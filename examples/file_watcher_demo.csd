@@ -87,7 +87,7 @@ squad FileWatcherDemo {
         } flex lowkey (self.event_count == 2) {
             // Create another file
             facts another_path = format!("{}/another_file.csd", self.watch_dir);
-            facts csd_content = "// Sample CURSED file\n\nslay main() {\n    println(\"Hello from watched file!\")?\n}";
+            facts csd_content = "// Sample CURSED file\n\nslay main_character() {\n    println(\"Hello from watched file!\")?\n}";
             fs::write_file(&another_path, csd_content)?;
             self.handle_file_event("Created", &another_path)?;
         } flex lowkey (self.event_count == 3) {
@@ -302,7 +302,7 @@ slay demonstrate_build_integration() {
 }
 
 fr fr Main function
-slay main() {
+slay main_character() {
     println("🎬 CURSED File Watcher Demo")?;
     println("==========================")?;
     println("")?;

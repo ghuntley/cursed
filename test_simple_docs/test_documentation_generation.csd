@@ -55,7 +55,7 @@ facts MAX_ITERATIONS drip = 100
 fr fr/ Default test timeout in milliseconds
 facts DEFAULT_TIMEOUT drip = 5000
 
-slay main() {
+slay main_character() {
     vibez.spill("Running documentation generation test...")
     
     sus result lit = test_documentation("test_name", 42)

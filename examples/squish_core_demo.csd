@@ -19,7 +19,7 @@ facts SMALL_TEXT: tea = "Hello, World! This is a small compression test.";
 facts MEDIUM_TEXT: tea = "This is a medium-sized text for testing compression algorithms. It contains repetitive patterns and should compress reasonably well with most algorithms. ".repeat(5);
 facts LARGE_TEXT: tea = "Large text sample for compression testing. ".repeat(100);
 
-slay main() {
+slay main_character() {
     vibez.spillf("🗜️ CURSED SquishCore Compression Demo\n");
     vibez.spillf("=====================================\n\n");
     

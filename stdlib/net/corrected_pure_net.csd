@@ -201,7 +201,7 @@ slay test_ffi_elimination() {
     vibez.spill("All networking operations are 100% pure CURSED!")
 }
 
-slay main() {
+slay main_character() {
     vibez.spill("CURSED Pure Networking - FFI Elimination Test")
     vibez.spill("Testing 100% self-contained networking implementation...")
     vibez.spill("")

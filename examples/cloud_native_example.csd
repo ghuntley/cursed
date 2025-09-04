@@ -9,7 +9,7 @@ yeet "errorz"
 yeet "timez"
 
 # Example: Full Cloud-Native Application Deployment
-slay main() {
+slay main_character() {
     vibez.spill("🚀 CURSED Cloud-Native Enterprise Deployment Demo")
     vibez.spill("=" * 60)
 

@@ -256,7 +256,7 @@ slay (dp *DataProcessor) Transform(input interface{}) (interface{}, error) {
 }
 
 fr fr Main function demonstrating usage
-slay main() {
+slay main_character() {
     sus config := ProcessorConfig{
         MaxBufferSize:   1024 * 1024,
         TimeoutDuration: 30 * time.Second,

@@ -146,7 +146,7 @@ slay advance(bodies []Planet, dt meal) {
     }
 }
 
-slay main() {
+slay main_character() {
     sus n normie = 1000000
     sus bodies []Planet = init_solar_system()
     sus start_ts thicc = timez.now()

@@ -1,4 +1,4 @@
-slay main() normie {
+slay main_character() normie {
     fr fr Using simple based conditions instead of comparisons
     sus i = 0;
     sus j = 0;

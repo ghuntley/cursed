@@ -2,7 +2,7 @@ vibe main
 
 yeet "vibez"
 
-slay main() {
+slay main_character() {
     vibez.spill("Test message");
     damn 0;
 }

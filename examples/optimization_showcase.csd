@@ -176,7 +176,7 @@ slay slang_heavy_function(input: &str) -> String {
 }
 
 fr fr Main function demonstrating all optimizations
-slay main() -> Result<(), Error> {
+slay main_character() -> Result<(), Error> {
     // Error propagation optimization
     sus data = process_data_with_errors("sample input")?;
     

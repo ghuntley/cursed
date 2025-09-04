@@ -223,7 +223,7 @@ slay demo_practical_example() -> Result<(), String> {
     Ok(())
 }
 
-slay main() -> Result<(), String> {
+slay main_character() -> Result<(), String> {
     println("🔥 CURSED Stack Collections Demo 🔥")?;
     println("=====================================")?;
     println("")?;

@@ -474,7 +474,7 @@ slay demo_delete_operations(repo UserRepository) {
 }
 
 # Main application
-slay main() {
+slay main_character() {
     vibez.spill("🗄️  CURSED Database Application Demo")
     vibez.spill("=====================================")
     vibez.spill("")

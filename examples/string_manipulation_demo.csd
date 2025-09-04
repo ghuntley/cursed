@@ -5,7 +5,7 @@ fr fr Shows all the string functions available in stdlib
 
 yeet "stdlib::string"
 
-slay main() {
+slay main_character() {
     facts message = "hello world"
     
     // Basic operations

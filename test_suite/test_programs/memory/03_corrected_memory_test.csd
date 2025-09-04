@@ -5,7 +5,7 @@ fr fr Corrected Memory Test - Basic Operations
 fr fr Tests: Simple memory-related operations with correct syntax
 fr fr Expected: Successful execution without memory issues
 
-slay main() {
+slay main_character() {
     vibez.spill("=== Corrected Memory Test ===")
     
     vibez.spill("Testing simple variable allocation...")

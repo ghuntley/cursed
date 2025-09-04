@@ -1075,7 +1075,7 @@ slay empty_contact_data() map[tea]tea {
 
 fr fr ===== MAIN APPLICATION =====
 
-slay main() {
+slay main_character() {
     vibez.spill("Starting Contact Management System...")
     
     fr fr Initialize database

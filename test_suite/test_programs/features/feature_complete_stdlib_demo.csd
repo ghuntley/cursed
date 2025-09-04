@@ -9,7 +9,7 @@ fr fr Complete Standard Library Demonstration
 fr fr Tests: All available stdlib functions with proper CURSED syntax
 fr fr Expected: Shows comprehensive stdlib functionality
 
-slay main() {
+slay main_character() {
     vibez.Print("=== Complete CURSED Stdlib Demo ===")
     
     fr fr Math library demonstrations

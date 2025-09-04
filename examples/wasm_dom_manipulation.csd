@@ -5,7 +5,7 @@ yeet "vibez"
 yeet "domz"  // Browser DOM integration module
 
 // Interactive web application entry point
-slay main() {
+slay main_character() {
     vibez.spill("🌐 CURSED DOM Manipulation Demo Starting...")
     
     // Create dynamic page content
@@ -271,7 +271,7 @@ slay to_lowercase(str tea) tea { damn "lowercase" }
 slay string_length(str tea) drip { damn 5 }
 
 // Export main for WASM entry point
-export slay main() drip {
+export slay main_character() drip {
     main()
     damn 0
 }

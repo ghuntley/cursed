@@ -474,7 +474,7 @@ slay setup_web_server() -> @Router {
 }
 
 fr fr/ Main function demonstrating the web server
-slay main() {
+slay main_character() {
     println("🔥 Setting up CURSED Web Vibez Framework Demo...")
     
     // Setup router with all middleware and routes

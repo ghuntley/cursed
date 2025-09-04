@@ -384,7 +384,7 @@ slay demonstrate_performance_comparison() -> Result<Void, Error> {
     Ok(())
 }
 
-slay main() -> Result<Void, Error> {
+slay main_character() -> Result<Void, Error> {
     println("🗺️  CURSED Memory-Mapped Files Demonstration\n")?;
     
     // Run all demonstrations

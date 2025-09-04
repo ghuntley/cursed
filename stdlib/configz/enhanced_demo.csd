@@ -286,7 +286,7 @@ fr fr ==========================================
 fr fr Main Demo Function
 fr fr ==========================================
 
-slay main() {
+slay main_character() {
     vibez.spill("🚀 CURSED Enhanced Configuration System Demo")
     vibez.spill("====================================================")
     

@@ -177,7 +177,7 @@ slay test_user_authentication() vibes {
     testz.spill_result(test)
 }
 
-slay main() vibes {
+slay main_character() vibes {
     vibez.spill("🔐 Testing Pure CURSED User Authentication Implementation")
     test_user_authentication()
     vibez.spill("✅ Pure CURSED user authentication - no extern dependencies!")

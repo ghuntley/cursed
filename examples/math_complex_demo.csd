@@ -8,7 +8,7 @@ fr fr/ like matrix operations and polynomial root finding.
 
 yeet "stdlib::math"
 
-slay main() {
+slay main_character() {
     // ===== COMPLEX NUMBER CREATION AND BASIC OPERATIONS =====
     vibez.spill("🔢 CURSED Complex Number Mathematics Demo")
     vibez.spill("==========================================")

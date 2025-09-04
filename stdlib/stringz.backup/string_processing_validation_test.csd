@@ -198,7 +198,7 @@ fr fr =================================
 fr fr Main Test Runner
 fr fr =================================
 
-slay main() normie {
+slay main_character() normie {
     vibez.spill("🚀 CURSED String Processing Validation Test Suite")
     vibez.spill("Testing comprehensive string functionality...")
     vibez.spill("")

@@ -442,7 +442,7 @@ benchmark!("vector_operations", 1000, {
 })
 
 // Main function to run examples
-slay main() {
+slay main_character() {
     demonstrate_macros()
     
     // Run tests

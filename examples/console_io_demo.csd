@@ -3,7 +3,7 @@ fr fr Shows comprehensive usage of the console I/O module
 
 yeet "stdlib::io"
 
-slay main() -> Result<(), IoError> {
+slay main_character() -> Result<(), IoError> {
     // Initialize I/O subsystem
     io::initialize()?;
 

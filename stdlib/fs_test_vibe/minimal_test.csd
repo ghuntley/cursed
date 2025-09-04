@@ -14,7 +14,7 @@ slay test_function() SimpleTest {
     damn result
 }
 
-slay main() {
+slay main_character() {
     sus test SimpleTest = test_function()
     vibez.spill("Test name: " + test.name)
     vibez.spill("Test value: " + tea(test.value))

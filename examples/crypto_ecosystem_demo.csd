@@ -14,7 +14,7 @@ yeet "stdlib::crypto"
 yeet "stdlib::io"
 
 fr fr Main demo function showcasing the crypto ecosystem
-slay main() -> CursedResult<()> {
+slay main_character() -> CursedResult<()> {
     println("🚀 CURSED Crypto Ecosystem Demo - Maximum Security Bestie!")?;
     println("==========================================================")?;
     

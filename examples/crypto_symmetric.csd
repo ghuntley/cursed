@@ -18,7 +18,7 @@ from timez import now
 from stringz import split, join
 
 fr fr/ slay Main encryption demo function
-slay main() -> void {
+slay main_character() -> void {
     spillf("🔐 CURSED Symmetric Encryption Demo - Let's secure the bag bestie!\n")
     
     // Demo 1: Basic password-based file encryption

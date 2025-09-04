@@ -1,5 +1,5 @@
 # Simple Strings Benchmark
-slay main() drip {
+slay main_character() drip {
     sus iterations drip = 1000  
     sus total drip = 0
     

@@ -583,7 +583,7 @@ impl DemoDataStructure {
 }
 
 fr fr Main demonstration function
-slay main() -> Result<(), String> {
+slay main_character() -> Result<(), String> {
     damn("CURSED IPC System Comprehensive Showcase");
     damn("==========================================");
     

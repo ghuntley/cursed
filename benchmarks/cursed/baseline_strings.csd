@@ -62,7 +62,7 @@ slay benchmark_strings() drip {
     damn total
 }
 
-slay main() drip {
+slay main_character() drip {
     sus start drip = timez.now_microseconds()
     sus result drip = benchmark_strings()
     sus end drip = timez.now_microseconds()

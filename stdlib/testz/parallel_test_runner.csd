@@ -662,7 +662,7 @@ slay run_parallel_test_suite(test_files [tea]) TestRunSummary {
     damn summary
 }
 
-slay main() {
+slay main_character() {
     vibez.spill("🧪 Starting CURSED Parallel Test Runner...")
     
     fr fr Sample test files for demonstration

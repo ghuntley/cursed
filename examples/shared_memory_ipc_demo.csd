@@ -294,7 +294,7 @@ sus error_handling_demo() -> Result<(), Error> {
 }
 
 fr fr/ Main demonstration function
-slay main() -> Result<(), Error> {
+slay main_character() -> Result<(), Error> {
     console::println("CURSED Shared Memory IPC Comprehensive Demo")?;
     console::println("==========================================")?;
     

@@ -421,7 +421,7 @@ slay test_single_character_input() {
 
 fr fr ===== MAIN TEST RUNNER =====
 
-slay main() {
+slay main_character() {
     vibez.spill("🧪 CURSED Formatter Test Suite")
     vibez.spill("Testing AST-based formatter with comprehensive features")
     vibez.spill("")

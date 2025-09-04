@@ -287,7 +287,7 @@ slay test_statistical_functions() {
 // Main Test Runner
 // ================================
 
-slay main() {
+slay main_character() {
     vibez.spill("=== Pure CURSED Math Library Test Suite ===");
     
     test_math_constants();

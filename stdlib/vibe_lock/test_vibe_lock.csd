@@ -143,7 +143,7 @@ slay test_comprehensive_synchronization() normie {
 }
 
 // Main test runner
-slay main() normie {
+slay main_character() normie {
     vibez.spill("=== VIBE_LOCK SYNCHRONIZATION TESTS ===")
     vibez.spill("")
     

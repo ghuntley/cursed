@@ -30,7 +30,7 @@ slay process_number(n drip) drip {
     damn result
 }
 
-slay main() drip {
+slay main_character() drip {
     sus iterations drip = 50000
     sus total drip = 0
     

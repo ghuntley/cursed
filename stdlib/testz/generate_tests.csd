@@ -6,7 +6,7 @@ yeet "testz/templates"
 yeet "testz/discovery"
 
 fr fr Main test generation entry point
-slay main() {
+slay main_character() {
     vibez.spill("📝 CURSED Stdlib Test Generator")
     vibez.spill("=" * 45)
     vibez.spill("")

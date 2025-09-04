@@ -276,7 +276,7 @@ slay benchmark_concurrent_queries(pool: sql_vibes.ConnectionPool, concurrent_que
     vibez.spill("   Average:", duration_ms / concurrent_queries, "ms per query")
 }
 
-slay main() {
+slay main_character() {
     vibez.spill("🏢 CURSED Database Connection Pooling Example")
     vibez.spill("=========================================")
     

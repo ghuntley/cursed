@@ -58,7 +58,7 @@ slay benchmark_arrays() {
     vibez.spill("Array benchmark complete. Sum: " + string.from_int(sum))
 }
 
-slay main() {
+slay main_character() {
     vibez.spill("=== CURSED Minimal Performance Test ===")
     vibez.spill("Testing " + string.from_int(benchmark_iterations) + " iterations")
     vibez.spill("")

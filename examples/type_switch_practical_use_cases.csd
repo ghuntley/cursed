@@ -832,7 +832,7 @@ slay demonstrate_event_processing() {
 }
 
 fr fr Main demonstration function
-slay main() {
+slay main_character() {
     demonstrate_configuration_system()
     demonstrate_message_queue()
     demonstrate_query_builder()

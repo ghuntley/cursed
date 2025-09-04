@@ -275,7 +275,7 @@ fr fr ================================
 fr fr Main Test Execution
 fr fr ================================
 
-slay main() {
+slay main_character() {
     vibez.spill("🧪 CURSED Parallel Test Runner Demo")
     vibez.spill("═══════════════════════════════════")
     

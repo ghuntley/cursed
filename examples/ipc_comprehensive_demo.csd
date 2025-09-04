@@ -6,7 +6,7 @@ yeet "stdlib::sync"
 yeet "stdlib::io"
 
 fr fr Main IPC demonstration
-slay main() {
+slay main_character() {
     println("🔗 CURSED IPC Comprehensive Demo");
     println("================================");
     

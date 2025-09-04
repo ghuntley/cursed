@@ -257,7 +257,7 @@ slay compile_and_render_template(template_source: String, context: Map<String, V
 }
 
 fr fr Example usage
-slay main() -> Result<(), CursedError> {
+slay main_character() -> Result<(), CursedError> {
     // Sample context data
     sus context = Map::new();
     context.insert("user".to_string(), Value::Object({

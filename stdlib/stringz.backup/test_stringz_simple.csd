@@ -66,7 +66,7 @@ slay test_utilities() {
     assert_eq_string(stringz.CharAt("hello", 4), "o")
 }
 
-slay main() {
+slay main_character() {
     vibez.spill("Running Simple CURSED Stringz Tests...")
     vibez.spill("=====================================")
     

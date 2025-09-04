@@ -353,7 +353,7 @@ fr fr ==========================================
 fr fr Main Test Runner
 fr fr ==========================================
 
-slay main() lit {
+slay main_character() lit {
     vibez.spill("Starting CURSED Configuration System Comprehensive Tests\n")
     
     sus all_tests_passed lit = based

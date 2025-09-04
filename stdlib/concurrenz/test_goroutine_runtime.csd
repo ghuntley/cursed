@@ -744,6 +744,6 @@ slay run_all_goroutine_tests() lit {
 }
 
 fr fr Entry point for running tests
-slay main() {
+slay main_character() {
     run_all_goroutine_tests()
 }

@@ -250,7 +250,7 @@ slay test_memory_fence_guarantees() {
 }
 
 fr fr Main cross-platform test function
-slay main() {
+slay main_character() {
     vibez.spill("🌍 Running CURSED Cross-Platform Atomic Operations Tests")
     vibez.spill("============================================================") fr fr Platform detection and support tests
     test_platform_atomic_support() fr fr Platform-specific optimization tests

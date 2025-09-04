@@ -27,7 +27,7 @@ slay (p Person) String() string {
     )
 }
 
-slay main() {
+slay main_character() {
     sus people = []Person{
         {
             name:  "Alice",

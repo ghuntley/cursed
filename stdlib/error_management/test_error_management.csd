@@ -396,7 +396,7 @@ slay test_complete_workflow() {
 }
 
 fr fr Run all tests
-slay main() {
+slay main_character() {
     vibez.spill("=== CURSED Error Management Module Tests ===")
     
     test_error_creation()

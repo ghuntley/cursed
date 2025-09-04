@@ -5,7 +5,7 @@ yeet "stdlib::io"
 yeet "stdlib::collections"
 
 fr fr Web template system demonstration
-slay main() {
+slay main_character() {
     fr fr Create web template renderer
     sus web_renderer = WebTemplateRenderer::new("templates")
     

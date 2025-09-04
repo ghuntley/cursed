@@ -222,7 +222,7 @@ slay print_failure(message tea) {
 }
 
 fr fr Main test execution
-slay main() {
+slay main_character() {
     print_core("=== CURSED Core Module Test Suite ===")
     print_core("")
     

@@ -530,7 +530,7 @@ slay demo_error_handling() -> Result<(), MongoDbError> {
 }
 
 fr fr/ Main function to run all demos
-slay main() -> Result<(), Box<dyn std::error::Error>> {
+slay main_character() -> Result<(), Box<dyn std::error::Error>> {
     println("🔥 CURSED MongoDB Driver Demo Starting...")?;
     println("=================================================")?;
 

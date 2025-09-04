@@ -6,7 +6,7 @@ fr fr/ requests, handling responses, and working with headers and cookies.
 yeet "stdlib::net::http"
 yeet "stdlib::io"
 
-slay main() -> Result<(), Error> {
+slay main_character() -> Result<(), Error> {
     println("🌐 CURSED HTTP Client Example")?;
     println("==============================")?;
     

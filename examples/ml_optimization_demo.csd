@@ -136,7 +136,7 @@ slay process_with_interface(sus processor: &dyn Processor, sus data: [i64; 1000]
 }
 
 fr fr Main function demonstrating various code patterns
-slay main() -> Result<(), string> {
+slay main_character() -> Result<(), string> {
     println("CURSED ML-Guided Optimization Demo")?;
     
     // Create some test data

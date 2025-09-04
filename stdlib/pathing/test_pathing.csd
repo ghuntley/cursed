@@ -275,7 +275,7 @@ slay test_string_helpers() {
 }
 
 // Run all tests
-slay main() {
+slay main_character() {
     vibez.spill("Running pathing module tests...")
     
     test_path_join()

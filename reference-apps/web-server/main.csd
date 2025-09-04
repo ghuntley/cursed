@@ -428,7 +428,7 @@ slay health_handler(request HttpRequest) HttpResponse {
 }
 
 # Main application
-slay main() {
+slay main_character() {
     sus config ServerConfig = {
         host: "127.0.0.1",
         port: 8080,

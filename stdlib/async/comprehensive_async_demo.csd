@@ -3,7 +3,7 @@
 
 yeet "async"
 
-slay main() {
+slay main_character() {
     vibez.spill("=== CURSED Native Async System Demo ===")
     
     // Initialize async system

@@ -303,7 +303,7 @@ slay print_benchmark_result(result BenchmarkResult) {
 }
 
 // Main benchmark runner
-slay main() normie {
+slay main_character() normie {
     vibez.spill("=== Structured Logging Performance Benchmarks ===")
     vibez.spill("")
     

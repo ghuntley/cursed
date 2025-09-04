@@ -2,7 +2,7 @@ vibe main
 yeet "vibez"
 yeet "mathz"
 
-slay main() {
+slay main_character() {
     vibez.spill("Testing mathz.abs_normie function...")
     
     // Test normal case

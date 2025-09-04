@@ -329,7 +329,7 @@ slay test_async_stress() {
 }
 
 fr fr Main test runner
-slay main() {
+slay main_character() {
     vibez.spill("🧪 Running Enhanced CURSED Async Core Module Tests")
     vibez.spill("=========================================================")
     

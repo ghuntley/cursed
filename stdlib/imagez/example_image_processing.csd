@@ -259,7 +259,7 @@ slay demo_gpu_acceleration() lit {
 
 // ===== MAIN DEMO FUNCTION =====
 
-slay main() normie {
+slay main_character() normie {
     vibez.print_header("CURSED ImageZ Professional Image Processing Demo")
     
     // Run all demonstrations

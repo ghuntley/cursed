@@ -133,7 +133,7 @@ fr fr For self-hosting compiler support
 
 fr fr Global file system state (simulated)
 sus fs_files map[tea]tea = map[tea]tea{
-    "main.csd": "fam \"core\"\n\nslay main() {\n    vibez.spill(\"Hello from CURSED compiler\")\n}",
+    "main.csd": "fam \"core\"\n\nslay main_character() {\n    vibez.spill(\"Hello from CURSED compiler\")\n}",
     "test.csd": "vibez.spill(\"Test file content\")",
     "empty.csd": "",
     "config.toml": "optimization_level = 2\ntarget = \"native\"\ndebug = false"

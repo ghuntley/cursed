@@ -479,7 +479,7 @@ slay init_app() {
 }
 
 # Entry point
-slay main() {
+slay main_character() {
     init_app()
     
     # Keep the application running

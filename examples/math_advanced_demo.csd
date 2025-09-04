@@ -330,7 +330,7 @@ slay demonstrate_scientific_computing() {
 }
 
 fr fr Main demonstration function
-slay main() {
+slay main_character() {
     println("CURSED Advanced Mathematical Functions Demonstration");
     println("===================================================");
     println();

@@ -280,7 +280,7 @@ impl EventProcessor {
 }
 
 fr fr Main demo function
-slay main() {
+slay main_character() {
     println!("=== CURSED Queue Collections Demo ===\n");
     
     // Job Scheduler Demo

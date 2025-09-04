@@ -67,7 +67,7 @@ be_like ReflectionValidator squad {
 }
 
 fr fr Initialize the API system
-slay main() {
+slay main_character() {
     vibez.spill("🚀 LookinGlass JSON API Demo - Reflection-Powered REST API")
     vibez.spill("=" * 60)
     

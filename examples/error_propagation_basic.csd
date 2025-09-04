@@ -41,7 +41,7 @@ slay complex_operation(sus values: &[i32], sus index: usize, sus divisor: i32) -
 }
 
 fr fr Main function demonstrating error propagation chains
-slay main() -> Result<(), String> {
+slay main_character() -> Result<(), String> {
     println("=== Error Propagation Examples ===")?;
     
     // Test basic Result propagation

@@ -25,7 +25,7 @@ slay array_work() drip {
     damn sum
 }
 
-slay main() drip {
+slay main_character() drip {
     sus total drip = 0
     
     bestie (sus i drip = 0; i < 1000; i++) {

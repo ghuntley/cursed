@@ -304,7 +304,7 @@ slay int_to_string(value normie) tea {
 }
 
 // Main test execution
-slay main() {
+slay main_character() {
     vibez.spill("🧪 CURSED Network Module - Basic Test Suite")
     vibez.spill("============================================================")
     

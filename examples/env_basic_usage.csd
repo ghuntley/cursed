@@ -6,7 +6,7 @@ fr fr Demonstrates core environment variable operations in CURSED
 yeet "stdlib::env"
 yeet "stdlib::io"
 
-slay main() {
+slay main_character() {
     println("=== CURSED Environment Variables Demo ===")?;
     
     // Basic operations

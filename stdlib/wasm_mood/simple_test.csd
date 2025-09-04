@@ -10,7 +10,7 @@ vibez.spill("✅ Created empty module: ", module1)
 
 fr fr Test module compilation
 sus options normie = wasm_create_compile_options(0, "wasm", based)
-sus module2 normie = wasm_compile_from_source("slay main() { damn 42 }", options)
+sus module2 normie = wasm_compile_from_source("slay main_character() { damn 42 }", options)
 assert_true(module2 > 0)
 vibez.spill("✅ Compiled source to module: ", module2)
 

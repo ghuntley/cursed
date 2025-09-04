@@ -4,7 +4,7 @@ yeet "vibez"
 yeet "htmlrizzler"
 yeet "timez"
 
-slay main() {
+slay main_character() {
     // Print a message
     vibez.spill("Testing all dot expression functions");
     

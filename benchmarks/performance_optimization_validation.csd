@@ -563,7 +563,7 @@ slay get_pool(manager *PoolManager, name tea) *ObjectPool {
 }
 
 // Main benchmark execution
-slay main() {
+slay main_character() {
     vibez.spill("Starting Performance Optimization Validation...")
     vibez.spill("This benchmark compares O(n) vs O(1) implementations")
     vibez.spill("")

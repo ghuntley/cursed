@@ -36,7 +36,7 @@ squad RevocationStats {
     emergency_revocations: sus,
 }
 
-damn slay main() {
+damn slay main_character() {
     io::println("🔒 CURSED PKI Certificate Revocation Management Demo")?;
     io::println("====================================================")?;
     

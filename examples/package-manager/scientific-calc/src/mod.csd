@@ -54,7 +54,7 @@ slay init_calculator() Calculator {
 }
 
 # Main calculator interface
-slay main() drip {
+slay main_character() drip {
     vibez.spill("CURSED Scientific Calculator v2.1.0")
     vibez.spill("Powered by MathLib v" + mathlib.version())
     vibez.spill("=====================================")

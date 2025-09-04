@@ -389,7 +389,7 @@ fr fr ================================
 fr fr Main Demo Runner
 fr fr ================================
 
-slay main() {
+slay main_character() {
     vibez.spill("🚀 CURSED Enhanced Testing Framework Demo")
     vibez.spill("====================================")
     vibez.spill("")

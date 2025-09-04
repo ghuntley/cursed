@@ -290,7 +290,7 @@ slay test_time_performance() {
 }
 
 fr fr Main test runner
-slay main() {
+slay main_character() {
     vibez.spill("🧪 Running Enhanced CURSED Clock Module Tests")
     vibez.spill("===================================================")
     

@@ -122,7 +122,7 @@ slay integrated_processing_pipeline() {
     }
 }
 
-slay main() {
+slay main_character() {
     vibez.spill("=== Comprehensive Stdlib Integration Tests ===")
     
     process_numeric_data()

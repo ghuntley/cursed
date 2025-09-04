@@ -509,6 +509,6 @@ slay demonstrate_advanced_constraints() {
 }
 
 fr fr Main function
-slay main() {
+slay main_character() {
     demonstrate_advanced_constraints()
 }

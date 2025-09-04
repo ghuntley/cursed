@@ -36,7 +36,7 @@ collab IpcMessage {
 }
 
 fr fr Main IPC demonstration
-slay main() -> Result<(), Error> {
+slay main_character() -> Result<(), Error> {
     println("Starting CURSED IPC Communication Demo")?;
     
     // Demo 1: Shared Memory Communication

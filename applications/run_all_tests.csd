@@ -48,7 +48,7 @@ sus overall_end_time drip = 0
 
 fr fr ===== MAIN TEST EXECUTION =====
 
-slay main() {
+slay main_character() {
     vibez.spill("🚀 CURSED APPLICATION TEST SUITE")
     vibez.spill("Testing real-world applications with comprehensive database functionality")
     vibez.spill("=" + stringz.repeat("=", 80))

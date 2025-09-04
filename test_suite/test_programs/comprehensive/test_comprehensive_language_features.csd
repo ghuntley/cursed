@@ -46,7 +46,7 @@ slay test_loops() {
     }
 }
 
-slay main() normie {
+slay main_character() normie {
     vibez.spill("CURSED Comprehensive Language Features Test")
     vibez.spill("=========================================")
     

@@ -253,7 +253,7 @@ slay test_file_watching() vibes {
     testz.spill_result(test)
 }
 
-slay main() vibes {
+slay main_character() vibes {
     vibez.spill("🎯 Testing Pure CURSED File Watching Implementation")
     test_file_watching()
     vibez.spill("✅ Pure CURSED file watching - no Zig dependencies!")

@@ -4,7 +4,7 @@ fr fr Demonstrates how to use the test runner programmatically
 yeet "stdlib::testing"
 use testing::*;
 
-slay main() -> Result<(), TestError> {
+slay main_character() -> Result<(), TestError> {
     // Create test framework with custom configuration
     sus config = TestFrameworkConfig {
         test_root: PathBuf::from("./tests"),

@@ -9,7 +9,7 @@ fr fr! - Integration with existing crypto infrastructure
 
 yeet "stdlib::crypto_pqc"
 
-slay main() -> Result<(), CursedError> {
+slay main_character() -> Result<(), CursedError> {
     println("🔐 Enhanced Post-Quantum Cryptography Showcase")?;
     println("=" * 60)?;
     

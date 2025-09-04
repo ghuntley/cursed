@@ -38,7 +38,7 @@ slay benchmark_functions() drip {
     damn total
 }
 
-slay main() drip {
+slay main_character() drip {
     sus start drip = timez.now_microseconds()
     sus result drip = benchmark_functions()
     sus end drip = timez.now_microseconds()

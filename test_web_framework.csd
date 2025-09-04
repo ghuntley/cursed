@@ -159,7 +159,7 @@ slay json_post_handler(ctx *web_framework.Context) cringe {
 }
 
 fr fr Main test runner
-slay main() cringe {
+slay main_character() cringe {
     print("CURSED Web Framework & Template Engine Test Suite")
     print("================================================")
     

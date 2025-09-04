@@ -554,7 +554,7 @@ slay demonstrate_complex_patterns() {
 }
 
 fr fr Main demonstration function
-slay main() {
+slay main_character() {
     demonstrate_json_processing()
     demonstrate_http_handling()
     demonstrate_plugin_system()

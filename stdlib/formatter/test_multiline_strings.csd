@@ -253,7 +253,7 @@ slay test_multiline_string_regression_test_2() {
 
 fr fr ===== MAIN TEST RUNNER =====
 
-slay main() {
+slay main_character() {
     vibez.spill("🔧 Critical P1 Issue #20: Multiline String Literal Formatter Fix Tests")
     vibez.spill("Testing enhanced formatter with proper multiline string support")
     vibez.spill("")

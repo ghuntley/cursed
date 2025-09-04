@@ -334,7 +334,7 @@ slay demonstrateProtocolAdapters() {
     oglogging.spill("Protocol adapters demonstration completed")
 }
 
-slay main() {
+slay main_character() {
     oglogging.spill("🎉 Welcome to the VibeNet Networking Demo!")
     oglogging.spill("This demo showcases the comprehensive networking capabilities of CURSED VibeNet")
     

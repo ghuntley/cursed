@@ -148,7 +148,7 @@ slay testDiamondPaths(obj any) Result<tea, Error> {
     return ok<tea, Error>("Diamond inheritance test completed successfully");
 }
 
-slay main() {
+slay main_character() {
     // Create a Player instance
     sus player = Player{
         player_id: 42,

@@ -1333,7 +1333,7 @@ slay lint_and_get_issues(source tea, config LinterConfig, file_path tea) LintIss
 }
 
 // Enhanced main function with comprehensive testing
-slay main() {
+slay main_character() {
     vibez.spill("🔥 CURSED Production Linter - 42 Critical Rules Migrated")
     vibez.spill("=========================================================")
     vibez.spill("")

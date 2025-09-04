@@ -17,7 +17,7 @@ slay test_simple() {
     vibez.spill("Squared:", squared)
 }
 
-slay main() {
+slay main_character() {
     vibez.spill("=== Minimal Extreme Test ===")
     test_simple()
     vibez.spill("Test completed")

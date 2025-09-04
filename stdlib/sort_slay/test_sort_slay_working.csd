@@ -178,7 +178,7 @@ slay test_performance_concept() {
     vibez.spill("Performance test completed!")
 }
 
-slay main() {
+slay main_character() {
     vibez.spill("=== CURSED Sort Slay Module Tests ===")
     vibez.spill("Testing fundamental sorting concepts...")
     

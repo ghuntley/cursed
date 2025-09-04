@@ -310,7 +310,7 @@ slay demo_file_encryption() {
 }
 
 fr fr Main demo function
-slay main() {
+slay main_character() {
     println("🚀 XChaCha20-Poly1305 AEAD Comprehensive Demo");
     println("================================================");
     

@@ -13,7 +13,7 @@ fr fr/ ```
 fr fr/ 
 fr fr/ @author CURSED Documentation Team
 fr fr/ @since 1.0.0
-slay main() {
+slay main_character() {
     println("🔥 Welcome to CURSED Documentation Demo!")
     
     // Demonstrate different language features

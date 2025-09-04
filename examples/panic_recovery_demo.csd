@@ -4,7 +4,7 @@ fr fr/ Shows panic handling, recovery scopes, and Gen Z slang panic functions
 yeet "stdlib::io"
 
 fr fr Basic panic and recovery demo
-slay main() {
+slay main_character() {
     // Initialize the panic/recovery system
     facts result = catch_panic_demo()
     if result {

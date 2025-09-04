@@ -13,7 +13,7 @@ slay factorial(n drip) drip {
     damn n * factorial(n - 1)
 }
 
-slay main() drip {
+slay main_character() drip {
     sus iterations drip = 25
     sus total drip = 0
     

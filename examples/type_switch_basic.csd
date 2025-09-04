@@ -200,7 +200,7 @@ slay demonstrate_error_handling() {
 }
 
 fr fr Main function demonstrating all features
-slay main() {
+slay main_character() {
     demonstrate_basic_type_switch()
     demonstrate_variable_binding()
     demonstrate_multiple_types()

@@ -329,7 +329,7 @@ slay cache_performance_benchmark() drip {
 }
 
 # Main benchmark execution
-slay main() {
+slay main_character() {
     test_start("Oracle Macro Performance Suite")
     
     vibez.spill("🚀 Starting Oracle Macro Performance Benchmarks")

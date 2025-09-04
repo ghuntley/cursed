@@ -295,7 +295,7 @@ slay is_digit(char tea) lit {
 }
 
 // Public API
-slay main() {
+slay main_character() {
     vibez.spill("CURSED Code Formatter - Self-Hosting Edition")
     
     // Example usage

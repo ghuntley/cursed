@@ -5,7 +5,7 @@ fr fr Comprehensive demo of the oglogging package - Simple logging with Gen Z vi
 yeet "stdlib::oglogging"
 yeet "stdlib::io"
 
-slay main() {
+slay main_character() {
     println("🔥 CURSED OG Logging Demo - Let's get this logging bestie! 🔥\n")?
     
     // Basic logging with standard logger

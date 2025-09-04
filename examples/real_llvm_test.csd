@@ -9,7 +9,7 @@ slay add(a: normie, b: normie) -> normie {
 }
 
 fr fr Main function that demonstrates basic functionality
-slay main() -> normie {
+slay main_character() -> normie {
     sus x = 42;
     sus y = 13;
     sus result = add(x, y);

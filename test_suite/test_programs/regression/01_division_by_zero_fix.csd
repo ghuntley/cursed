@@ -146,7 +146,7 @@ slay test_division_in_loops() {
     }
 }
 
-slay main() {
+slay main_character() {
     vibez.spill("=== Division by Zero Regression Test Suite ===")
     
     test_division_scenarios()

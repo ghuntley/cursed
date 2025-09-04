@@ -937,7 +937,7 @@ slay assert_true(condition lit, message tea) {
 }
 
 // Main test entry point
-slay main() {
+slay main_character() {
     run_advanced_pool_tests()
     damn 0
 }

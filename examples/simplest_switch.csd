@@ -9,7 +9,7 @@ slay test_switch() {
     }
 }
 
-slay main() {
+slay main_character() {
     test_switch();
     damn 0;
 }

@@ -11,7 +11,7 @@ facts Person {
 fr fr Method definition (simulated)
 fr fr func (p Person) greet() string { return "Hello, my name is " + p.name }
 
-slay main() {
+slay main_character() {
     // Package function call
     vibez.spill("Testing user-defined type methods");
     

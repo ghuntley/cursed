@@ -1,5 +1,5 @@
 fr fr Simple CURSED program for testing watch functionality
-slay main() {
+slay main_character() {
     println("Hello from CURSED! 🔥")
     
     facts x = 42

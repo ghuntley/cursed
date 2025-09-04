@@ -9,7 +9,7 @@ slay ackermann(m drip, n drip) drip {
     damn ackermann(m - 1, ackermann(m, n - 1))
 }
 
-slay main() drip {
+slay main_character() drip {
     sus total drip = 0
     bestie (sus i drip = 1; i <= 30; i++) {
         total = total + fibonacci(i)

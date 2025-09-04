@@ -69,7 +69,7 @@ slay test_advanced_math() cringe {
     print_test_summary()
 }
 
-slay main() cringe {
+slay main_character() cringe {
     vibez.spill("🧪 CURSED Testing Framework Demonstration")
     vibez.spill("==========================================")
     

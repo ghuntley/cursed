@@ -425,7 +425,7 @@ slay lint_code_with_config(source tea, config LinterConfig) tea {
     damn format_lint_results(issues)
 }
 
-slay main() {
+slay main_character() {
     vibez.spill("CURSED Code Linter - Self-Hosting Edition")
     
     // Example usage

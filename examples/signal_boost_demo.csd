@@ -3,7 +3,7 @@ fr fr This example demonstrates all the major features of the SignalBoost module
 
 yeet "stdlib::signal_boost"
 
-slay main() tea {
+slay main_character() tea {
     vibez.spill("🚀 Starting SignalBoost demo...")
     
     fr fr Initialize the SignalBoost module

@@ -327,7 +327,7 @@ slay test_file_compilation_checking() lit {
     
     test_start("Compilation checking with valid syntax")
     fr fr Note: This would check actual compilation in real implementation
-    sus valid_syntax tea = "yeet \"testz\"\nslay main() { damn based }"
+    sus valid_syntax tea = "yeet \"testz\"\nslay main_character() { damn based }"
     assert_true(validate_cursed_syntax(valid_syntax))
     
     test_start("Empty file handling") 

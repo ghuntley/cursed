@@ -7,7 +7,7 @@ yeet "testz"
 fr fr Import the timez_advanced module
 yeet "timez_advanced"
 
-slay main() void {
+slay main_character() void {
     vibez.spill("=== TIMEZ ADVANCED FUNCTIONALITY TESTS ===")
     vibez.spill("")
     

@@ -1,5 +1,5 @@
 vibe main
 
-slay main() {
+slay main_character() {
     sus nested_arrays [][]normie = [][]normie{}
 }

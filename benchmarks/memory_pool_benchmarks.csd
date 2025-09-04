@@ -620,7 +620,7 @@ slay get_performance_stats() tea {
 }
 
 # Main benchmark execution
-slay main() {
+slay main_character() {
     vibez.spill("🚀 CURSED Enterprise Memory Pool Benchmark Suite")
     vibez.spill("=" * 60)
     vibez.spill("")

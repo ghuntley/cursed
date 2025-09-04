@@ -1,6 +1,6 @@
 yeet "testz"
 
-slay main() {
+slay main_character() {
     test_start("fs_test_vibe simple test")
     
     vibez.spill("Testing fs_test_vibe module...") fr fr Test basic functionality

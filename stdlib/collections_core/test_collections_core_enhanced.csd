@@ -388,7 +388,7 @@ slay test_collections_stress() {
 }
 
 fr fr Main test runner
-slay main() {
+slay main_character() {
     vibez.spill("🧪 Running Enhanced CURSED Collections Core Module Tests")
     vibez.spill("==============================================================")
     

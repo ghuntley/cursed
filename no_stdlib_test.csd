@@ -1,4 +1,4 @@
 vibe main
-slay main() {
+slay main_character() {
     # Just return
 }

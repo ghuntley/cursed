@@ -31,7 +31,7 @@ slay check_tree(node @TreeNode) normie {
     damn node.item + check_tree(node.left) - check_tree(node.right)
 }
 
-slay main() {
+slay main_character() {
     sus min_depth normie = 4
     sus max_depth normie = 12
     

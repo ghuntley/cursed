@@ -3,7 +3,7 @@ fr fr Demonstrates CURSED string conversion utilities with Gen Z flair
 
 yeet "stdlib::no_cap"
 
-slay main() {
+slay main_character() {
     spillf("=== NoCap String Conversion Demo ===\n");
     
     // Boolean conversions with Gen Z slang

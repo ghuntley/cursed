@@ -1,7 +1,7 @@
 vibe main
 yeet "vibez"
 
-slay main() {
+slay main_character() {
     vibez.spill("Starting array test")
     sus arr []normie = []normie{}
     vibez.spill("Initial length:", len(arr))

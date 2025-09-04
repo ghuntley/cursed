@@ -181,7 +181,7 @@ slay performance_demo() {
 }
 
 fr fr Main demo function
-slay main() {
+slay main_character() {
     io.println(&format!("CURSED Runtime Introspection (vibecheck) Demo"));
     io.println(&format!("============================================="));
     io.println(&format!(""));

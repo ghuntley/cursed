@@ -154,7 +154,7 @@ slay parallel_vector_process(sus data: [f32], sus num_threads: i32) -> () {
 }
 
 fr fr Main demonstration function
-slay main() -> () {
+slay main_character() -> () {
     println("CURSED Vectorization Demo - Automatic SIMD Optimization")?;
     
     // Create test data

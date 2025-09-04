@@ -475,7 +475,7 @@ slay demo_error_handling() {
 
 // ==== MAIN DEMO RUNNER ====
 
-slay main() {
+slay main_character() {
     sus start_time drip = timez.now()
     
     vibez.spill("Initializing enhanced network module...")

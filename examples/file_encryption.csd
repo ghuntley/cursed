@@ -75,7 +75,7 @@ impl EncryptionConfig {
     }
 }
 
-slay main() {
+slay main_character() {
     print("🔐 CURSED File Encryption Utility")
     print("=================================")
     

@@ -27,7 +27,7 @@ collab EntityProcessor {
 }
 
 fr fr Main function demonstrating type switches
-slay main() {
+slay main_character() {
     // Create some test entities
     sus person = Person { name: "Alice", age: 25 };
     sus company = Company { name: "Tech Corp", employees: 100, revenue: 1000000.0 };

@@ -848,7 +848,7 @@ slay read_password() tea {
 }
 
 // Main entry point for CLI application
-slay main() drip {
+slay main_character() drip {
     sus cli PackageManagerCLI = PackageManagerCLI.new()
     
     // Get command line arguments (mock for now)

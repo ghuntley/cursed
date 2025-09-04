@@ -197,7 +197,7 @@ slay test_constant_time_select_bytes() {
     print_test_summary()
 }
 
-slay main() {
+slay main_character() {
     test_constant_time_compare()
     test_constant_time_byte_eq()
     test_constant_time_eq()

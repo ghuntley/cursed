@@ -1618,7 +1618,7 @@ slay save_config_to_string(config FormatterConfig) tea {
 
 fr fr ===== UTILITY FUNCTIONS =====
 
-slay main() {
+slay main_character() {
     vibez.spill("CURSED AST-Based Code Formatter - Production Edition")
     vibez.spill("Comprehensive formatting with configuration support")
     

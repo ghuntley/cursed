@@ -5,7 +5,7 @@ yeet "vibez"
 yeet "../stdlib/template_engine/advanced"
 yeet "../stdlib/template_engine/web"
 
-slay main() {
+slay main_character() {
     print("🚀 CURSED Advanced Template Engine Demo")
     print("=====================================")
     

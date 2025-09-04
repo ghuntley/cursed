@@ -460,6 +460,6 @@ slay test_memory_usage() {
 }
 
 # Main test runner
-slay main() {
+slay main_character() {
     test_contextz_comprehensive()
 }

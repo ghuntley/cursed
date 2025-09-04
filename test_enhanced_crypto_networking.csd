@@ -229,7 +229,7 @@ slay test_security_considerations() {
     vibez.spill("🛡️ Security considerations tested")
 }
 
-slay main() {
+slay main_character() {
     vibez.spill("🧪 CURSED Enhanced Crypto & Networking Test Suite")
     vibez.spill("================================================")
     

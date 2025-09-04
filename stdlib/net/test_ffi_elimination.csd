@@ -333,7 +333,7 @@ slay test_ffi_elimination() {
 
 // ==== MAIN TEST RUNNER ====
 
-slay main() {
+slay main_character() {
     vibez.spill("CURSED FFI Elimination Test - Pure Networking Implementation")
     vibez.spill("Testing 100% self-contained networking without external dependencies...")
     

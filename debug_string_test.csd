@@ -2,7 +2,7 @@ vibe main
 yeet "vibez"
 yeet "stringz"
 
-slay main() {
+slay main_character() {
     sus base = "CURSED"
     vibez.spill("Base length:", stringz.length(base))
     

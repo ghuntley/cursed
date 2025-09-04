@@ -468,7 +468,7 @@ slay int_to_string(n drip) tea {
 
 fr fr ===== MAIN TEST RUNNER =====
 
-slay main() {
+slay main_character() {
     vibez.spill("🚀 Starting EncodingZ Test Suite...")
     vibez.spill("=" * 50)
     

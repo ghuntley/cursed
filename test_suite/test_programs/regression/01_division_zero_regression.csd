@@ -5,7 +5,7 @@ fr fr Division by Zero Regression Test
 fr fr Tests: Ensures division by zero handling doesn't regress
 fr fr Expected: System handles division by zero gracefully
 
-slay main() {
+slay main_character() {
     vibez.spill("=== Division by Zero Regression Test ===")
     
     vibez.spill("Testing normal divisions...")

@@ -737,7 +737,7 @@ slay has_toml_key(toml map<tea, TOMLValue>, key tea) lit {
 }
 
 # Run tests when this module is executed
-slay main() {
+slay main_character() {
     ready (run_all_tests()) {
         vibez.spill("\n🎉 All production package management tests passed!")
         vibez.spill("Enhanced functionality is working correctly:")

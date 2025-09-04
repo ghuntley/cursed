@@ -105,7 +105,7 @@ slay test_error_recovery() {
     process_array_safe(single_array)
 }
 
-slay main() {
+slay main_character() {
     vibez.spill("=== Error Handling Test Suite ===")
     
     test_error_conditions()

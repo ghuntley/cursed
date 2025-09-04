@@ -379,7 +379,7 @@ fr fr ================================
 fr fr Main Test Runner
 fr fr ================================
 
-slay main() {
+slay main_character() {
     vibez.spill("🚀 Starting CURSED Testing Framework v6.0 Enhanced Production Tests")
     vibez.spill("💪 Testing ALL the new features with maximum power!")
     vibez.spill("") fr fr Configure the framework for comprehensive testing

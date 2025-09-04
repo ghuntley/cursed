@@ -322,6 +322,6 @@ fr fr/ Main entry point for the documentation demo
 fr fr/ 
 fr fr/ Runs the complete demonstration of the CURSED greeting system
 fr fr/ and showcases all documented features in action.
-slay main() {
+slay main_character() {
     demo_greeting_system()
 }

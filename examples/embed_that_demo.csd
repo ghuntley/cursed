@@ -18,7 +18,7 @@ var templateFiles embed_that.ThatFiles
 fr frgo:embed config.json
 var configData embed_that.ThatFile
 
-slay main() {
+slay main_character() {
     vibez.spill("🔥 EmbedThat Demo - File Embedding Example 🔥")
     
     fr fr Using embedded bytes

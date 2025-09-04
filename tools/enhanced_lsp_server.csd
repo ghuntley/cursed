@@ -727,7 +727,7 @@ slay create_word_range(line drip, character drip, word tea) tea {
 }
 
 // Main enhanced LSP server
-slay main() {
+slay main_character() {
     vibez.spill("🚀 Enhanced CURSED Language Server starting...")
     
     sus server LSPServer = init_enhanced_lsp_server()

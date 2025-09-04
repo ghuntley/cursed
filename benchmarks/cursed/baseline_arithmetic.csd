@@ -18,7 +18,7 @@ slay benchmark_arithmetic() drip {
     damn result
 }
 
-slay main() drip {
+slay main_character() drip {
     sus start drip = timez.now_microseconds()
     sus result drip = benchmark_arithmetic()
     sus end drip = timez.now_microseconds()

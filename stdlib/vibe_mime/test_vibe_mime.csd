@@ -464,7 +464,7 @@ slay (r *byteReader) Read(p byte[value]) (normie, tea) {
 }
 
 fr fr Run all tests
-slay main() {
+slay main_character() {
     test_mime_type_parsing()
     test_mime_type_methods()
     test_mime_type_string()

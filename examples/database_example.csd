@@ -4,7 +4,7 @@ fr fr/ This example demonstrates basic database operations using the sql_vibes p
 fr fr Import the sql_vibes package for database operations
 yeet sql_vibes
 
-slay main() {
+slay main_character() {
     // Connect to an in-memory SQLite database for testing
     sus db_connection = sql_vibes.connect("sqlite://:memory:")
     lowkey db_connection.is_error() {

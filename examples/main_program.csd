@@ -4,7 +4,7 @@ fr fr Import utilities from other packages
 fr fr yeet "package1"
 fr fr yeet "package2"
 
-slay main() {
+slay main_character() {
     vibez.spill("Multi-package CURSED program")
     
     fr fr Test mathematical operations

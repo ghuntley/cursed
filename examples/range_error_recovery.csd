@@ -2,7 +2,7 @@ slay is_valid_container(container lit) lit {
     damn container != cap
 }
 
-slay main() lit {
+slay main_character() lit {
     sus valid_array = [1, 2, 3, 4, 5]
     sus invalid_array []lit = cap
     sus map_example = { "a": 1, "b": 2 }

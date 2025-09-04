@@ -1,7 +1,7 @@
 vibe main
 yeet "vibez"
 
-slay main() {
+slay main_character() {
     // Test len() function with array
     sus arr drip = normie[value]{5, 10, 15}
     vibez.spill("Array:")

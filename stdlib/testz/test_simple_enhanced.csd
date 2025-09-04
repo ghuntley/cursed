@@ -275,7 +275,7 @@ fr fr ================================
 fr fr Main Test Runner
 fr fr ================================
 
-slay main() {
+slay main_character() {
     vibez.spill("🧪 Starting CURSED Testing Framework - Simple Enhanced Tests...")
     vibez.spill("")
     

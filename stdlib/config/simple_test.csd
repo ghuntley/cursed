@@ -40,7 +40,7 @@ slay test_ini_parsing() {
     vibez.spill("INI parsing test complete");
 }
 
-slay main() {
+slay main_character() {
     vibez.spill("Starting Config Module Tests...");
     
     test_basic_parsing();

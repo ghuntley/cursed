@@ -70,7 +70,7 @@ fr fr ===============================
 fr fr Main Build Integration Runner
 fr fr ===============================
 
-slay main() {
+slay main_character() {
     vibez.spill("🚀 Starting Enhanced Testz Build Integration")
     vibez.spill("============================================") fr fr Run all validation tests
     run_build_validation_tests()

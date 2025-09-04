@@ -282,7 +282,7 @@ slay benchmarkDeepAssertions(iterations lit) tea {
 }
 
 // Run all benchmarks
-slay main() {
+slay main_character() {
     // Define iteration counts
     sus iterations = 10000;
     

@@ -25,7 +25,7 @@ vibez.spill("✅ Coverage initialization test passed")
 
 fr fr Test code instrumentation
 test_start("instrument_code test")
-sus sample_code tea = "yeet \"testz\"\n\nslay add_numbers(a normie, b normie) normie {\n    damn a + b\n}\n\nslay main() {\n    sus result normie = add_numbers(5, 3)\n    vibez.spill(result)\n}"
+sus sample_code tea = "yeet \"testz\"\n\nslay add_numbers(a normie, b normie) normie {\n    damn a + b\n}\n\nslay main_character() {\n    sus result normie = add_numbers(5, 3)\n    vibez.spill(result)\n}"
 
 sus instrumented tea = instrument_code("test_file.csd", sample_code)
 assert_true(stringz.contains(instrumented, "coverage_track_line"))
@@ -252,7 +252,7 @@ vibez.spill("✅ Edge cases test passed")
 
 fr fr Test comprehensive instrumentation
 test_start("comprehensive instrumentation test")
-sus complex_code tea = "yeet \"testz\"\nyeet \"mathz\"\n\n# Calculate factorial\nslay factorial(n normie) normie {\n    lowkey n <= 1 {\n        damn 1\n    }\n    damn n * factorial(n - 1)\n}\n\nslay main() {\n    sus result normie = factorial(5)\n    vibez.spill(\"Factorial: \" + toString(result))\n    \n    bestie i := 1; i <= 10; i++ {\n        vibez.spill(\"Number: \" + toString(i))\n    }\n}"
+sus complex_code tea = "yeet \"testz\"\nyeet \"mathz\"\n\n# Calculate factorial\nslay factorial(n normie) normie {\n    lowkey n <= 1 {\n        damn 1\n    }\n    damn n * factorial(n - 1)\n}\n\nslay main_character() {\n    sus result normie = factorial(5)\n    vibez.spill(\"Factorial: \" + toString(result))\n    \n    bestie i := 1; i <= 10; i++ {\n        vibez.spill(\"Number: \" + toString(i))\n    }\n}"
 
 sus complex_instrumented tea = instrument_code("complex.csd", complex_code)
 

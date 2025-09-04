@@ -1,5 +1,5 @@
 # Simple Arrays Benchmark  
-slay main() drip {
+slay main_character() drip {
     sus iterations drip = 1000
     sus size drip = 100
     sus total drip = 0

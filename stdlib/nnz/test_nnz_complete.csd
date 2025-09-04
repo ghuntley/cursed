@@ -5,7 +5,7 @@ yeet "nnz/mod_enhanced_complete"
 yeet "vibez"
 yeet "testz"
 
-slay main() cringe {
+slay main_character() cringe {
     vibez.spill("=== CURSED Neural Network Complete Test Suite ===")
     
     fr fr Initialize test framework

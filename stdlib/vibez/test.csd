@@ -4,7 +4,7 @@ fr fr Tests all public functions with proper validation using testz framework
 yeet "testz"
 yeet "vibez"
 
-slay main() {
+slay main_character() {
     testz.test_start("VIBEZ Comprehensive Test Suite")
     
     fr fr ===== BASIC OUTPUT TESTS =====

@@ -5,7 +5,7 @@ yeet "vibez"
 yeet "filez"
 yeet "testz"
 
-slay main() drip {
+slay main_character() drip {
     vibez.spill("CURSED Package Manager Test Suite")
     vibez.spill("=================================")
     
@@ -495,7 +495,7 @@ slay initialize_cursed_project(name tea) lit {
     # Create src/mod.csd
     sus main_mod tea = "# " + name + " - CURSED Project\n" +
         "yeet \"vibez\"\n\n" +
-        "slay main() drip {\n" +
+        "slay main_character() drip {\n" +
         "    vibez.spill(\"Hello from " + name + "!\")\n" +
         "    damn 0\n" +
         "}\n"

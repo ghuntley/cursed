@@ -331,7 +331,7 @@ slay test_binary_stress() {
 }
 
 fr fr Main test runner
-slay main() {
+slay main_character() {
     vibez.spill("🧪 Running Enhanced CURSED Binary Data Module Tests")
     vibez.spill("=========================================================")
     

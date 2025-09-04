@@ -105,7 +105,7 @@ bestie worker_goroutine(sus worker_id) {
 }
 
 fr fr Main function that demonstrates the debug system
-slay main() -> Result<(), tea> {
+slay main_character() -> Result<(), tea> {
     println!("🎉 Welcome to the CURSED Debug System Showcase! 🎉");
     println!("This program demonstrates comprehensive debugging capabilities.\n");
     

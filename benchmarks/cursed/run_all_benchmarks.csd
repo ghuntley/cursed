@@ -435,7 +435,7 @@ slay unlock(mutex Mutex) lit {
     damn based
 }
 
-slay main() lit {
+slay main_character() lit {
     vibez.spill("🚀 CURSED Comprehensive Performance Benchmark Suite")
     vibez.spill("═══════════════════════════════════════════════════════")
     vibez.spill("This benchmark suite will test all aspects of the CURSED compiler:")

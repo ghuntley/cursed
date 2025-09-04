@@ -112,7 +112,7 @@ slay fannkuch(n normie) normie {
     damn maxFlips
 }
 
-slay main() {
+slay main_character() {
     sus n normie = 10
     sus start_ts thicc = timez.now()
     

@@ -28,7 +28,7 @@ be_like ContactInfo squad {
     SocialMedia map[tea]tea `json:"social_media,omitempty"`
 }
 
-slay main() {
+slay main_character() {
     vibez.spill("🔍 LookinGlass Reflection Demo - Examining Types at Runtime")
     vibez.spill("=" * 60)
     

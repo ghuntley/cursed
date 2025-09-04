@@ -12,7 +12,7 @@ yeet "stdlib::process::exec_vibez_advanced"
 yeet "stdlib::timez"
 yeet "vibez"
 
-slay main() tea {
+slay main_character() tea {
     vibez.spill("=== Advanced Process Execution Demo ===\n")
     
     fr fr Demo 1: Enhanced Environment Management

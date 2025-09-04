@@ -7,7 +7,7 @@ yeet "stdlib::env"
 yeet "stdlib::io"
 yeet "stdlib::collections"
 
-slay main() {
+slay main_character() {
     println("=== Advanced Environment Variable Parsing ===")?;
     
     // Configuration parsing

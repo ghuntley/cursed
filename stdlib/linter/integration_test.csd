@@ -158,7 +158,7 @@ slay test_performance_benchmark() {
     vibez.spill("✅ Linter can handle large codebases efficiently");
 }
 
-slay main() {
+slay main_character() {
     vibez.spill("🚀 CURSED Linter - Complete Integration Test Suite");
     vibez.spill("==================================================");
     

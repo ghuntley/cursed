@@ -12,7 +12,7 @@ vibez.spill("✅ WASM runtime initialization: PASS")
 
 fr fr Test WASM compilation from source
 test_start("WASM Compilation from Source")
-sus test_source tea = "slay main() normie { damn 42 }"
+sus test_source tea = "slay main_character() normie { damn 42 }"
 sus module normie = wasm_compile_from_source(test_source, WASM_OPT_NONE)
 assert_true(module > 0)
 vibez.spill("✅ WASM compilation from source: PASS")

@@ -5,7 +5,7 @@ yeet "filez"
 yeet "stringz"
 yeet "arrayz"
 
-slay main() drip {
+slay main_character() drip {
     vibez.spill("🎉 CURSED Package Manager - Comprehensive Demo")
     vibez.spill("=" * 50)
     vibez.spill("")

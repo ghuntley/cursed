@@ -294,7 +294,7 @@ slay demonstrate_real_world_use_cases() {
 }
 
 fr fr Main function demonstrating all set operations
-slay main() -> Result<(), Box<dyn std::error::Error>> {
+slay main_character() -> Result<(), Box<dyn std::error::Error>> {
     println("CURSED Collections Sets Demo");
     println("===========================");
     

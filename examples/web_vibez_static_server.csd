@@ -5,7 +5,7 @@ yeet "web_vibez"
 yeet "vibez"
 yeet "path_utils"
 
-slay main() {
+slay main_character() {
     vibez.spill("Starting static file server...")
     
     sus config = web_vibez.ServerConfig{

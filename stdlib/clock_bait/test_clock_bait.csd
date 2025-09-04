@@ -339,7 +339,7 @@ slay test_unix_conversions() {
 }
 
 fr fr Main test runner
-slay main() {
+slay main_character() {
     test_duration_constants()
     test_month_constants()
     test_weekday_constants()

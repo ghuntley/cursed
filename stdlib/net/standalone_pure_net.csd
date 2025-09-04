@@ -218,7 +218,7 @@ slay int_to_string(value normie) tea {
     damn "15+"  // Default for higher values
 }
 
-slay main() {
+slay main_character() {
     vibez.spill("🚀 CURSED Pure Networking FFI Elimination Test")
     vibez.spill("Demonstrating 100% self-contained networking...")
     vibez.spill("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")

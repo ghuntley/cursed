@@ -476,7 +476,7 @@ slay test_find_all() drip {
 }
 
 # Main test runner
-slay main() drip {
+slay main_character() drip {
     test_basic_patterns()
     test_quantifiers()
     test_capture_groups()

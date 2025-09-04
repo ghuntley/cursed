@@ -17,7 +17,7 @@ slay multiply_with_overflow(a normie, b normie) normie yikes {
     damn a * b
 }
 
-slay main() {
+slay main_character() {
     vibez.spill("=== CURSED Error Handling Tests ===")
     
     // Test 1: Basic error creation and handling

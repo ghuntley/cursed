@@ -499,7 +499,7 @@ fr fr ==========================================================================
 
 slay test_tokenizer_integration() {
     test_start("Tokenizer integration with CURSED syntax") fr fr Test complete CURSED program tokenization
-    sus program tea = "yeet \"stdlib\"\n\nslay main() {\n    sus greeting tea = \"Hello, CURSED!\"\n    vibez.spill(greeting)\n    damn based\n}"
+    sus program tea = "yeet \"stdlib\"\n\nslay main_character() {\n    sus greeting tea = \"Hello, CURSED!\"\n    vibez.spill(greeting)\n    damn based\n}"
     
     sus token_count normie = tokenize(program)
     assert_true(token_count > 15) fr fr Should have many tokens fr fr Test error handling syntax

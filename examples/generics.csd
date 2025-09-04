@@ -55,7 +55,7 @@ slay size[T](l @List[T]) normie {
 }
 
 fr fr Main function to demonstrate the usage
-slay main() {
+slay main_character() {
     fr fr Create a Box of normie
     sus box_int = Box[normie]{
         value: 42

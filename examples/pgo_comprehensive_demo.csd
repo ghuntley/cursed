@@ -175,7 +175,7 @@ slay complex_algorithm(sus input: &[i32]) -> i32 {
 }
 
 fr fr Main function demonstrating PGO benefits
-slay main() -> void {
+slay main_character() -> void {
     println("CURSED PGO Comprehensive Demo");
     println("=============================");
     

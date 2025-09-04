@@ -194,7 +194,7 @@ fr fr ================================
 fr fr Main Test Runner
 fr fr ================================
 
-slay main() {
+slay main_character() {
     vibez.spill("🧪 Starting Simple Enhanced Testing Framework Test...")
     vibez.spill("")
     

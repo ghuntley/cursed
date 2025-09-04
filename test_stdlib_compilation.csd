@@ -1,4 +1,4 @@
-slay main() no_cap {
+slay main_character() no_cap {
     sus a drip = 5;
     sus b drip = 3;
     

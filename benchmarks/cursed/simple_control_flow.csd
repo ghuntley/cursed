@@ -19,7 +19,7 @@ slay complex_conditions(n drip) drip {
     damn result
 }
 
-slay main() drip {
+slay main_character() drip {
     sus iterations drip = 10000
     sus total drip = 0
     

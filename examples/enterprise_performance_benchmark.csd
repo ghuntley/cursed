@@ -1077,7 +1077,7 @@ slay run_enterprise_benchmarks() yikes<tea> {
 }
 
 // Main entry point
-slay main() {
+slay main_character() {
     run_enterprise_benchmarks() fam {
         when err -> {
             vibez.spill("❌ Benchmark failed:", err)

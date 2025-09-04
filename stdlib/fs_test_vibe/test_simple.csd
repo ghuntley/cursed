@@ -1,7 +1,7 @@
 yeet "testz"
 yeet "fs_test_vibe"
 
-slay main() {
+slay main_character() {
     test_start("fs_test_vibe Simple Tests") fr fr Test creating MapFS
     sus fsys fs_test_vibe.MapFS = fs_test_vibe.NewMapFS()
     assert_true(fsys.initialized) fr fr Test creating test files

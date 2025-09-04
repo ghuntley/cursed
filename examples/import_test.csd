@@ -3,7 +3,7 @@ vibe main
 yeet "./packages/utils"
 yeet "./packages/math_utils"
 
-slay main() {
+slay main_character() {
     let result1 = utils.add(5, 3)
     vibez.spill("5 + 3 = " + result1)
     

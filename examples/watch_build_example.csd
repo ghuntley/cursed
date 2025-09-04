@@ -81,7 +81,7 @@ squad Calculator {
     }
 }
 
-slay main() {
+slay main_character() {
     facts calc = Calculator {};
     facts result = calc.add(5, 3);
     println(&format!("Result: {}", result))?;
@@ -504,7 +504,7 @@ slay demonstrate_advanced_strategies() {
 }
 
 fr fr Main function
-slay main() {
+slay main_character() {
     println("🔨 CURSED Build Watcher Demo")?;
     println("============================")?;
     println("")?;

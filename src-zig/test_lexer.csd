@@ -5,7 +5,7 @@ yeet "testz"
 fr fr Import our CURSED lexer module
 yeet "lexer"
 
-slay main() {
+slay main_character() {
     vibez.spill("Testing CURSED Lexer Implementation")
     
     fr fr Run all lexer tests

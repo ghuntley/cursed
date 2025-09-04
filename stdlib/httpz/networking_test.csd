@@ -188,7 +188,7 @@ slay test_http_request_building() {
     }
 }
 
-slay main() {
+slay main_character() {
     vibez.spill("🚀 CURSED HTTP Networking Test Suite")
     vibez.spill("Testing real HTTP connectivity and protocol implementation")
     vibez.spill("=" * 60)

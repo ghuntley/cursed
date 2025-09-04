@@ -1,6 +1,6 @@
 facts exec_slay = import("stdlib::exec_slay");
 
-slay main() {
+slay main_character() {
     vibez.spill("ExecSlay Demo - Running external commands with style!");
     
     fr fr Basic command execution

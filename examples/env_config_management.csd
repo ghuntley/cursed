@@ -254,7 +254,7 @@ slay generate_docker_env_file(config: &AppConfig) -> Result<String, IoError> {
     Ok(env_file)
 }
 
-slay main() {
+slay main_character() {
     println("=== Environment-Based Configuration Management ===")?;
     
     // Demonstrate different environment setups

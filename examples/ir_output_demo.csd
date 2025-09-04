@@ -15,7 +15,7 @@ slay fibonacci(n normie) normie {
     }
 }
 
-slay main() {
+slay main_character() {
     vibez.spill("IR Output Demo Program")
     
     fr fr Test various language features

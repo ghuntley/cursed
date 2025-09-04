@@ -485,7 +485,7 @@ slay cli_main(args tea[value]) drip {
 
 fr fr ===== DEMO MAIN FUNCTION =====
 
-slay main() {
+slay main_character() {
     vibez.spill("🎨 CURSED Formatter CLI - Comprehensive Demo")
     vibez.spill("Demonstrating professional code formatter capabilities")
     vibez.spill("")

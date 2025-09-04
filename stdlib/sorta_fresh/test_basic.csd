@@ -44,7 +44,7 @@ slay test_array_ops() {
 }
 
 // Main function
-slay main() {
+slay main_character() {
     vibez.spill("SortaFresh Module - Basic Tests")
     vibez.spill("================================")
     

@@ -7,7 +7,7 @@ yeet "stdlib::env"
 yeet "stdlib::io"
 yeet "stdlib::collections"
 
-slay main() {
+slay main_character() {
     println("=== Environment Variable Expansion Demo ===")?;
     
     // Setup test environment

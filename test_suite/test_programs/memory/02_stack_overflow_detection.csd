@@ -27,7 +27,7 @@ slay safe_recursive_with_limit(depth normie, limit normie) normie yikes {
     damn depth * result
 }
 
-slay main() {
+slay main_character() {
     vibez.spill("=== Stack Overflow Detection Tests ===")
     
     // Test 1: Safe recursion depth

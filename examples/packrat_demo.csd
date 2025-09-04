@@ -6,7 +6,7 @@ yeet "stdlib::io"
 yeet "stdlib::dropz"
 yeet "vibez"
 
-slay main() -> tea {
+slay main_character() -> tea {
     vibez.spill("🐀 PackRat Archive Demo - Hoarding files like a pro! 🐀");
     vibez.spill("");
     
@@ -144,7 +144,7 @@ slay demo_zip_operations() -> tea {
     
     // Add files to the ZIP archive
     facts files = [
-        {"name": "program.csd", "content": "slay main() -> tea {\n    vibez.spill(\"Hello from ZIP!\");\n    periodt cap;\n}"},
+        {"name": "program.csd", "content": "slay main_character() -> tea {\n    vibez.spill(\"Hello from ZIP!\");\n    periodt cap;\n}"},
         {"name": "docs/manual.md", "content": "# CURSED Manual\n\nThis is the manual for CURSED programming language."},
         {"name": "assets/logo.txt", "content": "   ____  __ __  ____   _____ _____  _____ \n  /  _/ / / / / /  _/  /  __// ___/ /  __/\n _/ /  / /_/ / _/ /   /  _/ / /_   /  _/  \n/___/  \\____/ /___/  /___/ \\___/  /___/  "},
     ];

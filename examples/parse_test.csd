@@ -1,5 +1,5 @@
 vibe main
 
-slay main() normie {
+slay main_character() normie {
     vibez.spill("Hello, World!");
 }

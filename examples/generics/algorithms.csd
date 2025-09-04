@@ -678,6 +678,6 @@ slay demonstrate_algorithms() {
 }
 
 fr fr Main function
-slay main() {
+slay main_character() {
     demonstrate_algorithms()
 }

@@ -11,7 +11,7 @@ yeet "stdlib::fs"
 yeet "stdlib::time"
 
 fr fr Main demonstration function
-slay main() -> tea {
+slay main_character() -> tea {
     vibez.spill("🚀 Enhanced Process Management Demo Starting...\n");
     
     fr fr 1. Basic SlayCommand Usage

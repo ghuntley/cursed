@@ -276,7 +276,7 @@ slay test_cleanup_behavior() {
 }
 
 fr fr Main test execution
-slay main() {
+slay main_character() {
     vibez.spill("🧪 Running Parallelism Control Tests")
     vibez.spill("════════════════════════════════════")
     

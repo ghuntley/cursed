@@ -5,7 +5,7 @@ yeet "stringz"
 yeet "htmlrizzler"
 yeet "rizztemplate"
 
-slay main() {
+slay main_character() {
     vibez.spill("HTML Escaping Example")
     vibez.spill("--------------------")
     

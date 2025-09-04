@@ -772,7 +772,7 @@ slay print(message tea) {
 
 fr fr ===== MAIN APPLICATION ENTRY =====
 
-slay main() cringe {
+slay main_character() cringe {
     print("Starting CURSED Blog Application...")
     sus err cringe = start_blog_application()
     vibe_if err != nil {

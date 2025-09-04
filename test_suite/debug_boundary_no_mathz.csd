@@ -22,7 +22,7 @@ slay test_numeric_boundaries() {
     vibez.spill("Large value:", large)
 }
 
-slay main() {
+slay main_character() {
     test_numeric_boundaries()
     vibez.spill("Test complete")
 }

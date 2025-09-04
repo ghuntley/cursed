@@ -310,7 +310,7 @@ slay test_edge_cases() {
 }
 
 // Run all tests
-slay main() {
+slay main_character() {
     vibez.spill("Running Sort Slay Module Tests...")
     
     test_sort_ints()

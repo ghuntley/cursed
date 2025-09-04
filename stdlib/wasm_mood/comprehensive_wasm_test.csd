@@ -8,7 +8,7 @@ test_start("Comprehensive Real WASM Implementation Tests")
 
 fr fr Test real WASM compilation
 test_start("Real WASM Compilation")
-sus simple_source tea = "slay main() drip { damn 42 }"
+sus simple_source tea = "slay main_character() drip { damn 42 }"
 sus compiled_module = wasm_compile_from_source(simple_source, WASM_OPT_NONE)
 assert_true(compiled_module > 0)
 vibez.spill("✅ Real WASM compilation: PASS")
@@ -24,7 +24,7 @@ sus complex_source tea = `
         damn x * y
     }
     
-    slay main() drip {
+    slay main_character() drip {
         sus result = add(multiply(3, 4), 10)
         damn result
     }
@@ -384,7 +384,7 @@ sus integration_source tea = `
         damn ptr + 100
     }
     
-    slay main() drip {
+    slay main_character() drip {
         sus fact5 = factorial(5)
         sus mem_test = test_memory(1000)
         damn fact5 + mem_test

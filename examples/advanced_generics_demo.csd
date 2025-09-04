@@ -178,7 +178,7 @@ impl Collect<normie> for Array<normie> {
 }
 
 fr fr 13. Main Function - Demo All Features
-slay main() {
+slay main_character() {
     vibez.spill("=== Advanced Generics Demo ===")
     
     // Test basic generics with constraints

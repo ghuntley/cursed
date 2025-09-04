@@ -2,7 +2,7 @@ vibe main
 yeet "vibez"
 yeet "collections"
 
-slay main() {
+slay main_character() {
     vibez.spill("=== Test collections.length only ===")
     
     sus test_array normie[value] = normie[value]{100, 200, 300}

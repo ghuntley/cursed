@@ -156,7 +156,7 @@ slay test_enhanced_networking() {
     damn based
 }
 
-slay main() {
+slay main_character() {
     sus crypto_result lit = test_enhanced_crypto()
     sus network_result lit = test_enhanced_networking()
     

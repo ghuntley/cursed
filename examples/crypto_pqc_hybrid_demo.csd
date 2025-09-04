@@ -7,7 +7,7 @@ fr fr post-quantum transition period.
 yeet "stdlib::crypto_pqc::hybrid"
 yeet "stdlib::io"
 
-slay main() {
+slay main_character() {
     println("🔐 CURSED Post-Quantum Cryptography Hybrid System Demo")?;
     println("=======================================================")?;
     

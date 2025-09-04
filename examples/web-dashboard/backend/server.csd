@@ -448,7 +448,7 @@ slay uploaded_file_to_json(file UploadedFile) tea {
 }
 
 # Main server function
-slay main() yikes<void> {
+slay main_character() yikes<void> {
     vibez.spill("Starting CURSED Web Dashboard Backend Server...")
     
     # Initialize configuration

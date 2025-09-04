@@ -26,7 +26,7 @@ slay custom_min(a normie, b normie) normie {
     damn b
 }
 
-slay main() {
+slay main_character() {
     vibez.spill("=== Boundary Conditions Test ===")
     
     vibez.spill("Testing zero values...")

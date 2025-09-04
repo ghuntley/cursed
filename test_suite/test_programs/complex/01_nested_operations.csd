@@ -6,7 +6,7 @@ slay calculate_complex(a, b, c normie) normie {
     damn (a + b) * c - (a - b) / 2
 }
 
-slay main() {
+slay main_character() {
     vibez.spill("=== Nested Operations Test ===")
     
     vibez.spill("Complex arithmetic:")

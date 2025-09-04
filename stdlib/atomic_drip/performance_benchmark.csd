@@ -309,7 +309,7 @@ slay benchmark_performance_comparison() {
 }
 
 fr fr Main benchmark function
-slay main() {
+slay main_character() {
     vibez.spill("🚀 Running CURSED Atomic Operations Performance Benchmark")
     vibez.spill("==========================================================")
     vibez.spill("Configuration:")

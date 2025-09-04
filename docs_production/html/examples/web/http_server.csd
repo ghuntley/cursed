@@ -402,7 +402,7 @@ slay test_http_server() {
 }
 
 # Main function
-slay main() {
+slay main_character() {
     vibez.spill("CURSED HTTP Server Example")
     vibez.spill("==========================")
     

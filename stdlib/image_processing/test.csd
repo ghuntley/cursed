@@ -157,7 +157,7 @@ slay test_image_manipulation() {
 }
 
 fr fr Main test runner
-slay main() {
+slay main_character() {
     vibez.spill("Running Image Processing Tests...")
     
     test_bmp_decoding()
