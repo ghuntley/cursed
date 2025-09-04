@@ -1664,8 +1664,11 @@ pub const LLVMIRPipeline = struct {
     
     /// Generate string literal as global constant
     fn generateStringLiteral(self: *LLVMIRPipeline, str_val: []const u8) !c.LLVMValueRef {
-        // Check if we already have this string
-        if (self.global_strings.get(str_val)) |existing| {
+        // Create a stable copy of the string key to avoid dangling pointers
+        const stable_key = try self.arena.allocator().dupe(u8, str_val);
+        
+        // Check if we already have this string (use stable key)
+        if (self.global_strings.get(stable_key)) |existing| {
             return existing;
         }
         
@@ -1689,7 +1692,8 @@ pub const LLVMIRPipeline = struct {
         const indices = [_]c.LLVMValueRef{ zero, zero };
         const str_ptr = c.LLVMConstGEP2(str_type, str_global, @constCast(@ptrCast(&indices)), 2);
         
-        try self.global_strings.put(str_val, str_ptr);
+        // Use stable key for hash map to prevent memory corruption
+        try self.global_strings.put(stable_key, str_ptr);
         return str_ptr;
     }
     
