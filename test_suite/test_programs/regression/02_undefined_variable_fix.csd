@@ -35,7 +35,7 @@ slay test_variable_initialization_patterns() {
     // Test different initialization patterns
     sus int_var normie = 0
     sus string_var tea = ""
-    sus boolean_var lit = cap
+    sus boolean_var lit = cringe
     
     vibez.spill("Initialized variables:")
     vibez.spill("Int var:", int_var)
@@ -110,7 +110,7 @@ slay test_function_parameter_variables() {
     
     // Test function calls with proper parameters
     process_parameters(42, "test", based)
-    process_parameters(0, "empty", cap)
+    process_parameters(0, "empty", cringe)
     process_parameters(-5, "negative", based)
 }
 
@@ -187,7 +187,7 @@ slay test_variable_lifecycle_patterns() {
     vibez.spill("After rotation - A:", var_a, "B:", var_b, "C:", var_c)
 }
 
-slay main() {
+slay main_character() {
     vibez.spill("=== Undefined Variable Prevention Regression Tests ===")
     
     test_proper_variable_declaration()
