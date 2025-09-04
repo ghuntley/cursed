@@ -821,6 +821,35 @@ pub const Interpreter = struct {
                 .func = builtinAppend 
             } 
         });
+
+        // Register native bridge functions for CURSED stdlib modules
+        try self.globals.define("string_concat_native", Value{ 
+            .BuiltinFunction = .{ 
+                .name = "string_concat_native", 
+                .func = builtinStringzConcat 
+            } 
+        });
+        
+        try self.globals.define("char_at_native", Value{ 
+            .BuiltinFunction = .{ 
+                .name = "char_at_native", 
+                .func = builtinCharAtNative 
+            } 
+        });
+        
+        try self.globals.define("char_to_upper_native", Value{ 
+            .BuiltinFunction = .{ 
+                .name = "char_to_upper_native", 
+                .func = builtinCharToUpperNative 
+            } 
+        });
+        
+        try self.globals.define("char_to_lower_native", Value{ 
+            .BuiltinFunction = .{ 
+                .name = "char_to_lower_native", 
+                .func = builtinCharToLowerNative 
+            } 
+        });
         
         // Removed DEBUG output
     }
@@ -1155,11 +1184,21 @@ pub const Interpreter = struct {
         const parent_path = try std.fmt.allocPrint(self.allocator, "../stdlib/{s}/mod.csd", .{module_name});
         defer self.allocator.free(parent_path);
         
-        // Try local path first, then parent path
-        const file = std.fs.cwd().openFile(local_path, .{}) catch |err| blk: {
-            if (err == error.FileNotFound) {
-                break :blk std.fs.cwd().openFile(parent_path, .{}) catch {
-                    return InterpreterError.ModuleNotFound;
+        const layer1_path = try std.fmt.allocPrint(self.allocator, "../stdlib/layer1/{s}.csd", .{module_name});
+        defer self.allocator.free(layer1_path);
+        
+        // Try local path first, then parent path, then layer1 path
+        const file = std.fs.cwd().openFile(local_path, .{}) catch |err1| blk: {
+            if (err1 == error.FileNotFound) {
+                break :blk std.fs.cwd().openFile(parent_path, .{}) catch |err2| blk2: {
+                    if (err2 == error.FileNotFound) {
+                        // Removed DEBUG: Trying layer1 path: {s}\n", .{layer1_path});
+                        break :blk2 std.fs.cwd().openFile(layer1_path, .{}) catch {
+                            return InterpreterError.ModuleNotFound;
+                        };
+                    } else {
+                        return InterpreterError.ModuleNotFound;
+                    }
                 };
             } else {
                 return InterpreterError.ModuleNotFound;
@@ -1430,7 +1469,8 @@ pub const Interpreter = struct {
         } else |err| {
             std.debug.print("ERROR: No CURSED stdlib implementation found for module '{s}': {}\n", .{ module_name, err });
             std.debug.print("SELF-HOSTING: Please implement stdlib/{s}/mod.csd for true self-hosting\n", .{module_name});
-            return err;
+            // Fallback to Zig builtins
+            return self.loadZigBuiltinModule(module_name);
         }
         
         // Fallback to Zig builtin modules (should not be reached in self-hosting mode)
@@ -6344,4 +6384,71 @@ test "interpreter basic" {
     defer allocator.free(str);
     
     try std.testing.expect(std.mem.eql(u8, str, "42"));
+}
+
+// Native bridge functions for CURSED stdlib modules
+fn builtinCharAtNative(interpreter: *Interpreter, args: []Value) InterpreterError!Value {
+    if (args.len != 2) return InterpreterError.InvalidArgumentCount;
+    
+    const str_value = args[0];
+    const index_value = args[1];
+    
+    switch (str_value) {
+        .String => |str| switch (index_value) {
+            .Integer => |index| {
+                if (index < 0 or index >= str.len) {
+                    return Value{ .String = try interpreter.allocator.dupe(u8, "") };
+                }
+                const char_str = try interpreter.allocator.alloc(u8, 1);
+                char_str[0] = str[@intCast(index)];
+                return Value{ .String = char_str };
+            },
+            else => return InterpreterError.TypeMismatch,
+        },
+        else => return InterpreterError.TypeMismatch,
+    }
+}
+
+fn builtinCharToUpperNative(interpreter: *Interpreter, args: []Value) InterpreterError!Value {
+    if (args.len != 1) return InterpreterError.InvalidArgumentCount;
+    
+    switch (args[0]) {
+        .String => |str| {
+            if (str.len == 0) {
+                return Value{ .String = try interpreter.allocator.dupe(u8, "") };
+            }
+            const result = try interpreter.allocator.alloc(u8, str.len);
+            for (str, 0..) |char, i| {
+                if (char >= 'a' and char <= 'z') {
+                    result[i] = char - 32;
+                } else {
+                    result[i] = char;
+                }
+            }
+            return Value{ .String = result };
+        },
+        else => return InterpreterError.TypeMismatch,
+    }
+}
+
+fn builtinCharToLowerNative(interpreter: *Interpreter, args: []Value) InterpreterError!Value {
+    if (args.len != 1) return InterpreterError.InvalidArgumentCount;
+    
+    switch (args[0]) {
+        .String => |str| {
+            if (str.len == 0) {
+                return Value{ .String = try interpreter.allocator.dupe(u8, "") };
+            }
+            const result = try interpreter.allocator.alloc(u8, str.len);
+            for (str, 0..) |char, i| {
+                if (char >= 'A' and char <= 'Z') {
+                    result[i] = char + 32;
+                } else {
+                    result[i] = char;
+                }
+            }
+            return Value{ .String = result };
+        },
+        else => return InterpreterError.TypeMismatch,
+    }
 }
