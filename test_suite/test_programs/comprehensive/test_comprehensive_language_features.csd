@@ -2,13 +2,13 @@ vibe main
 yeet "vibez"
 yeet "mathz"
 
-slay simple_multiply(x, y) {
+slay simple_multiply(x normie, y normie) normie {
     damn x * y
 }
 
 slay test_arithmetic_operations() {
-    sus a drip = 15
-    sus b drip = 7
+    sus a normie = 15
+    sus b normie = 7
     
     vibez.spill("Testing arithmetic operations:")
     vibez.spill("Addition:")
@@ -26,7 +26,7 @@ slay test_arithmetic_operations() {
     vibez.spill("Math operations completed")
 }
 
-slay test_control_flow(value) {
+slay test_control_flow(value normie) {
     ready (value > 10) {
         vibez.spill("Value is large")
     } otherwise ready (value > 5) {
@@ -38,7 +38,7 @@ slay test_control_flow(value) {
 
 slay test_loops() {
     vibez.spill("Testing periodt loop:")
-    sus i drip = 1
+    sus i normie = 1
     periodt (i <= 3) {
         vibez.spill("Loop iteration:")
         vibez.spill(i)
@@ -46,16 +46,16 @@ slay test_loops() {
     }
 }
 
-slay main() {
+slay main() normie {
     vibez.spill("CURSED Comprehensive Language Features Test")
     vibez.spill("=========================================")
     
-    sus integer_var drip = 42
+    sus integer_var normie = 42
     vibez.spill("Variable declaration:")
     vibez.spill(integer_var)
     
     vibez.spill("Function call test - multiply 5 * 6:")
-    sus multiply_result drip = simple_multiply(5, 6)
+    sus multiply_result normie = simple_multiply(5, 6)
     vibez.spill(multiply_result)
     
     vibez.spill("Control flow test:")

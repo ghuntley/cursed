@@ -4,11 +4,11 @@
 
 0c. study fix_plan.md.
 
-1. Your task is to implement the standard libary (stdlib) in cursed and produce tests for the stdlib functionality in curded, and to run the tests to ensure they work. If the compiler needs improvement you may do this (see specs). Use parrallel subagents. Follow the fix_plan.md and choose the most important 200 things. Before making changes search codebase (don't assume not implemented) using subagents. You may use up to 500 parrallel subagents for all operations but only 1 subagent for build/tests of zig.
+1. Your task is to get the standard library test_suite programs working and identify/resolve compiler issues. Note the test_suite programs in cursed may not be valid programs so you need to verify that the cursed program is valid as acccording to the specs/* and fix it if invalid.
 
-2. After implementing functionality or resolving problems, run the tests for that unit of code that was improved. If functionality is missing then it's your job to add it as per the application specifications. Think hard.
+2. After implementing functionality or resolving problems, run the tests for that unit of code that was improved. Think hard.
 
-2. When you discover a parser, lexer, control flow or zig issue. Immediately update @fix_plan.md with your findings using a subagent. When the issue is resolved, update @fix_plan.md and remove the item using a subagent.
+2. When you discover a parser, lexer, control flow, standard library or zig issue. Immediately update @fix_plan.md with your findings using a subagent. When the issue is resolved, update @fix_plan.md and remove the item using a subagent.
 
 3. When the tests pass update the @fix_plan.md`, then add changed code and @fix_plan.md with "git add -A" via bash then do a "git commit" with a message that describes the changes you made to the code. After the commit do a "git push" to push the changes to the remote repository.
 
@@ -23,39 +23,4 @@
 
 9999999999. ALWAYS KEEP @fix_plan.md up to do date with your learnings using a subagent. Especially after wrapping up/finishing your turn.
 
-99999999999. When you learn something new about how to run the compiler or examples make sure you update @AGENT.md using a subagent but keep it brief. For example if you run commands multiple times before learning the correct command then that file should be updated.
-
-999999999999. IMPORTANT DO NOT IGNORE: The standard libray should be authored in cursed itself and tests authored. If you find zig implementation then delete it/migrate to implementation in the cursed language unless it is required to make the standard library work (ie. FFI integration topics with the language).
-
-99999999999999. IMPORTANT when you discover a bug resolve it using subagents even if it is unrelated to the current piece of work after documenting it in @fix_plan.md
-
-
-99999999999999999. The tests for the cursed standard library "stdlib" should be located in the folder of the stdlib library next to the source code. Ensure you document the stdlib library with a README.md in the same folder as the source code.
-
-
-9999999999999999999. Keep AGENT.md up to date with information on how to build the compiler and your learnings to optimise the build/test loop using a subagent.
-
-
-999999999999999999999. For any bugs you notice, it's important to resolve them or document them in @fix_plan.md to be resolved using a subagent.
-
-
-99999999999999999999999. When authoring the standard library in the cursed language you may author multiple standard libraries at once using up to 1000 parrallel subagents
-
-
-99999999999999999999999999. When @fix_plan.md becomes large periodically clean out the items that are completed from the file using a subagent.
-
-
-99999999999999999999999999. If you find inconsistentcies in the specs/* then use the oracle and then update the specs. Specifically around types and lexical tokens.
-
-9999999999999999999999999999. DO NOT IMPLEMENT PLACEHOLDER OR SIMPLE IMPLEMENTATIONS. WE WANT FULL IMPLEMENTATIONS. 
-
-
-9999999999999999999999999999999. SUPER IMPORTANT DO NOT IGNORE. DO NOT PLACE STATUS REPORT UPDATES INTO @AGENT.md
-
-
-99999999999. DO NOT COMPLETE RUST IMPLEMENTATION DO DIRECTLY TO DOING ZIG IMPLEMENTATION. ALWAYS CHECK THE ZIG IMPLEMENTATION TO THE SPECS AND RUST IMPLEMENTATION. DO NOT MAKE ASSUMPTIONS. CHOOSE TOP 50 ITEMS TO RESOLVE.
-
-999999999999999. DO NOT ATTEMPT TO FIX THE RUST IMPLEMENTAITON. FOCUS SOLEY ON THE ZIG IMPLEMENTATION.
-
-
-99999999999999999. THE BACKEND MUST BE LLVM (IE. LLVM IR) NOT A PROTOTYPE C TRANSPILER
+99999999999999. The standard library should be implemented in cursed, not zig. if zig is found then migrate to cursed.

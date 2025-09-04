@@ -1,0 +1,34 @@
+ERROR: No CURSED stdlib implementation found for module 'vibez': error.ModuleNotFound
+SELF-HOSTING: Please implement stdlib/vibez/mod.csd for true self-hosting
+❌ Runtime error in test_programs/edge_cases/edge_case_complex_expressions.csd: error.ModuleNotFound
+error: ModuleNotFound
+/snap/zig/14937/lib/std/posix.zig:1861:23: 0x10fa273 in openatZ (std.zig)
+            .NOENT => return error.FileNotFound,
+                      ^
+/snap/zig/14937/lib/std/fs/Dir.zig:904:16: 0x10e0642 in openFileZ (std.zig)
+    const fd = try posix.openatZ(self.fd, sub_path, os_flags, 0);
+               ^
+/snap/zig/14937/lib/std/fs/Dir.zig:851:5: 0x10a4f35 in openFile (std.zig)
+    return self.openFileZ(&path_c, flags);
+    ^
+/home/ghuntley/cursed/src-zig/interpreter.zig:1153:13: 0x12cfca1 in loadCursedStdlibModule (cursed_compiler_main.zig)
+            return InterpreterError.ModuleNotFound;
+            ^
+/home/ghuntley/cursed/src-zig/interpreter.zig:1420:13: 0x129840b in loadBuiltinModule (cursed_compiler_main.zig)
+            return err;
+            ^
+/home/ghuntley/cursed/src-zig/interpreter.zig:1012:9: 0x125a32d in executeImportStatement (cursed_compiler_main.zig)
+        try self.loadBuiltinModule(import_stmt.path);
+        ^
+/home/ghuntley/cursed/src-zig/interpreter.zig:858:21: 0x120872a in execute (cursed_compiler_main.zig)
+                    try self.executeImportStatement(import_stmt);
+                    ^
+/home/ghuntley/cursed/src-zig/interpreter.zig:829:9: 0x11cfe2c in interpret (cursed_compiler_main.zig)
+        return self.execute(program);
+        ^
+/home/ghuntley/cursed/src-zig/cursed_compiler_main.zig:262:9: 0x11aa551 in interpretSource (cursed_compiler_main.zig)
+        return err;
+        ^
+/home/ghuntley/cursed/src-zig/cursed_compiler_main.zig:111:9: 0x11ac5e0 in main (cursed_compiler_main.zig)
+        try interpretSource(allocator, source, filename.?, verbose);
+        ^
