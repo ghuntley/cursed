@@ -1148,13 +1148,22 @@ pub const Interpreter = struct {
 
     fn loadCursedStdlibModule(self: *Interpreter, module_name: []const u8) InterpreterError!void {
         // Try to load CURSED stdlib module from stdlib/{module_name}/mod.csd
-        const stdlib_path = try std.fmt.allocPrint(self.allocator, "stdlib/{s}/mod.csd", .{module_name});
-        defer self.allocator.free(stdlib_path);
+        // First try relative to current directory, then try from parent directory
+        const local_path = try std.fmt.allocPrint(self.allocator, "stdlib/{s}/mod.csd", .{module_name});
+        defer self.allocator.free(local_path);
         
-        // Check if the CURSED stdlib file exists
-        const file = std.fs.cwd().openFile(stdlib_path, .{}) catch {
-            // Removed DEBUG: Could not open CURSED stdlib file {s}: {}\n", .{ stdlib_path, err });
-            return InterpreterError.ModuleNotFound;
+        const parent_path = try std.fmt.allocPrint(self.allocator, "../stdlib/{s}/mod.csd", .{module_name});
+        defer self.allocator.free(parent_path);
+        
+        // Try local path first, then parent path
+        const file = std.fs.cwd().openFile(local_path, .{}) catch |err| blk: {
+            if (err == error.FileNotFound) {
+                break :blk std.fs.cwd().openFile(parent_path, .{}) catch {
+                    return InterpreterError.ModuleNotFound;
+                };
+            } else {
+                return InterpreterError.ModuleNotFound;
+            }
         };
         defer file.close();
         
@@ -2037,14 +2046,12 @@ pub const Interpreter = struct {
     }
 
     fn evaluateIncrementDecrement(self: *Interpreter, operand_expr: ast.Expression, operator: []const u8) InterpreterError!Value {
-        // For increment/decrement, we need to modify the variable
-        // Currently this is a simplified implementation that just returns the modified value
-        // TODO: Properly handle variable modification in the environment
+        // For increment/decrement, we need to modify the variable in the environment
         
+        // First get the current value
         const current_value = try self.evaluateExpression(operand_expr);
         
         if (current_value != .Integer) {
-            std.debug.print("ERROR: Increment/decrement can only be applied to integers\n", .{});
             return InterpreterError.TypeMismatch;
         }
         
@@ -2054,9 +2061,19 @@ pub const Interpreter = struct {
         else 
             current_value.Integer - 1;
         
-        // TODO: Update the variable in the environment
-        // For now, we'll just return the new value
-        return Value{ .Integer = new_value };
+        // Update the variable in the environment
+        switch (operand_expr) {
+            .Identifier => |identifier| {
+                // Store the new value back in the environment
+                const updated_value = Value{ .Integer = new_value };
+                try self.environment.set(identifier, updated_value);
+                return updated_value;
+            },
+            else => {
+                // Increment/decrement can only be applied to variables (identifiers)
+                return InterpreterError.InvalidOperation;
+            },
+        }
     }
 
     fn evaluateCall(self: *Interpreter, call: ast.CallExpression) InterpreterError!Value {
@@ -2496,11 +2513,9 @@ pub const Interpreter = struct {
                     }
                     
                     // Check if this is a global builtin function
-                    std.debug.print("DEBUG: Checking for global builtin function: {s}\n", .{name});
                     if (self.globals.get(name)) |global_value| {
                         switch (global_value) {
                             .BuiltinFunction => |builtin_func| {
-                                std.debug.print("DEBUG: Found global builtin function: {s}\n", .{name});
                                 // Evaluate arguments
                                 var args = std.ArrayList(Value){};
                                 defer args.deinit(self.allocator);
@@ -2514,11 +2529,11 @@ pub const Interpreter = struct {
                                 return try builtin_func.func(self, args.items);
                             },
                             else => {
-                                std.debug.print("DEBUG: Global value {s} is not a builtin function: {s}\n", .{name, @tagName(global_value)});
+                                // Silent handling for non-builtin functions
                             },
                         }
                     } else |_| {
-                        std.debug.print("DEBUG: Global builtin function {s} not found\n", .{name});
+                        // Global builtin function not found - continue with normal resolution
                     }
                     
                     // Enhanced generic function call resolution
@@ -4080,78 +4095,71 @@ fn builtinYap(interpreter: *Interpreter, args: []Value) InterpreterError!Value {
 
 fn builtinLen(interpreter: *Interpreter, args: []Value) InterpreterError!Value {
     _ = interpreter; // Mark as used to avoid warnings
-    std.debug.print("DEBUG: builtinLen called with {} args\n", .{args.len});
     
     if (args.len != 1) {
-        std.debug.print("DEBUG: builtinLen - Invalid argument count: {}\n", .{args.len});
         return InterpreterError.InvalidArgumentCount;
     }
     
     const value = args[0];
-    std.debug.print("DEBUG: builtinLen - Value type: {s}\n", .{@tagName(value)});
     
     switch (value) {
         .Array => |array| {
             // Safe cast with overflow checking
             if (array.len > std.math.maxInt(i64)) {
-                std.debug.print("DEBUG: builtinLen - Array length overflow: {}\n", .{array.len});
                 return InterpreterError.InvalidOperation;
             }
             const length = @as(i64, @intCast(array.len));
-            std.debug.print("DEBUG: builtinLen - Array length: {}\n", .{length});
             return Value{ .Integer = length };
         },
         .String => |str| {
             // Safe cast with overflow checking
             if (str.len > std.math.maxInt(i64)) {
-                std.debug.print("DEBUG: builtinLen - String length overflow: {}\n", .{str.len});
                 return InterpreterError.InvalidOperation;
             }
             const length = @as(i64, @intCast(str.len));
-            std.debug.print("DEBUG: builtinLen - String length: {}\n", .{length});
             return Value{ .Integer = length };
         },
         .OwnedString => |str| {
             // Safe cast with overflow checking
             if (str.len > std.math.maxInt(i64)) {
-                std.debug.print("DEBUG: builtinLen - OwnedString length overflow: {}\n", .{str.len});
                 return InterpreterError.InvalidOperation;
             }
             const length = @as(i64, @intCast(str.len));
-            std.debug.print("DEBUG: builtinLen - OwnedString length: {}\n", .{length});
             return Value{ .Integer = length };
         },
         else => {
-            std.debug.print("DEBUG: builtinLen - Unsupported type for len(): {s}\n", .{@tagName(value)});
             return InterpreterError.TypeMismatch;
         },
     }
 }
 
+// Thread-local re-entrancy guard to prevent infinite debug logging
+var debug_in_append: bool = false;
+
 fn builtinAppend(interpreter: *Interpreter, args: []Value) InterpreterError!Value {
-    std.debug.print("DEBUG: builtinAppend called with {} args\n", .{args.len});
+    // Prevent recursive debug logging during allocation
+    const should_debug = !debug_in_append;
+    if (should_debug) {
+        debug_in_append = true;
+        defer debug_in_append = false;
+    }
     
     if (args.len != 2) {
-        std.debug.print("DEBUG: builtinAppend - Invalid argument count: {}\n", .{args.len});
         return InterpreterError.InvalidArgumentCount;
     }
     
     const array_value = args[0];
     const element_value = args[1];
     
-    std.debug.print("DEBUG: builtinAppend - Array type: {s}, Element type: {s}\n", .{@tagName(array_value), @tagName(element_value)});
-    
     switch (array_value) {
         .Array => |array| {
             // Check for overflow before allocation
             if (array.len >= std.math.maxInt(usize) - 1) {
-                std.debug.print("DEBUG: builtinAppend - Array too large for append: {}\n", .{array.len});
                 return InterpreterError.InvalidOperation;
             }
             
             // Create new array with one additional element
             const new_array = interpreter.allocator.alloc(Value, array.len + 1) catch {
-                std.debug.print("DEBUG: builtinAppend - Memory allocation failed\n", .{});
                 return InterpreterError.OutOfMemory;
             };
             
@@ -4163,11 +4171,9 @@ fn builtinAppend(interpreter: *Interpreter, args: []Value) InterpreterError!Valu
             // Add new element
             new_array[array.len] = element_value;
             
-            std.debug.print("DEBUG: builtinAppend - New array length: {}\n", .{new_array.len});
             return Value{ .Array = new_array };
         },
         else => {
-            std.debug.print("DEBUG: builtinAppend - First argument is not an array: {s}\n", .{@tagName(array_value)});
             return InterpreterError.TypeMismatch;
         },
     }

@@ -5,7 +5,7 @@ fr fr Memory Allocation Test - Simple Patterns
 fr fr Tests: Basic array allocation and deallocation patterns
 fr fr Expected: Successful memory operations without leaks
 
-slay main() {
+slay main_character() {
     vibez.spill("=== Memory Allocation Test ===")
     
     vibez.spill("Creating small array...")

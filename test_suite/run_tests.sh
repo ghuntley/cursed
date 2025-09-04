@@ -276,7 +276,7 @@ for test_file in "${test_files[@]}"; do
     fi
     
     # Exit on first failure unless continue flag is set
-    if [[ $test_failed -eq 1 && $CONTINUE_ON_FAIL -eq 0 ]]; then
+    if [[ $test_failed -eq 1 && ${CONTINUE_ON_FAIL:-0} -eq 0 ]]; then
         echo -e "${RED}Test failed. Stopping execution.${RESET}"
         echo ""
         echo -e "${BOLD}Results at failure:${RESET}"
