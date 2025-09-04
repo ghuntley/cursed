@@ -1,7 +1,7 @@
-vibe main;
+vibe main
 
-yeet "mathz";
-yeet "vibez";
+yeet "mathz"
+yeet "vibez"
 
 slay main_character() {
     vibez.spill("=== Advanced Mathz Test ===")

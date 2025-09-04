@@ -327,10 +327,10 @@ pub const Value = union(enum) {
                     }
                     // Only free if we have a valid allocation (len > 0)
                     allocator.free(array);
-                    std.debug.print("DEBUG Value.deinit Array: freed array slice\n", .{});
+                    // Array slice freed
                 } else {
                     // Zero-length arrays use sentinel pointers - don't free them
-                    std.debug.print("DEBUG deinit Array: skipping free for zero-length array with sentinel ptr\n", .{});
+                    // Skipping free for zero-length array with sentinel ptr
                 }
             },
             .Error => |*err| err.deinit(),

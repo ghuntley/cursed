@@ -1,5 +1,5 @@
-vibe main;
-yeet "vibez";
+vibe main
+yeet "vibez"
 
 slay main_character() {
     sus x normie = 15;

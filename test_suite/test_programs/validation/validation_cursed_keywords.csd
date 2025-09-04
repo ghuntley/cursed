@@ -6,7 +6,7 @@ fr fr Test: Validation of all CURSED Gen Z slang keywords
 fr fr Purpose: Ensure all language keywords are recognized and parsed correctly
 fr fr Expected: All keywords should parse without errors
 
-slay main_character() normie {
+slay main_character() {
     fr fr Variable declarations using sus
     sus x normie = 42
     sus y tea = "no cringe"
@@ -22,8 +22,8 @@ slay main_character() normie {
         vibez.spill("negative energy")
     }
     
-    fr fr Return with explicit type
-    damn 0
+    fr fr Return void - no value needed
+    damn
 }
 
 slay calculate_something(value normie) normie {

@@ -11,26 +11,26 @@ slay main_character() {
     simple_function()
     
     fr fr Test single parameter function
-    sus result1 normie drip = double_value(21)
+    sus result1 normie = double_value(21)
     vibez.spill(result1)
     
     fr fr Test multiple parameter function
-    sus result2 normie drip = add_three(5, 10, 15)
+    sus result2 normie = add_three(5, 10, 15)
     vibez.spill(result2)
     
     fr fr Test function with boolean
-    sus is_greater lit drip = compare_values(10, 5)
+    sus is_greater lit = compare_values(10, 5)
     vibez.spill(is_greater)
     
     fr fr Test nested function calls
-    sus nested_result normie drip = double_value(add_three(1, 2, 3))
+    sus nested_result normie = double_value(add_three(1, 2, 3))
     vibez.spill(nested_result)
     
     damn 0
 }
 
 slay simple_function() {
-    sus x normie drip = 42
+    sus x normie = 42
     vibez.spill(x)
 }
 

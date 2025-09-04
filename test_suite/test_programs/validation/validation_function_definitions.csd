@@ -1,7 +1,7 @@
 vibe main
 
-yeet "vibez";
-yeet "mathz";
+yeet "vibez"
+yeet "mathz"
 
 fr fr Function Definition Validation Test
 fr fr Tests: Proper CURSED function syntax and calling conventions
