@@ -1394,7 +1394,7 @@ pub const Parser = struct {
         }
 
         // Select statement
-        if (self.check(.Select) or self.check(.Ready)) {
+        if (self.check(.Select)) {
             return try self.parseSelectStatement();
         }
         
