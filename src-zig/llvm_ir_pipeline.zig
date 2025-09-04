@@ -2164,8 +2164,8 @@ pub const LLVMIRPipeline = struct {
             break :blk stored_func_type;
         } else blk: {
             // print("⚠️ DEBUG: Function {s} not in signature registry, falling back to inferred type\n", .{function_name});
-            // For unknown functions, assume they return int32 (normie type in CURSED)
-            const return_type = c.LLVMInt32TypeInContext(self.context);
+            // For unknown functions, assume they return void (CURSED functions without return type are void)
+            const return_type = c.LLVMVoidTypeInContext(self.context);
             
             // Create function type with proper signature
             break :blk c.LLVMFunctionType(
@@ -2222,13 +2222,19 @@ pub const LLVMIRPipeline = struct {
         
         // Generate the function call with proper signature
         const args_ptr = if (call.arguments.items.len > 0) @as([*]c.LLVMValueRef, @ptrCast(&llvm_args)) else null;
+        
+        // Check if function returns void to avoid naming void calls
+        const return_type = c.LLVMGetReturnType(func_type);
+        const is_void_return = c.LLVMGetTypeKind(return_type) == c.LLVMVoidTypeKind;
+        const call_name = if (is_void_return) "" else "forward_call_tmp";
+        
         const result = c.LLVMBuildCall2(
             self.builder,
             func_type,
             function,
             args_ptr,
             @intCast(call.arguments.items.len),
-            "forward_call_tmp"
+            call_name
         );
         
         if (@as(?*anyopaque, result) == null) {
