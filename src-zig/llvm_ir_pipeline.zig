@@ -1311,7 +1311,8 @@ pub const LLVMIRPipeline = struct {
     fn generateConstantLiteral(self: *LLVMIRPipeline, lit: ast.Literal) !c.LLVMValueRef {
         switch (lit) {
             .Integer => |int_val| {
-                return c.LLVMConstInt(c.LLVMInt64TypeInContext(self.context), @intCast(int_val), 0);
+                // Use i32 (normie) type for integer literals to match CURSED type system
+                return c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), @intCast(int_val), 0);
             },
             .Float => |float_val| {
                 return c.LLVMConstReal(c.LLVMDoubleTypeInContext(self.context), float_val);
@@ -1344,8 +1345,8 @@ pub const LLVMIRPipeline = struct {
                 if (type_kind == c.LLVMIntegerTypeKind) {
                     return c.LLVMConstInt(target_type, @bitCast(@as(u64, @intCast(int_val))), 0);
                 } else {
-                    // For non-integer targets, create i64 constant
-                    return c.LLVMConstInt(c.LLVMInt64TypeInContext(self.context), @bitCast(@as(u64, @intCast(int_val))), 0);
+                    // For non-integer targets, use i32 (normie) as default integer type  
+                    return c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), @intCast(int_val), 0);
                 }
             },
             .Float => |float_val| {
@@ -1450,7 +1451,8 @@ pub const LLVMIRPipeline = struct {
                 }
             },
             .Integer => |int_val| {
-                return c.LLVMConstInt(c.LLVMInt64TypeInContext(self.context), @bitCast(int_val), 0);
+                // Use i32 (normie) type for integer literals to match CURSED type system
+                return c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), @intCast(int_val), 0);
             },
             .Float => |float_val| {
                 return c.LLVMConstReal(c.LLVMDoubleTypeInContext(self.context), float_val);
@@ -1633,7 +1635,8 @@ pub const LLVMIRPipeline = struct {
     fn generateLiteral(self: *LLVMIRPipeline, literal: ast.Literal) !c.LLVMValueRef {
         switch (literal) {
             .Integer => |int_val| {
-                return c.LLVMConstInt(c.LLVMInt64TypeInContext(self.context), @bitCast(int_val), 0);
+                // Use i32 (normie) type for integer literals to match CURSED type system
+                return c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), @intCast(int_val), 0);
             },
             .Float => |float_val| {
                 return c.LLVMConstReal(c.LLVMDoubleTypeInContext(self.context), float_val);
@@ -2008,17 +2011,27 @@ pub const LLVMIRPipeline = struct {
         }
         
         // Look up user-defined function
-        if (self.functions.get(function_name)) |function| {
+        // First try exact name, then try with current module prefix for same-module calls
+        const function = self.functions.get(function_name) orelse blk: {
+            if (self.current_module_name) |module_name| {
+                const qualified_name = try std.fmt.allocPrint(self.allocator, "{s}.{s}", .{module_name, function_name});
+                defer self.allocator.free(qualified_name);
+                break :blk self.functions.get(qualified_name);
+            }
+            break :blk null;
+        };
+        
+        if (function) |func| {
             // print("✅ DEBUG: Found function {s} in function table\n", .{function_name});
             
             // Safety check
-            if (@as(?*anyopaque, function) == null) {
+            if (@as(?*anyopaque, func) == null) {
                 print("❌ Null function reference for: {s}\n", .{function_name});
                 return error.UndefinedFunction;
             }
             
             // Get function type first
-            const func_type = c.LLVMGlobalGetValueType(function);
+            const func_type = c.LLVMGlobalGetValueType(func);
             if (@as(?*anyopaque, func_type) == null) {
                 print("❌ Null function type for: {s}\n", .{function_name});
                 return error.UndefinedFunction;
@@ -2083,7 +2096,7 @@ pub const LLVMIRPipeline = struct {
             const result = c.LLVMBuildCall2(
                 self.builder,
                 func_type,
-                function,
+                func,
                 args_ptr,
                 @intCast(call.arguments.items.len),
                 if (is_void) "" else "call_tmp"
