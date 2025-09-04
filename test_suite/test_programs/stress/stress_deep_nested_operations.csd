@@ -37,7 +37,7 @@ slay complex_array_processing(arr flex, operations normie) {
         fr fr Nested mathematical operations
         sus processed normie = mathz.add(
             mathz.multiply(
-                mathz.power(element, 2),
+                mathz.pow(element, 2),
                 3
             ),
             mathz.divide(
@@ -60,7 +60,7 @@ slay main_character() {
     sus complex_expr normie = mathz.add(
         mathz.multiply(
             mathz.add(
-                mathz.power(2, 3),
+                mathz.pow(2, 3),
                 mathz.multiply(4, 5)
             ),
             mathz.subtract(
@@ -103,7 +103,7 @@ slay main_character() {
     vibez.spill(nested_condition)
     
     fr fr Test deeply nested function calls
-    sus final_result normie = mathz.power(
+    sus final_result normie = mathz.pow(
         mathz.add(
             deeply_nested_calculation(4),
             collections.length(processed_array)

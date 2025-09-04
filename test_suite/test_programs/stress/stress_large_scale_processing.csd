@@ -94,7 +94,7 @@ slay mathematical_stress_test() {
         sus factorial_component meal = mathz.divide(1.0, i)
         accumulator = mathz.add(accumulator, factorial_component)
         
-        sus power_component normie = mathz.power(2, mathz.mod(i, 10))
+        sus power_component normie = mathz.pow(2, mathz.mod(i, 10))
         accumulator = mathz.multiply(accumulator, mathz.divide(power_component, 100.0))
         
         i = mathz.add(i, 1)
