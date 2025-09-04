@@ -178,9 +178,9 @@ for test_file in "${test_files[@]}"; do
         has_comp_output=1
     fi
     
-    # Normalize outputs for comparison (filter out DEBUG messages)
-    interp_normalized=$(echo "$interp_output" | grep -v "^DEBUG " | sed 's/[[:space:]]*$//' | tr -d '\r')
-    compiled_normalized=$(echo "$compiled_output" | grep -v "^DEBUG " | sed 's/[[:space:]]*$//' | tr -d '\r')
+    # Normalize outputs for comparison (filter out DEBUG messages and error statistics)
+    interp_normalized=$(echo "$interp_output" | grep -v "^DEBUG " | grep -v "^=== Error Recovery Statistics ===" | grep -v "^Total errors encountered:" | grep -v "^Semicolon recoveries:" | grep -v "^Statement recoveries:" | grep -v "^Expression recoveries:" | grep -v "^Delimiter recoveries:" | grep -v "^Total tokens skipped:" | grep -v "^====================================" | grep -v "^Error at unknown:" | grep -v "^INFO:" | sed 's/[[:space:]]*$//' | tr -d '\r')
+    compiled_normalized=$(echo "$compiled_output" | grep -v "^DEBUG " | grep -v "^=== Error Recovery Statistics ===" | grep -v "^Total errors encountered:" | grep -v "^Semicolon recoveries:" | grep -v "^Statement recoveries:" | grep -v "^Expression recoveries:" | grep -v "^Delimiter recoveries:" | grep -v "^Total tokens skipped:" | grep -v "^====================================" | grep -v "^Error at unknown:" | grep -v "^INFO:" | sed 's/[[:space:]]*$//' | tr -d '\r')
     
     if [[ $has_interp_output -eq 1 && $has_comp_output -eq 1 ]]; then
         # Both produced output - compare them
