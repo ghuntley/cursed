@@ -104,10 +104,10 @@ This represents a major breakthrough toward true self-hosting. The CURSED langua
 - **🚀 HISTORIC ACHIEVEMENT: Full stdlib self-hosting with 100% function coverage**
 
 ## CURRENT PRIORITIES 🔥
-- **Collections module debugging**: HIGH PRIORITY - Debug collections module loading issues (tests calling collections.new_array() but interpreter may be using Zig builtins vs CURSED self-hosting)
-- **LLVM compilation parity**: Primary focus - fix remaining 9 tests working in interpreter but failing in compiled mode
-- **Float precision formatting differences**: Fix formatting inconsistencies between interpreter/compiled modes for float values
+- **LLVM compilation parity**: PRIMARY FOCUS - fix remaining 9 tests working in interpreter but failing in compiled mode (collections issue resolved, interpreter errors now 0/107)
+- **Float precision formatting differences**: Fix formatting inconsistencies between interpreter/compiled modes for float values  
 - **String length calculation differences**: Address string length calculation mismatches between execution modes
+- **Complex expression compilation**: Debug LLVM backend handling of advanced expressions and stdlib function calls
 - **Interpreter/compiler output parity**: Eliminate remaining inconsistencies between execution modes for advanced features
 
 ## KEY FINDINGS FROM STDLIB INTEGRATION:
@@ -140,6 +140,9 @@ This represents a major breakthrough toward true self-hosting. The CURSED langua
 - **LLVM stdlib compilation improvements** - stdlib/01_stdlib_integration_basic.csd now compiles and runs correctly
 - **Collections module enhancements** - Enhanced stdlib collections module with missing functions (new_array, push, get)
 - **Test suite pass rate improvement** - Improved from 65% to 66% (67 to 68 passing tests)
+- **Collections module loading issue resolved** - Fixed array syntax problems in stdlib/collections/mod.csd that were causing silent program failures. Removed problematic `normie[value]` parameter syntax and array literal return values. Collections module functions (length, new_array, push, get) now load and execute correctly.
+- **Interpreter errors eliminated** - Reduced interpreter errors from 1 to 0 in test suite, maintaining 66% pass rate
+- **Root cause identified** - Array literal syntax `{1, 2, 3}` and array type parameters `normie[value]` in CURSED stdlib modules cause silent execution failures
 
 ## Phase 0: LLVM Backend Critical Fix ✅ COMPLETED
 
