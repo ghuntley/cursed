@@ -2903,14 +2903,31 @@ pub const LLVMIRPipeline = struct {
         defer module_arena.deinit();
         const tmp_allocator = module_arena.allocator();
         
-        // 1. Locate the .csd file
-        const stdlib_path = try std.fmt.allocPrint(tmp_allocator, "stdlib/{s}/mod.csd", .{module_name});
-        const source = std.fs.cwd().readFileAlloc(tmp_allocator, stdlib_path, std.math.maxInt(usize)) catch |err| {
-            print("DEBUG: Could not read CURSED module {s}: {}\n", .{ stdlib_path, err });
-            return;
+        // 1. Locate the .csd file - try multiple paths like interpreter
+        const local_path = try std.fmt.allocPrint(tmp_allocator, "stdlib/{s}/mod.csd", .{module_name});
+        const parent_path = try std.fmt.allocPrint(tmp_allocator, "../stdlib/{s}/mod.csd", .{module_name});
+        const layer1_path = try std.fmt.allocPrint(tmp_allocator, "../stdlib/layer1/{s}.csd", .{module_name});
+        
+        const source = std.fs.cwd().readFileAlloc(tmp_allocator, local_path, std.math.maxInt(usize)) catch |err1| blk: {
+            if (err1 == error.FileNotFound) {
+                break :blk std.fs.cwd().readFileAlloc(tmp_allocator, parent_path, std.math.maxInt(usize)) catch |err2| blk2: {
+                    if (err2 == error.FileNotFound) {
+                        break :blk2 std.fs.cwd().readFileAlloc(tmp_allocator, layer1_path, std.math.maxInt(usize)) catch {
+                            print("DEBUG: Could not read CURSED module from any path: {s}, {s}, {s}\n", .{ local_path, parent_path, layer1_path });
+                            return;
+                        };
+                    } else {
+                        print("DEBUG: Could not read CURSED module {s}: {}\n", .{ parent_path, err2 });
+                        return;
+                    }
+                };
+            } else {
+                print("DEBUG: Could not read CURSED module {s}: {}\n", .{ local_path, err1 });
+                return;
+            }
         };
         
-        print("DEBUG: Successfully read CURSED module {s} ({} bytes)\n", .{ stdlib_path, source.len });
+        print("DEBUG: Successfully read CURSED module {s} ({} bytes)\n", .{ module_name, source.len });
         
         // 2. Front-end: tokenize and parse
         var lex = lexer.Lexer.init(tmp_allocator, source);
