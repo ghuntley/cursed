@@ -1797,6 +1797,7 @@ pub const Interpreter = struct {
             .StringInterpolation => |interpolation| return try self.evaluateStringInterpolation(interpolation),
             .Match => |match| return try self.evaluateMatch(match),
             .Array => |array| return try self.evaluateArray(array.*),
+            .ArrayAccess => |access| return try self.evaluateArrayAccess(access),
             .MethodCall => |method_call| {
                 // Check if this is a vibez.spill call specifically
                 const is_vibez_spill = blk: {
@@ -2855,6 +2856,34 @@ pub const Interpreter = struct {
         }
         
         return Value{ .Array = elements_slice };
+    }
+    
+    fn evaluateArrayAccess(self: *Interpreter, access: ast.ArrayAccessExpression) InterpreterError!Value {
+        // Evaluate the array expression
+        const array_value = try self.evaluateExpression(access.array.*);
+        
+        // Evaluate the index expression
+        const index_value = try self.evaluateExpression(access.index.*);
+        
+        // Ensure index is an integer
+        if (index_value != .Integer) {
+            return InterpreterError.TypeMismatch;
+        }
+        
+        // Check array type and perform bounds checking
+        switch (array_value) {
+            .Array => |array| {
+                const index = index_value.Integer;
+                // Bounds checking
+                if (index < 0 or index >= @as(i64, @intCast(array.len))) {
+                    return InterpreterError.IndexOutOfBounds;
+                }
+                return array[@as(usize, @intCast(index))];
+            },
+            else => {
+                return InterpreterError.TypeMismatch;
+            },
+        }
     }
 
     /// Enhanced generic function call resolution
