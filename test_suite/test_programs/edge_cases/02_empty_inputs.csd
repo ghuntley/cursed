@@ -1,6 +1,6 @@
-vibe main;
+vibe main
 
-yeet "vibez";
+yeet "vibez"
 
 slay handle_empty(x normie) tea {
     ready (x == 0) {

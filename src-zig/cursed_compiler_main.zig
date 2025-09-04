@@ -211,7 +211,7 @@ fn compileToExecutable(allocator: Allocator, source: []const u8, filename: []con
             print("💡 Compile to binary: clang -O2 -o {s} {s}\n", .{ output_name, final_output });
         }
     } else {
-        print("🎉 Successfully compiled {s} to {s}\n", .{ filename, output_name });
+        // print("🎉 Successfully compiled {s} to {s}\n", .{ filename, output_name });
         if (verbose) {
             print("🚀 Run with: ./{s}\n", .{output_name});
         }

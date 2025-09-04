@@ -1,6 +1,6 @@
-vibe main;
+vibe main
 
-yeet "vibez";
+yeet "vibez"
 
 fr fr Regression test validates correct CURSED keyword usage and syntax
 fr fr Tests canonical keywords vs deprecated forms to ensure parser correctness

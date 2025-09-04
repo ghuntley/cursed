@@ -54,10 +54,7 @@ slay test_very_long_strings() {
 slay test_very_large_arrays() {
     vibez.spill("=== Very Large Array Tests ===")
     
-    sus huge_array normie[value] = normie[value]{}
-    
-    fr fr Create array with initial values
-    huge_array = normie[value]{100, 400, 900, 1600, 2500}
+    sus huge_array normie[value] = normie[value]{100, 400, 900, 1600, 2500}
     
     vibez.spill("Array length:", collections.length(huge_array))
     
@@ -120,7 +117,7 @@ slay test_mixed_extreme_operations() {
     vibez.spill("Mixed extreme operations completed")
 }
 
-slay main() {
+slay main_character() {
     vibez.spill("=== Extreme Input Tests ===")
     
     test_very_large_numbers()

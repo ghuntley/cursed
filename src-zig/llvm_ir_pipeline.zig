@@ -108,7 +108,7 @@ pub const LLVMIRPipeline = struct {
         const arena_allocator = arena.allocator();
         
         // Initialize LLVM
-        print("🔧 Initializing LLVM components...\n", .{});
+        // print("🔧 Initializing LLVM components...\n", .{});
         _ = c.LLVMInitializeNativeTarget();
         _ = c.LLVMInitializeNativeAsmPrinter();
         _ = c.LLVMInitializeNativeAsmParser();
@@ -203,12 +203,12 @@ pub const LLVMIRPipeline = struct {
         // Register builtin functions 
         try pipeline.registerBuiltinFunctions();
         
-        print("✅ LLVM IR Pipeline initialized successfully\n", .{});
+        // print("✅ LLVM IR Pipeline initialized successfully\n", .{});
         return pipeline;
     }
     
     pub fn deinit(self: *LLVMIRPipeline) void {
-        print("🧹 Cleaning up LLVM IR Pipeline...\n", .{});
+        // print("🧹 Cleaning up LLVM IR Pipeline...\n", .{});
         
         // Clean up hash maps first
         self.functions.deinit();
@@ -244,12 +244,12 @@ pub const LLVMIRPipeline = struct {
         self.arena.deinit();
         self.allocator.destroy(self);
         
-        print("✅ LLVM IR Pipeline cleanup complete\n", .{});
+        // print("✅ LLVM IR Pipeline cleanup complete\n", .{});
     }
     
     /// Complete compilation pipeline: Source -> AST -> Type Check -> LLVM IR -> Binary
     pub fn compileSource(self: *LLVMIRPipeline, source: []const u8, output_file: []const u8, verbose: bool) !void {
-        print("🚀 Starting complete LLVM compilation pipeline...\n", .{});
+        // print("🚀 Starting complete LLVM compilation pipeline...\n", .{});
         
         // Step 1: Tokenize source
         if (verbose) print("📝 Step 1: Tokenizing source code...\n", .{});
@@ -286,7 +286,7 @@ pub const LLVMIRPipeline = struct {
         if (verbose) print("🔥 Step 7: Compiling to binary...\n", .{});
         try self.compileToExecutable(output_file);
         
-        print("🎉 Compilation pipeline completed successfully!\n", .{});
+        // print("🎉 Compilation pipeline completed successfully!\n", .{});
     }
     
     /// Run type checking on the AST
@@ -393,7 +393,7 @@ pub const LLVMIRPipeline = struct {
             }
         }
         
-        print("🔍 DEBUG: Building function signature registry for {} functions\n", .{functions.items.len});
+        // // print("🔍 DEBUG: Building function signature registry for {} functions\n", .{functions.items.len});
         // First pass: Build function signatures for forward declaration support
         for (functions.items) |stmt| {
             if (stmt.* == .Function) {
@@ -401,18 +401,18 @@ pub const LLVMIRPipeline = struct {
             }
         }
         
-        print("🔍 DEBUG: About to generate {} functions\n", .{functions.items.len});
+        // // print("🔍 DEBUG: About to generate {} functions\n", .{functions.items.len});
         // Generate IR for functions first
-        for (functions.items, 0..) |stmt, i| {
-            print("🔍 DEBUG: Generating function {} of {}\n", .{i + 1, functions.items.len});
+        for (functions.items) |stmt| {
+            // Generating function
             try self.generateStatement(stmt.*);
-            print("🔍 DEBUG: Successfully generated function {} of {}\n", .{i + 1, functions.items.len});
+            // // print("🔍 DEBUG: Successfully generated function {} of {}\n", .{i + 1, functions.items.len});
         }
         
-        print("🔍 DEBUG: About to ensure main function with {} global statements\n", .{global_statements.items.len});
+        // // print("🔍 DEBUG: About to ensure main function with {} global statements\n", .{global_statements.items.len});
         // Ensure we have a main function and generate global statements within it
         try self.ensureMainFunctionWithGlobalStatements(global_statements.items);
-        print("🔍 DEBUG: Successfully ensured main function\n", .{});
+        // // print("🔍 DEBUG: Successfully ensured main function\n", .{});
     }
     
     /// Generate IR for a statement
@@ -448,11 +448,11 @@ pub const LLVMIRPipeline = struct {
             },
             .Import => |import_stmt| {
                 // Handle import statements by loading and compiling the module
-                print("📦 Processing import: {s}\n", .{import_stmt.path});
+                // print("📦 Processing import: {s}\n", .{import_stmt.path});
                 
                 // Skip vibez module loading - use built-in printf handling instead
                 if (std.mem.eql(u8, import_stmt.path, "vibez")) {
-                    print("DEBUG: Skipping vibez module loading - using built-in printf handling\n", .{});
+                    // print("DEBUG: Skipping vibez module loading - using built-in printf handling\n", .{});
                     return;
                 }
                 
@@ -481,7 +481,7 @@ pub const LLVMIRPipeline = struct {
     
     /// Build function signature and store in registry for forward declarations
     fn buildFunctionSignature(self: *LLVMIRPipeline, func_decl: ast.FunctionStatement) !void {
-        print("🔧 DEBUG: Building function signature for {s}\n", .{func_decl.name});
+        // // print("🔧 DEBUG: Building function signature for {s}\n", .{func_decl.name});
         
         // Create parameter types
         var param_types = std.ArrayList(c.LLVMTypeRef){};
@@ -510,12 +510,12 @@ pub const LLVMIRPipeline = struct {
         const func_name_duped = try self.arena.allocator().dupe(u8, func_decl.name);
         try self.function_signatures.put(func_name_duped, func_type);
         
-        print("✅ DEBUG: Stored function signature for {s} with return type\n", .{func_decl.name});
+        // // print("✅ DEBUG: Stored function signature for {s} with return type\n", .{func_decl.name});
     }
 
     /// Infer return type from function body by analyzing return statements
     fn inferReturnTypeFromFunctionBody(self: *LLVMIRPipeline, func_decl: ast.FunctionStatement) !c.LLVMTypeRef {
-        print("🔍 DEBUG: Inferring return type for function {s}\n", .{func_decl.name});
+        // // print("🔍 DEBUG: Inferring return type for function {s}\n", .{func_decl.name});
         
         // Look for return statements in the function body
         for (func_decl.body.items) |stmt_ptr| {
@@ -525,7 +525,7 @@ pub const LLVMIRPipeline = struct {
                     if (return_stmt.value) |_| {
                         // Found a return statement with a value - infer it's an integer for now
                         // TODO: In a more sophisticated implementation, we would analyze the expression type
-                        print("🔍 DEBUG: Found return statement with value, inferring integer type\n", .{});
+                        // // print("🔍 DEBUG: Found return statement with value, inferring integer type\n", .{});
                         return c.LLVMInt32TypeInContext(self.context);
                     }
                 },
@@ -534,7 +534,7 @@ pub const LLVMIRPipeline = struct {
         }
         
         // No return statements with values found, assume void
-        print("🔍 DEBUG: No return statements with values found, assuming void\n", .{});
+        // // print("🔍 DEBUG: No return statements with values found, assuming void\n", .{});
         return c.LLVMVoidTypeInContext(self.context);
     }
 
@@ -569,16 +569,16 @@ pub const LLVMIRPipeline = struct {
         
         // Check if function already exists
         if (self.functions.get(qualified_name)) |existing_func| {
-            print("🔍 DEBUG: Function {s} already exists, checking if it's a forward declaration...\n", .{qualified_name});
+            // // print("🔍 DEBUG: Function {s} already exists, checking if it's a forward declaration...\n", .{qualified_name});
             
             // Check if existing function has a body (if it's just a declaration or has implementation)
             const first_block = c.LLVMGetFirstBasicBlock(existing_func);
             if (first_block != null) {
-                print("⚠️ DEBUG: Function {s} already has implementation, skipping\n", .{qualified_name});
+                // // print("⚠️ DEBUG: Function {s} already has implementation, skipping\n", .{qualified_name});
                 return; // Function already implemented
             }
             
-            print("🔧 DEBUG: Function {s} is forward declaration, replacing with proper implementation\n", .{qualified_name});
+            // // print("🔧 DEBUG: Function {s} is forward declaration, replacing with proper implementation\n", .{qualified_name});
             
             // Get existing function type for comparison
             const existing_type = c.LLVMGlobalGetValueType(existing_func);
@@ -603,7 +603,7 @@ pub const LLVMIRPipeline = struct {
                 }
                 
                 if (param_types_match) {
-                    print("✅ DEBUG: Forward declaration signature is compatible with {s}\n", .{qualified_name});
+                    // // print("✅ DEBUG: Forward declaration signature is compatible with {s}\n", .{qualified_name});
                     
                     // Check if types are compatible but not identical - need signature update
                     var need_replacement = false;
@@ -641,7 +641,7 @@ pub const LLVMIRPipeline = struct {
         const func_name_z = try self.arena.allocator().dupeZ(u8, qualified_name);
         const function = c.LLVMAddFunction(self.module, func_name_z.ptr, func_type);
         try self.functions.put(qualified_name, function);
-        print("🔧 DEBUG: Created new function {s} with {d} parameters\n", .{qualified_name, param_types.items.len});
+        // print("🔧 DEBUG: Created new function {s} with {d} parameters\n", .{qualified_name, param_types.items.len});
         
         // Generate function body
         try self.generateFunctionBody(function, func_decl);
@@ -841,7 +841,7 @@ pub const LLVMIRPipeline = struct {
             if (var_decl.var_type) |vtype| {
                 if (vtype == .Array) {
                     try self.array_lengths.put(safe_name, 0); // Initialize empty array
-                    print("🔍 DEBUG: Initialized array variable '{s}' with length 0\n", .{safe_name});
+                    // print("🔍 DEBUG: Initialized array variable '{s}' with length 0\n", .{safe_name});
                 }
             }
             
@@ -854,7 +854,7 @@ pub const LLVMIRPipeline = struct {
                         const array_length = initializer.Array.elements.items.len;
                         const safe_name_for_length = try self.arena.allocator().dupe(u8, var_decl.name);
                         try self.array_lengths.put(safe_name_for_length, @intCast(array_length));
-                        print("🔍 DEBUG: Tracked array literal '{s}' with {} elements\n", .{safe_name_for_length, array_length});
+                        // print("🔍 DEBUG: Tracked array literal '{s}' with {} elements\n", .{safe_name_for_length, array_length});
                     }
                 }
                 
@@ -1009,7 +1009,7 @@ pub const LLVMIRPipeline = struct {
                         const array_length = value_expr.Array.elements.items.len;
                         const safe_name = try self.arena.allocator().dupe(u8, var_name);
                         try self.array_lengths.put(safe_name, @intCast(array_length));
-                        print("🔍 DEBUG: Tracked array assignment '{s}' with {} elements\n", .{safe_name, array_length});
+                        // print("🔍 DEBUG: Tracked array assignment '{s}' with {} elements\n", .{safe_name, array_length});
                     }
                 } else {
                     print("❌ Undefined variable in assignment: {s}\n", .{var_name});
@@ -1098,7 +1098,7 @@ pub const LLVMIRPipeline = struct {
     
     /// Generate Return statement (damn statements)
     fn generateReturnStatement(self: *LLVMIRPipeline, return_stmt: ast.ReturnStatement) !void {
-        print("🔍 DEBUG: Generating return statement\n", .{});
+        // print("🔍 DEBUG: Generating return statement\n", .{});
         const parent = self.current_function orelse {
             print("❌ Return statements can only be used inside functions\n", .{});
             return LLVMIRError.UndefinedVariable;
@@ -1107,25 +1107,25 @@ pub const LLVMIRPipeline = struct {
         if (return_stmt.value) |value_ptr| {
             // Cast return value from *anyopaque to *Expression
             const return_expr: *ast.Expression = @ptrCast(@alignCast(value_ptr));
-            print("🔍 DEBUG: Generating return value expression\n", .{});
+            // print("🔍 DEBUG: Generating return value expression\n", .{});
             const ret_val = try self.generateExpression(return_expr.*);
-            print("🔍 DEBUG: Return value generated successfully\n", .{});
+            // print("🔍 DEBUG: Return value generated successfully\n", .{});
             
             // Ensure return type matches function signature
             const func_type = c.LLVMGlobalGetValueType(parent);
             const func_ret_ty = c.LLVMGetReturnType(func_type);
             
-            print("🔍 DEBUG: Checking type compatibility for return value\n", .{});
+            // print("🔍 DEBUG: Checking type compatibility for return value\n", .{});
             const final_val = if (func_ret_ty == c.LLVMTypeOf(ret_val)) blk: {
-                print("🔍 DEBUG: Return type matches exactly\n", .{});
+                // print("🔍 DEBUG: Return type matches exactly\n", .{});
                 break :blk ret_val;
             } else if (c.LLVMGetTypeKind(func_ret_ty) == c.LLVMIntegerTypeKind and
                      c.LLVMGetTypeKind(c.LLVMTypeOf(ret_val)) == c.LLVMIntegerTypeKind) blk: {
-                print("🔍 DEBUG: Return type needs integer cast\n", .{});
+                // print("🔍 DEBUG: Return type needs integer cast\n", .{});
                 break :blk c.LLVMBuildIntCast(self.builder, ret_val, func_ret_ty, "ret.cast");
             } else if (c.LLVMGetTypeKind(func_ret_ty) == c.LLVMPointerTypeKind and
                      c.LLVMGetTypeKind(c.LLVMTypeOf(ret_val)) == c.LLVMPointerTypeKind) blk: {
-                print("🔍 DEBUG: Return type needs pointer cast\n", .{});
+                // print("🔍 DEBUG: Return type needs pointer cast\n", .{});
                 break :blk c.LLVMBuildPointerCast(self.builder, ret_val, func_ret_ty, "ret.ptr.cast");
             } else {
                 print("❌ RETURN TYPE MISMATCH ERROR! Expected: {}, Got: {}\n", .{c.LLVMGetTypeKind(func_ret_ty), c.LLVMGetTypeKind(c.LLVMTypeOf(ret_val))});
@@ -1319,22 +1319,22 @@ pub const LLVMIRPipeline = struct {
                 return try self.generateLiteral(lit);
             },
             .Identifier => |ident| {
-                print("🔍 DEBUG: Looking up identifier: {s}\n", .{ident});
+                // print("🔍 DEBUG: Looking up identifier: {s}\n", .{ident});
                 
                 // First check if it's a builtin function (should not be used as variable)
                 if (self.functions.get(ident)) |function| {
-                    print("🔍 DEBUG: Found {s} as function reference\n", .{ident});
+                    // print("🔍 DEBUG: Found {s} as function reference\n", .{ident});
                     // Return the function reference itself - this is for function pointers or calls
                     return function;
                 }
                 
                 // Then check if it's a variable
                 if (self.variables.get(ident)) |var_ref| {
-                    print("🔍 DEBUG: Found {s} as variable reference\n", .{ident});
+                    // print("🔍 DEBUG: Found {s} as variable reference\n", .{ident});
                     
                     // Use stored type information
                     if (self.variable_types.get(ident)) |var_type| {
-                        print("🔍 DEBUG: Found type info for variable {s}\n", .{ident});
+                        // print("🔍 DEBUG: Found type info for variable {s}\n", .{ident});
                         
                         // Check if we're in a function context
                         if (self.current_function == null) {
@@ -1349,7 +1349,7 @@ pub const LLVMIRPipeline = struct {
                     }
                 } else {
                     print("❌ Undefined variable: {s}\n", .{ident});
-                    print("🔍 DEBUG: Available variables:\n", .{});
+                    // print("🔍 DEBUG: Available variables:\n", .{});
                     var iter = self.variables.iterator();
                     while (iter.next()) |entry| {
                         print("  - {s}\n", .{entry.key_ptr.*});
@@ -1604,13 +1604,13 @@ pub const LLVMIRPipeline = struct {
     
     /// Generate binary operation
     fn generateBinaryOperation(self: *LLVMIRPipeline, bin_op: ast.BinaryExpression) anyerror!c.LLVMValueRef {
-        print("🔍 DEBUG: Generating binary operation: {s}\n", .{bin_op.operator});
-        print("🔍 DEBUG: Generating left operand\n", .{});
+        // print("🔍 DEBUG: Generating binary operation: {s}\n", .{bin_op.operator});
+        // print("🔍 DEBUG: Generating left operand\n", .{});
         var left = try self.generateExpression(bin_op.left.*);
-        print("🔍 DEBUG: Generated left operand successfully\n", .{});
-        print("🔍 DEBUG: Generating right operand\n", .{});
+        // print("🔍 DEBUG: Generated left operand successfully\n", .{});
+        // print("🔍 DEBUG: Generating right operand\n", .{});
         var right = try self.generateExpression(bin_op.right.*);
-        print("🔍 DEBUG: Generated right operand successfully\n", .{});
+        // print("🔍 DEBUG: Generated right operand successfully\n", .{});
         
         // Check if we're dealing with floating point values
         const left_type = c.LLVMTypeOf(left);
@@ -1881,7 +1881,7 @@ pub const LLVMIRPipeline = struct {
             else => return c.LLVMConstInt(c.LLVMInt64TypeInContext(self.context), 0, 0),
         };
         
-        print("🔍 DEBUG: Looking for function: {s}\n", .{function_name});
+        // print("🔍 DEBUG: Looking for function: {s}\n", .{function_name});
         
         if (std.mem.eql(u8, function_name, "vibez.spill")) {
             // Convert []*Expression to []Expression
@@ -1904,18 +1904,18 @@ pub const LLVMIRPipeline = struct {
         }
         
         if (std.mem.eql(u8, function_name, "append")) {
-            print("🔍 DEBUG: Handling append function call\n", .{});
+            // print("🔍 DEBUG: Handling append function call\n", .{});
             if (call.arguments.items.len != 2) {
-                print("❌ DEBUG: append requires 2 arguments, got {}\n", .{call.arguments.items.len});
+                // print("❌ DEBUG: append requires 2 arguments, got {}\n", .{call.arguments.items.len});
                 return error.InvalidArgumentCount;
             }
             return try self.generateAppendCall(call.arguments.items[0].*, call.arguments.items[1].*);
         }
         
         if (std.mem.eql(u8, function_name, "len")) {
-            print("🔍 DEBUG: Handling len function call\n", .{});
+            // print("🔍 DEBUG: Handling len function call\n", .{});
             if (call.arguments.items.len != 1) {
-                print("❌ DEBUG: len requires 1 argument, got {}\n", .{call.arguments.items.len});
+                // print("❌ DEBUG: len requires 1 argument, got {}\n", .{call.arguments.items.len});
                 return error.InvalidArgumentCount;
             }
             return try self.generateLenCall(call.arguments.items[0].*);
@@ -1923,7 +1923,7 @@ pub const LLVMIRPipeline = struct {
         
         // Look up user-defined function
         if (self.functions.get(function_name)) |function| {
-            print("✅ DEBUG: Found function {s} in function table\n", .{function_name});
+            // print("✅ DEBUG: Found function {s} in function table\n", .{function_name});
             
             // Safety check
             if (@as(?*anyopaque, function) == null) {
@@ -2010,7 +2010,7 @@ pub const LLVMIRPipeline = struct {
             
             return result;
         } else {
-            print("❌ DEBUG: Function {s} not found in function table, creating forward declaration...\n", .{function_name});
+            // print("❌ DEBUG: Function {s} not found in function table, creating forward declaration...\n", .{function_name});
             
             // CRITICAL BUG FIX: Instead of returning error, create a forward declaration
             // with the correct signature based on the call arguments
@@ -2020,7 +2020,7 @@ pub const LLVMIRPipeline = struct {
     
     /// Create forward declaration for undefined function with proper signature
     fn createForwardDeclaration(self: *LLVMIRPipeline, function_name: []const u8, call: ast.CallExpression) !c.LLVMValueRef {
-        print("🔧 DEBUG: Creating forward declaration for {s} with {d} arguments\n", .{function_name, call.arguments.items.len});
+        // print("🔧 DEBUG: Creating forward declaration for {s} with {d} arguments\n", .{function_name, call.arguments.items.len});
         
         // Analyze argument types to create proper function signature
         var param_types = std.ArrayList(c.LLVMTypeRef){};
@@ -2043,10 +2043,10 @@ pub const LLVMIRPipeline = struct {
         
         // Check if we have the function signature in our registry
         const func_type = if (self.function_signatures.get(function_name)) |stored_func_type| blk: {
-            print("✅ DEBUG: Found function signature for {s} in registry\n", .{function_name});
+            // print("✅ DEBUG: Found function signature for {s} in registry\n", .{function_name});
             break :blk stored_func_type;
         } else blk: {
-            print("⚠️ DEBUG: Function {s} not in signature registry, falling back to inferred type\n", .{function_name});
+            // print("⚠️ DEBUG: Function {s} not in signature registry, falling back to inferred type\n", .{function_name});
             // For unknown functions, assume they return int32 (normie type in CURSED)
             const return_type = c.LLVMInt32TypeInContext(self.context);
             
@@ -2066,7 +2066,7 @@ pub const LLVMIRPipeline = struct {
         // Store in function table for future use
         try self.functions.put(function_name, function);
         
-        print("✅ DEBUG: Created forward declaration for {s} with signature: {d} params\n", .{function_name, param_types.items.len});
+        // print("✅ DEBUG: Created forward declaration for {s} with signature: {d} params\n", .{function_name, param_types.items.len});
         
         // Convert arguments to match function parameter types from the actual signature
         const param_count = c.LLVMCountParamTypes(func_type);
@@ -2092,11 +2092,11 @@ pub const LLVMIRPipeline = struct {
                         if (expected_width < actual_width) {
                             // Truncate to smaller type
                             llvm_args[i] = c.LLVMBuildTrunc(self.builder, llvm_args[i], expected_type, "fwd_arg_trunc");
-                            print("🔧 DEBUG: Truncated argument {d} from i{d} to i{d}\n", .{i, actual_width, expected_width});
+                            // print("🔧 DEBUG: Truncated argument {d} from i{d} to i{d}\n", .{i, actual_width, expected_width});
                         } else if (expected_width > actual_width) {
                             // Extend to larger type  
                             llvm_args[i] = c.LLVMBuildSExt(self.builder, llvm_args[i], expected_type, "fwd_arg_extend");
-                            print("🔧 DEBUG: Extended argument {d} from i{d} to i{d}\n", .{i, actual_width, expected_width});
+                            // print("🔧 DEBUG: Extended argument {d} from i{d} to i{d}\n", .{i, actual_width, expected_width});
                         }
                     }
                 }
@@ -2288,7 +2288,7 @@ pub const LLVMIRPipeline = struct {
                         
                         // First, check if we have a tracked array length
                         if (self.array_lengths.get(var_name)) |tracked_length| {
-                            print("🔍 DEBUG: collections.length({s}) = {} (tracked)\n", .{var_name, tracked_length});
+                            // print("🔍 DEBUG: collections.length({s}) = {} (tracked)\n", .{var_name, tracked_length});
                             return c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), tracked_length, 0);
                         }
                         
@@ -2303,7 +2303,7 @@ pub const LLVMIRPipeline = struct {
                                 // Extract the length field (index 0)
                                 const length_ptr = c.LLVMBuildStructGEP2(self.builder, pointed_type, var_ref, 0, "length_ptr");
                                 const length_val = c.LLVMBuildLoad2(self.builder, c.LLVMInt32TypeInContext(self.context), length_ptr, "slice_length");
-                                print("🔍 DEBUG: collections.length({s}) extracted from slice structure\n", .{var_name});
+                                // print("🔍 DEBUG: collections.length({s}) extracted from slice structure\n", .{var_name});
                                 return length_val;
                             }
                         }
@@ -2315,12 +2315,12 @@ pub const LLVMIRPipeline = struct {
                             c.LLVMInt32TypeInContext(self.context));
                         const args = [_]c.LLVMValueRef{arg_val};
                         const func_type = c.LLVMGlobalGetValueType(collections_len_fn);
-                        print("🔍 DEBUG: collections.length({s}) using runtime function\n", .{var_name});
+                        // print("🔍 DEBUG: collections.length({s}) using runtime function\n", .{var_name});
                         return c.LLVMBuildCall2(self.builder, func_type, collections_len_fn, @constCast(@ptrCast(&args)), 1, "collections_len_result");
                     }
                     
                     // Fallback: return 0 if we can't determine length
-                    print("🔍 DEBUG: collections.length() fallback to 0\n", .{});
+                    // print("🔍 DEBUG: collections.length() fallback to 0\n", .{});
                     return c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 0, 0);
                 } else {
                     return c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 0, 0);
@@ -2683,7 +2683,7 @@ pub const LLVMIRPipeline = struct {
 
     /// Generate append function call for arrays
     fn generateAppendCall(self: *LLVMIRPipeline, array_expr: ast.Expression, element_expr: ast.Expression) !c.LLVMValueRef {
-        print("🔍 DEBUG: Generating append call\n", .{});
+        // print("🔍 DEBUG: Generating append call\n", .{});
         
         // Evaluate the array expression
         const array_val = try self.generateExpression(array_expr);
@@ -2691,26 +2691,26 @@ pub const LLVMIRPipeline = struct {
         // Evaluate the element expression  
         const element_val = try self.generateExpression(element_expr);
         
-        print("🔍 DEBUG: Array and element values generated\n", .{});
+        // print("🔍 DEBUG: Array and element values generated\n", .{});
         
         // Track array length if we can identify the variable name
         if (array_expr == .Identifier) {
             const var_name = array_expr.Identifier;
             if (self.array_lengths.getPtr(var_name)) |length_ptr| {
                 length_ptr.* += 1;
-                print("🔍 DEBUG: Incremented array '{s}' length to {}\n", .{var_name, length_ptr.*});
+                // print("🔍 DEBUG: Incremented array '{s}' length to {}\n", .{var_name, length_ptr.*});
             }
         }
         
         _ = element_val; // We don't modify the array structure for this fix
         
-        print("✅ DEBUG: Append call generated (length tracked)\n", .{});
+        // print("✅ DEBUG: Append call generated (length tracked)\n", .{});
         return array_val;
     }
 
     /// Generate len function call for arrays
     fn generateLenCall(self: *LLVMIRPipeline, array_expr: ast.Expression) !c.LLVMValueRef {
-        print("🔍 DEBUG: Generating len call\n", .{});
+        // print("🔍 DEBUG: Generating len call\n", .{});
         
         // Evaluate the array expression
         const array_val = try self.generateExpression(array_expr);
@@ -2722,15 +2722,15 @@ pub const LLVMIRPipeline = struct {
             const var_name = array_expr.Identifier;
             if (self.array_lengths.get(var_name)) |tracked_length| {
                 length = tracked_length;
-                print("🔍 DEBUG: Found tracked length for '{s}': {}\n", .{var_name, length});
+                // print("🔍 DEBUG: Found tracked length for '{s}': {}\n", .{var_name, length});
             } else {
-                print("🔍 DEBUG: No length tracking found for '{s}', using default 0\n", .{var_name});
+                // print("🔍 DEBUG: No length tracking found for '{s}', using default 0\n", .{var_name});
             }
         }
         
         const length_value = c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), length, 0);
         
-        print("✅ DEBUG: Len call generated - length: {}\n", .{length});
+        // print("✅ DEBUG: Len call generated - length: {}\n", .{length});
         return length_value;
     }
     
@@ -2924,7 +2924,7 @@ pub const LLVMIRPipeline = struct {
         const fflush_func = c.LLVMAddFunction(self.module, "fflush", fflush_type);
         try self.functions.put("fflush", fflush_func);
         
-        print("✅ C library functions declared\n", .{});
+        // print("✅ C library functions declared\n", .{});
     }
     
     /// Register builtin functions available globally without imports
@@ -2942,7 +2942,7 @@ pub const LLVMIRPipeline = struct {
         const yap_func = c.LLVMAddFunction(self.module, "yap", yap_type);
         try self.functions.put("yap", yap_func);
         
-        print("✅ Builtin functions registered (yap)\n", .{});
+        // print("✅ Builtin functions registered (yap)\n", .{});
     }
     
     /// Ensure main function exists and includes global statements
@@ -3080,7 +3080,7 @@ pub const LLVMIRPipeline = struct {
             return error.IRWriteFailed;
         }
         
-        print("✅ LLVM IR written to: {s}\n", .{output_file});
+        // print("✅ LLVM IR written to: {s}\n", .{output_file});
     }
 
     /// Compile to executable using llc + gcc pipeline
@@ -3098,7 +3098,7 @@ pub const LLVMIRPipeline = struct {
         const obj_file = try std.fmt.allocPrint(self.allocator, "{s}.o", .{output_file});
         defer self.allocator.free(obj_file);
         
-        print("🔧 Step 1: Compiling IR to object file with llc-18...\n", .{});
+        // print("🔧 Step 1: Compiling IR to object file with llc-18...\n", .{});
         const llc_result = try std.process.Child.run(.{
             .allocator = self.allocator,
             .argv = &[_][]const u8{
@@ -3119,7 +3119,7 @@ pub const LLVMIRPipeline = struct {
         }
         
         // Step 2: Use gcc to link object file to executable
-        print("🔧 Step 2: Linking object file with gcc...\n", .{});
+        // print("🔧 Step 2: Linking object file with gcc...\n", .{});
         const gcc_result = try std.process.Child.run(.{
             .allocator = self.allocator,
             .argv = &[_][]const u8{
@@ -3144,7 +3144,7 @@ pub const LLVMIRPipeline = struct {
         _ = std.fs.cwd().deleteFile(ir_file) catch {};
         _ = std.fs.cwd().deleteFile(obj_file) catch {};
         
-        print("✅ Successfully compiled to: {s}\n", .{output_file});
+        // print("✅ Successfully compiled to: {s}\n", .{output_file});
     }
     
     /// Dump LLVM IR to stdout for debugging

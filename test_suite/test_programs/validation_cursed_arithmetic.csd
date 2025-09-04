@@ -5,7 +5,7 @@ vibe main
 yeet "vibez"
 yeet "mathz"
 
-slay main() {
+slay main_character() {
     vibez.spill("Testing arithmetic operations")
     vibez.spill("Addition: 10 + 5")
     vibez.spill("Subtraction: 10 - 5")

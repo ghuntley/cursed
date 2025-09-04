@@ -1,0 +1,769 @@
+[1mCURSED Test Suite - Fixed Version[0m
+====================================
+Compiler: /home/ghuntley/cursed/test_suite/../zig-out/bin/cursed-compiler
+Test directory: /home/ghuntley/cursed/test_suite/test_programs
+Working from: /home/ghuntley/cursed/test_suite/.. (for stdlib loading)
+
+Scanning for test files...
+Found 107 test files
+
+[1m[1/107] Testing: arithmetic/01_mixed_types.csd[0m
+  Result: [32mPASS[0m
+---
+[1m[2/107] Testing: arithmetic/02_edge_cases.csd[0m
+  Result: [32mPASS[0m
+---
+[1m[3/107] Testing: arithmetic/03_operator_precedence.csd[0m
+  Result: [32mPASS[0m
+---
+[1m[4/107] Testing: arithmetic/04_complex_expressions.csd[0m
+  Result: [32mPASS[0m
+---
+[1m[5/107] Testing: arithmetic/arithmetic_basic_operations.csd[0m
+  Result: [32mPASS[0m
+---
+[1m[6/107] Testing: arithmetic/division_semantics_test.csd[0m
+  Result: [32mPASS[0m
+---
+[1m[7/107] Testing: arithmetic/feature_arithmetic_operations.csd[0m
+  Result: [32mPASS[0m
+---
+[1m[8/107] Testing: arithmetic/overflow_edge_cases.csd[0m
+  Result: [32mPASS[0m
+---
+[1m[9/107] Testing: basic/01_hello_world.csd[0m
+  Result: [32mPASS[0m
+---
+[1m[10/107] Testing: basic/02_simple_arithmetic.csd[0m
+  Result: [32mPASS[0m
+---
+[1m[11/107] Testing: basic/03_variable_assignment.csd[0m
+  Result: [32mPASS[0m
+---
+[1m[12/107] Testing: basic/basic_hello_world.csd[0m
+  Result: [32mPASS[0m
+---
+[1m[13/107] Testing: basic/hello_world_simple.csd[0m
+  Result: [32mPASS[0m
+---
+[1m[14/107] Testing: complex/01_nested_operations.csd[0m
+  Result: [33mPASS (EXIT_CODE_ISSUE: exit 22, output correct)[0m
+---
+[1m[15/107] Testing: complex/02_fizzbuzz.csd[0m
+  Result: [33mPASS (EXIT_CODE_ISSUE: exit 112, output correct)[0m
+---
+[1m[16/107] Testing: comprehensive/control_flow_comprehensive.csd[0m
+  Result: [32mPASS[0m
+---
+[1m[17/107] Testing: comprehensive/function_definitions_test.csd[0m
+  Result: [32mPASS[0m
+---
+[1m[18/107] Testing: comprehensive/test_comprehensive_language_features.csd[0m
+  Result: [32mPASS[0m
+---
+[1m[19/107] Testing: control_flow/01_if_statements.csd[0m
+  Result: [32mPASS[0m
+---
+[1m[20/107] Testing: control_flow/02_loops.csd[0m
+  Result: [32mPASS[0m
+---
+[1m[21/107] Testing: control_flow/control_flow_comprehensive.csd[0m
+  Result: [32mPASS[0m
+---
+[1m[22/107] Testing: control_flow/control_flow_if_else.csd[0m
+  Result: [32mPASS[0m
+---
+[1m[23/107] Testing: control_flow/feature_control_flow_comprehensive.csd[0m
+  Result: [33mPASS (EXIT_CODE_ISSUE: exit 35, output correct)[0m
+---
+[1m[24/107] Testing: edge_cases/01_boundary_conditions.csd[0m
+  Result: [33mPASS (EXIT_CODE_ISSUE: exit 35, output correct)[0m
+---
+[1m[25/107] Testing: edge_cases/02_empty_inputs.csd[0m
+  Result: [32mPASS[0m
+---
+[1m[26/107] Testing: edge_cases/02_extreme_inputs.csd[0m
+  Result: [31mFAIL (OUTPUT_MISMATCH)[0m
+  [36mInterpreter (exit: 0):[0m
+    === Extreme Input Tests === 
+    === Very Large Number Tests === 
+    Large number operations: 
+    Large1: 999999 
+    Large2: 888888 
+    Large3: 777777 
+    Large1 + Large2: 1888887 
+    Large1 - Large2: 111111 
+    Large1 abs: 999999 
+    Large accumulation: 2666664 
+    === Very Long String Tests === 
+    Final long string length: 24 
+    Upper version length: 24 
+    Lower version length: 24 
+    === Very Large Array Tests === 
+    Array length: 5 
+    Array sum: 5500 
+    Array max: 100 
+    Array min: 100 
+    === Extreme Computation Tests === 
+    Computation result: 275 
+    Average per cycle: 91 
+    === Mixed Extreme Operations === 
+    Final - num: 234567 str_len: 24 arr_len: 5 
+    Mixed extreme operations completed 
+    All extreme input tests completed 
+
+  [36mCompiled (exit: 0):[0m
+    === Extreme Input Tests ===
+    === Very Large Number Tests ===
+    Large number operations:
+    Large1: 999999
+    Large2: 888888
+    Large3: 777777
+    Large1 + Large2: 1888887
+    Large1 - Large2: 111111
+    Large1 abs: 999999
+    Large accumulation: 2666664
+    === Very Long String Tests ===
+    Final long string length: 24
+    Upper version length: 24
+    Lower version length: 24
+    === Very Large Array Tests ===
+    Array length: 5
+    Array sum: 5500
+    Array max: 100
+    Array min: 100
+    === Extreme Computation Tests ===
+    Computation result: 275
+    Average per cycle: 91
+    === Mixed Extreme Operations ===
+    Final - num: 234567 str_len: 21 arr_len: 3
+    Mixed extreme operations completed
+    All extreme input tests completed
+
+  [33mHEX COMPARISON (to identify differences):[0m
+  [36mInterpreter HEX (exit: 0):[0m
+    00000000: 3d3d 3d20 4578 7472 656d 6520 496e 7075  === Extreme Inpu
+    00000010: 7420 5465 7374 7320 3d3d 3d20 0a3d 3d3d  t Tests === .===
+    00000020: 2056 6572 7920 4c61 7267 6520 4e75 6d62   Very Large Numb
+    00000030: 6572 2054 6573 7473 203d 3d3d 200a 4c61  er Tests === .La
+    00000040: 7267 6520 6e75 6d62 6572 206f 7065 7261  rge number opera
+    00000050: 7469 6f6e 733a 200a 4c61 7267 6531 3a20  tions: .Large1: 
+    00000060: 3939 3939 3939 200a 4c61 7267 6532 3a20  999999 .Large2: 
+    00000070: 3838 3838 3838 200a 4c61 7267 6533 3a20  888888 .Large3: 
+    00000080: 3737 3737 3737 200a 4c61 7267 6531 202b  777777 .Large1 +
+    00000090: 204c 6172 6765 323a 2031 3838 3838 3837   Large2: 1888887
+    000000a0: 200a 4c61 7267 6531 202d 204c 6172 6765   .Large1 - Large
+    000000b0: 323a 2031 3131 3131 3120 0a4c 6172 6765  2: 111111 .Large
+    000000c0: 3120 6162 733a 2039 3939 3939 3920 0a4c  1 abs: 999999 .L
+    000000d0: 6172 6765 2061 6363 756d 756c 6174 696f  arge accumulatio
+    000000e0: 6e3a 2032 3636 3636 3634 200a 3d3d 3d20  n: 2666664 .=== 
+    000000f0: 5665 7279 204c 6f6e 6720 5374 7269 6e67  Very Long String
+    00000100: 2054 6573 7473 203d 3d3d 200a 4669 6e61   Tests === .Fina
+    00000110: 6c20 6c6f 6e67 2073 7472 696e 6720 6c65  l long string le
+    00000120: 6e67 7468 3a20 3234 200a 5570 7065 7220  ngth: 24 .Upper 
+    00000130: 7665 7273 696f 6e20 6c65 6e67 7468 3a20  version length: 
+    00000140: 3234 200a 4c6f 7765 7220 7665 7273 696f  24 .Lower versio
+    00000150: 6e20 6c65 6e67 7468 3a20 3234 200a 3d3d  n length: 24 .==
+    00000160: 3d20 5665 7279 204c 6172 6765 2041 7272  = Very Large Arr
+    00000170: 6179 2054 6573 7473 203d 3d3d 200a 4172  ay Tests === .Ar
+    00000180: 7261 7920 6c65 6e67 7468 3a20 3520 0a41  ray length: 5 .A
+    00000190: 7272 6179 2073 756d 3a20 3535 3030 200a  rray sum: 5500 .
+    000001a0: 4172 7261 7920 6d61 783a 2031 3030 200a  Array max: 100 .
+    000001b0: 4172 7261 7920 6d69 6e3a 2031 3030 200a  Array min: 100 .
+    000001c0: 3d3d 3d20 4578 7472 656d 6520 436f 6d70  === Extreme Comp
+    000001d0: 7574 6174 696f 6e20 5465 7374 7320 3d3d  utation Tests ==
+    000001e0: 3d20 0a43 6f6d 7075 7461 7469 6f6e 2072  = .Computation r
+    000001f0: 6573 756c 743a 2032 3735 200a 4176 6572  esult: 275 .Aver
+    00000200: 6167 6520 7065 7220 6379 636c 653a 2039  age per cycle: 9
+    00000210: 3120 0a3d 3d3d 204d 6978 6564 2045 7874  1 .=== Mixed Ext
+    00000220: 7265 6d65 204f 7065 7261 7469 6f6e 7320  reme Operations 
+    00000230: 3d3d 3d20 0a46 696e 616c 202d 206e 756d  === .Final - num
+    00000240: 3a20 3233 3435 3637 2073 7472 5f6c 656e  : 234567 str_len
+    00000250: 3a20 3234 2061 7272 5f6c 656e 3a20 3520  : 24 arr_len: 5 
+    00000260: 0a4d 6978 6564 2065 7874 7265 6d65 206f  .Mixed extreme o
+    00000270: 7065 7261 7469 6f6e 7320 636f 6d70 6c65  perations comple
+    00000280: 7465 6420 0a41 6c6c 2065 7874 7265 6d65  ted .All extreme
+    00000290: 2069 6e70 7574 2074 6573 7473 2063 6f6d   input tests com
+    000002a0: 706c 6574 6564 20                        pleted 
+
+  [36mCompiled HEX (exit: 0):[0m
+    00000000: 3d3d 3d20 4578 7472 656d 6520 496e 7075  === Extreme Inpu
+    00000010: 7420 5465 7374 7320 3d3d 3d0a 3d3d 3d20  t Tests ===.=== 
+    00000020: 5665 7279 204c 6172 6765 204e 756d 6265  Very Large Numbe
+    00000030: 7220 5465 7374 7320 3d3d 3d0a 4c61 7267  r Tests ===.Larg
+    00000040: 6520 6e75 6d62 6572 206f 7065 7261 7469  e number operati
+    00000050: 6f6e 733a 0a4c 6172 6765 313a 2039 3939  ons:.Large1: 999
+    00000060: 3939 390a 4c61 7267 6532 3a20 3838 3838  999.Large2: 8888
+    00000070: 3838 0a4c 6172 6765 333a 2037 3737 3737  88.Large3: 77777
+    00000080: 370a 4c61 7267 6531 202b 204c 6172 6765  7.Large1 + Large
+    00000090: 323a 2031 3838 3838 3837 0a4c 6172 6765  2: 1888887.Large
+    000000a0: 3120 2d20 4c61 7267 6532 3a20 3131 3131  1 - Large2: 1111
+    000000b0: 3131 0a4c 6172 6765 3120 6162 733a 2039  11.Large1 abs: 9
+    000000c0: 3939 3939 390a 4c61 7267 6520 6163 6375  99999.Large accu
+    000000d0: 6d75 6c61 7469 6f6e 3a20 3236 3636 3636  mulation: 266666
+    000000e0: 340a 3d3d 3d20 5665 7279 204c 6f6e 6720  4.=== Very Long 
+    000000f0: 5374 7269 6e67 2054 6573 7473 203d 3d3d  String Tests ===
+    00000100: 0a46 696e 616c 206c 6f6e 6720 7374 7269  .Final long stri
+    00000110: 6e67 206c 656e 6774 683a 2032 340a 5570  ng length: 24.Up
+    00000120: 7065 7220 7665 7273 696f 6e20 6c65 6e67  per version leng
+    00000130: 7468 3a20 3234 0a4c 6f77 6572 2076 6572  th: 24.Lower ver
+    00000140: 7369 6f6e 206c 656e 6774 683a 2032 340a  sion length: 24.
+    00000150: 3d3d 3d20 5665 7279 204c 6172 6765 2041  === Very Large A
+    00000160: 7272 6179 2054 6573 7473 203d 3d3d 0a41  rray Tests ===.A
+    00000170: 7272 6179 206c 656e 6774 683a 2035 0a41  rray length: 5.A
+    00000180: 7272 6179 2073 756d 3a20 3535 3030 0a41  rray sum: 5500.A
+    00000190: 7272 6179 206d 6178 3a20 3130 300a 4172  rray max: 100.Ar
+    000001a0: 7261 7920 6d69 6e3a 2031 3030 0a3d 3d3d  ray min: 100.===
+    000001b0: 2045 7874 7265 6d65 2043 6f6d 7075 7461   Extreme Computa
+    000001c0: 7469 6f6e 2054 6573 7473 203d 3d3d 0a43  tion Tests ===.C
+    000001d0: 6f6d 7075 7461 7469 6f6e 2072 6573 756c  omputation resul
+    000001e0: 743a 2032 3735 0a41 7665 7261 6765 2070  t: 275.Average p
+    000001f0: 6572 2063 7963 6c65 3a20 3931 0a3d 3d3d  er cycle: 91.===
+    00000200: 204d 6978 6564 2045 7874 7265 6d65 204f   Mixed Extreme O
+    00000210: 7065 7261 7469 6f6e 7320 3d3d 3d0a 4669  perations ===.Fi
+    00000220: 6e61 6c20 2d20 6e75 6d3a 2032 3334 3536  nal - num: 23456
+    00000230: 3720 7374 725f 6c65 6e3a 2032 3120 6172  7 str_len: 21 ar
+    00000240: 725f 6c65 6e3a 2033 0a4d 6978 6564 2065  r_len: 3.Mixed e
+    00000250: 7874 7265 6d65 206f 7065 7261 7469 6f6e  xtreme operation
+    00000260: 7320 636f 6d70 6c65 7465 640a 416c 6c20  s completed.All 
+    00000270: 6578 7472 656d 6520 696e 7075 7420 7465  extreme input te
+    00000280: 7374 7320 636f 6d70 6c65 7465 64         sts completed
+
+---
+[1m[27/107] Testing: edge_cases/02_simple_boundary_test.csd[0m
+  Result: [31mFAIL (OUTPUT_MISMATCH)[0m
+  [36mInterpreter (exit: 0):[0m
+    === Simple Boundary Test === 
+    Testing zero values... 
+    Zero: 0 
+    Zero abs: 0 
+    Testing negative values... 
+    Negative: -100 
+    Negative abs: 100 
+    Testing large values... 
+    Large: 999999 
+    Large abs: 999999 
+    Testing empty strings... 
+    Empty string length: 24 
+    Testing single characters... 
+    Single char: x 
+    Single length: 24 
+    Testing edge arithmetic... 
+    Zero + 1 = 1 
+    Zero * 999 = 0 
+    1 - 1 = 0 
+    Testing boundary conditions... 
+    Zero boundary detected 
+    Negative boundary detected 
+    Large value boundary detected 
+    Simple boundary test completed 
+
+  [36mCompiled (exit: 31):[0m
+    === Simple Boundary Test ===
+    Testing zero values...
+    Zero: 0
+    Zero abs: 0
+    Testing negative values...
+    Negative: -100
+    Negative abs: 100
+    Testing large values...
+    Large: 999999
+    Large abs: 999999
+    Testing empty strings...
+    Empty string length: 0
+    Testing single characters...
+    Single char: x
+    Single length: 1
+    Testing edge arithmetic...
+    Zero + 1 = 1
+    Zero * 999 = 0
+    1 - 1 = 0
+    Testing boundary conditions...
+    Zero boundary detected
+    Negative boundary detected
+    Large value boundary detected
+    Simple boundary test completed
+
+---
+[1m[28/107] Testing: edge_cases/03_corrected_boundary_test.csd[0m
+  Result: [31mFAIL (OUTPUT_MISMATCH)[0m
+  [36mInterpreter (exit: 0):[0m
+    === Corrected Boundary Test === 
+    Testing zero values... 
+    Zero: 0 
+    Zero abs: 0 
+    Testing negative values... 
+    Negative: -100 
+    Negative abs: 100 
+    Testing large values... 
+    Large: 999999 
+    Large abs: 999999 
+    Testing empty strings... 
+    Empty string length: 24 
+    Testing single characters... 
+    Single char: x 
+    Single length: 24 
+    Testing edge arithmetic... 
+    Zero + 1 = 1 
+    Zero * 999 = 0 
+    1 - 1 = 0 
+    Testing boundary loops... 
+    Boundary loop iteration: 0 
+    Boundary loop iteration: 1 
+    Boundary loop iteration: 2 
+    Testing boundary conditions... 
+    Zero boundary detected 
+    Negative boundary detected 
+    Large value boundary detected 
+    Corrected boundary test completed 
+
+  [36mCompiled (exit: 34):[0m
+    === Corrected Boundary Test ===
+    Testing zero values...
+    Zero: 0
+    Zero abs: 0
+    Testing negative values...
+    Negative: -100
+    Negative abs: 100
+    Testing large values...
+    Large: 999999
+    Large abs: 999999
+    Testing empty strings...
+    Empty string length: 0
+    Testing single characters...
+    Single char: x
+    Single length: 1
+    Testing edge arithmetic...
+    Zero + 1 = 1
+    Zero * 999 = 0
+    1 - 1 = 0
+    Testing boundary loops...
+    Boundary loop iteration: 0
+    Boundary loop iteration: 1
+    Boundary loop iteration: 2
+    Testing boundary conditions...
+    Zero boundary detected
+    Negative boundary detected
+    Large value boundary detected
+    Corrected boundary test completed
+
+---
+[1m[29/107] Testing: edge_cases/edge_case_boundary_values.csd[0m
+  Result: [32mPASS[0m
+---
+[1m[30/107] Testing: edge_cases/edge_case_complex_expressions.csd[0m
+  Result: [31mCOMPILE ERROR (interpreted worked)[0m
+  [36mInterpreter (exit: 0):[0m
+    25 
+    13 
+    based 
+    3 
+    Complex condition passed 
+    5.07143 
+    based 
+
+  [36mCompiled (exit: 1):[0m
+    Compilation failed
+
+---
+[1m[31/107] Testing: edge_cases/edge_case_operator_precedence.csd[0m
+  Result: [31mCOMPILE ERROR (interpreted worked)[0m
+  [36mInterpreter (exit: 0):[0m
+    (no output)
+
+  [36mCompiled (exit: 0):[0m
+    (no output)
+
+  [33mHEX COMPARISON (to identify differences):[0m
+  [36mInterpreter HEX (exit: 0):[0m
+    (no output)
+
+  [36mCompiled HEX (exit: 0):[0m
+    (no output)
+
+---
+[1m[32/107] Testing: errors/01_division_by_zero.csd[0m
+  Result: [33mFAIL (different error messages)[0m
+  [36mInterpreter (exit: 1):[0m
+    === Division by Zero Test === 
+    Normal division: 
+    5 
+    Attempting division by zero: 
+    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/errors/01_division_by_zero.csd: error.DivisionByZero
+    error: DivisionByZero
+                            return InterpreterError.DivisionByZero;
+                            ^
+                .Binary => |bin| return try self.evaluateBinary(bin),
+                                        ^
+                            const arg_value = try self.evaluateExpression(arg_ptr.*);
+                                              ^
+                    _ = try self.evaluateExpression(expr);
+                        ^
+                if (try self.executeStatement(stmt.*)) {
+                    ^
+                _ = try self.callFunction(main_func, &[_]Value{});
+                    ^
+            return self.execute(program);
+            ^
+            return err;
+            ^
+            try interpretSource(allocator, source, filename.?, verbose);
+            ^
+
+  [36mCompiled (exit: 1):[0m
+    === Division by Zero Test ===
+    Normal division:
+    5
+    Attempting division by zero:
+    Division by zero
+
+---
+[1m[33/107] Testing: errors/02_undefined_variable.csd[0m
+  Result: [33mFAIL (different error messages)[0m
+  [36mInterpreter (exit: 1):[0m
+    === Undefined Variable Test === 
+    ERROR: No CURSED stdlib implementation found for module 'undefined_var': error.ModuleNotFound
+    SELF-HOSTING: Please implement stdlib/undefined_var/mod.csd for true self-hosting
+    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/errors/02_undefined_variable.csd: error.UndefinedVariable
+    error: UndefinedVariable
+            return InterpreterError.UndefinedVariable;
+            ^
+                        return InterpreterError.UndefinedVariable;
+                        ^
+                            const arg_value = try self.evaluateExpression(arg_ptr.*);
+                                              ^
+                    _ = try self.evaluateExpression(expr);
+                        ^
+                if (try self.executeStatement(stmt.*)) {
+                    ^
+                _ = try self.callFunction(main_func, &[_]Value{});
+                    ^
+            return self.execute(program);
+            ^
+            return err;
+            ^
+            try interpretSource(allocator, source, filename.?, verbose);
+            ^
+
+  [36mCompiled (exit: 1):[0m
+    Compilation failed
+
+---
+[1m[34/107] Testing: errors/03_error_handling_basic.csd[0m
+  Result: [33mFAIL (different error messages)[0m
+  [36mInterpreter (exit: 134):[0m
+    === Error Handling Test Suite === 
+    === Basic Error Handling Tests === 
+    Safe division 10/2 = 5 
+    Error: Division by zero prevented 
+    Safe division 10/0 result: -1 
+    Safe division 0/5 = 0 
+    Safe division -10/2 = -5 
+    === Input Validation Tests === 
+    DEBUG: Checking for global builtin function: len
+    DEBUG: Found global builtin function: len
+    DEBUG: builtinLen called with 1 args
+    DEBUG: builtinLen - Value type: Array
+    DEBUG: builtinLen - Array length: 6
+    Unsupported expression type in interpreter: ArrayAccess
+    thread 2365137 panic: integer overflow
+                return InterpreterError.TypeMismatch;
+                ^
+                .Binary => |bin| return try self.evaluateBinary(bin),
+                                        ^
+            const condition = try self.evaluateExpression(condition_expr.*);
+                              ^
+                    if (try self.executeIfStatement(if_stmt)) {
+                        ^
+                if (try self.executeStatement(stmt.*)) {
+                    ^
+        return @as(cast_target, @ptrCast(slice))[0 .. slice.len * @sizeOf(std.meta.Elem(Slice))];
+                                                                ^
+        const bytes = mem.sliceAsBytes(memory);
+                                      ^
+                gpa.free(self.allocatedSlice());
+                        ^
+                            defer args.deinit(self.allocator);
+                                             ^
+                .Call => |call| return try self.evaluateCall(call),
+                                                            ^
+                try self.evaluateExpression(initializer_expr.*)
+                                           ^
+                    try self.executeLetStatement(let);
+                                                ^
+                    if (try self.executeStatement(stmt.*)) {
+                                                 ^
+                    if (try self.executeForStatement(for_stmt)) {
+                                                    ^
+                if (try self.executeStatement(stmt.*)) {
+                                             ^
+                            return try self.callFunction(func, args.items);
+                                                        ^
+                .Call => |call| return try self.evaluateCall(call),
+                                                            ^
+                    _ = try self.evaluateExpression(expr);
+                                                   ^
+                if (try self.executeStatement(stmt.*)) {
+                                             ^
+                _ = try self.callFunction(main_func, &[_]Value{});
+                                         ^
+            return self.execute(program);
+                               ^
+        cursed_interpreter.interpret(program) catch |err| {
+                                    ^
+            try interpretSource(allocator, source, filename.?, verbose);
+                               ^
+                const result = root.main() catch |err| {
+                                        ^
+    ../sysdeps/nptl/libc_start_call_main.h:58:16: 0x78585822a1c9 in __libc_start_call_main (../sysdeps/x86/libc-start.c)
+    ../csu/libc-start.c:360:3: 0x78585822a28a in __libc_start_main_impl (../sysdeps/x86/libc-start.c)
+    ???:?:?: 0x1474c64 in ??? (???)
+    ???:?:?: 0x0 in ??? (???)
+
+  [36mCompiled (exit: 1):[0m
+    Compilation failed
+
+---
+[1m[35/107] Testing: errors/03_error_handling_simple.csd[0m
+  Result: [31mCOMPILE ERROR (interpreted worked)[0m
+  [36mInterpreter (exit: 0):[0m
+    (no output)
+
+  [36mCompiled (exit: 0):[0m
+    (no output)
+
+  [33mHEX COMPARISON (to identify differences):[0m
+  [36mInterpreter HEX (exit: 0):[0m
+    (no output)
+
+  [36mCompiled HEX (exit: 0):[0m
+    (no output)
+
+---
+[1m[36/107] Testing: errors/03_error_handling_yikes_fam_shook.csd[0m
+  Result: [33mFAIL (different error messages)[0m
+  [36mInterpreter (exit: 1):[0m
+    DEBUG: Checking for global builtin function: divide_with_error
+    DEBUG: Global builtin function divide_with_error not found
+    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/errors/03_error_handling_yikes_fam_shook.csd: error.UndefinedFunction
+    error: UndefinedFunction
+                        return InterpreterError.UndefinedFunction;
+                        ^
+                .Call => |call| return try self.evaluateCall(call),
+                                       ^
+                try self.evaluateExpression(initializer_expr.*)
+                ^
+                    try self.executeLetStatement(let);
+                    ^
+                    _ = try self.executeStatement(stmt.*);
+                        ^
+            return self.execute(program);
+            ^
+            return err;
+            ^
+            try interpretSource(allocator, source, filename.?, verbose);
+            ^
+
+  [36mCompiled (exit: 134):[0m
+    Compilation failed
+
+---
+[1m[37/107] Testing: errors/04_boundary_error_conditions.csd[0m
+  Result: [31mCOMPILE ERROR (interpreted worked)[0m
+  [36mInterpreter (exit: 0):[0m
+    All boundary error condition tests completed 
+
+  [36mCompiled (exit: 134):[0m
+    Compilation failed
+
+---
+[1m[38/107] Testing: errors/04_panic_recovery.csd[0m
+  Result: [31mFAIL (OUTPUT_MISMATCH)[0m
+  [36mInterpreter (exit: 0):[0m
+    Outer panic handled: cap 
+    Panic recovery tests completed successfully 
+
+  [36mCompiled (exit: 0):[0m
+    Panic recovery tests completed successfully
+
+  [33mHEX COMPARISON (to identify differences):[0m
+  [36mInterpreter HEX (exit: 0):[0m
+    00000000: 4f75 7465 7220 7061 6e69 6320 6861 6e64  Outer panic hand
+    00000010: 6c65 643a 2063 6170 200a 5061 6e69 6320  led: cap .Panic 
+    00000020: 7265 636f 7665 7279 2074 6573 7473 2063  recovery tests c
+    00000030: 6f6d 706c 6574 6564 2073 7563 6365 7373  ompleted success
+    00000040: 6675 6c6c 7920                           fully 
+
+  [36mCompiled HEX (exit: 0):[0m
+    00000000: 5061 6e69 6320 7265 636f 7665 7279 2074  Panic recovery t
+    00000010: 6573 7473 2063 6f6d 706c 6574 6564 2073  ests completed s
+    00000020: 7563 6365 7373 6675 6c6c 79              uccessfully
+
+---
+[1m[39/107] Testing: errors/05_error_handling_fixed.csd[0m
+  Result: [33mPASS (EXIT_CODE_ISSUE: exit 30, output correct)[0m
+---
+[1m[40/107] Testing: feature/feature_comprehensive_syntax.csd[0m
+  Result: [33mFAIL (different error messages)[0m
+  [36mInterpreter (exit: 1):[0m
+    Initial values: 
+    Testing comprehensive syntax 
+    ERROR: No CURSED stdlib implementation found for module 'number': error.ModuleNotFound
+    SELF-HOSTING: Please implement stdlib/number/mod.csd for true self-hosting
+    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/feature/feature_comprehensive_syntax.csd: error.UndefinedVariable
+    error: UndefinedVariable
+            return InterpreterError.UndefinedVariable;
+            ^
+                        return InterpreterError.UndefinedVariable;
+                        ^
+                            const arg_value = try self.evaluateExpression(arg_ptr.*);
+                                              ^
+                    _ = try self.evaluateExpression(expr);
+                        ^
+                    _ = try self.executeStatement(stmt.*);
+                        ^
+            return self.execute(program);
+            ^
+            return err;
+            ^
+            try interpretSource(allocator, source, filename.?, verbose);
+            ^
+
+  [36mCompiled (exit: 1):[0m
+    Compilation failed
+
+---
+[1m[41/107] Testing: features/feature_complete_stdlib_demo.csd[0m
+  Result: [33mFAIL (different error messages)[0m
+  [36mInterpreter (exit: 1):[0m
+    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/features/feature_complete_stdlib_demo.csd: error.UndefinedFunction
+    error: UndefinedFunction
+                        return InterpreterError.UndefinedFunction;
+                        ^
+                    return try self.evaluateMethodCall(object_as_member, method_call.arguments.items);
+                           ^
+                    _ = try self.evaluateExpression(expr);
+                        ^
+                if (try self.executeStatement(stmt.*)) {
+                    ^
+                _ = try self.callFunction(main_func, &[_]Value{});
+                    ^
+            return self.execute(program);
+            ^
+            return err;
+            ^
+            try interpretSource(allocator, source, filename.?, verbose);
+            ^
+
+  [36mCompiled (exit: 1):[0m
+    Compilation failed
+
+---
+[1m[42/107] Testing: features/feature_control_flow_simple.csd[0m
+  Result: [32mPASS[0m
+---
+[1m[43/107] Testing: features/feature_function_definitions.csd[0m
+grep: (standard input): binary file matches
+  Result: [31mCOMPILE ERROR (interpreted worked)[0m
+  [36mInterpreter (exit: 0):[0m
+    Hello from CURSED! 
+    Addition result: {} 8 
+    Is valid: {} based 
+
+  [36mCompiled (exit: 1):[0m
+    Compilation failed
+
+---
+[1m[44/107] Testing: features/feature_stdlib_imports.csd[0m
+  Result: [33mFAIL (different error messages)[0m
+  [36mInterpreter (exit: 1):[0m
+    === Testing Multiple Stdlib Imports === 
+    Testing vibez output 
+    mathz.abs_normie({}) = {} -15 15 
+    mathz.max({}, {}) = {} -15 25 25 
+    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/features/feature_stdlib_imports.csd: error.UndefinedFunction
+    error: UndefinedFunction
+                        return InterpreterError.UndefinedFunction;
+                        ^
+                    return try self.evaluateMethodCall(object_as_member, method_call.arguments.items);
+                           ^
+                try self.evaluateExpression(initializer_expr.*)
+                ^
+                    try self.executeLetStatement(let);
+                    ^
+                if (try self.executeStatement(stmt.*)) {
+                    ^
+                _ = try self.callFunction(main_func, &[_]Value{});
+                    ^
+            return self.execute(program);
+            ^
+            return err;
+            ^
+            try interpretSource(allocator, source, filename.?, verbose);
+            ^
+
+  [36mCompiled (exit: 134):[0m
+    Compilation failed
+
+---
+[1m[45/107] Testing: features/feature_stdlib_integration.csd[0m
+  Result: [31mCOMPILE ERROR (interpreted worked)[0m
+  [36mInterpreter (exit: 0):[0m
+    === Stdlib Test === 
+    abs(-42): 
+    42 
+    add(3, 4): 
+    7 
+    === Test Complete === 
+
+  [36mCompiled (exit: 134):[0m
+    Compilation failed
+
+---
+[1m[46/107] Testing: functions/01_simple_function.csd[0m
+  Result: [32mPASS[0m
+---
+[1m[47/107] Testing: functions/02_recursive_function.csd[0m
+  Result: [32mPASS[0m
+---
+[1m[48/107] Testing: functions/03_nested_function_calls.csd[0m
+  Result: [32mPASS[0m
+---
+[1m[49/107] Testing: functions/04_function_parameters.csd[0m
+  Result: [32mPASS[0m
+---
+[1m[50/107] Testing: functions/feature_function_calls.csd[0m
+  Result: [31mCOMPILE ERROR (interpreted worked)[0m
+  [36mInterpreter (exit: 0):[0m
+    === Function Call Test === 
+    Sum of 7 and 13: 
+    20 
+    Function call successful 
+    Is 25 positive? 
+    based 
+    Is -5 positive? 
+    cap 
+    Function result in expression: 
+    14 
+    Mixed function calls result: 
+    5 
+    === Function Test Complete === 
+
+  [36mCompiled (exit: 1):[0m
+    Compilation failed
+
+---
+[1m[51/107] Testing: functions/functions_parameter_return.csd[0m
+  Result: [31mCOMPILE ERROR (interpreted worked)[0m
+  [36mInterpreter (exit: 0):[0m
+    42 
+    42 
+    30 
+    based 
+    12 
+
+  [36mCompiled (exit: 1):[0m
+    Compilation failed
+
+---
+[1m[52/107] Testing: memory/01_allocation_patterns.csd[0m
