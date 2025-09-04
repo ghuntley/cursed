@@ -473,6 +473,9 @@ pub const LLVMIRPipeline = struct {
             .Return => |return_stmt| {
                 try self.generateReturnStatement(return_stmt);
             },
+            .ShortDeclaration => |short_decl| {
+                try self.generateShortDeclarationStatement(short_decl);
+            },
             else => {
                 print("⚠️ Unhandled statement type in IR generation: {s}\n", .{@tagName(stmt)});
             },
@@ -1011,6 +1014,9 @@ pub const LLVMIRPipeline = struct {
                         try self.array_lengths.put(safe_name, @intCast(array_length));
                         // print("🔍 DEBUG: Tracked array assignment '{s}' with {} elements\n", .{safe_name, array_length});
                     }
+                    // Special case: assignment from append call result  
+                    // Note: The length tracking was already updated in generateAppendCall
+                    // so no additional tracking needed here for append results
                 } else {
                     print("❌ Undefined variable in assignment: {s}\n", .{var_name});
                     return LLVMIRError.UndefinedVariable;
@@ -1020,6 +1026,83 @@ pub const LLVMIRPipeline = struct {
                 print("❌ Unsupported assignment target\n", .{});
                 return LLVMIRError.UndefinedVariable;
             }
+        }
+    }
+    
+    /// Generate Short Declaration statement (i := value syntax)
+    fn generateShortDeclarationStatement(self: *LLVMIRPipeline, short_decl: ast.ShortDeclarationStatement) !void {
+        // Short declaration is like: i := 0, name := "hello"
+        // It declares variables and assigns initial values in one statement
+        
+        if (short_decl.names.items.len != short_decl.values.items.len) {
+            print("❌ Mismatched names and values in short declaration\n", .{});
+            return LLVMIRError.UndefinedVariable;
+        }
+        
+        // Process each name-value pair
+        for (short_decl.names.items, short_decl.values.items) |name, value_expr| {
+            // Generate the initial value first to determine type
+            const init_value = try self.generateExpression(value_expr.*);
+            const llvm_type = c.LLVMTypeOf(init_value);
+            
+            // Create variable in current scope
+            if (self.current_function) |func| {
+                // Inside a function - create alloca in entry block
+                const var_name_z = try self.arena.allocator().dupeZ(u8, name);
+                const alloca = self.buildEntryAlloca(func, llvm_type, var_name_z.ptr);
+                
+                // Store the initial value
+                _ = c.LLVMBuildStore(self.builder, init_value, alloca);
+                
+                // Register variable for future access
+                const safe_name = try self.arena.allocator().dupe(u8, name);
+                try self.variables.put(safe_name, alloca);
+                try self.variable_types.put(safe_name, llvm_type);
+            } else {
+                // Global scope - create global variable
+                const var_name_z = try self.arena.allocator().dupeZ(u8, name);
+                const global = c.LLVMAddGlobal(self.module, llvm_type, var_name_z.ptr);
+                c.LLVMSetInitializer(global, init_value);
+                
+                const safe_name = try self.arena.allocator().dupe(u8, name);
+                try self.variables.put(safe_name, global);
+                try self.variable_types.put(safe_name, llvm_type);
+            }
+        }
+    }
+    
+    /// Generate increment/decrement operations (++/-- operators)
+    fn generateIncrementDecrement(self: *LLVMIRPipeline, operand_expr: ast.Expression, operator: []const u8) !c.LLVMValueRef {
+        // Increment/decrement can only be applied to variables (identifiers)
+        switch (operand_expr) {
+            .Identifier => |var_name| {
+                if (self.variables.get(var_name)) |var_ref| {
+                    // Load current value
+                    const current_value = c.LLVMBuildLoad2(self.builder, 
+                        self.variable_types.get(var_name) orelse c.LLVMInt32TypeInContext(self.context), 
+                        var_ref, "load_for_inc");
+                    
+                    // Create increment/decrement value
+                    const one = c.LLVMConstInt(c.LLVMTypeOf(current_value), 1, 0);
+                    const new_value = if (std.mem.eql(u8, operator, "++"))
+                        c.LLVMBuildAdd(self.builder, current_value, one, "inc")
+                    else
+                        c.LLVMBuildSub(self.builder, current_value, one, "dec");
+                    
+                    // Store new value back to variable
+                    _ = c.LLVMBuildStore(self.builder, new_value, var_ref);
+                    
+                    // Return the new value
+                    return new_value;
+                } else {
+                    print("❌ Undefined variable in increment/decrement: {s}\n", .{var_name});
+                    return error.UndefinedVariable;
+                }
+            },
+            else => {
+                print("❌ Increment/decrement can only be applied to variables\n", .{});
+                return error.UnsupportedOperator;
+            },
         }
     }
     
@@ -1420,6 +1503,9 @@ pub const LLVMIRPipeline = struct {
                     }
                 } else if (std.mem.eql(u8, unary.operator, "!")) {
                     return c.LLVMBuildNot(self.builder, operand_val, "not");
+                } else if (std.mem.eql(u8, unary.operator, "++") or std.mem.eql(u8, unary.operator, "--")) {
+                    // Handle increment/decrement operators
+                    return try self.generateIncrementDecrement(unary.operand.*, unary.operator);
                 } else {
                     print("❌ Unsupported unary operator: {s}\n", .{unary.operator});
                     return error.UnsupportedOperator;
@@ -2683,29 +2769,29 @@ pub const LLVMIRPipeline = struct {
 
     /// Generate append function call for arrays
     fn generateAppendCall(self: *LLVMIRPipeline, array_expr: ast.Expression, element_expr: ast.Expression) !c.LLVMValueRef {
-        // print("🔍 DEBUG: Generating append call\n", .{});
+        // This is a simplified implementation that focuses on length tracking
+        // for interpreter/compiler parity. In a full implementation, this would
+        // need to handle dynamic memory allocation and array resizing.
         
-        // Evaluate the array expression
-        const array_val = try self.generateExpression(array_expr);
-        
-        // Evaluate the element expression  
+        // Evaluate the element expression (for side effects)
         const element_val = try self.generateExpression(element_expr);
-        
-        // print("🔍 DEBUG: Array and element values generated\n", .{});
+        _ = element_val; // Acknowledge we have the element value
         
         // Track array length if we can identify the variable name
         if (array_expr == .Identifier) {
             const var_name = array_expr.Identifier;
             if (self.array_lengths.getPtr(var_name)) |length_ptr| {
                 length_ptr.* += 1;
-                // print("🔍 DEBUG: Incremented array '{s}' length to {}\n", .{var_name, length_ptr.*});
+            } else {
+                // Initialize array length if not tracked yet
+                const safe_name = try self.arena.allocator().dupe(u8, var_name);
+                try self.array_lengths.put(safe_name, 1);
             }
         }
         
-        _ = element_val; // We don't modify the array structure for this fix
-        
-        // print("✅ DEBUG: Append call generated (length tracked)\n", .{});
-        return array_val;
+        // Return the array expression unchanged (simplified implementation)
+        // Note: In a full implementation, this would return a new array with the appended element
+        return try self.generateExpression(array_expr);
     }
 
     /// Generate len function call for arrays
