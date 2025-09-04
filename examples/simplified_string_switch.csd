@@ -2,7 +2,7 @@ vibe main
 
 yeet "vibez"
 
-slay main() {
+slay main_character() {
   sus test := "Hello"
 
   switch test {

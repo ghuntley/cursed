@@ -10,7 +10,7 @@ yeet stdlib.print as print
 yeet stdlib.string as str
 
 fr fr/ slay Main function demonstrating asymmetric crypto
-slay main() {
+slay main_character() {
     print("🔐 CURSED Asymmetric Crypto Examples - let's get secure bestie!")
     
     // Demonstrate RSA operations

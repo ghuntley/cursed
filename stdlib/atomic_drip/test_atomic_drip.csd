@@ -386,7 +386,7 @@ slay test_weak_cas() {
 }
 
 fr fr Main test function
-slay main() {
+slay main_character() {
     vibez.spill("🧪 Running CURSED Hardware Atomic Operations Module Tests")
     vibez.spill("===========================================================") fr fr Basic atomic operations tests
     test_atomic_i32_basic()

@@ -6,7 +6,7 @@ fr fr/ of the CURSED programming language standard library.
 yeet "stdlib::net"
 yeet "stdlib::io"
 
-slay main() -> Result<(), Error> {
+slay main_character() -> Result<(), Error> {
     println("🌐 CURSED Networking Showcase")?;
     println("==============================")?;
     

@@ -43,7 +43,7 @@ facts VERSION = "1.0.0";
 
 fr fr/ Main application entry point
 fr fr/ Demonstrates various CURSED language features
-slay main() {
+slay main_character() {
     sus person = Person {
         name: "Alice",
         age: 30,

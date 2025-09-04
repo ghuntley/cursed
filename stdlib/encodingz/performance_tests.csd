@@ -493,7 +493,7 @@ slay get_current_time_ms() drip {
 
 fr fr ===== MAIN PERFORMANCE TEST RUNNER =====
 
-slay main() {
+slay main_character() {
     vibez.spill("🚀 EncodingZ Performance Test Suite")
     vibez.spill("=" * 50)
     

@@ -191,7 +191,7 @@ fr fr ================================
 fr fr Main Test Runner
 fr fr ================================
 
-slay main() {
+slay main_character() {
     vibez.spill("Starting CURSED TestResult System Tests")
     vibez.spill("=========================================")
     

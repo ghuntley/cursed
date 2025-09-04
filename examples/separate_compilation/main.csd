@@ -3,7 +3,7 @@ vibe main;
 yeet "mathutils"
 yeet "stringutils"
 
-slay main() {
+slay main_character() {
     vibez.spill("=== CURSED Separate Compilation Demo ===")
     
     fr fr Test math utilities

@@ -1,6 +1,6 @@
 yeet "logging"
 
-slay main() {
+slay main_character() {
     vibez.spill("🚀 Starting CURSED Logging Module Tests")
     vibez.spill("")
     

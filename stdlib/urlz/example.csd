@@ -330,7 +330,7 @@ slay demo_batch_processing() {
 
 fr fr ===== MAIN DEMO FUNCTION =====
 
-slay main() drip {
+slay main_character() drip {
     vibez.spill("CURSED URL Parsing Package (urlz) - Example Usage")
     vibez.spill("=" * 60)
     vibez.spill("")

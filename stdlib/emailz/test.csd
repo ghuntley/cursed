@@ -1028,7 +1028,7 @@ slay run_all_emailz_tests() lit {
 }
 
 // Main test execution
-slay main() lit {
+slay main_character() lit {
     run_all_emailz_tests()
 }
 

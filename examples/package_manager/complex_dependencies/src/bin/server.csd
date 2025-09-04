@@ -3,7 +3,7 @@ vibe server
 yeet "../lib" as web_server_demo
 yeet "log_manager"
 
-slay main(args []tea) normie {
+slay main_character(args []tea) normie {
     // Initialize logging
     log_manager.init("info")
     

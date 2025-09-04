@@ -80,7 +80,7 @@ slay test_fallthrough(category normie) tea {
     damn status;
 }
 
-slay main() {
+slay main_character() {
     vibez.spill("=== Day of Week Test ===");
     sus day1 normie = 1;
     sus day3 normie = 3;

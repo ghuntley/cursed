@@ -3,7 +3,7 @@ fr fr Demonstrates the fundamentals of channel communication
 
 vibe main
 
-slay main() {
+slay main_character() {
     puts("=== CURSED Channel Hello World ===")
     
     // Create an unbuffered channel

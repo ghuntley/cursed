@@ -159,7 +159,7 @@ slay rate_limit_middleware(max_requests: numo, window_seconds: numo) {
     }
 }
 
-slay main() {
+slay main_character() {
     vibez.spill("Starting authenticated API server...")
     
     sus config = web_vibez.ServerConfig{

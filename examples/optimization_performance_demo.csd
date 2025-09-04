@@ -138,7 +138,7 @@ slay constant_demo() -> i32 {
 }
 
 fr fr Main function demonstrating all optimizations
-slay main() -> i32 {
+slay main_character() -> i32 {
     yeet("🔧 CURSED Advanced Optimization Demo");
     yeet("Testing various optimization passes...");
     

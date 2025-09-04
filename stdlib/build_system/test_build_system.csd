@@ -253,7 +253,7 @@ slay test_build_system_integration() { fr fr Create a minimal project structure
 }
 
 fr fr Main test runner
-slay main() {
+slay main_character() {
     test_create_build_config()
     test_parse_build_config()
     test_merge_configs()

@@ -276,7 +276,7 @@ slay test_performance_benchmarks() {
 }
 
 // Main test runner
-slay main() {
+slay main_character() {
     vibez.spill("🧪 CURSED Production Linter Test Suite")
     vibez.spill("=====================================\n")
     

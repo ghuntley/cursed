@@ -10,7 +10,7 @@ yeet "std::env"
 yeet "cursed_http"
 yeet "cursed_json"
 
-slay main() -> i32 {
+slay main_character() -> i32 {
     io::println("🔥 Welcome to My CURSED App! 🔥");
     io::println("This app was built with the CURSED build system no cap!");
     

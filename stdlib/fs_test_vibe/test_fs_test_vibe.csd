@@ -1,7 +1,7 @@
 yeet "testz"
 yeet "fs_test_vibe"
 
-slay main() {
+slay main_character() {
     test_start("fs_test_vibe Comprehensive Tests") fr fr Test filesystem initialization
     sus init_result lit = fs_test_vibe.test_fs_initialization()
     assert_true(init_result) fr fr Test file operations

@@ -1,7 +1,7 @@
 vibe main
 yeet "vibez"
 
-slay main() {
+slay main_character() {
     vibez.spill("Testing new array syntax")
     
     // Test basic array declaration with new syntax

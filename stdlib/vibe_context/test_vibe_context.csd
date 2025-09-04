@@ -351,7 +351,7 @@ slay test_multiple_vibes() {
 }
 
 fr fr Run all tests
-slay main() {
+slay main_character() {
     test_background_context()
     test_empty_context()
     test_cancellable_context()

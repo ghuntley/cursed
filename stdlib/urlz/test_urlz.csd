@@ -440,7 +440,7 @@ slay test_real_world_scenarios() {
 
 fr fr ===== MAIN TEST RUNNER =====
 
-slay main() drip {
+slay main_character() drip {
     testz.test_start("URL Parsing Package (urlz) Test Suite")
     
     fr fr URL Parsing Tests

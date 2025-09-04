@@ -37,7 +37,7 @@ slay test_basic_functionality() cringe {
     damn ""
 }
 
-slay main() cringe {
+slay main_character() cringe {
     test_basic_functionality()
     damn ""
 }

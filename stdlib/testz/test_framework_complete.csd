@@ -538,7 +538,7 @@ fr fr ================================
 fr fr Main Test Runner
 fr fr ================================
 
-slay main() {
+slay main_character() {
     vibez.spill("🧪 Starting CURSED Testing Framework - Complete Self-Contained Tests...")
     vibez.spill("")
     vibez.spill("This comprehensive test suite validates all core testing primitives")

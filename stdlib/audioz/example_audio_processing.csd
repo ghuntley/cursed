@@ -346,7 +346,7 @@ slay demo_performance_benchmarking() lit {
 
 // ===== MAIN DEMO FUNCTION =====
 
-slay main() normie {
+slay main_character() normie {
     vibez.print_header("CURSED AudioZ Professional Audio Processing Demo")
     
     // Check GPU acceleration availability

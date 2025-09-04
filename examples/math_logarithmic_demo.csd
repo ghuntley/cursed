@@ -3,7 +3,7 @@ fr fr Demo program showcasing comprehensive logarithmic and exponential function
 yeet "stdlib::math"
 yeet "stdlib::io"
 
-slay main() -> nil {
+slay main_character() -> nil {
     println("🧮 CURSED Logarithmic and Exponential Functions Demo")?;
     println("===================================================\n")?;
     

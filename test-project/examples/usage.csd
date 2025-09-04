@@ -1,6 +1,6 @@
 yeet "lib"
 
-slay main() {
+slay main_character() {
     vibez.spill("Library Usage Example")
     vibez.spill("===================")
     

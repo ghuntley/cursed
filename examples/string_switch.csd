@@ -29,7 +29,7 @@ slay format_date(txt day_name, i32 day, txt month, i32 year) txt {
     damn buffer;
 }
 
-slay main() normie {
+slay main_character() normie {
     txt days[7] = {"Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"};
     
     sus i = 0;

@@ -8,7 +8,7 @@ be_like Person squad {
     Active lit `json:"active"`
 }
 
-slay main() {
+slay main_character() {
     fr fr Create a test person
     sus person = Person{
         Name: "Alice Johnson",

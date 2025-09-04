@@ -410,7 +410,7 @@ slay setup_graceful_shutdown(server httpz.Server) {
 }
 
 // Main application function
-slay main() yikes<tea> {
+slay main_character() yikes<tea> {
     // Initialize logging
     logz.init({
         level: "info",

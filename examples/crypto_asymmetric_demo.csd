@@ -381,7 +381,7 @@ slay digital_certificate_example() {
     }
 }
 
-slay main() -> Result<(), Error> {
+slay main_character() -> Result<(), Error> {
     demonstrate_asymmetric_crypto()?
     secure_messaging_example()?
     digital_certificate_example()?

@@ -646,7 +646,7 @@ slay demonstrate_maintenance_operations() damn {
 }
 
 fr fr/ Main entry point
-slay main() damn {
+slay main_character() damn {
     periodt {
         demonstrate_sqlite_driver()?;
     } catch(err) {

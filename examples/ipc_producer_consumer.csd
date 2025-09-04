@@ -244,7 +244,7 @@ slay coordinator_process() -> Result<(), IpcError> {
     Ok(())
 }
 
-slay main() -> Result<(), IpcError> {
+slay main_character() -> Result<(), IpcError> {
     println("🎊 CURSED Producer-Consumer Pattern Demo")?;
     println("This demonstrates real-world IPC patterns with shared memory and semaphores")?;
     println("=" * 70)?;

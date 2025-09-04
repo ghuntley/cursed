@@ -7,7 +7,7 @@ fr fr Stdlib Integration Test - Basic Multi-module Usage
 fr fr Tests: Integration between vibez, mathz, and stringz modules
 fr fr Expected: Successful operations across all modules
 
-slay main() {
+slay main_character() {
     vibez.spill("=== Stdlib Integration Test ===")
     
     vibez.spill("Testing mathz operations...")

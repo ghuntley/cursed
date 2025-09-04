@@ -409,7 +409,7 @@ slay test_performance() {
 }
 
 // Run all tests
-slay main() {
+slay main_character() {
     vibez.spill("Running SortaFresh Module Tests...")
     
     test_sort_ints()

@@ -1,7 +1,7 @@
 fr fr Boolean conversion demonstration program for CURSED
 fr fr This example showcases comprehensive bool type conversions
 
-slay main() {
+slay main_character() {
     // Basic bool literals
     sus truthy = based;
     sus falsy = cap;

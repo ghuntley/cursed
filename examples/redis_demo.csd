@@ -8,7 +8,7 @@ yeet "stdlib::packages::db_nosql::redis"
 yeet "stdlib::io"
 
 fr fr/ slay Main demo function - showcase Redis capabilities
-async slay main() {
+async slay main_character() {
     println("🔥 CURSED Redis Demo - Let's Cache Everything Bestie! 🔥")?;
     
     // Create Redis driver and connect

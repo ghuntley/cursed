@@ -1,5 +1,5 @@
 # Simple Arithmetic Benchmark
-slay main() drip {
+slay main_character() drip {
     sus iterations drip = 100000
     sus result drip = 0
     

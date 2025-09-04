@@ -560,7 +560,7 @@ fr fr ================================
 fr fr Main Test Runner Entry Point
 fr fr ================================
 
-slay main() {
+slay main_character() {
     vibez.spill("🚀 CURSED Test Runner v5.0 - Production Ready")
     vibez.spill("===============================================")
     vibez.spill("")

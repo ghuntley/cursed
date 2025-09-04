@@ -1,6 +1,6 @@
 fr fr Test file for nested loop control flow issues
 
-slay main() normie {
+slay main_character() normie {
     sus i = 0;
     sus j = 0;
     sus sum = 0;

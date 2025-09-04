@@ -199,6 +199,6 @@ slay run_comprehensive_benchmarks() {
     vibez.spill("  Peak Memory: " + string.from_int(memory_stats.peak_memory) + " bytes")
 }
 
-slay main() {
+slay main_character() {
     run_comprehensive_benchmarks()
 }

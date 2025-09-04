@@ -292,7 +292,7 @@ fr fr ================================
 fr fr Main Entry Point
 fr fr ================================
 
-slay main() {
+slay main_character() {
     fr fr Demonstrate parallel test runner capabilities
     sus failed_tests drip = demo_parallel_test_runner()
     

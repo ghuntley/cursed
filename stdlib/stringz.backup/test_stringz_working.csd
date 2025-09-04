@@ -122,7 +122,7 @@ slay test_basic_stringz() {
     vibez.spill("All stringz tests completed!")
 }
 
-slay main() {
+slay main_character() {
     vibez.spill("CURSED Stringz Module Test")
     vibez.spill("==========================")
     

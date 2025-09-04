@@ -5,7 +5,7 @@ fr fr Loop Syntax Regression Test
 fr fr Tests: Ensures periodt loop syntax doesn't regress
 fr fr Expected: Correct loop execution and termination
 
-slay main() {
+slay main_character() {
     vibez.spill("=== Loop Syntax Regression Test ===")
     
     vibez.spill("Testing basic periodt loop...")

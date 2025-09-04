@@ -3,7 +3,7 @@
 
 yeet "linter"
 
-slay main() {
+slay main_character() {
     vibez.spill("🧪 CURSED Linter Comprehensive Test Suite")
     vibez.spill("=========================================")
     vibez.spill("")

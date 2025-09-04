@@ -114,7 +114,7 @@ slay test_edge_cases() {
 }
 
 // Run all tests
-slay main() {
+slay main_character() {
     vibez.spill("Running SortaFresh Module Tests (Simplified)...")
     
     test_sort_ints()

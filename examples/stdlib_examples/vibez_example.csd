@@ -122,7 +122,7 @@ slay demonstrate_performance_features() cringe {
     vibez.spill("")
 }
 
-slay main() cringe {
+slay main_character() cringe {
     vibez.spill("💬 CURSED I/O Framework (vibez) Demonstration")
     vibez.spill("=============================================")
     vibez.spill("")

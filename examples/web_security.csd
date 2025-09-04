@@ -88,7 +88,7 @@ impl Default for WebSecurityConfig {
     }
 }
 
-slay main() {
+slay main_character() {
     print("🌐 Web Security with CURSED Crypto Demo")
     print("======================================")
     

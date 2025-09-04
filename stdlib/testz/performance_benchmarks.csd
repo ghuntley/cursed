@@ -196,7 +196,7 @@ fr fr ===============================
 fr fr Main Performance Suite Runner
 fr fr ===============================
 
-slay main() {
+slay main_character() {
     vibez.spill("🚀 Starting Enhanced Testz Performance Benchmarks")
     vibez.spill("===============================================") fr fr Run all performance benchmarks
     benchmark_assertion_performance()

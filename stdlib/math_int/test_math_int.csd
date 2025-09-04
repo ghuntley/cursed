@@ -447,7 +447,7 @@ slay test_edge_cases() {
 // Run All Tests
 // ================================
 
-slay main() {
+slay main_character() {
     test_basic_operations();
     test_power_functions();
     test_gcd_lcm();

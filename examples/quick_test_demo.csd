@@ -450,7 +450,7 @@ slay abs(x: normie) -> normie {
 }
 
 fr fr Main function to run all examples
-slay main() {
+slay main_character() {
     vibez.spill("CURSED Quick Test (Property-Based Testing) Demonstration");
     vibez.spill("========================================================");
     vibez.spill("");

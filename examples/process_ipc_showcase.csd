@@ -6,7 +6,7 @@ yeet "stdlib::signal_boost"
 yeet "stdlib::ipc"
 yeet "stdlib::vibez"
 
-slay main() {
+slay main_character() {
     vibez.spill("🚀 Process Management and IPC System Showcase");
     vibez.spill("================================================");
     

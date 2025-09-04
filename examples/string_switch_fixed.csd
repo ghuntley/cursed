@@ -17,7 +17,7 @@ slay string_switch(day txt) txt {
     damn result;
 }
 
-slay main() {
+slay main_character() {
     vibez.spill(string_switch("Monday"));
     vibez.spill(string_switch("Tuesday"));
     vibez.spill(string_switch("Saturday"));

@@ -16,6 +16,6 @@ slay main_character() {
     vibez.spill("arr_len:", len(big_array))
 }
 
-slay main() {
+slay main_character() {
     main_character()
 }

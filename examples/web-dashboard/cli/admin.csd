@@ -425,7 +425,7 @@ slay format_timestamp(timestamp drip) tea {
 }
 
 # Main CLI handler
-slay main() yikes<void> {
+slay main_character() yikes<void> {
     # Mock command line arguments for demonstration
     sus mock_args []tea = ["status"]  # Change this to test different commands
     

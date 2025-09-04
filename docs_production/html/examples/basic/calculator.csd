@@ -243,7 +243,7 @@ slay assert_eq_float(actual drip, expected drip, tolerance drip) {
 }
 
 # Main execution
-slay main() {
+slay main_character() {
     vibez.spill("CURSED Calculator Example")
     vibez.spill("=========================")
     

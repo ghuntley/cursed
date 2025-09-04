@@ -25,7 +25,7 @@ slay power(base: i32, exp: i32) -> i32 {
     return result;
 }
 
-slay main() -> i32 {
+slay main_character() -> i32 {
     facts fib_result = fibonacci(10);
     facts fact_result = factorial(5);
     facts pow_result = power(2, 8);

@@ -42,7 +42,7 @@ slay complex_computation() -> f64 {
     return result;
 }
 
-slay main() {
+slay main_character() {
     println("🚀 CURSED Optimization Demo")?;
     
     // Test function inlining optimization

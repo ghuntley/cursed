@@ -61,7 +61,7 @@ slay processReader(r Reader) {
     }
 }
 
-slay main() {
+slay main_character() {
     // Create a TextFile that implements FileReader
     sus textFile = TextFile{path: "example.txt"};
     

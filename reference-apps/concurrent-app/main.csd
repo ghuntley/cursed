@@ -427,7 +427,7 @@ slay load_balancer(work_queue *PriorityQueue, stats *StatsTracker,
 }
 
 # Main concurrent application
-slay main() {
+slay main_character() {
     vibez.spill("🚀 CURSED Concurrent Application v1.0")
     vibez.spill("=====================================")
     vibez.spill("")

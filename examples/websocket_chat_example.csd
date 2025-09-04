@@ -7,7 +7,7 @@ yeet "stdlib::net::websocket"
 yeet "stdlib::io"
 yeet "stdlib::sync"
 
-slay main() -> Result<(), Error> {
+slay main_character() -> Result<(), Error> {
     println("💬 CURSED WebSocket Chat Example")?;
     println("================================")?;
     

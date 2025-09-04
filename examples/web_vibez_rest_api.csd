@@ -17,7 +17,7 @@ fr fr In-memory user store (in production, use a real database)
 sus users = []User{}
 sus next_id = 1
 
-slay main() {
+slay main_character() {
     vibez.spill("Starting RESTful API server...")
     
     sus config = web_vibez.ServerConfig{

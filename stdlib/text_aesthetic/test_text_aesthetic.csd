@@ -349,7 +349,7 @@ slay test_must_helper() {
     print_test_summary()
 }
 
-slay main() {
+slay main_character() {
     test_template_creation()
     test_template_parsing()
     test_template_execution()

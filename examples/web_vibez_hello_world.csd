@@ -4,7 +4,7 @@ fr fr This example demonstrates basic HTTP server setup with CURSED web_vibez
 yeet "web_vibez"
 yeet "vibez"
 
-slay main() {
+slay main_character() {
     vibez.spill("Starting Hello World HTTP server...")
     
     fr fr Create server configuration

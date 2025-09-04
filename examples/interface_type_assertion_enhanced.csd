@@ -149,7 +149,7 @@ slay processNestedShape(shape Shape) Result<tea, Error> {
 }
 
 fr fr Main function to demonstrate enhanced error reporting
-slay main() {
+slay main_character() {
     // Create different shapes
     sus circle = Circle{radius: 5.0};
     sus rectangle = Rectangle{width: 4.0, height: 6.0};

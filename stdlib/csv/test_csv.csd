@@ -267,7 +267,7 @@ slay test_newlines_in_fields() {
 }
 
 fr fr Run all tests
-slay main() {
+slay main_character() {
     test_basic_csv_parsing()
     test_delimiter_detection()
     test_quoted_fields()

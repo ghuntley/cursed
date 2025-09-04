@@ -168,7 +168,7 @@ slay test_keyword_completion() {
     assert_true(contains_str(completions, "collab"))
 }
 
-slay main() {
+slay main_character() {
     vibez.spill("Running CURSED LSP Server Tests...")
     
     test_lsp_initialization()

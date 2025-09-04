@@ -11,7 +11,7 @@ yeet "../testz/testz.csd"
 
 fr fr ===== MAIN TEST RUNNER =====
 
-slay main() drip {
+slay main_character() drip {
     test_start("CURSED MATHZ Comprehensive Test Suite")
     
     fr fr Core mathematical functions

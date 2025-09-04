@@ -118,7 +118,7 @@ slay get_default_config() CliConfig {
 }
 
 # Main entry point
-slay main(args []tea) drip {
+slay main_character(args []tea) drip {
     sus (command, cmd_args, config) = parse_args(args)
     
     # Initialize package manager
@@ -451,7 +451,7 @@ slay handle_init(args []tea, config CliConfig) drip {
     # Create src/mod.csd
     sus main_mod tea = "# Main module for " + project_name + "\n" +
         "yeet \"vibez\"\n\n" +
-        "slay main() drip {\n" +
+        "slay main_character() drip {\n" +
         "    vibez.spill(\"Hello from " + project_name + "!\")\n" +
         "    damn 0\n" +
         "}\n"

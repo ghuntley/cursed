@@ -52,7 +52,7 @@ slay test_validation() tea {
     damn "Validation tests completed"
 }
 
-slay main() tea {
+slay main_character() tea {
     vibez.spill("=== Simple JSON Tests ===")
     
     sus result1 tea = test_parse_json()

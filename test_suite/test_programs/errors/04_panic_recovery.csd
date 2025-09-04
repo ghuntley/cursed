@@ -18,7 +18,7 @@ slay safe_operation_with_recovery() yikes {
     }
 }
 
-slay main() {
+slay main_character() {
     vibez.spill("=== Panic Recovery Tests ===")
     
     // Test 1: Basic panic recovery

@@ -269,7 +269,7 @@ slay (server @HttpServer) handle_connection(conn net.Conn) {
 }
 
 fr fr/ Example usage of the HTTP server
-slay main() {
+slay main_character() {
     // Create server configuration
     sus config = ServerConfig{
         port: 8080,

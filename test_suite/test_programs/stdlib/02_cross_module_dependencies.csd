@@ -121,7 +121,7 @@ slay performance_intensive_cross_module() {
     }
 }
 
-slay main() {
+slay main_character() {
     vibez.spill("=== Cross-Module Dependencies Tests ===")
     
     mathematical_string_operations()

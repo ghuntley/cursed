@@ -231,7 +231,7 @@ slay test_clean_code_output() {
     assert_true(contains_str(formatted, "fresh"))
 }
 
-slay main() {
+slay main_character() {
     vibez.spill("Running CURSED Linter Tests...")
     
     test_basic_linting()

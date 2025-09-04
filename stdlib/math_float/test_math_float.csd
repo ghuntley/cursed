@@ -358,7 +358,7 @@ slay test_accuracy_edge_cases() {
 // Run All Tests
 // ================================
 
-slay main() {
+slay main_character() {
     test_constants();
     test_special_values();
     test_basic_operations();

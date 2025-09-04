@@ -115,7 +115,7 @@ slay test_gen_z_keywords() {
     assert_eq_string(result, expected)
 }
 
-slay main() {
+slay main_character() {
     vibez.spill("Running CURSED Formatter Tests...")
     
     test_basic_formatting()

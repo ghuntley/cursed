@@ -86,7 +86,7 @@ slay process_data_intensive() -> List<f64> {
     return results;
 }
 
-slay main() -> i32 {
+slay main_character() -> i32 {
     facts calc_result = benchmark_calculations();
     facts data_result = process_data_intensive();
     

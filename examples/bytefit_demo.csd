@@ -6,7 +6,7 @@ fr fr Demonstrates all ByteFit byte manipulation functionality
 yeet "stdlib::bytefit"
 yeet "stdlib::vibez"
 
-slay main() {
+slay main_character() {
     vibez.spillln("=== ByteFit Comprehensive Demo ===\n");
     
     // Basic Operations Demo

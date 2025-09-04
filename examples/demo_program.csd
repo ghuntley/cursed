@@ -13,7 +13,7 @@ slay calculate(x, y) {
 }
 
 fr fr Main program logic
-slay main() {
+slay main_character() {
     // Print greeting
     println(greeting);
     

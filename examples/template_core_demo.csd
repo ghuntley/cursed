@@ -189,7 +189,7 @@ slay demo_template_inheritance() -> Result<(), Error> {
 }
 
 fr fr/ Main function demonstrating all template features
-slay main() -> Result<(), Error> {
+slay main_character() -> Result<(), Error> {
     println("=== CURSED Template Core System Demo ===")?;
     println()?;
     

@@ -424,7 +424,7 @@ slay demo_performance_metrics() {
     vibez.spill("  Performance:", headers_per_second, "headers/second")
 }
 
-slay main() {
+slay main_character() {
     vibez.spill("🚀 CURSED HTTP/2 Implementation Demo")
     vibez.spill("=====================================\n")
     

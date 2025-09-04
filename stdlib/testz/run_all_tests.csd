@@ -5,7 +5,7 @@ yeet "testz/advanced"
 yeet "testz/discovery"
 
 fr fr Main test execution entry point
-slay main() {
+slay main_character() {
     vibez.spill("🧪 CURSED Stdlib Comprehensive Test Suite")
     vibez.spill("=" * 60)
     vibez.spill("")

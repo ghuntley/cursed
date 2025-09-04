@@ -5,7 +5,7 @@ yeet "stdlib::chaos_mode"
 yeet "stdlib::io"
 yeet "stdlib::json_tea"
 
-slay main() {
+slay main_character() {
     println("🔥 CURSED ChaosMode Runtime Demo 🔥")?;
     println("=====================================")?;
     

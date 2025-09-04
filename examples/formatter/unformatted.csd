@@ -17,7 +17,7 @@ slay (p Person)String()string{
 vibe fmt.Sprintf("Person{name=%s, age=%d, email=%s}",p.name,p.age,p.email)
 }
 
-slay main(){
+slay main_character(){
 sus people=[]Person{
 {name:"Alice",age:30,email:"alice@example.com"},
 {"Bob",25,"bob@example.com"},

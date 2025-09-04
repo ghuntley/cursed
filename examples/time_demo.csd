@@ -3,7 +3,7 @@ fr fr Demonstrates comprehensive time/date functionality
 
 yeet "stdlib::time"
 
-slay main() {
+slay main_character() {
     println("🕒 CURSED Time & Date Library Demo")?;
     println("================================")?;
     

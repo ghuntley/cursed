@@ -21,7 +21,7 @@ slay test_simple_ini() {
     vibez.spill("Test passed: Simple INI parsing works");
 }
 
-slay main() {
+slay main_character() {
     vibez.spill("Testing basic config functionality...");
     test_simple_ini();
     vibez.spill("Config test complete!");

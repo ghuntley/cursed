@@ -361,7 +361,7 @@ slay test_integration() {
 
 fr fr ===== MAIN TEST RUNNER =====
 
-slay main() {
+slay main_character() {
     setup_tests()
     
     fr fr Run all test suites

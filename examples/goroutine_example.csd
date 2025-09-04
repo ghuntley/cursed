@@ -1,7 +1,7 @@
 fr fr Example demonstrating CURSED goroutine usage
 fr fr This shows how goroutines integrate with the language runtime
 
-slay main() {
+slay main_character() {
     // Initialize the goroutine scheduler
     facts scheduler = GoroutineScheduler::new()
     scheduler.start()

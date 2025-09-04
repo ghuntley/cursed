@@ -6,7 +6,7 @@ fr fr ========================================
 yeet "web_vibez"
 
 fr fr HTTP/2 Web Server with Advanced Features
-slay main() {
+slay main_character() {
     vibez.spill("🚀 Starting Modern HTTP/2 Web Server")
     vibez.spill("===================================")
     

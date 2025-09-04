@@ -469,7 +469,7 @@ fr fr ================================
 fr fr Main Entry Point for Configuration Testing
 fr fr ================================
 
-slay main() {
+slay main_character() {
     vibez.spill("🔧 CURSED Parallel Test Runner Configuration")
     vibez.spill("═══════════════════════════════════════════")
     

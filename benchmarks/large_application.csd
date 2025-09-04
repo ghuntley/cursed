@@ -273,7 +273,7 @@ slay analyze_results(results: List<TaskResult>) -> (f64, Duration, Duration, f64
     return (avg_computation, min_time, max_time, total_time);
 }
 
-slay main() -> i32 {
+slay main_character() -> i32 {
     println("Starting large application benchmark...");
     
     facts num_workers = 8;

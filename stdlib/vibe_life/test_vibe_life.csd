@@ -167,7 +167,7 @@ fr fr ==========================================================================
 test_start("file and directory integration")
 fr fr Create directory and file
 assert_true(vibe_life.create_dir("/home/projects"))
-assert_true(vibe_life.create_file("/home/projects/main.csd", "slay main() { vibez.spill(\"Hello\") }"))
+assert_true(vibe_life.create_file("/home/projects/main.csd", "slay main_character() { vibez.spill(\"Hello\") }"))
 assert_true(vibe_life.file_exists("/home/projects/main.csd"))
 assert_true(vibe_life.is_dir("/home/projects"))
 

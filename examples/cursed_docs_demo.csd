@@ -208,7 +208,7 @@ fr fr/ @example Running the demo
 fr fr/ ```shell
 fr fr/ cursed run examples/cursed_docs_demo.csd
 fr fr/ ```
-slay main() {
+slay main_character() {
     println("🎉 Welcome to the CURSED Documentation Demo!")?;
     println("This program showcases comprehensive documentation features.")?;
     println()?;

@@ -598,7 +598,7 @@ slay interactive_mode() {
 }
 
 # Main application
-slay main() {
+slay main_character() {
     vibez.spill("🔐 CURSED Cryptographic Application v1.0")
     vibez.spill("=========================================")
     vibez.spill("")

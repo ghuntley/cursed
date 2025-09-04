@@ -508,6 +508,6 @@ slay divide(a: Integer, b: Integer) -> Result<Integer, String> {
 }
 
 fr fr Main function to run examples
-slay main() {
+slay main_character() {
     demonstrate_collections()
 }

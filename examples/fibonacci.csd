@@ -51,7 +51,7 @@ slay fibonacci_iterative(n normie) -> normie {
 }
 
 fr fr/ Main function to demonstrate fibonacci calculations
-slay main() {
+slay main_character() {
     facts n = 10
     
     sus recursive_result = fibonacci(n)

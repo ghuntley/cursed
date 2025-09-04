@@ -48,7 +48,7 @@ slay count_non_black(result [][]normie, max_iterations normie) normie {
 }
 
 fr fr Main function
-slay main() {
+slay main_character() {
     sus start_ts thicc = timez.now()
     
     sus result [][]normie = calculate_mandelbrot(MAX_ITERATIONS)

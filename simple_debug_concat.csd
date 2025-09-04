@@ -2,7 +2,7 @@ vibe main
 yeet "vibez"
 yeet "stringz"
 
-slay main() {
+slay main_character() {
     sus a = "AB"
     sus b = "CD"
     vibez.spill("A:", a)

@@ -367,7 +367,7 @@ slay test_statistics() lit {
 }
 
 // Main test runner
-slay main() normie {
+slay main_character() normie {
     vibez.spill("Running Real Structured Logging Tests...")
     
     test_basic_logging()

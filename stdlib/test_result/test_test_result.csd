@@ -577,7 +577,7 @@ fr fr ================================
 fr fr Main Test Execution
 fr fr ================================
 
-slay main() {
+slay main_character() {
     vibez.spill("Starting CURSED TestResult Type System Tests")
     vibez.spill("=" * 60)
     

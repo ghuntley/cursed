@@ -18,7 +18,7 @@ slay test_conditions(value normie) tea {
     }
 }
 
-slay main() {
+slay main_character() {
     sus result1 normie = calculate_factorial(5)
     sus result2 tea = test_conditions(42)
     vibez.spill("Results: " + result1 + " " + result2)

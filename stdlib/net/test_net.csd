@@ -355,7 +355,7 @@ slay test_networking_workflow() {
 }
 
 // Main test runner
-slay main() {
+slay main_character() {
     vibez.spill("Running CURSED Networking Module Tests...")
     
     test_tcp_socket_creation()

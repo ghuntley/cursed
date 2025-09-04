@@ -222,7 +222,7 @@ fr fr ==========================================
 fr fr Main test execution
 fr fr ==========================================
 
-slay main() tea {
+slay main_character() tea {
     vibez.spill("=== CURSED JSON Cross-Module Tests ===")
     vibez.spill("")
     

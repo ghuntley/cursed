@@ -49,7 +49,7 @@ slay memory_intensive_operations() {
     vibez.spill("Memory intensive operations completed")
 }
 
-slay main() {
+slay main_character() {
     vibez.spill("=== Memory Allocation Pattern Tests ===")
     
     memory_intensive_operations()

@@ -9,7 +9,7 @@ be_like Person squad {
     Email tea `json:"email" validation:"required,email"`
 }
 
-slay main() {
+slay main_character() {
     fr fr Initialize reflection system
     lookin_glass.initialize()
     

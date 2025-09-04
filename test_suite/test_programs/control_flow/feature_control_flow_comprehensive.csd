@@ -6,7 +6,7 @@ fr fr Comprehensive Control Flow Test
 fr fr Tests: All control flow structures work correctly
 fr fr Expected: Conditionals, loops, and returns function properly
 
-slay main() {
+slay main_character() {
     vibez.spill("=== Control Flow Test ===")
     
     fr fr Test basic conditional

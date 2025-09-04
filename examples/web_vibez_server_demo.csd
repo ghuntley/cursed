@@ -298,7 +298,7 @@ slay run_server() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 fr fr/ Entry point
-slay main() -> Result<(), Box<dyn std::error::Error>> {
+slay main_character() -> Result<(), Box<dyn std::error::Error>> {
     console::println("🌟 CURSED web_vibez HTTP Server Demo")?;
     console::println("=====================================\n")?;
     

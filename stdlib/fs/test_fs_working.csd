@@ -101,7 +101,7 @@ slay test_error_handling() {
     vibez.spill("Delete non-existent file result: " + tea(delete_nonexistent))
 }
 
-slay main() {
+slay main_character() {
     vibez.spill("Starting CURSED Filesystem Module Tests...")
     
     test_file_operations()

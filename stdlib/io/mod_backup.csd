@@ -708,7 +708,7 @@ slay read_file(filename tea) IOResult {
     } else bestie filename == "main.csd" {
         damn IOResult{
             success: based,
-            data: "fam \"core\"\n\nslay main() {\n    vibez.spill(\"Self-hosting compiler ready\")\n}",
+            data: "fam \"core\"\n\nslay main_character() {\n    vibez.spill(\"Self-hosting compiler ready\")\n}",
             error: "",
             bytes_processed: 77
         }
@@ -994,7 +994,7 @@ slay read_to_string(filename tea) tea {
         damn "vibez.spill(\"Hello from CURSED file\")"
     }
     lowkey filename == "main.csd" {
-        damn "fam \"core\"\n\nslay main() {\n    vibez.spill(\"Self-hosting compiler ready\")\n}"
+        damn "fam \"core\"\n\nslay main_character() {\n    vibez.spill(\"Self-hosting compiler ready\")\n}"
     }
     lowkey filename == "empty.csd" {
         damn ""

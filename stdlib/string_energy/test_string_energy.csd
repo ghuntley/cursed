@@ -297,7 +297,7 @@ slay test_normalize_space() {
     print_test_summary()
 }
 
-slay main() {
+slay main_character() {
     test_basic_string_operations()
     test_string_manipulation()
     test_string_transformation()

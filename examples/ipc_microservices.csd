@@ -435,7 +435,7 @@ slay run_microservices_demo() -> Result<(), IpcError> {
     Ok(())
 }
 
-slay main() -> Result<(), IpcError> {
+slay main_character() -> Result<(), IpcError> {
     println("🎉 CURSED Microservices Communication Demo")?;
     println("This demonstrates real-world microservice patterns using IPC")?;
     println("=" * 70)?;

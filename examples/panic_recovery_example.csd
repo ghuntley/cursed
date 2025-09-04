@@ -1,7 +1,7 @@
 fr fr CURSED Panic/Recovery Example
 fr fr Demonstrates the panic/recovery system with Gen Z slang
 
-slay main() {
+slay main_character() {
     println("Starting panic/recovery demo...")
     
     // Example 1: Basic panic handling

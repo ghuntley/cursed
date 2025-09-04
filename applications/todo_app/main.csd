@@ -759,7 +759,7 @@ slay get_content_type(file_path tea) tea {
 
 fr fr ===== MAIN APPLICATION =====
 
-slay main() {
+slay main_character() {
     vibez.spill("Starting Todo List Application...")
     
     fr fr Initialize database

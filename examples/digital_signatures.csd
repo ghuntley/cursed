@@ -39,7 +39,7 @@ squad SignatureContext {
     certificate: SignerCertificate,
 }
 
-slay main() {
+slay main_character() {
     print("✍️ Digital Signatures and Document Verification Demo")
     print("===================================================")
     

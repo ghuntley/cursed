@@ -4,7 +4,7 @@ fr fr/ This example demonstrates comprehensive MySQL database operations in CURS
 yeet "stdlib::packages::db_sql::mysql"
 yeet "stdlib::packages::db_core"
 
-slay main() {
+slay main_character() {
     // Create MySQL driver instance
     sus driver = mysql::MySqlDriver::new();
     

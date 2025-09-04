@@ -6,7 +6,7 @@ yeet "advanced_pools"
 yeet "vibez"
 yeet "mathz"
 
-slay main() {
+slay main_character() {
     vibez.spill("🚀 CURSED Advanced Memory Pool Management Demo")
     vibez.spill("================================================")
     

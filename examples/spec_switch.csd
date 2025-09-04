@@ -1,6 +1,6 @@
 vibe main
 
-slay main() {
+slay main_character() {
     sus day = "Monday"
     
     vibe_check day {

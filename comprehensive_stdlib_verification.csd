@@ -9,7 +9,7 @@ yeet "fs"
 yeet "time"
 yeet "collections"
 
-slay main() cringe {
+slay main_character() cringe {
     ayo("🚀 CURSED Comprehensive Standard Library Test")
     ayo("===============================================")
     

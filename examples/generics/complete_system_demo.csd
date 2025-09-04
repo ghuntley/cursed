@@ -594,7 +594,7 @@ slay demonstrate_complete_system() {
 }
 
 fr fr Main function showcasing the complete system
-slay main() {
+slay main_character() {
     demonstrate_complete_system()
     
     // Additional demonstrations

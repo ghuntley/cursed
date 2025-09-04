@@ -6,7 +6,7 @@ fr fr Demonstrates comprehensive hardware acceleration capabilities detection
 yeet "stdlib::io"
 yeet "stdlib::packages::crypto_asymmetric::hardware_acceleration"
 
-slay main() -> Result<(), Error> {
+slay main_character() -> Result<(), Error> {
     println("🔧 CURSED Hardware Acceleration Detection Demo")?;
     println("==============================================")?;
     println("")?;

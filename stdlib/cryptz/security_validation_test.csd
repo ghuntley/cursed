@@ -320,7 +320,7 @@ fr fr ================================================================
 fr fr MAIN SECURITY VALIDATION TEST RUNNER
 fr fr ================================================================
 
-slay main() {
+slay main_character() {
     vibez.spill("🔒 CURSED CRYPTOGRAPHIC SECURITY VALIDATION SUITE")
     vibez.spill("================================================")
     

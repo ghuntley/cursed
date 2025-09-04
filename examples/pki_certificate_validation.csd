@@ -26,7 +26,7 @@ Um9vdCBDQSAxMB4XDTE1MDUyNjAwMDAwMFoXDTM4MDExNzAwMDAwMFowOTELMAkG
 -----END CERTIFICATE-----`;
 
 fr fr Main PKI validation demonstration
-slay main() -> nil {
+slay main_character() -> nil {
     println("🔒 CURSED PKI Certificate Validation Demo");
     println("==========================================");
     

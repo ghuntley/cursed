@@ -4,7 +4,7 @@ fr fr This example showcases all the features of the csv_mood module
 yeet "stdlib::csv"
 yeet "stdlib::io"
 
-slay main() {
+slay main_character() {
     vibez.spill("=== CSV Mood Demo ===\n");
     
     // Basic CSV reading and writing

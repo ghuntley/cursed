@@ -1,7 +1,7 @@
 yeet "testz"
 
 fr fr Test without importing fs_test_vibe module
-slay main() {
+slay main_character() {
     test_start("Basic fs_test_vibe functionality") fr fr Test basic functionality without complex types
     assert_true(1 == 1)
     

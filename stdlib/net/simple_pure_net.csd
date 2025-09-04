@@ -169,7 +169,7 @@ slay test_pure_networking() {
     vibez.spill("Pure CURSED networking test completed!")
 }
 
-slay main() {
+slay main_character() {
     vibez.spill("Testing Pure CURSED Networking (100% FFI-Free)...")
     test_pure_networking()
     print_test_summary()

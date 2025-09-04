@@ -345,7 +345,7 @@ slay test_error_constants() {
     print_test_summary()
 }
 
-slay main() {
+slay main_character() {
     test_one_byte_reader()
     test_half_reader()
     test_data_err_reader()

@@ -435,7 +435,7 @@ slay test_network_monitoring() {
 }
 
 // Main test runner
-slay main() {
+slay main_character() {
     vibez.spill("Running CURSED Pure Networking Module Tests (100% FFI-Free)...")
     vibez.spill("Testing complete self-contained networking implementation...")
     

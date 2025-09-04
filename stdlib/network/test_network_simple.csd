@@ -1,7 +1,7 @@
 // Simple Network Test - Basic functionality check
 yeet "stdlib/network"
 
-slay main() {
+slay main_character() {
     vibez.spill("🧪 Testing Network Module - Basic Functions")
     
     // Test TCP socket creation

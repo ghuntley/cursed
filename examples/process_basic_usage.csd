@@ -224,7 +224,7 @@ slay system_info_example() tea {
 }
 
 fr fr/ Main function demonstrating all examples
-slay main() tea {
+slay main_character() tea {
     vibez.spill("CURSED Process Management - Basic Usage Examples");
     vibez.spill("=================================================");
     

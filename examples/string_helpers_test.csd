@@ -3,7 +3,7 @@ vibe string_helpers_test
 yeet "vibez"  fr fr For printing results
 yeet "stringz" fr fr String manipulation package
 
-slay main() {
+slay main_character() {
     vibez.spill("Testing enhanced stringz package functions")
     
     fr fr Test string searching

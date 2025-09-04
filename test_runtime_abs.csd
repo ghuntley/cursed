@@ -1,7 +1,7 @@
 vibe main
 yeet "vibez"
 
-slay main() {
+slay main_character() {
     vibez.spill("Testing runtime abs function directly...")
     
     // Test normal case with basic arithmetic

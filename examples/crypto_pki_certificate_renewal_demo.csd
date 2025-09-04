@@ -1040,6 +1040,6 @@ squad CertificateRenewalDemo {
 }
 
 fr fr/ Main function to run the certificate renewal demo
-slay main() -> Result<(), String> {
+slay main_character() -> Result<(), String> {
     CertificateRenewalDemo::run_certificate_renewal_demo()
 }

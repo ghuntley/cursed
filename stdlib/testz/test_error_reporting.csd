@@ -144,7 +144,7 @@ fr fr ===============================
 fr fr Main Error Reporting Test Runner
 fr fr ===============================
 
-slay main() {
+slay main_character() {
     vibez.spill("🚀 Starting Enhanced Testz Error Reporting Tests")
     vibez.spill("================================================")
     vibez.spill("⚠️  NOTE: This test suite intentionally contains failures")

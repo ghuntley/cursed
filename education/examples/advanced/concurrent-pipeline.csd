@@ -257,7 +257,7 @@ slay generate_test_data(pipeline Pipeline, count drip) {
 }
 
 # Main application
-slay main() {
+slay main_character() {
     vibez.spill("🔥 CURSED Concurrent Pipeline Demo")
     vibez.spill("===================================")
     

@@ -56,7 +56,7 @@ slay test_gcd_lcm() {
 }
 
 # Main test runner
-slay main() {
+slay main_character() {
     test_basic_arithmetic()
     test_factorial()
     test_fibonacci()

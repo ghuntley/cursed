@@ -318,7 +318,7 @@ slay test_performance_validation() {
 }
 
 fr fr Main test execution
-slay main() {
+slay main_character() {
     vibez.spill("🔒 CURSED VALIDATION SECURITY TEST SUITE")
     vibez.spill("==========================================")
     

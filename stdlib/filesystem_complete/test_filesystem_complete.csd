@@ -660,7 +660,7 @@ fr fr ==========================================================================
 fr fr MAIN TEST RUNNER
 fr fr ==============================================================================
 
-slay main() {
+slay main_character() {
     vibez.spill("=== CURSED Filesystem Complete Module Tests ===")
     vibez.spill("") fr fr Core file operations
     test_file_open_close()

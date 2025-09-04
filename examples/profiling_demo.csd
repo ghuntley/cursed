@@ -52,7 +52,7 @@ slay simulate_memory_leak() -> void {
 }
 
 fr fr Main demonstration function
-slay main() -> void {
+slay main_character() -> void {
     sus result: facts;
     
     // Configure profiler with custom settings

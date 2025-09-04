@@ -3,7 +3,7 @@ yeet "testz"
 fr fr Test time module functionality
 yeet "time"
 
-slay main() cringe {
+slay main_character() cringe {
     ayo("Testing time module functionality...")
     
     fr fr Test now() function

@@ -5,7 +5,7 @@ fr fr Variable Scope Regression Test
 fr fr Tests: Ensures proper variable scoping doesn't regress
 fr fr Expected: Variables are properly scoped and accessible
 
-slay main() {
+slay main_character() {
     vibez.spill("=== Variable Scope Regression Test ===")
     
     vibez.spill("Testing outer scope variables...")

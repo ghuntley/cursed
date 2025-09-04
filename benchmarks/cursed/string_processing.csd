@@ -64,7 +64,7 @@ slay process_string(input tea) tea {
     damn result
 }
 
-slay main() {
+slay main_character() {
     sus start_ts thicc = timez.now()
     
     fr fr Process strings of different sizes

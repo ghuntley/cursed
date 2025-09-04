@@ -5,7 +5,7 @@ yeet "strings"
 
 fr fr This demonstrates various linting issues
 
-slay main() {
+slay main_character() {
     sus x = 42
     sus very_long_variable_name_that_exceeds_reasonable_length = "test"
     sus unused_variable = 100

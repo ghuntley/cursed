@@ -362,7 +362,7 @@ slay diagnostic_to_json(diag Diagnostic) tea {
 }
 
 // Main LSP server loop (simplified)
-slay main() {
+slay main_character() {
     vibez.spill("CURSED Language Server starting...")
     
     sus server LSPServer = init_lsp_server()

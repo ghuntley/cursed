@@ -3,7 +3,7 @@ fr fr Demonstrates comprehensive statistical analysis capabilities
 
 yeet "stdlib::math::statistics"
 
-slay main() {
+slay main_character() {
     println("=== CURSED Statistics Module Demo ===\n")?;
     
     // Sample dataset for analysis

@@ -4,7 +4,7 @@ yeet "stdlib::template"
 yeet "stdlib::io"
 
 fr fr Basic template system demonstration
-slay main() {
+slay main_character() {
     fr fr Create a template engine
     sus engine = TemplateEngine::new()
     

@@ -1,6 +1,6 @@
 vibe main
 
-slay main() normie {
+slay main_character() normie {
     normie x = 1;
     // Parse open brace separately
     vibe_check x 

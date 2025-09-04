@@ -4,7 +4,7 @@ yeet "vibez"
 yeet "dropz"
 yeet "rizztemplate"
 
-slay main() {
+slay main_character() {
     vibez.spill("Testing rizztemplate ParseFiles and ParseGlob functionality")
     
     fr fr Test ParseFiles function

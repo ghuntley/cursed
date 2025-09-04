@@ -21,7 +21,7 @@ slay send_messages(ch dm<tea>, count normie) {
 }
 
 fr fr Main function demonstrates goroutines and channels
-slay main() {
+slay main_character() {
     fr fr Start some worker goroutines
     stan worker(1, ch)
     stan worker(2, ch)

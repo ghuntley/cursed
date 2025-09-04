@@ -5,7 +5,7 @@ fr fr Simple Memory Test - Basic Operations
 fr fr Tests: Simple memory-related operations without complex arrays
 fr fr Expected: Successful execution without memory issues
 
-slay main() {
+slay main_character() {
     vibez.spill("=== Simple Memory Test ===")
     
     vibez.spill("Testing simple variable allocation...")

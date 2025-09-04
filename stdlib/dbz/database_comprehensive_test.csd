@@ -467,7 +467,7 @@ slay test_performance_benchmarks() {
 
 fr fr ===== Main Test Runner =====
 
-slay main() {
+slay main_character() {
     testz.test_start("Comprehensive Database Driver Testing")
     
     vibez.spill("🚀 Starting comprehensive database driver tests...")

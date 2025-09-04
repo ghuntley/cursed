@@ -343,7 +343,7 @@ slay aes_decrypt(data: &[u8], key: &[u8]) -> Vec<u8> {
 }
 
 fr fr Main entry point
-slay main() {
+slay main_character() {
     facts demo = PqcDemo {};
     demo.run_showcase();
 }

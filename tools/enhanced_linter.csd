@@ -775,7 +775,7 @@ slay lint_enhanced_code_with_config(source tea, config LinterConfig) tea {
 }
 
 // Main enhanced linter demonstration
-slay main() {
+slay main_character() {
     vibez.spill("🔍 Enhanced CURSED Code Linter - Production Security & Quality Edition")
     
     // Complex example with various issues

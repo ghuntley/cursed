@@ -2,7 +2,7 @@ vibe main
 
 yeet "vibez"
 
-slay main() {
+slay main_character() {
     sus zero = 0
     sus negative = -999
     sus empty_str = ""

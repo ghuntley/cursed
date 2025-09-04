@@ -5,7 +5,7 @@ yeet "stdlib::exec_vibez"
 yeet "stdlib::io"
 yeet "stdlib::time"
 
-slay main() tea {
+slay main_character() tea {
     fr fr Basic command execution
     io.println("=== Basic Command Execution ===")?
     

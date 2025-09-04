@@ -24,7 +24,7 @@ func main() {
     
     // Create some more files
     fs::write_file(fs::join_path(vec![test_dir, "test1.txt"]), "Test 1")?;
-    fs::write_file(fs::join_path(vec![test_dir, "test2.rs"]), "slay main() {}")?;
+    fs::write_file(fs::join_path(vec![test_dir, "test2.rs"]), "slay main_character() {}")?;
     fs::write_file(fs::join_path(vec![test_dir, "config.json"]), "{\"app\": \"cursed\"}")?;
     
     // List directory contents

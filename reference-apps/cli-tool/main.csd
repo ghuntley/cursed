@@ -285,7 +285,7 @@ slay show_stats(path tea) {
 }
 
 # Main entry point
-slay main() {
+slay main_character() {
     sus args []tea = vibez.get_args() fam {
         when _ -> damn []
     }

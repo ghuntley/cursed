@@ -483,7 +483,7 @@ slay count_format_changes(source tea, config FormatterConfig) drip {
 
 fr fr ===== MAIN DEMO FUNCTION =====
 
-slay main() {
+slay main_character() {
     vibez.spill("🎨 CURSED Simple Token-Based Code Formatter")
     vibez.spill("Production-ready formatter with comprehensive features")
     vibez.spill("")

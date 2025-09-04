@@ -371,7 +371,7 @@ slay read_file_simulation(filename tea) tea {
         damn "# Project\n\nThis is a sample project."
     }
     ready (filename == "main.csd") {
-        damn "slay main() lit {\n    vibez.spill(\"Hello, world!\")\n    damn based\n}"
+        damn "slay main_character() lit {\n    vibez.spill(\"Hello, world!\")\n    damn based\n}"
     }
     
     damn "Sample file content"

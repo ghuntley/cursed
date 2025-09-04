@@ -6,7 +6,7 @@ fr fr Arithmetic Precedence Regression Test
 fr fr Tests: Operator precedence and expression evaluation order
 fr fr Expected: Correct mathematical precedence maintained
 
-slay main() {
+slay main_character() {
     vibez.spill("=== Arithmetic Precedence Regression Test ===")
     
     vibez.spill("Testing basic precedence...")

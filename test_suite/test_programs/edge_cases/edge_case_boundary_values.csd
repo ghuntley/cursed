@@ -7,7 +7,7 @@ fr fr Test: Boundary value edge cases
 fr fr Purpose: Test handling of edge values and boundary conditions
 fr fr Expected: All boundary cases should be handled correctly
 
-slay main() {
+slay main_character() {
     vibez.spill("=== Testing Boundary Values ===")
     
 fr fr Test zero values

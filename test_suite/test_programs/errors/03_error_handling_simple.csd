@@ -5,7 +5,7 @@ fr fr Error Handling Test - Simple Validation
 fr fr Tests: Basic error condition detection and handling
 fr fr Expected: Proper error messages and recovery
 
-slay main() {
+slay main_character() {
     vibez.spill("=== Error Handling Test ===")
     
     sus value1 = 10

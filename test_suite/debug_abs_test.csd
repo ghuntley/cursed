@@ -2,7 +2,7 @@ vibe main
 yeet "vibez"
 yeet "mathz"
 
-slay main() {
+slay main_character() {
     vibez.spill("Testing abs function:")
     sus test_val = 42
     vibez.spill("Input:", test_val)

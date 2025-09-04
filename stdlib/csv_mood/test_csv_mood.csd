@@ -302,7 +302,7 @@ slay test_csv_transformer() {
     print_test_summary()
 }
 
-slay main() {
+slay main_character() {
     test_csv_reader_basic()
     test_csv_reader_quoted_fields()
     test_csv_reader_custom_delimiter()

@@ -1136,7 +1136,7 @@ slay get_payment_gateway_token() tea {
 }
 
 // Main entry point
-slay main() {
+slay main_character() {
     start_microservices_platform() fam {
         when err -> {
             vibez.spill("❌ Failed to start platform:", err)

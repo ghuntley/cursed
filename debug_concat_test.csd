@@ -2,7 +2,7 @@ vibe main
 yeet "vibez"
 yeet "stringz"
 
-slay main() {
+slay main_character() {
     vibez.spill("Testing stringz.concat implementation:")
     
     sus base = "CURSED"

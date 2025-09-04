@@ -28,7 +28,7 @@ sus cursed_source tea = `
         damn fibonacci(n - 1) + fibonacci(n - 2)
     }
     
-    slay main() drip {
+    slay main_character() drip {
         sus result = fibonacci(10)
         damn result
     }

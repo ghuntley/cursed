@@ -4,7 +4,7 @@
 yeet "vibez"
 
 // Main function - entry point for WASM
-slay main() {
+slay main_character() {
     vibez.spill("Hello from CURSED WebAssembly! 🚀")
     vibez.spill("This is running in your browser via WASM")
     

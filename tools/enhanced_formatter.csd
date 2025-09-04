@@ -845,7 +845,7 @@ slay is_digit(char tea) lit {
 }
 
 // Main enhanced formatter
-slay main() {
+slay main_character() {
     vibez.spill("🎨 Enhanced CURSED Code Formatter - Production Edition")
     
     // Enhanced example with complex CURSED code

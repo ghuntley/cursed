@@ -3,7 +3,7 @@
 yeet "stdlib::glowup_http"
 
 fr fr Simple HTTP server example using GlowUpHTTP
-slay main() tea {
+slay main_character() tea {
     // Create a new router
     sus router = glowup_http.NewVibeRouter();
     

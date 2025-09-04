@@ -481,7 +481,7 @@ slay string_starts_with(s tea, prefix tea) lit {
 
 fr fr ===== MAIN EXAMPLE RUNNER =====
 
-slay main() {
+slay main_character() {
     vibez.spill("🎯 EncodingZ Real-World Examples")
     vibez.spill("=" * 50)
     vibez.spill("Demonstrating practical encoding use cases in CURSED applications\n")

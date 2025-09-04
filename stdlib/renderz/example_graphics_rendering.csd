@@ -505,7 +505,7 @@ slay demo_multi_api_support() lit {
 
 // ===== MAIN DEMO FUNCTION =====
 
-slay main() normie {
+slay main_character() normie {
     vibez.print_header("CURSED RenderZ Professional Graphics Rendering Demo")
     
     // Enable debug output for development

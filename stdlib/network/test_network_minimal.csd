@@ -73,7 +73,7 @@ slay int_to_string(value normie) tea {
 }
 
 // Main test function
-slay main() {
+slay main_character() {
     vibez.spill("🧪 Minimal Network Test")
     
     // Initialize network

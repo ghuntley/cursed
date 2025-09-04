@@ -2,7 +2,7 @@ vibe main
 
 yeet "math_utils"
 
-slay main(args []tea) normie {
+slay main_character(args []tea) normie {
     issa len(args) < 3 {
         printfr("Usage: calculator <operation> <num1> <num2>")
         printfr("Operations: add, subtract, multiply, divide")

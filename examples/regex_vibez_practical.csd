@@ -424,7 +424,7 @@ slay demo_password_validation() -> () {
     println("");
 }
 
-slay main() -> () {
+slay main_character() -> () {
     println("RegexVibez Practical Examples");
     println("============================");
     println("");

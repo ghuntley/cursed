@@ -21,7 +21,7 @@ collab Task {
 }
 
 fr fr Main demo function
-slay main() -> CursedResult<()> {
+slay main_character() -> CursedResult<()> {
     println("🎉 CURSED Collections Demo - Let's get this collection started! 🎉\n")?;
     
     // 1. Hash Set Demo - Unique user tracking

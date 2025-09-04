@@ -512,7 +512,7 @@ slay simulated_service(input dm<Message>, output dm<Message>, service_id normie)
     }
 }
 
-slay main() {
+slay main_character() {
     puts("=== Fan-in and Fan-out Patterns Demo ===")
     
     // Demonstrate each pattern

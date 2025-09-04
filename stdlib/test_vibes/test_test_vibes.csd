@@ -414,7 +414,7 @@ slay test_testing_manager() {
     print_test_summary()
 }
 
-slay main() {
+slay main_character() {
     test_vibe_test_creation()
     test_vibe_bench_creation()
     test_basic_assertions()

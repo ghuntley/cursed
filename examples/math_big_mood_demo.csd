@@ -13,7 +13,7 @@ fr fr - Performance optimizations for large numbers
 yeet "stdlib::math::big_mood"
 yeet "stdlib::io"
 
-slay main() {
+slay main_character() {
     io.println("🔥 CURSED Big Mood Mathematics Demo 🔥")?
     io.println("=======================================")
     

@@ -796,7 +796,7 @@ slay create_end_entity_with_san(
 }
 
 fr fr/ Main demonstration function
-slay main() -> Result<(), Box<dyn std::error::Error>> {
+slay main_character() -> Result<(), Box<dyn std::error::Error>> {
     println("🔐 CURSED PKI Certificate Path Validation Demonstration")?;
     println("========================================================\n")?;
     

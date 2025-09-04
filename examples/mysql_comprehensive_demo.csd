@@ -36,7 +36,7 @@ squad Order {
     status: tea,
 }
 
-slay main() {
+slay main_character() {
     // Initialize MySQL driver with Gen Z energy
     facts mysql_config = mysql::ComprehensiveMySqlConfig {
         max_connections: 50,

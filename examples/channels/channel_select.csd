@@ -473,7 +473,7 @@ slay rate_limiter(requests dm<Event>, limit normie, interval normie) {
     }
 }
 
-slay main() {
+slay main_character() {
     puts("=== Advanced Channel Select Operations ===")
     
     // Demonstrate various select patterns

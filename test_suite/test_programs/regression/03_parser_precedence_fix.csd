@@ -160,7 +160,7 @@ slay test_function_call_precedence() {
     vibez.spill("mathz.pow(1+1, 2+1) =", complex_arg2, "(should be 8)")
 }
 
-slay main() {
+slay main_character() {
     vibez.spill("=== Parser Precedence Regression Tests ===")
     
     test_basic_arithmetic_precedence()

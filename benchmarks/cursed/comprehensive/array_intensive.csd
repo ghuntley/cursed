@@ -1,4 +1,4 @@
-slay main() drip {
+slay main_character() drip {
     sus iterations drip = 1000
     sus array_size drip = 200
     sus total drip = 0

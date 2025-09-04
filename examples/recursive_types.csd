@@ -94,7 +94,7 @@ slay create_tree() *TreeNode {
 }
 
 fr fr Main function demonstrating recursive types
-slay main() normie {
+slay main_character() normie {
     // Test linked list
     list := create_list()
     length := traverse_list(list)

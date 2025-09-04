@@ -124,7 +124,7 @@ slay demo_synchronization() {
 }
 
 fr fr Main demo function
-slay main() {
+slay main_character() {
     vibez.spill("🚀 CURSED Hardware Atomic Operations Validation Demo")
     vibez.spill("====================================================")
     

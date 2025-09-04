@@ -128,7 +128,7 @@ slay find_user_by_id(sus users: &[User], sus id: u32) -> Option<&User> {
 }
 
 fr fr Main function demonstrating advanced patterns
-slay main() -> Result<(), ProcessingError> {
+slay main_character() -> Result<(), ProcessingError> {
     println("=== Advanced Error Propagation ===")?;
     
     // Test file processing chain

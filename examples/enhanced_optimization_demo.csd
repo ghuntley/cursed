@@ -94,7 +94,7 @@ slay error_heavy_function(sus value: int) -> int? {
 }
 
 fr fr/ Main function demonstrating optimization opportunities
-slay main() {
+slay main_character() {
     println("🚀 Enhanced Optimization Demo")
     
     // Test data for optimization

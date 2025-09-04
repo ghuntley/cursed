@@ -3,7 +3,7 @@ yeet "plugin_system"
 fr fr Plugin System Demonstration
 fr fr This demonstrates the complete plugin system functionality
 
-slay main() lit {
+slay main_character() lit {
     vibez.spill("🚀 CURSED Plugin System Demonstration")
     vibez.spill("=====================================") fr fr Initialize plugin system
     vibez.spill("\n1. Initializing Plugin System...")

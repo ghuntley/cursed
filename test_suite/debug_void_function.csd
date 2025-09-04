@@ -7,7 +7,7 @@ slay test_function() {
     vibez.spill("Value:", x)
 }
 
-slay main() {
+slay main_character() {
     test_function()
     vibez.spill("Done")
 }

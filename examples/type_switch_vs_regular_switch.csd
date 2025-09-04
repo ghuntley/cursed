@@ -419,7 +419,7 @@ slay print_comparison_summary() {
 }
 
 fr fr Main demonstration function
-slay main() {
+slay main_character() {
     demonstrate_regular_switch()
     demonstrate_type_switch()
     demonstrate_side_by_side()

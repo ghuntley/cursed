@@ -7,7 +7,7 @@ fr fr Stdlib Cross-Module Test - Simple Integration
 fr fr Tests: Basic operations across multiple stdlib modules
 fr fr Expected: Successful integration between modules
 
-slay main() {
+slay main_character() {
     vibez.spill("=== Stdlib Cross-Module Test ===")
     
     vibez.spill("Testing mathz and vibez integration...")

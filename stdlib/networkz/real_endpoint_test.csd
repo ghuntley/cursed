@@ -147,7 +147,7 @@ slay test_network_error_handling() {
 }
 
 fr fr Main test execution
-slay main() {
+slay main_character() {
     vibez.spill("🚀 Starting Real Network Endpoint Tests...")
     vibez.spill("=" * 50)
     

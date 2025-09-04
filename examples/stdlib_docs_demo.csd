@@ -9,7 +9,7 @@ fr fr/
 fr fr/ @module stdlib_demo
 fr fr/ @author CURSED Team
 fr fr/ @version 1.0.0
-slay main() {
+slay main_character() {
     println("📚 CURSED Standard Library Documentation Demo")
     
     demonstrate_math_functions()

@@ -1,7 +1,7 @@
 vibe main
 yeet "vibez"
 
-slay main() {
+slay main_character() {
     vibez.spill("Simple test")
     sus test_val = 5
     vibez.spill("Value:", test_val)

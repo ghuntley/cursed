@@ -3,7 +3,7 @@ vibe main
 yeet "vibez"
 yeet "mathz"
 
-slay main() {
+slay main_character() {
     // Test with string arguments (already working)
     vibez.spill("Testing non-string arguments");
     

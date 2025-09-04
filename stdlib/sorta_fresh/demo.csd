@@ -79,7 +79,7 @@ slay show_complexity() {
 }
 
 // Main demo function
-slay main() {
+slay main_character() {
     simple_sort_demo()
     test_helper_functions()
     show_complexity()

@@ -2,7 +2,7 @@ vibe main
 yeet "stringz"
 yeet "vibez"
 
-slay main() {
+slay main_character() {
     vibez.spill("=== String Concat Debug ===")
     
     sus base_str = "CURSED"

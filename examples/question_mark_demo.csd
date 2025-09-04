@@ -107,7 +107,7 @@ slay complex_workflow(config_path string, input_data string) string {
 }
 
 fr fr Main function demonstrating various error propagation scenarios
-slay main() {
+slay main_character() {
     println("Question Mark Operator Demo")?
     println("============================")?
     

@@ -82,7 +82,7 @@ struct File {
 fr fr === SIMULATED FILE SYSTEM ===
 
 fr fr Use simple variables instead of complex maps
-sus main_csd_content tea = "fam \"core\"\n\nslay main() {\n    vibez.spill(\"Hello from CURSED compiler\")\n}"
+sus main_csd_content tea = "fam \"core\"\n\nslay main_character() {\n    vibez.spill(\"Hello from CURSED compiler\")\n}"
 sus test_csd_content tea = "vibez.spill(\"Test file content\")"
 sus empty_csd_content tea = ""
 sus config_toml_content tea = "optimization_level = 2\ntarget = \"native\"\ndebug = false"

@@ -421,7 +421,7 @@ slay demo_multiline_string_fix() {
     }
 }
 
-slay main() {
+slay main_character() {
     vibez.spill("🚀 CURSED Formatter CLI - Complete Pure CURSED Implementation")
     vibez.spill("Comprehensive replacement for Rust formatter with multiline string fixes")
     vibez.spill("")

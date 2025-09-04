@@ -480,7 +480,7 @@ slay cli_format_main(args tea[value]) drip {
 
 fr fr ===== DEMO MAIN FUNCTION =====
 
-slay main() {
+slay main_character() {
     vibez.spill("🎨 CURSED Formatter CLI Integration Demo")
     vibez.spill("Demonstrating comprehensive CLI features")
     vibez.spill("")

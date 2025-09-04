@@ -169,7 +169,7 @@ slay complex_user_validation(user User) lit {
 }
 
 // Main function demonstrating various features
-slay main() void {
+slay main_character() void {
     vibez.spill("Advanced IDE Features Demo")
     
     // Variable with type inference

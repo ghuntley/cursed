@@ -360,7 +360,7 @@ sick DivisionByZero {}
 sick CalculatorError {}
 
 // Main function (WASI uses _start but we provide main for compatibility)
-slay main() drip {
+slay main_character() drip {
     _start()
     damn 0
 }

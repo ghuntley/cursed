@@ -373,7 +373,7 @@ fr fr ================================
 fr fr Main Test Runner Entry Point
 fr fr ================================
 
-slay main() {
+slay main_character() {
     sus config TestConfig = create_default_config()
     sus exit_code normie = run_tests_with_config(config)
     damn exit_code

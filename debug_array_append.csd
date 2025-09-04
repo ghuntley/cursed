@@ -1,7 +1,7 @@
 vibe main
 yeet "vibez"
 
-slay main() {
+slay main_character() {
     vibez.spill("=== Array Append Debug Test ===")
     
     fr fr Initialize empty array - using working syntax from existing tests

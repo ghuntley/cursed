@@ -133,7 +133,7 @@ slay generate_report(data: [String]) -> String {
 }
 
 fr fr Example 10: Main function demonstrating usage
-slay main() {
+slay main_character() {
     sus sample_data = ["hello", "world", "cursed", "optimization"];
     sus sample_numbers = [1, 2, 3, 4, 5];
     sus sample_flags = [based, cap, based, cap, based];

@@ -13,7 +13,7 @@ fr fr! - Multiple signature algorithms support
 yeet "stdlib::packages::crypto_pki"
 yeet "stdlib::io"
 
-slay main() -> void {
+slay main_character() -> void {
     println("🏛️ CURSED PKI Comprehensive Demo")?;
     println("=================================")?;
     

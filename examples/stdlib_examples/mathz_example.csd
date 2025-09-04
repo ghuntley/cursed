@@ -217,7 +217,7 @@ slay run_comprehensive_tests() cringe {
     print_test_summary()
 }
 
-slay main() cringe {
+slay main_character() cringe {
     vibez.spill("📐 CURSED Mathematics Library (mathz) Demonstration")
     vibez.spill("==================================================")
     vibez.spill("")

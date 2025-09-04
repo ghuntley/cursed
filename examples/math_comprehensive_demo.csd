@@ -487,7 +487,7 @@ slay demonstrate_integration() {
 }
 
 fr fr Main demonstration function
-slay main() {
+slay main_character() {
     println("CURSED Mathematical Library - Comprehensive Demonstration")?;
     println("========================================================")?;
     println("")?;

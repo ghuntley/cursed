@@ -156,7 +156,7 @@ slay start_server(port drip) yikes<tea> {
 }
 
 # Application entry point
-slay main() {
+slay main_character() {
     start_server(8080) fam {
         when err -> {
             vibez.spill("❌ Server error:", err)

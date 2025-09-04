@@ -1,6 +1,6 @@
 vibe main
 
-slay main() {
+slay main_character() {
     normie x = 1;
     
     vibe_check x {

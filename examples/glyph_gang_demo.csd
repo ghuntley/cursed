@@ -4,7 +4,7 @@ fr fr Demonstrates comprehensive Unicode character processing with Gen Z flair
 yeet "stdlib::glyph_gang"
 yeet "stdlib::vibez"
 
-slay main() {
+slay main_character() {
     vibez.spill("🔥 GlyphGang Unicode Demo - Where Unicode meets Gen Z! 🔥");
     vibez.spill("");
     

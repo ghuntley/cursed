@@ -14,7 +14,7 @@ sus WATCH_TIMEOUT_MS drip = 30000  fr fr 30 seconds
 
 fr fr ===== MAIN DEMO PROGRAM =====
 
-slay main() {
+slay main_character() {
     vibez.spill("🔍 CURSED File Watching System Demo")
     vibez.spill("=====================================")
     

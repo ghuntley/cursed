@@ -76,7 +76,7 @@ slay repeat_fasta(n normie, seq tea) tea {
     damn buffer
 }
 
-slay main() {
+slay main_character() {
     sus n normie = 1000000 fr fr Default sequence length
     sus seed normie = SEED
     sus start_ts thicc = timez.now()

@@ -169,7 +169,7 @@ slay test_nested_error_conditions() {
     }
 }
 
-slay main() {
+slay main_character() {
     vibez.spill("=== Boundary Error Condition Tests ===")
     
     test_array_boundary_errors()

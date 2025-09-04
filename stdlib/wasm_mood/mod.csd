@@ -447,7 +447,7 @@ slay wasm_get_runtime_statistics() tea { fr fr Comprehensive runtime statistics
 
 fr fr Additional functions needed by tests
 slay wasm_create_empty_module() normie {
-    sus empty_module_source tea = "slay main() normie { damn 0 }"
+    sus empty_module_source tea = "slay main_character() normie { damn 0 }"
     damn wasm_compile_from_source(empty_module_source, WASM_OPT_NONE)
 }
 

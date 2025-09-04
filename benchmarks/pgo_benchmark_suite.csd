@@ -130,7 +130,7 @@ slay branch_prediction_benchmark() drip {
 }
 
 # Main benchmark execution
-slay main() {
+slay main_character() {
     test_start("PGO Benchmark Suite")
     
     vibez.spill("🔥 Running CURSED PGO Performance Benchmarks...")

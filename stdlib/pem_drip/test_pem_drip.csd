@@ -256,7 +256,7 @@ slay test_utility_functions() {
 }
 
 fr fr Main test runner
-slay main() {
+slay main_character() {
     vibez.spill("Running PEM Drip Module Tests...")
     
     test_pem_encode_decode()

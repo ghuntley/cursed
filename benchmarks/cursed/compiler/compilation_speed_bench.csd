@@ -136,7 +136,7 @@ slay create_small_program() lit {
     sus content tea = "
 yeet \"mathz\"
 
-slay main() lit {
+slay main_character() lit {
     sus x normie = 42
     sus y normie = abs_normie(-10)
     vibez.spill(\"Result:\", x + y)
@@ -177,7 +177,7 @@ slay process_points(points []Point) []meal {
     damn distances
 }
 
-slay main() lit {
+slay main_character() lit {
     sus points []Point = [
         Point{x: 0, y: 0},
         Point{x: 3, y: 4},
@@ -297,7 +297,7 @@ slay fibonacci(n normie) normie {
     damn fibonacci(n - 1) + fibonacci(n - 2)
 }
 
-slay main() lit {
+slay main_character() lit {
     sus objects []Drawable = [
         Circle{radius: 5.0, center: Vector3D{x: 0.0, y: 0.0, z: 0.0}},
         Rectangle{width: 10.0, height: 8.0, position: Vector3D{x: 5.0, y: 5.0, z: 0.0}},
@@ -363,7 +363,7 @@ slay function" + i + "(x normie, y normie) normie {
     }
     
     content = content + "
-slay main() lit {
+slay main_character() lit {
     sus total normie = 0
     sus i normie = 0
     bestie (i < 50) {

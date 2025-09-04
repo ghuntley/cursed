@@ -3,7 +3,7 @@ fr fr This file demonstrates comprehensive debug information generation
 fr fr for the CURSED programming language compiler
 
 fr fr Simple function with debug information
-slay main(sus argc, tea argv) -> sus {
+slay main_character(sus argc, tea argv) -> sus {
     // Variable declarations with debug info
     sus result = 42;
     facts debug_enabled = based;

@@ -332,7 +332,7 @@ slay error_handling_demo() -> Result<(), ProcessError> {
 }
 
 fr fr Main demonstration function
-slay main() -> Result<(), ProcessError> {
+slay main_character() -> Result<(), ProcessError> {
     println("CURSED Process Management Comprehensive Demo")?;
     println("============================================")?;
     

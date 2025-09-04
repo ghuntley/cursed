@@ -243,7 +243,7 @@ damn slay compile_template_to_llvm(
 }
 
 fr fr Main execution
-damn slay main() -> Result<(), tea> {
+damn slay main_character() -> Result<(), tea> {
     sus result = compile_template_examples()?;
     println(&format!("🎯 Result: {}", result));
     return ();

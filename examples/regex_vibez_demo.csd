@@ -386,7 +386,7 @@ squad VibeDemo {
     }
 }
 
-slay main() -> () {
+slay main_character() -> () {
     println("RegexVibez Comprehensive Demo");
     println("============================");
     println("");

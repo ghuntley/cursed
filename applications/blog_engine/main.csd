@@ -883,7 +883,7 @@ slay generate_comments_html(comments []tea) tea {
 
 fr fr ===== MAIN APPLICATION =====
 
-slay main() {
+slay main_character() {
     vibez.spill("Starting CURSED Blog Engine...")
     
     fr fr Initialize database
