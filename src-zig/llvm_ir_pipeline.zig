@@ -449,6 +449,13 @@ pub const LLVMIRPipeline = struct {
             .Import => |import_stmt| {
                 // Handle import statements by loading and compiling the module
                 print("📦 Processing import: {s}\n", .{import_stmt.path});
+                
+                // Skip vibez module loading - use built-in printf handling instead
+                if (std.mem.eql(u8, import_stmt.path, "vibez")) {
+                    print("DEBUG: Skipping vibez module loading - using built-in printf handling\n", .{});
+                    return;
+                }
+                
                 try self.loadAndCompileModule(import_stmt.path);
             },
             .While => |while_stmt| {
@@ -2974,29 +2981,21 @@ pub const LLVMIRPipeline = struct {
         self.current_function = main_func;
         c.LLVMPositionBuilderAtEnd(self.builder, entry_block);
         
-        // CRITICAL FIX: Call appropriate main function based on package name
-        // If package is "main", call "main" function
-        // If package is "main_character" or missing, call "main_character" function
-        var main_function_name: []const u8 = "main_character"; // default
-        if (self.program_package) |pkg_name| {
-            if (std.mem.eql(u8, pkg_name, "main")) {
-                main_function_name = "main";
-            }
-        }
+        // CRITICAL FIX: CURSED always uses "main_character" as the entry function
+        // The package name can be "main" but the function is always "main_character"
+        const main_function_name: []const u8 = "main_character";
         
         if (self.functions.get(main_function_name)) |cursed_main_func| {
             // Create the function type for main function: () -> void
-            var empty_param_types = [_]c.LLVMTypeRef{};
             const main_function_type = c.LLVMFunctionType(
                 c.LLVMVoidTypeInContext(self.context),
-                @ptrCast(empty_param_types[0..0]),
+                null,
                 0,
                 0
             );
             
             // Call main function with no arguments  
-            var empty_args = [_]c.LLVMValueRef{};
-            _ = c.LLVMBuildCall2(self.builder, main_function_type, cursed_main_func, @ptrCast(empty_args[0..0]), 0, "");
+            _ = c.LLVMBuildCall2(self.builder, main_function_type, cursed_main_func, null, 0, "");
         }
 
         // Add proper terminator if block doesn't have one
