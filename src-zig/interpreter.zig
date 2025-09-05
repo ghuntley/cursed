@@ -29,8 +29,9 @@ fn formatFloatLikeC(allocator: Allocator, value: f64) ![]u8 {
     }
     
     // For very small or very large values, use scientific notation
+    // Match LLVM backend format: 1e-07 instead of 1.00000e-7
     if (abs_value < 0.0001 or abs_value >= 1000000.0) {
-        return std.fmt.allocPrint(allocator, "{e:.5}", .{value});
+        return std.fmt.allocPrint(allocator, "{e}", .{value});
     }
     
     // For integer values (within precision limits), show as integers
@@ -38,9 +39,9 @@ fn formatFloatLikeC(allocator: Allocator, value: f64) ![]u8 {
         return std.fmt.allocPrint(allocator, "{d:.0}", .{value});
     }
     
-    // For decimal values, use %g-like behavior with limited significant digits
-    // Note: Zig's {d} doesn't have %g's exact rounding behavior, so we approximate
-    const formatted = std.fmt.allocPrint(allocator, "{d:.5}", .{value}) catch return std.fmt.allocPrint(allocator, "{d}", .{value});
+    // For decimal values, use %g-like behavior with limited significant digits  
+    // Match LLVM backend precision: use 6 digits instead of 5
+    const formatted = std.fmt.allocPrint(allocator, "{d:.6}", .{value}) catch return std.fmt.allocPrint(allocator, "{d}", .{value});
     
     // Remove trailing zeros after decimal point (like %g does)
     var result = formatted;
@@ -393,9 +394,9 @@ pub const Value = union(enum) {
             .Float => |float| return formatFloatLikeC(allocator, float),
             .String => |str| return allocator.dupe(u8, str),
             .OwnedString => |str| return allocator.dupe(u8, str),
-            .Boolean => |bool_val| return allocator.dupe(u8, if (bool_val) "based" else "cap"),
+            .Boolean => |bool_val| return allocator.dupe(u8, if (bool_val) "based" else "cringe"),
             .Character => |char| return std.fmt.allocPrint(allocator, "{c}", .{char}),
-            .Null => return allocator.dupe(u8, "cap"),
+            .Null => return allocator.dupe(u8, "nah"),
             .Pointer => |ptr| return std.fmt.allocPrint(allocator, "pointer@{*}", .{ptr.pointee_value}),
             .Struct => |struct_inst| return std.fmt.allocPrint(allocator, "struct {s}", .{struct_inst.type_name}),
             .Interface => |interface_inst| return std.fmt.allocPrint(allocator, "interface {s}", .{interface_inst.vtable.interface_name}),
@@ -1296,7 +1297,7 @@ pub const Interpreter = struct {
                     // Removed DEBUG: Copied function name to stable memory: '{s}' ptr=@{*}\n", .{ stable_name, stable_name.ptr });
                     
                     try module_functions.put(stable_name, value);
-                    // Removed DEBUG: Exported CURSED function {s}.{s}\n", .{ module_name, stable_name });
+                    // std.debug.print("DEBUG: Exported CURSED function {s}.{s}\n", .{ module_name, stable_name });
                 },
                 else => {
                     // Skip non-function values
@@ -2694,9 +2695,7 @@ pub const Interpreter = struct {
             },
             .Module => |module_ptr| {
                 // Look for function in module
-                // Removed DEBUG: Looking for function '{s}' in module (length: {})\n", .{ member.property, member.property.len });
                 if (module_ptr.functions.get(member.property)) |func_value| {
-                    // Removed DEBUG: Found function '{s}' in module\n", .{member.property});
                     
                     switch (func_value) {
                         .BuiltinFunction => |builtin_func| {
@@ -2733,7 +2732,6 @@ pub const Interpreter = struct {
                         }
                     }
                 } else {
-                    // Removed DEBUG: Function '{s}' not found in module\n", .{member.property});
                     return InterpreterError.UndefinedFunction;
                 }
             },
@@ -4651,7 +4649,7 @@ fn builtinFmtFormatBool(interpreter: *Interpreter, args: []Value) InterpreterErr
     const val = args[0];
     switch (val) {
         .Boolean => |b| {
-            const result = interpreter.allocator.dupe(u8, if (b) "based" else "cap") catch {
+            const result = interpreter.allocator.dupe(u8, if (b) "based" else "cringe") catch {
                 return InterpreterError.OutOfMemory;
             };
             return Value{ .String = result };
@@ -4846,7 +4844,7 @@ fn builtinIoPrint(interpreter: *Interpreter, args: []Value) InterpreterError!Val
             std.heap.page_allocator.free(formatted);
         },
         .Boolean => |b| {
-            std.debug.print("{s}", .{if (b) "based" else "cap"});
+            std.debug.print("{s}", .{if (b) "based" else "cringe"});
         },
         else => {
             std.debug.print("unsupported type", .{});
@@ -4873,7 +4871,7 @@ fn builtinIoPrintln(interpreter: *Interpreter, args: []Value) InterpreterError!V
             std.heap.page_allocator.free(formatted);
         },
         .Boolean => |b| {
-            std.debug.print("{s}\n", .{if (b) "based" else "cap"});
+            std.debug.print("{s}\n", .{if (b) "based" else "cringe"});
         },
         else => {
             std.debug.print("unsupported type\n", .{});

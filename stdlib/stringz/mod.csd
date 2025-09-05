@@ -15,7 +15,7 @@ slay concat(a tea, b tea) tea {
 
 slay substring(text tea, start normie, stop normie) tea {
     fr fr Guard against obvious bad ranges 
-    ready (start < 0 || stop < start || start >= length(text)) {
+    ready (start < 0 || stop < start || start >= len(text)) {
         damn ""
     }
     

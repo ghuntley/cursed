@@ -2959,12 +2959,12 @@ pub const LLVMIRPipeline = struct {
                 // Integer types - check bit width
                 const bit_width = c.LLVMGetIntTypeWidth(printf_arg_type);
                 if (bit_width == 1) {
-                    // Boolean type (i1) - convert to "based" or "cap" string
+                    // Boolean type (i1) - convert to "based" or "cringe" string
                     const based_str = if (is_last) try self.generateStringLiteral("based\n") else try self.generateStringLiteral("based ");
-                    const cap_str = if (is_last) try self.generateStringLiteral("cap\n") else try self.generateStringLiteral("cap ");
+                    const cringe_str = if (is_last) try self.generateStringLiteral("cringe\n") else try self.generateStringLiteral("cringe ");
                     
                     // Select the appropriate string based on the boolean value
-                    const selected_str = c.LLVMBuildSelect(self.builder, arg_val, based_str, cap_str, "bool_to_string");
+                    const selected_str = c.LLVMBuildSelect(self.builder, arg_val, based_str, cringe_str, "bool_to_string");
                     
                     // Use %s format for string output
                     fmt_str = try self.generateStringLiteral("%s");
@@ -3025,29 +3025,60 @@ pub const LLVMIRPipeline = struct {
 
     /// Generate append function call for arrays
     fn generateAppendCall(self: *LLVMIRPipeline, array_expr: ast.Expression, element_expr: ast.Expression) !c.LLVMValueRef {
-        // This is a simplified implementation that focuses on length tracking
-        // for interpreter/compiler parity. In a full implementation, this would
-        // need to handle dynamic memory allocation and array resizing.
-        
-        // Evaluate the element expression (for side effects)
+        // Get the current array value
+        const current_array = try self.generateExpression(array_expr);
         const element_val = try self.generateExpression(element_expr);
-        _ = element_val; // Acknowledge we have the element value
         
-        // Track array length if we can identify the variable name
+        // Get array type information
+        const array_type = c.LLVMTypeOf(current_array);
+        const element_type = c.LLVMInt32TypeInContext(self.context); // Assume i32 elements for now
+        
+        // Get current array length from metadata or calculate it
+        var current_length: u32 = 1; // Default fallback
+        
+        // Try to get array length from our tracking system
         if (array_expr == .Identifier) {
             const var_name = array_expr.Identifier;
-            if (self.array_lengths.getPtr(var_name)) |length_ptr| {
-                length_ptr.* += 1;
-            } else {
-                // Initialize array length if not tracked yet
-                const safe_name = try self.arena.allocator().dupe(u8, var_name);
-                try self.array_lengths.put(safe_name, 1);
+            if (self.array_lengths.get(var_name)) |tracked_length| {
+                current_length = @intCast(tracked_length);
             }
         }
         
-        // Return the array expression unchanged (simplified implementation)
-        // Note: In a full implementation, this would return a new array with the appended element
-        return try self.generateExpression(array_expr);
+        // Create new array with length + 1
+        const new_length = current_length + 1;
+        const new_array_type = c.LLVMArrayType(element_type, new_length);
+        const new_array_alloca = c.LLVMBuildAlloca(self.builder, new_array_type, "new_array");
+        
+        // Copy existing elements to new array
+        var i: u32 = 0;
+        while (i < current_length) {
+            const idx = c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), i, 0);
+            
+            // Get element from current array (using placeholder for now)
+            const element_ptr = c.LLVMBuildGEP2(self.builder, array_type, current_array, @constCast(@ptrCast(&idx)), 1, "element_ptr");
+            const element_value = c.LLVMBuildLoad2(self.builder, element_type, element_ptr, "element_val");
+            
+            // Store in new array
+            const new_element_ptr = c.LLVMBuildGEP2(self.builder, new_array_type, new_array_alloca, @constCast(@ptrCast(&idx)), 1, "new_element_ptr");
+            _ = c.LLVMBuildStore(self.builder, element_value, new_element_ptr);
+            
+            i += 1;
+        }
+        
+        // Add the new element at the end
+        const last_idx = c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), new_length - 1, 0);
+        const last_element_ptr = c.LLVMBuildGEP2(self.builder, new_array_type, new_array_alloca, @constCast(@ptrCast(&last_idx)), 1, "last_element_ptr");
+        _ = c.LLVMBuildStore(self.builder, element_val, last_element_ptr);
+        
+        // Update length tracking
+        if (array_expr == .Identifier) {
+            const var_name = array_expr.Identifier;
+            const safe_name = try self.arena.allocator().dupe(u8, var_name);
+            try self.array_lengths.put(safe_name, new_length);
+        }
+        
+        // Return the new array
+        return c.LLVMBuildLoad2(self.builder, new_array_type, new_array_alloca, "appended_array");
     }
 
     /// Generate len function call for arrays
