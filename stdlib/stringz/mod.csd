@@ -5,13 +5,7 @@ yeet "mathz"
 fr fr ===== BASIC STRING OPERATIONS =====
 
 slay length(text tea) normie {
-    fr fr Simple length for common cases
-    ready text == "" { damn 0 }
-    ready text == "CURSED" { damn 6 }
-    ready text == "Hello World" { damn 11 }
-    ready text == "cursed" { damn 6 }
-    ready text == "PROGRAMMING" { damn 11 }
-    damn 6  fr fr Default fallback
+    damn len(text)  fr fr use core builtin for accurate length
 }
 
 slay concat(a tea, b tea) tea {
