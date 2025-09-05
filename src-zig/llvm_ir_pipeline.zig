@@ -670,6 +670,25 @@ pub const LLVMIRPipeline = struct {
         const previous_function = self.current_function;
         self.current_function = function;
         
+        // Push new variable scope for function-local variables
+        const old_variables = self.variables;
+        const old_var_types = self.variable_types;
+        const old_array_lengths = self.array_lengths;
+        
+        self.variables = HashMap([]const u8, c.LLVMValueRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(self.allocator);
+        self.variable_types = HashMap([]const u8, c.LLVMTypeRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(self.allocator);
+        self.array_lengths = HashMap([]const u8, u32, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(self.allocator);
+        
+        defer {
+            // Pop scope - restore previous variable maps
+            self.variables.deinit();
+            self.variable_types.deinit();
+            self.array_lengths.deinit();
+            self.variables = old_variables;
+            self.variable_types = old_var_types;
+            self.array_lengths = old_array_lengths;
+        }
+        
         // Generate function parameters
         for (func_decl.parameters.items, 0..) |param, i| {
             const llvm_param = c.LLVMGetParam(function, @intCast(i));
