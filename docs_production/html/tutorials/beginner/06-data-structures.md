@@ -18,7 +18,7 @@ Arrays are fixed-size collections of elements of the same type.
 ### Basic Array Operations
 
 ```cursed
-# arrays.csd - Working with arrays
+# arrays.💀 - Working with arrays
 
 vibe main
 
@@ -49,7 +49,7 @@ slay main() {
 ### Array Iteration
 
 ```cursed
-# array_iteration.csd - Iterating through arrays
+# array_iteration.💀 - Iterating through arrays
 
 vibe main
 
@@ -87,7 +87,7 @@ slay main() {
 ### Multi-dimensional Arrays
 
 ```cursed
-# multi_arrays.csd - Multi-dimensional arrays
+# multi_arrays.💀 - Multi-dimensional arrays
 
 vibe main
 
@@ -131,7 +131,7 @@ Slices are dynamic arrays that can grow and shrink.
 ### Basic Slice Operations
 
 ```cursed
-# slices.csd - Working with slices
+# slices.💀 - Working with slices
 
 vibe main
 
@@ -161,7 +161,7 @@ slay main() {
 ### Slice Manipulation
 
 ```cursed
-# slice_operations.csd - Slice operations
+# slice_operations.💀 - Slice operations
 
 vibe main
 
@@ -197,7 +197,7 @@ Structs group related data together.
 ### Basic Struct Definition
 
 ```cursed
-# structs.csd - Working with structs
+# structs.💀 - Working with structs
 
 vibe main
 
@@ -255,7 +255,7 @@ slay main() {
 ### Nested Structs
 
 ```cursed
-# nested_structs.csd - Structs containing other structs
+# nested_structs.💀 - Structs containing other structs
 
 vibe main
 
@@ -327,7 +327,7 @@ slay main() {
 ### Struct Methods
 
 ```cursed
-# struct_methods.csd - Methods on structs
+# struct_methods.💀 - Methods on structs
 
 vibe main
 
@@ -400,7 +400,7 @@ Maps store key-value pairs for fast lookups.
 ### Basic Map Operations
 
 ```cursed
-# maps.csd - Working with maps
+# maps.💀 - Working with maps
 
 vibe main
 
@@ -443,7 +443,7 @@ slay main() {
 ### Map Iteration and Operations
 
 ```cursed
-# map_operations.csd - Advanced map operations
+# map_operations.💀 - Advanced map operations
 
 vibe main
 
@@ -492,7 +492,7 @@ slay main() {
 ### Combining Data Structures
 
 ```cursed
-# complex_data.csd - Combining different data structures
+# complex_data.💀 - Combining different data structures
 
 vibe main
 
@@ -571,7 +571,7 @@ Create a comprehensive library management system using various data structures:
 ### Solution
 
 ```cursed
-# library_system.csd - Complete library management system
+# library_system.💀 - Complete library management system
 
 vibe main
 

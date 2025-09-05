@@ -134,8 +134,8 @@ lowkey write_err != "" {
 ```cursed
 yeet "ioz"
 
-lowkey ioz_file_exists("source.csd") {
-    sus code tea = ioz_read_file("source.csd")
+lowkey ioz_file_exists("source.💀") {
+    sus code tea = ioz_read_file("source.💀")
     // Process code...
 }
 ```
@@ -144,7 +144,7 @@ lowkey ioz_file_exists("source.csd") {
 ```cursed
 yeet "io_enhanced"
 
-(sus source SourceFile, sus err tea) = SourceFile_read("source.csd")
+(sus source SourceFile, sus err tea) = SourceFile_read("source.💀")
 lowkey err == "" {
     vibez.spill("Loaded " + string(source.line_count) + " lines")
     
@@ -256,7 +256,7 @@ The module provides a thin compatibility layer that:
 ```bash
 # Test legacy compatibility
 zig build test
-./zig-out/bin/cursed-zig stdlib/ioz/test_ioz.csd
+./zig-out/bin/cursed-zig stdlib/ioz/test_ioz.💀
 ```
 
 ### Migration Validation

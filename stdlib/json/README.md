@@ -207,10 +207,10 @@ Run the comprehensive test suite:
 
 ```bash
 # Test interpretation mode
-cargo run --bin cursed stdlib/json/test_json.csd
+cargo run --bin cursed stdlib/json/test_json.💀
 
 # Test compilation mode
-cargo run --bin cursed -- compile stdlib/json/test_json.csd
+cargo run --bin cursed -- compile stdlib/json/test_json.💀
 ./test_json
 ```
 

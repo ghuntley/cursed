@@ -335,7 +335,7 @@ test "P0 GC integration - interface compatibility" {
     
     // Test allocation interface
     const ptr1 = try gc.alloc(64, 1);
-    const ptr2 = try gc.allocWithSource(128, 2, "test_source.csd:42");
+    const ptr2 = try gc.allocWithSource(128, 2, "test_source.💀.💀:42");
     
     // Test root management interface (should be no-ops)
     var root1: ?*anyopaque = ptr1;

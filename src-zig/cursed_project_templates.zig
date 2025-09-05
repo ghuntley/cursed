@@ -68,7 +68,7 @@ pub const ProjectTemplates = struct {
         const package_content = try std.fmt.allocPrint(allocator, package_toml, .{project_name});
         try template.addFile("CursedPackage.toml", package_content, false);
         
-        // main.csd
+        // main.💀.💀
         const main_csd = 
             \\yeet "vibez"
             \\
@@ -80,9 +80,9 @@ pub const ProjectTemplates = struct {
         ;
         
         const main_content = try std.fmt.allocPrint(allocator, main_csd, .{project_name});
-        try template.addFile("src/main.csd", main_content, false);
+        try template.addFile("src/main.💀", main_content, false);
         
-        // test/main_test.csd
+        // test/main_test.💀.💀
         const test_csd = 
             \\yeet "testz"
             \\yeet "../src/main"
@@ -96,7 +96,7 @@ pub const ProjectTemplates = struct {
             \\
         ;
         
-        try template.addFile("test/main_test.csd", test_csd, false);
+        try template.addFile("test/main_test.💀", test_csd, false);
         
         // README.md
         const readme_md = 
@@ -205,7 +205,7 @@ pub const ProjectTemplates = struct {
         const package_content = try std.fmt.allocPrint(allocator, package_toml, .{project_name});
         try template.addFile("CursedPackage.toml", package_content, false);
         
-        // lib.csd
+        // lib.💀.💀
         const lib_csd = 
             \\// {s} - A CURSED Library
             \\
@@ -239,9 +239,9 @@ pub const ProjectTemplates = struct {
         ;
         
         const lib_content = try std.fmt.allocPrint(allocator, lib_csd, .{ project_name, project_name });
-        try template.addFile("src/lib.csd", lib_content, false);
+        try template.addFile("src/lib.💀", lib_content, false);
         
-        // test/lib_test.csd
+        // test/lib_test.💀.💀
         const test_csd = 
             \\yeet "testz"
             \\yeet "../src/lib"
@@ -266,9 +266,9 @@ pub const ProjectTemplates = struct {
         ;
         
         const test_content = try std.fmt.allocPrint(allocator, test_csd, .{ project_name, project_name });
-        try template.addFile("test/lib_test.csd", test_content, false);
+        try template.addFile("test/lib_test.💀", test_content, false);
         
-        // examples/usage.csd
+        // examples/usage.💀.💀
         const example_csd = 
             \\yeet "vibez"
             \\yeet "../src/lib"
@@ -289,7 +289,7 @@ pub const ProjectTemplates = struct {
         ;
         
         const example_content = try std.fmt.allocPrint(allocator, example_csd, .{project_name});
-        try template.addFile("examples/usage.csd", example_content, false);
+        try template.addFile("examples/usage.💀", example_content, false);
         
         // README.md for library
         const readme_md = 
@@ -399,7 +399,7 @@ pub const ProjectTemplates = struct {
         const package_content = try std.fmt.allocPrint(allocator, package_toml, .{project_name});
         try template.addFile("CursedPackage.toml", package_content, false);
         
-        // main.csd for web
+        // main.💀.💀 for web
         const main_csd = 
             \\// {s} - CURSED Web Application
             \\
@@ -431,7 +431,7 @@ pub const ProjectTemplates = struct {
         ;
         
         const main_content = try std.fmt.allocPrint(allocator, main_csd, .{project_name});
-        try template.addFile("src/main.csd", main_content, false);
+        try template.addFile("src/main.💀", main_content, false);
         
         // index.html
         const index_html = 
@@ -547,7 +547,7 @@ pub const ProjectTemplates = struct {
         const package_content = try std.fmt.allocPrint(allocator, package_toml, .{project_name});
         try template.addFile("CursedPackage.toml", package_content, false);
         
-        // main.csd for CLI
+        // main.💀.💀 for CLI
         const main_csd = 
             \\yeet "vibez"
             \\yeet "args"
@@ -602,7 +602,7 @@ pub const ProjectTemplates = struct {
         ;
         
         const main_content = try std.fmt.allocPrint(allocator, main_csd, .{ project_name, project_name, project_name });
-        try template.addFile("src/main.csd", main_content, false);
+        try template.addFile("src/main.💀", main_content, false);
         
         return template;
     }

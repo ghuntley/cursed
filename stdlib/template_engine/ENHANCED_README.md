@@ -15,9 +15,9 @@ A comprehensive, high-performance template engine for web development and code g
 
 ### Core Modules
 
-- `mod.csd` - Basic template engine with variable substitution and control flow
-- `advanced.csd` - Advanced features including inheritance, compilation, and security
-- `web.csd` - Web-specific templates, components, forms, and layouts
+- `mod.💀` - Basic template engine with variable substitution and control flow
+- `advanced.💀` - Advanced features including inheritance, compilation, and security
+- `web.💀` - Web-specific templates, components, forms, and layouts
 
 ## 🔧 Usage Examples
 
@@ -136,7 +136,7 @@ Optimized for production use with:
 Run the comprehensive test suite:
 
 ```bash
-./zig-out/bin/cursed-zig stdlib/template_engine/comprehensive_test.csd
+./zig-out/bin/cursed-zig stdlib/template_engine/comprehensive_test.💀
 ```
 
 This tests all enhanced features including:

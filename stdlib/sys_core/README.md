@@ -150,14 +150,14 @@ The `sys_core` module is designed with self-hosting in mind:
 
 ## Testing
 
-Comprehensive test suite included in `test_sys_core.csd`:
+Comprehensive test suite included in `test_sys_core.💀`:
 
 ```bash
 # Run sys_core tests
-cargo run --bin cursed stdlib/sys_core/test_sys_core.csd
+cargo run --bin cursed stdlib/sys_core/test_sys_core.💀
 
 # Test compilation mode
-cargo run --bin cursed -- compile stdlib/sys_core/test_sys_core.csd
+cargo run --bin cursed -- compile stdlib/sys_core/test_sys_core.💀
 ./test_sys_core
 ```
 

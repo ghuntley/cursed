@@ -26,7 +26,7 @@ slay function_name(parameters) return_type {
 ### Simple Function Example
 
 ```cursed
-# simple_function.csd - Basic function examples
+# simple_function.💀 - Basic function examples
 
 vibe main
 
@@ -62,7 +62,7 @@ slay main() {
 ### Single Parameter
 
 ```cursed
-# parameters.csd - Function parameters
+# parameters.💀 - Function parameters
 
 vibe main
 
@@ -94,7 +94,7 @@ slay main() {
 ### Multiple Parameters
 
 ```cursed
-# multiple_params.csd - Functions with multiple parameters
+# multiple_params.💀 - Functions with multiple parameters
 
 vibe main
 
@@ -139,7 +139,7 @@ slay main() {
 ### Single Return Value
 
 ```cursed
-# return_single.csd - Single return values
+# return_single.💀 - Single return values
 
 vibe main
 
@@ -175,7 +175,7 @@ slay main() {
 ### Multiple Return Values
 
 ```cursed
-# return_multiple.csd - Multiple return values
+# return_multiple.💀 - Multiple return values
 
 vibe main
 
@@ -230,7 +230,7 @@ slay main() {
 ### Local Variables
 
 ```cursed
-# scope.csd - Variable scope in functions
+# scope.💀 - Variable scope in functions
 
 vibe main
 
@@ -272,7 +272,7 @@ slay main() {
 ### Parameter Passing
 
 ```cursed
-# parameter_passing.csd - How parameters are passed
+# parameter_passing.💀 - How parameters are passed
 
 vibe main
 
@@ -308,7 +308,7 @@ slay main() {
 ### Recursive Functions
 
 ```cursed
-# recursion.csd - Recursive functions
+# recursion.💀 - Recursive functions
 
 vibe main
 
@@ -356,7 +356,7 @@ slay main() {
 ### Helper Functions
 
 ```cursed
-# helpers.csd - Helper functions for organization
+# helpers.💀 - Helper functions for organization
 
 vibe main
 
@@ -413,7 +413,7 @@ slay main() {
 
 ## Exercise: Library Management System
 
-Create a program called `library.csd` that implements a simple library management system with the following functions:
+Create a program called `library.💀` that implements a simple library management system with the following functions:
 
 1. `calculate_fine(days_overdue normie) meal` - Calculate fine for overdue books
 2. `get_book_category(book_id normie) tea` - Get book category by ID
@@ -423,7 +423,7 @@ Create a program called `library.csd` that implements a simple library managemen
 ### Solution
 
 ```cursed
-# library.csd - Library management system
+# library.💀 - Library management system
 
 vibe main
 

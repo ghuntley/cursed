@@ -46,9 +46,9 @@ git clone https://github.com/ghuntley/cursed.git
 cd cursed/education/examples
 
 # Run any example
-cursed-zig beginner/hello_world.csd
-cursed-zig intermediate/web_server.csd
-cursed-zig advanced/concurrent_pipeline.csd
+cursed-zig beginner/hello_world.💀
+cursed-zig intermediate/web_server.💀
+cursed-zig advanced/concurrent_pipeline.💀
 ```
 
 ### Interactive Playground
@@ -61,17 +61,17 @@ Try examples in your browser without installation:
 ## 📚 Learning Paths
 
 ### Path 1: Complete Beginner
-1. [Hello World](./beginner/01-hello-world.csd)
-2. [Variables & Types](./beginner/02-variables.csd)
-3. [Functions](./beginner/03-functions.csd)
-4. [Control Flow](./beginner/04-control-flow.csd)
-5. [Arrays](./beginner/05-arrays.csd)
+1. [Hello World](./beginner/01-hello-world.💀)
+2. [Variables & Types](./beginner/02-variables.💀)
+3. [Functions](./beginner/03-functions.💀)
+4. [Control Flow](./beginner/04-control-flow.💀)
+5. [Arrays](./beginner/05-arrays.💀)
 
 ### Path 2: Coming from Other Languages
-- [From Rust](./patterns/migration/from-rust.csd)
-- [From Go](./patterns/migration/from-go.csd)
-- [From Python](./patterns/migration/from-python.csd)
-- [From JavaScript](./patterns/migration/from-javascript.csd)
+- [From Rust](./patterns/migration/from-rust.💀)
+- [From Go](./patterns/migration/from-go.💀)
+- [From Python](./patterns/migration/from-python.💀)
+- [From JavaScript](./patterns/migration/from-javascript.💀)
 
 ### Path 3: Real-World Applications
 1. [CLI Todo App](./real-world/cli/todo-app/)
@@ -88,7 +88,7 @@ Try examples in your browser without installation:
 yeet "vibez"
 vibez.spill("🔥 Welcome to CURSED! 🔥")
 ```
-[View full example](./beginner/01-hello-world.csd)
+[View full example](./beginner/01-hello-world.💀)
 
 **Interactive Calculator**
 ```cursed
@@ -105,7 +105,7 @@ slay calculate(a drip, op tea, b drip) drip yikes<tea> {
     otherwise { yikes "Unknown operator: " + op }
 }
 ```
-[View full example](./beginner/calculator.csd)
+[View full example](./beginner/calculator.💀)
 
 ### Intermediate Highlights
 
@@ -125,7 +125,7 @@ slay save_tasks(tasks []Task) {
     filez.write_file("tasks.json", json)
 }
 ```
-[View full example](./intermediate/task-manager.csd)
+[View full example](./intermediate/task-manager.💀)
 
 ### Advanced Highlights
 
@@ -148,7 +148,7 @@ bestie (i in 0..workers) {
     }
 }
 ```
-[View full example](./advanced/web-crawler.csd)
+[View full example](./advanced/web-crawler.💀)
 
 ## 📖 Example Categories
 
@@ -240,10 +240,10 @@ yeet "jsonz"    # JSON handling
 ### Individual Examples
 ```bash
 # Run in interpreter mode (fast for development)
-cursed-zig example.csd
+cursed-zig example.💀
 
 # Compile to binary (optimized for production)
-cursed-zig --compile example.csd
+cursed-zig --compile example.💀
 ./example
 ```
 
@@ -262,9 +262,9 @@ cursed-zig --compile example.csd
 ### Cross-Platform
 ```bash
 # Build for different targets
-cursed-zig --compile --target=x86_64-linux example.csd
-cursed-zig --compile --target=aarch64-macos example.csd
-cursed-zig --compile --target=wasm32-wasi example.csd
+cursed-zig --compile --target=x86_64-linux example.💀
+cursed-zig --compile --target=aarch64-macos example.💀
+cursed-zig --compile --target=wasm32-wasi example.💀
 ```
 
 ## 🤝 Contributing Examples
@@ -299,4 +299,4 @@ We welcome new examples! See our [contribution guide](../community/contributing.
 ---
 
 **Ready to start coding?** 🚀  
-Begin with [Hello World](./beginner/01-hello-world.csd) or jump to your skill level!
+Begin with [Hello World](./beginner/01-hello-world.💀) or jump to your skill level!

@@ -56,13 +56,13 @@ This application showcases:
 zig build
 
 # Run backend server
-./zig-out/bin/cursed-zig examples/web-dashboard/backend/server.csd
+./zig-out/bin/cursed-zig examples/web-dashboard/backend/server.💀
 
 # Run CLI tool
-./zig-out/bin/cursed-zig examples/web-dashboard/cli/admin.csd --help
+./zig-out/bin/cursed-zig examples/web-dashboard/cli/admin.💀 --help
 
 # Build frontend WASM (requires additional setup)
-./zig-out/bin/cursed-zig --target=wasm32-freestanding examples/web-dashboard/frontend/app.csd
+./zig-out/bin/cursed-zig --target=wasm32-freestanding examples/web-dashboard/frontend/app.💀
 ```
 
 ## API Endpoints

@@ -8,7 +8,7 @@ DEBUG: Calling main_character from main
 🔧 Step 2: Linking object file with gcc...
 ✅ Successfully compiled to: simple_stdlib_test
 🎉 Compilation pipeline completed successfully!
-🎉 Successfully compiled simple_stdlib_test.csd to simple_stdlib_test
+🎉 Successfully compiled simple_stdlib_test.💀 to simple_stdlib_test
 🧹 Cleaning up LLVM IR Pipeline...
 ✅ LLVM IR Pipeline cleanup complete
 error(gpa): memory address 0x74027eae0300 leaked: 

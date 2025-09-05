@@ -98,9 +98,9 @@ class PerformanceProfiler:
         
         # Compilation benchmarks
         self.compilation_tests = {
-            "small_file": "basic_test.csd",
-            "medium_file": "comprehensive_stdlib_test.csd", 
-            "large_file": "comprehensive_advanced_test.csd"
+            "small_file": "basic_test.💀",
+            "medium_file": "comprehensive_stdlib_test.💀", 
+            "large_file": "comprehensive_advanced_test.💀"
         }
     
     def check_prerequisites(self) -> bool:
@@ -125,7 +125,7 @@ class PerformanceProfiler:
                            timeout: int = 30) -> BenchmarkResult:
         """Run a single benchmark and collect metrics"""
         # Create temporary test file
-        test_file = self.results_dir / f"{test_name}_temp.csd"
+        test_file = self.results_dir / f"{test_name}_temp.💀"
         test_file.write_text(program_code)
         
         try:
@@ -314,7 +314,7 @@ class PerformanceProfiler:
         
         for test_name, program_code in self.test_programs.items():
             # Create test file
-            test_file = self.results_dir / f"{test_name}_hyperfine.csd"
+            test_file = self.results_dir / f"{test_name}_hyperfine.💀"
             test_file.write_text(program_code)
             
             try:
@@ -360,7 +360,7 @@ class PerformanceProfiler:
         }
         
         for test_name, program_code in memory_test_programs.items():
-            test_file = self.results_dir / f"{test_name}_valgrind.csd"
+            test_file = self.results_dir / f"{test_name}_valgrind.💀"
             test_file.write_text(program_code)
             
             try:

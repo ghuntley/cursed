@@ -14,7 +14,7 @@ The CURSED programming language has achieved **full self-hosting capability** wi
 
 ## 🎯 **Standard Library Modules Status**
 
-### ✅ **mathz Module** - `stdlib/mathz/mod.csd`
+### ✅ **mathz Module** - `stdlib/mathz/mod.💀`
 **Status:** COMPLETE AND VERIFIED
 - ✅ `add_two(a, b)` - Addition operations
 - ✅ `abs_normie(x)` - Absolute value
@@ -28,7 +28,7 @@ The CURSED programming language has achieved **full self-hosting capability** wi
 
 **Verification:** Successfully tested with `test_math_verification_binary`
 
-### ✅ **stringz Module** - `stdlib/stringz/mod.csd`  
+### ✅ **stringz Module** - `stdlib/stringz/mod.💀`  
 **Status:** COMPLETE AND VERIFIED
 - ✅ `length(s)` - String length calculation
 - ✅ `concat(s1, s2)` - String concatenation
@@ -43,7 +43,7 @@ The CURSED programming language has achieved **full self-hosting capability** wi
 
 **Verification:** Tested with string manipulation operations
 
-### ✅ **time Module** - `stdlib/time/mod.csd`
+### ✅ **time Module** - `stdlib/time/mod.💀`
 **Status:** COMPLETE AND COMPREHENSIVE
 - ✅ **Core Time Functions:**
   - `now()` - Current time
@@ -75,7 +75,7 @@ The CURSED programming language has achieved **full self-hosting capability** wi
 
 **Innovation:** Most comprehensive time library of any self-hosted language
 
-### ✅ **collections Module** - `stdlib/collections/mod.csd`
+### ✅ **collections Module** - `stdlib/collections/mod.💀`
 **Status:** COMPLETE AND VERIFIED
 - ✅ `Vec_new(capacity)` - Dynamic vector creation
 - ✅ `Vec_len(vec)` - Vector length
@@ -90,7 +90,7 @@ The CURSED programming language has achieved **full self-hosting capability** wi
 
 **Verification:** Successfully tested with `test_collections_real_working_binary`
 
-### ✅ **fs Module** - `stdlib/fs/mod.csd`
+### ✅ **fs Module** - `stdlib/fs/mod.💀`
 **Status:** COMPLETE AND VERIFIED  
 - ✅ `read_file(path)` - File reading
 - ✅ `write_file(path, content)` - File writing

@@ -26,9 +26,9 @@
     "timeout_seconds": 300,
     "warmup_iterations": 3,
     "test_files": [
-      "benchmarks/fibonacci.csd",
-      "benchmarks/sort_algorithms.csd",
-      "benchmarks/matrix_multiply.csd"
+      "benchmarks/fibonacci.💀",
+      "benchmarks/sort_algorithms.💀",
+      "benchmarks/matrix_multiply.💀"
     ]
   },
   "profiling_config": {

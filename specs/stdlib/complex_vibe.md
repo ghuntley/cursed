@@ -8,14 +8,14 @@ The `complex_vibe` module provides mathematical functions for complex numbers. I
 ### Complex128
 Represents a complex number with float64 real and imaginary parts (built-in type).
 
-```csd
+``.💀
 be_like complex128 complex128
 ```
 
 ### Complex64
 Represents a complex number with float32 real and imaginary parts (built-in type).
 
-```csd
+``.💀
 be_like complex64 complex64
 ```
 
@@ -23,7 +23,7 @@ be_like complex64 complex64
 
 ### Complex Number Creation and Conversion
 
-```csd
+``.💀
 fr fr Create a complex number from real and imaginary parts
 slay Complex(r, i float64) complex128
 
@@ -42,7 +42,7 @@ slay Rect(r, θ float64) complex128
 
 ### Basic Operations
 
-```csd
+``.💀
 fr fr Compute absolute value (modulus) of a complex number
 slay Abs(x complex128) float64
 
@@ -55,7 +55,7 @@ slay Conj(x complex128) complex128
 
 ### Exponential and Logarithmic Functions
 
-```csd
+``.💀
 fr fr Compute e^x
 slay Exp(x complex128) complex128
 
@@ -74,7 +74,7 @@ slay Sqrt(x complex128) complex128
 
 ### Trigonometric Functions
 
-```csd
+``.💀
 fr fr Compute sine of x
 slay Sin(x complex128) complex128
 
@@ -96,7 +96,7 @@ slay Tanh(x complex128) complex128
 
 ### Inverse Trigonometric Functions
 
-```csd
+``.💀
 fr fr Compute inverse sine of x
 slay Asin(x complex128) complex128
 
@@ -119,37 +119,37 @@ slay Atanh(x complex128) complex128
 ## Enhanced Features
 
 - **Complex Vector Operations**: Operations on vectors of complex numbers
-  ```csd
+  ``.💀
   vecSum := complex_vibe.VectorSum(complexVector)
   vecProduct := complex_vibe.VectorProduct(complexVector)
   ```
 
 - **Complex Matrix Operations**: Operations on matrices of complex numbers
-  ```csd
+  ``.💀
   matrixProduct := complex_vibe.MatrixMul(matrixA, matrixB)
   determinant := complex_vibe.Determinant(matrix)
   ```
 
 - **Complex Polynomial Functions**: Operations with complex polynomials
-  ```csd
+  ``.💀
   roots := complex_vibe.FindRoots(coefficients)
   polyValue := complex_vibe.EvaluatePolynomial(coefficients, x)
   ```
 
 - **Complex Series Expansions**: Taylor and Laurent series expansions
-  ```csd
+  ``.💀
   taylorCoeffs := complex_vibe.TaylorSeries(f, z0, order)
   laurentCoeffs := complex_vibe.LaurentSeries(f, z0, order)
   ```
 
 - **Complex Numerical Integration**: Integration in the complex plane
-  ```csd
+  ``.💀
   result := complex_vibe.ContourIntegral(f, contour)
   ```
 
 ## Usage Examples
 
-```csd
+``.💀
 fr fr Creating complex numbers
 z1 := complex(3, 4) fr fr 3 + 4i
 z2 := complex(1, 2) fr fr 1 + 2i

@@ -7,28 +7,28 @@ Working from: /home/ghuntley/cursed/test_suite/.. (for stdlib loading)
 Scanning for test files...
 Found 103 test files
 
-[1m[1/103] Testing: arithmetic/01_mixed_types.csd[0m
+[1m[1/103] Testing: arithmetic/01_mixed_types.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[2/103] Testing: arithmetic/02_edge_cases.csd[0m
+[1m[2/103] Testing: arithmetic/02_edge_cases.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[3/103] Testing: arithmetic/03_operator_precedence.csd[0m
+[1m[3/103] Testing: arithmetic/03_operator_precedence.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[4/103] Testing: arithmetic/04_complex_expressions.csd[0m
+[1m[4/103] Testing: arithmetic/04_complex_expressions.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[5/103] Testing: arithmetic/arithmetic_basic_operations.csd[0m
+[1m[5/103] Testing: arithmetic/arithmetic_basic_operations.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[6/103] Testing: arithmetic/division_semantics_test.csd[0m
+[1m[6/103] Testing: arithmetic/division_semantics_test.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[7/103] Testing: arithmetic/feature_arithmetic_operations.csd[0m
+[1m[7/103] Testing: arithmetic/feature_arithmetic_operations.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[8/103] Testing: arithmetic/overflow_edge_cases.csd[0m
+[1m[8/103] Testing: arithmetic/overflow_edge_cases.💀[0m
   Result: [31mFAIL (OUTPUT_MISMATCH)[0m
   [36mInterpreter (exit: 0):[0m
     === Overflow Edge Cases Test === 
@@ -96,22 +96,22 @@ Found 103 test files
     000000f0: 3d3d                                     ==
 
 ---
-[1m[9/103] Testing: basic/01_hello_world.csd[0m
+[1m[9/103] Testing: basic/01_hello_world.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[10/103] Testing: basic/02_simple_arithmetic.csd[0m
+[1m[10/103] Testing: basic/02_simple_arithmetic.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[11/103] Testing: basic/03_variable_assignment.csd[0m
+[1m[11/103] Testing: basic/03_variable_assignment.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[12/103] Testing: basic/basic_hello_world.csd[0m
+[1m[12/103] Testing: basic/basic_hello_world.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[13/103] Testing: basic/hello_world_simple.csd[0m
+[1m[13/103] Testing: basic/hello_world_simple.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[14/103] Testing: complex/01_nested_operations.csd[0m
+[1m[14/103] Testing: complex/01_nested_operations.💀[0m
   Result: [31mCOMPILE ERROR (interpreted worked)[0m
   [36mInterpreter (exit: 0):[0m
     === Nested Operations Test === 
@@ -129,4 +129,4 @@ Found 103 test files
     Compilation failed
 
 ---
-[1m[15/103] Testing: complex/02_fizzbuzz.csd[0m
+[1m[15/103] Testing: complex/02_fizzbuzz.💀[0m

@@ -272,10 +272,10 @@ The module includes comprehensive tests covering:
 Run tests with:
 ```bash
 # Test interpretation mode
-cargo run --bin cursed stdlib/sort_slay/test_sort_slay.csd
+cargo run --bin cursed stdlib/sort_slay/test_sort_slay.💀
 
 # Test compilation mode
-cargo run --bin cursed -- compile stdlib/sort_slay/test_sort_slay.csd
+cargo run --bin cursed -- compile stdlib/sort_slay/test_sort_slay.💀
 ./test_sort_slay
 ```
 

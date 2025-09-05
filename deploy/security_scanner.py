@@ -129,7 +129,7 @@ class SecurityScanner:
         print("🔍 Scanning code files for security issues...")
         
         # File extensions to scan
-        extensions = {'.zig', '.rs', '.c', '.cpp', '.h', '.hpp', '.csd', '.py', '.js', '.ts'}
+        extensions = {'.zig', '.rs', '.c', '.cpp', '.h', '.hpp', '.💀', '.py', '.js', '.ts'}
         
         for file_path in self.project_root.rglob('*'):
             if (file_path.is_file() and 

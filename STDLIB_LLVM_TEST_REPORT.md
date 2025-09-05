@@ -16,7 +16,7 @@ The recent LLVM backend "fix" for stdlib functions **DOES NOT WORK**. While basi
 
 ### Test 1: Basic mathz.add_two() Function
 
-**File:** `test_mathz_simple_working.csd`
+**File:** `test_mathz_simple_working.💀`
 ```cursed
 slay main_character() {
     sus result normie = mathz.add_two(5, 3)

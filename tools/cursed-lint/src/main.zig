@@ -551,7 +551,7 @@ pub fn main() !void {
     
     if (args.len < 2) {
         print("CURSED Linter v1.0.0\n");
-        print("Usage: cursed-lint [options] <file.csd>\n");
+        print("Usage: cursed-lint [options] <file.💀.💀>\n");
         print("\nOptions:\n");
         print("  --config <file>     Use configuration file\n");
         print("  --format <fmt>      Output format (default, json, xml)\n");

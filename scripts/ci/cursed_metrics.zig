@@ -213,7 +213,7 @@ const MetricsCollector = struct {
                 try self.scanDirectory(sub_path);
             } else if (entry.kind == .file) {
                 if (std.mem.endsWith(u8, entry.name, ".zig") or 
-                    std.mem.endsWith(u8, entry.name, ".csd")) {
+                    std.mem.endsWith(u8, entry.name, ".💀")) {
                     const file_path = try std.fmt.allocPrint(self.allocator, "{s}/{s}", .{ dir_path, entry.name });
                     defer self.allocator.free(file_path);
                     try self.scanFile(file_path, entry.name);

@@ -36,13 +36,13 @@ cd /workspace
 ### Verification Test
 ```bash
 # Create test file
-echo 'vibez.spill("CURSED Bug Bash Ready!")' > hello.csd
+echo 'vibez.spill("CURSED Bug Bash Ready!")' > hello.💀
 
 # Run interpreter mode (should always work)
-cursed-zig hello.csd
+cursed-zig hello.💀
 
 # Test compilation mode (report if fails)
-cursed-zig --compile hello.csd && ./hello
+cursed-zig --compile hello.💀 && ./hello
 ```
 
 ## Platform-Specific Setup
@@ -97,11 +97,11 @@ mkdir ~/cursed-bugbash
 cd ~/cursed-bugbash
 
 # Get test files
-curl -O https://raw.githubusercontent.com/ghuntley/cursed/main/community_testing/test_scenarios.csd
+curl -O https://raw.githubusercontent.com/ghuntley/cursed/main/community_testing/test_scenarios.💀
 curl -O https://raw.githubusercontent.com/ghuntley/cursed/main/community_testing/bug_report_template.md
 
 # Run comprehensive test
-cursed-zig test_scenarios.csd
+cursed-zig test_scenarios.💀
 ```
 
 ### Performance Testing Setup
@@ -111,10 +111,10 @@ sudo apt install hyperfine valgrind  # Linux
 brew install hyperfine              # macOS
 
 # Memory leak testing
-valgrind --leak-check=full cursed-zig test_scenarios.csd
+valgrind --leak-check=full cursed-zig test_scenarios.💀
 
 # Performance benchmarking  
-hyperfine 'cursed-zig test_scenarios.csd'
+hyperfine 'cursed-zig test_scenarios.💀'
 hyperfine 'zig build clean && zig build'  # Compilation speed
 ```
 
@@ -124,10 +124,10 @@ hyperfine 'zig build clean && zig build'  # Compilation speed
 zig targets  # List available targets
 
 # Test cross-compilation (advanced)
-cursed-zig --compile --target=x86_64-linux test.csd
-cursed-zig --compile --target=aarch64-macos test.csd  
-cursed-zig --compile --target=x86_64-windows test.csd
-cursed-zig --compile --target=wasm32-wasi test.csd
+cursed-zig --compile --target=x86_64-linux test.💀
+cursed-zig --compile --target=aarch64-macos test.💀  
+cursed-zig --compile --target=x86_64-windows test.💀
+cursed-zig --compile --target=wasm32-wasi test.💀
 ```
 
 ## Development Environment Integration
@@ -157,7 +157,7 @@ require'lspconfig'.cursed_lsp.setup{
 ### Emacs Setup
 ```elisp
 ;; Add to .emacs or init.el
-(add-to-list 'auto-mode-alist '("\\.csd\\'" . cursed-mode))
+(add-to-list 'auto-mode-alist '("\\.💀\\'" . cursed-mode))
 
 ;; LSP setup with lsp-mode
 (use-package lsp-mode
@@ -186,7 +186,7 @@ require'lspconfig'.cursed_lsp.setup{
 #### Beginner (5-10 minutes)
 ```bash
 # Run pre-written test scenarios
-cursed-zig test_scenarios.csd
+cursed-zig test_scenarios.💀
 
 # Try basic syntax variations
 echo 'sus x drip = 42; vibez.spill(x)' | cursed-zig
@@ -206,12 +206,12 @@ echo 'sus arr []drip = [1,2,3]; vibez.spill(arr[10])' | cursed-zig
 #### Advanced (2+ hours)
 ```bash
 # Stress testing
-cursed-zig --compile large_program.csd
+cursed-zig --compile large_program.💀
 valgrind ./large_program
 
 # Cross-compilation testing
 for target in x86_64-linux aarch64-linux x86_64-windows; do
-    cursed-zig --compile --target=$target test.csd
+    cursed-zig --compile --target=$target test.💀
 done
 ```
 
@@ -241,19 +241,19 @@ gdb ./zig-out/bin/cursed-zig core
 ### Memory Issues  
 ```bash
 # Check for leaks
-valgrind --leak-check=full --show-leak-kinds=all cursed-zig test.csd
+valgrind --leak-check=full --show-leak-kinds=all cursed-zig test.💀
 
 # Check memory usage
-/usr/bin/time -v cursed-zig large_test.csd
+/usr/bin/time -v cursed-zig large_test.💀
 ```
 
 ### Cross-Platform Issues
 ```bash
 # Linux-specific
-strace cursed-zig test.csd  # System call tracing
+strace cursed-zig test.💀  # System call tracing
 
 # macOS-specific  
-dtruss cursed-zig test.csd  # System call tracing
+dtruss cursed-zig test.💀  # System call tracing
 otool -L ./zig-out/bin/cursed-zig  # Check dependencies
 
 # Windows-specific (in WSL)
@@ -310,7 +310,7 @@ Track your contributions:
 1. **Setup Complete**: Verify installation with smoke test
 2. **Choose Testing Focus**: Pick area based on your expertise  
 3. **Join Community**: Connect with other testers in Discord
-4. **Start Testing**: Begin with test_scenarios.csd
+4. **Start Testing**: Begin with test_scenarios.💀
 5. **Report Issues**: Use GitHub Issues with proper templates
 6. **Help Others**: Share knowledge and assist fellow testers
 

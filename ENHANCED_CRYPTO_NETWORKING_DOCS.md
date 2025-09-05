@@ -4,7 +4,7 @@
 
 This document describes the enhanced cryptographic and networking capabilities added to CURSED's standard library. These modules provide application-level security and networking functions while maintaining pure CURSED compatibility for self-hosting.
 
-## Enhanced Crypto Module (`stdlib/crypto_enhanced/mod.csd`)
+## Enhanced Crypto Module (`stdlib/crypto_enhanced/mod.💀`)
 
 ### Functions Implemented
 
@@ -35,7 +35,7 @@ This document describes the enhanced cryptographic and networking capabilities a
 - MD5 included only for compatibility with legacy systems
 - Simple encryption provides basic obfuscation, not security
 
-## Enhanced Networking Module (`stdlib/network_enhanced/mod.csd`)
+## Enhanced Networking Module (`stdlib/network_enhanced/mod.💀`)
 
 ### Functions Implemented
 
@@ -164,7 +164,7 @@ sus encrypted_data tea = encrypt_simple("sensitive info", random_key)
 
 Run the comprehensive test suite:
 ```bash
-cursed test_enhanced_crypto_networking.csd
+cursed test_enhanced_crypto_networking.💀
 ```
 
 The test suite covers:

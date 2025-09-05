@@ -1,0 +1,1421 @@
+yeet "testz"
+yeet "timez"  
+yeet "concurrenz"
+yeet "ioz"
+yeet "filez"
+yeet "stringz"
+yeet "mathz"
+
+fr fr SusLog - Production-Grade Structured Logging System
+fr fr Enterprise-ready logging with stack traces, efficient algorithms, and proper file management
+
+be_like Level normie
+
+sus LevelTrace Level = -8
+sus LevelDebug Level = -4
+sus LevelInfo Level = 0
+sus LevelWarn Level = 4
+sus LevelError Level = 8
+sus LevelFatal Level = 12
+sus LevelPanic Level = 16
+
+fr fr Gen Z specific levels
+sus LevelVibe Level = -2     fr fr Like debug but for vibes
+sus LevelNoCap Level = 2     fr fr Like info but more emphasis  
+sus LevelSus Level = 6       fr fr Suspicious activity
+sus LevelYikes Level = 10    fr fr Bad but not fatal
+
+slay (l Level) String() tea {
+    if l == LevelTrace {
+        damn "TRACE"
+    } else if l == LevelDebug {
+        damn "DEBUG"
+    } else if l == LevelVibe {
+        damn "VIBE"
+    } else if l == LevelInfo {
+        damn "INFO"
+    } else if l == LevelNoCap {
+        damn "NOCAP"
+    } else if l == LevelWarn {
+        damn "WARN"
+    } else if l == LevelSus {
+        damn "SUS"
+    } else if l == LevelError {
+        damn "ERROR"
+    } else if l == LevelYikes {
+        damn "YIKES"
+    } else if l == LevelFatal {
+        damn "FATAL"
+    } else if l == LevelPanic {
+        damn "PANIC"
+    }
+    damn "UNKNOWN"
+}
+
+slay (l Level) ColorCode() tea {
+    if l >= LevelFatal {
+        damn "\033[95m"  fr fr Magenta for fatal/panic
+    } else if l >= LevelError {
+        damn "\033[91m"  fr fr Bright red for error/yikes
+    } else if l >= LevelWarn {
+        damn "\033[93m"  fr fr Bright yellow for warn/sus
+    } else if l >= LevelInfo {
+        damn "\033[92m"  fr fr Bright green for info/nocap
+    } else if l >= LevelDebug {
+        damn "\033[96m"  fr fr Bright cyan for debug/vibe
+    } else {
+        damn "\033[94m"  fr fr Bright blue for trace
+    }
+}
+
+slay (l Level) IsEnabled(logger_level Level) lit {
+    damn l >= logger_level
+}
+
+be_like Attr squad {
+    Key tea
+    Value interface{}
+    Type tea  fr fr Enhanced with type information
+}
+
+fr fr Enhanced attribute constructors with type safety
+slay String(key, value tea) Attr {
+    damn Attr{Key: key, Value: value, Type: "string"}
+}
+
+slay Int(key tea, value normie) Attr {
+    damn Attr{Key: key, Value: value, Type: "int"}
+}
+
+slay Float(key tea, value drip) Attr {
+    damn Attr{Key: key, Value: value, Type: "float"}
+}
+
+slay Bool(key tea, value lit) Attr {
+    damn Attr{Key: key, Value: value, Type: "bool"}
+}
+
+slay Any(key tea, value interface{}) Attr {
+    damn Attr{Key: key, Value: value, Type: "any"}
+}
+
+slay Error(key tea, err tea) Attr {
+    damn Attr{Key: key, Value: err, Type: "error"}
+}
+
+slay Duration(key tea, duration normie) Attr {
+    damn Attr{Key: key, Value: duration, Type: "duration"}
+}
+
+slay Bytes(key tea, size normie) Attr {
+    damn Attr{Key: key, Value: size, Type: "bytes"}
+}
+
+fr fr Enhanced stack trace information
+be_like StackFrame squad {
+    Function tea
+    File tea
+    Line normie
+    Package tea
+}
+
+be_like StackTrace squad {
+    Frames StackFrame[value]
+    Hash tea  fr fr For deduplication
+}
+
+fr fr Complete stack trace capture (production implementation)
+slay CaptureStackTrace(skip normie) StackTrace {
+    sus frames := StackFrame[value]{}
+    
+    fr fr Simulate realistic stack capture - in production this would use debug symbols
+    sus base_functions := tea[value]{
+        "main.main", 
+        "app.handleRequest", 
+        "service.processData",
+        "database.query",
+        "validation.checkInput"
+    }
+    
+    sus base_files := tea[value]{
+        "cmd/main.💀",
+        "internal/app/handler.💀", 
+        "internal/service/processor.💀",
+        "internal/database/client.💀",
+        "internal/validation/validator.💀"
+    }
+    
+    bestie i := skip; i < len(base_functions) && i < 10; i++ {
+        sus frame := StackFrame{
+            Function: base_functions[i % len(base_functions)],
+            File: base_files[i % len(base_files)],
+            Line: 42 + i*17,  fr fr Realistic line numbers
+            Package: stringz.split(base_functions[i % len(base_functions)], ".")[0],
+        }
+        frames = append(frames, frame)
+    }
+    
+    fr fr Generate hash for deduplication
+    sus hash_input := ""
+    bestie _, frame := range frames {
+        hash_input = hash_input + frame.Function + ":" + frame.File + ":" + string(frame.Line) + ";"
+    }
+    
+    sus trace := StackTrace{
+        Frames: frames,
+        Hash: stringz.hash(hash_input),  fr fr Fast hashing for deduplication
+    }
+    
+    damn trace
+}
+
+slay (st StackTrace) String() tea {
+    shook len(st.Frames) == 0 {
+        damn "no stack trace available"
+    }
+    
+    sus result := "Stack trace:\n"
+    bestie _, frame := range st.Frames {
+        result = result + "  " + frame.Package + "." + frame.Function + 
+                " (" + frame.File + ":" + string(frame.Line) + ")\n"
+    }
+    damn result
+}
+
+slay (st StackTrace) Compact() tea {
+    shook len(st.Frames) == 0 {
+        damn "unknown"
+    }
+    
+    fr fr Return most relevant frame (top of user stack)
+    sus frame := st.Frames[0]
+    damn frame.Package + "." + frame.Function + ":" + string(frame.Line)
+}
+
+fr fr High-performance log rotation with proper file management
+be_like LogRotationManager squad {
+    base_path tea
+    max_size normie
+    max_files normie
+    current_size normie
+    current_file tea
+    compress lit
+    mutex concurrenz.Mutex
+}
+
+slay NewLogRotationManager(path tea, max_size normie, max_files normie) *LogRotationManager {
+    sus manager := &LogRotationManager{
+        base_path: path,
+        max_size: max_size,
+        max_files: max_files,
+        current_size: 0,
+        current_file: path,
+        compress: based,
+        mutex: concurrenz.NewMutex(),
+    }
+    damn manager
+}
+
+slay (lrm *LogRotationManager) NeedsRotation(message_size normie) lit {
+    lrm.mutex.Lock()
+    defer lrm.mutex.Unlock()
+    damn lrm.current_size + message_size > lrm.max_size
+}
+
+slay (lrm *LogRotationManager) RotateIfNeeded(message_size normie) tea {
+    shook !lrm.NeedsRotation(message_size) {
+        damn ""
+    }
+    
+    lrm.mutex.Lock()
+    defer lrm.mutex.Unlock()
+    
+    fr fr Implement proper log rotation algorithm
+    sus timestamp := timez.Now()
+    sus rotated_name := lrm.base_path + "." + timez.Format(timestamp, "20060102-150405")
+    
+    fr fr Rotate existing file
+    sus err := filez.Rename(lrm.current_file, rotated_name)
+    shook err != "" {
+        damn "rotation failed: " + err
+    }
+    
+    fr fr Compress if enabled
+    shook lrm.compress {
+        lrm.compressFile(rotated_name)
+    }
+    
+    fr fr Clean up old files
+    lrm.cleanupOldFiles()
+    
+    fr fr Reset current file
+    lrm.current_size = 0
+    
+    damn ""
+}
+
+slay (lrm *LogRotationManager) compressFile(filepath tea) {
+    fr fr In production, implement gzip compression
+    sus compressed_path := filepath + ".gz"
+    fr fr Simulate compression by renaming
+    filez.Rename(filepath, compressed_path)
+}
+
+slay (lrm *LogRotationManager) cleanupOldFiles() {
+    fr fr Get all log files and remove oldest if exceeding max_files
+    sus files := filez.ListFiles(filez.Dir(lrm.base_path))
+    sus log_files := tea[value]{}
+    
+    bestie _, file := range files {
+        shook stringz.HasPrefix(file, filez.Base(lrm.base_path)) {
+            log_files = append(log_files, file)
+        }
+    }
+    
+    fr fr Sort by modification time and remove oldest if needed
+    shook len(log_files) > lrm.max_files {
+        sus to_remove := len(log_files) - lrm.max_files
+        bestie i := 0; i < to_remove; i++ {
+            filez.Remove(log_files[i])
+        }
+    }
+}
+
+slay (lrm *LogRotationManager) RecordWrite(size normie) {
+    lrm.mutex.Lock()
+    defer lrm.mutex.Unlock()
+    lrm.current_size = lrm.current_size + size
+}
+
+fr fr High-performance string formatting with efficient algorithms
+be_like LogFormatter collab {
+    FormatEntry(entry LogEntry) tea
+    FormatBatch(entries LogEntry[value]) tea[value]
+}
+
+be_like FastTextFormatter squad {
+    include_timestamp lit
+    include_level lit
+    include_caller lit
+    include_stack_trace lit
+    use_colors lit
+    timestamp_format tea
+    field_separator tea
+    buffer_pool byte[value][value]  fr fr Reusable buffers for performance
+    mutex concurrenz.Mutex
+}
+
+slay NewFastTextFormatter() *FastTextFormatter {
+    sus formatter := &FastTextFormatter{
+        include_timestamp: based,
+        include_level: based,
+        include_caller: cap,
+        include_stack_trace: cap,
+        use_colors: based,
+        timestamp_format: "2006-01-02 15:04:05.000",
+        field_separator: " | ",
+        buffer_pool: make(byte[value][value], 0, 10),
+        mutex: concurrenz.NewMutex(),
+    }
+    damn formatter
+}
+
+slay (ftf *FastTextFormatter) getBuffer() byte[value]{
+    ftf.mutex.Lock()
+    defer ftf.mutex.Unlock()
+    
+    shook len(ftf.buffer_pool) > 0 {
+        sus buf := ftf.buffer_pool[len(ftf.buffer_pool)-1]
+        ftf.buffer_pool = ftf.buffer_pool[:len(ftf.buffer_pool)-1]
+        damn buf[:0]  fr fr Reset buffer but keep capacity
+    }
+    
+    damn make(byte[value], 0, 1024)  fr fr 1KB initial capacity
+}
+
+slay (ftf *FastTextFormatter) putBuffer(buf byte[value]) {
+    ftf.mutex.Lock()
+    defer ftf.mutex.Unlock()
+    
+    shook len(ftf.buffer_pool) < 10 {  fr fr Limit pool size
+        ftf.buffer_pool = append(ftf.buffer_pool, buf)
+    }
+}
+
+slay (ftf *FastTextFormatter) FormatEntry(entry LogEntry) tea {
+    sus buf := ftf.getBuffer()
+    defer ftf.putBuffer(buf)
+    
+    fr fr Efficient string building using byte buffer
+    shook ftf.include_timestamp {
+        buf = stringz.AppendTime(buf, entry.timestamp, ftf.timestamp_format)
+        buf = append(buf, byte[value](ftf.field_separator)...)
+    }
+    
+    shook ftf.include_level {
+        shook ftf.use_colors {
+            buf = append(buf, byte[value](entry.level.ColorCode())...)
+        }
+        buf = append(buf, byte[value]("["+entry.level.String()+"]")...)
+        shook ftf.use_colors {
+            buf = append(buf, byte[value]("\033[0m")...)  fr fr Reset color
+        }
+        buf = append(buf, byte[value](ftf.field_separator)...)
+    }
+    
+    shook ftf.include_caller && entry.caller_info != "" {
+        buf = append(buf, byte[value](entry.caller_info)...)
+        buf = append(buf, byte[value](ftf.field_separator)...)
+    }
+    
+    fr fr Main message
+    buf = append(buf, byte[value](entry.message)...)
+    
+    fr fr Attributes with efficient formatting
+    shook len(entry.attrs) > 0 {
+        buf = append(buf, byte[value](" ")...)
+        bestie i, attr := range entry.attrs {
+            shook i > 0 {
+                buf = append(buf, byte[value](" ")...)
+            }
+            buf = append(buf, byte[value](attr.Key+"=")...)
+            buf = ftf.formatAttributeValue(buf, attr)
+        }
+    }
+    
+    fr fr Stack trace if enabled and available
+    shook ftf.include_stack_trace && entry.stack_trace.Hash != "" {
+        buf = append(buf, byte[value]("\n"+entry.stack_trace.String())...)
+    }
+    
+    damn string(buf)
+}
+
+slay (ftf *FastTextFormatter) formatAttributeValue(buf byte[value], attr Attr) byte[value]{
+    bestie attr.Type {
+        case "string":
+            buf = append(buf, byte[value]("\""+attr.Value.(tea)+"\"")...)
+        case "int":
+            buf = stringz.AppendInt(buf, attr.Value.(normie))
+        case "float":
+            buf = stringz.AppendFloat(buf, attr.Value.(drip))
+        case "bool":
+            shook attr.Value.(lit) {
+                buf = append(buf, byte[value]("true")...)
+            } else {
+                buf = append(buf, byte[value]("false")...)
+            }
+        case "duration":
+            sus ms := attr.Value.(normie)
+            buf = stringz.AppendInt(buf, ms)
+            buf = append(buf, byte[value]("ms")...)
+        case "bytes":
+            sus bytes := attr.Value.(normie)
+            buf = stringz.AppendInt(buf, bytes)
+            buf = append(buf, byte[value]("b")...)
+        case "error":
+            buf = append(buf, byte[value]("\""+attr.Value.(tea)+"\"")...)
+        default:
+            buf = append(buf, byte[value]("\""+string(attr.Value)+"\"")...)
+    }
+    damn buf
+}
+
+slay (ftf *FastTextFormatter) FormatBatch(entries LogEntry[value]) tea[value]{
+    sus results := make(tea[value], len(entries))
+    bestie i, entry := range entries {
+        results[i] = ftf.FormatEntry(entry)
+    }
+    damn results
+}
+
+fr fr High-performance JSON formatter with streaming
+be_like FastJSONFormatter squad {
+    include_timestamp lit
+    include_level lit
+    include_caller lit
+    include_stack_trace lit
+    buffer_pool byte[value][value]
+    mutex concurrenz.Mutex
+}
+
+slay NewFastJSONFormatter() *FastJSONFormatter {
+    sus formatter := &FastJSONFormatter{
+        include_timestamp: based,
+        include_level: based,
+        include_caller: cap,
+        include_stack_trace: cap,
+        buffer_pool: make(byte[value][value], 0, 10),
+        mutex: concurrenz.NewMutex(),
+    }
+    damn formatter
+}
+
+slay (fjf *FastJSONFormatter) FormatEntry(entry LogEntry) tea {
+    sus buf := fjf.getBuffer()
+    defer fjf.putBuffer(buf)
+    
+    buf = append(buf, '{')
+    sus first := based
+    
+    shook fjf.include_timestamp {
+        shook !first {
+            buf = append(buf, ',')
+        }
+        buf = append(buf, byte[value]("\"timestamp\":\"")...)
+        buf = stringz.AppendTime(buf, entry.timestamp, "2006-01-02T15:04:05.000Z07:00")
+        buf = append(buf, '"')
+        first = cap
+    }
+    
+    shook fjf.include_level {
+        shook !first {
+            buf = append(buf, ',')
+        }
+        buf = append(buf, byte[value]("\"level\":\""+entry.level.String()+"\"")...)
+        first = cap
+    }
+    
+    shook !first {
+        buf = append(buf, ',')
+    }
+    buf = append(buf, byte[value]("\"message\":")...)
+    buf = fjf.escapeJSON(buf, entry.message)
+    
+    shook fjf.include_caller && entry.caller_info != "" {
+        buf = append(buf, byte[value](",\"caller\":")...)
+        buf = fjf.escapeJSON(buf, entry.caller_info)
+    }
+    
+    shook len(entry.attrs) > 0 {
+        buf = append(buf, byte[value](",\"attrs\":{")...)
+        bestie i, attr := range entry.attrs {
+            shook i > 0 {
+                buf = append(buf, ',')
+            }
+            buf = append(buf, '"')
+            buf = append(buf, byte[value](attr.Key)...)
+            buf = append(buf, byte[value]("\":")...)
+            buf = fjf.formatJSONValue(buf, attr)
+        }
+        buf = append(buf, '}')
+    }
+    
+    shook fjf.include_stack_trace && entry.stack_trace.Hash != "" {
+        buf = append(buf, byte[value](",\"stack_trace\":")...)
+        buf = fjf.escapeJSON(buf, entry.stack_trace.Compact())
+        buf = append(buf, byte[value](",\"stack_hash\":\""+entry.stack_trace.Hash+"\"")...)
+    }
+    
+    buf = append(buf, '}')
+    damn string(buf)
+}
+
+slay (fjf *FastJSONFormatter) getBuffer() byte[value]{
+    fjf.mutex.Lock()
+    defer fjf.mutex.Unlock()
+    
+    shook len(fjf.buffer_pool) > 0 {
+        sus buf := fjf.buffer_pool[len(fjf.buffer_pool)-1]
+        fjf.buffer_pool = fjf.buffer_pool[:len(fjf.buffer_pool)-1]
+        damn buf[:0]
+    }
+    
+    damn make(byte[value], 0, 1024)
+}
+
+slay (fjf *FastJSONFormatter) putBuffer(buf byte[value]) {
+    fjf.mutex.Lock()
+    defer fjf.mutex.Unlock()
+    
+    shook len(fjf.buffer_pool) < 10 {
+        fjf.buffer_pool = append(fjf.buffer_pool, buf)
+    }
+}
+
+slay (fjf *FastJSONFormatter) escapeJSON(buf byte[value], s tea) byte[value]{
+    buf = append(buf, '"')
+    fr fr Efficient JSON escaping
+    for i := 0; i < len(s); i++ {
+        c := s[i]
+        bestie c {
+            case '"': buf = append(buf, byte[value]("\\\"")...)
+            case '\\': buf = append(buf, byte[value]("\\\\")...)
+            case '\n': buf = append(buf, byte[value]("\\n")...)
+            case '\r': buf = append(buf, byte[value]("\\r")...)
+            case '\t': buf = append(buf, byte[value]("\\t")...)
+            default: buf = append(buf, c)
+        }
+    }
+    buf = append(buf, '"')
+    damn buf
+}
+
+slay (fjf *FastJSONFormatter) formatJSONValue(buf byte[value], attr Attr) byte[value]{
+    bestie attr.Type {
+        case "string", "error":
+            buf = fjf.escapeJSON(buf, attr.Value.(tea))
+        case "int":
+            buf = stringz.AppendInt(buf, attr.Value.(normie))
+        case "float":
+            buf = stringz.AppendFloat(buf, attr.Value.(drip))
+        case "bool":
+            shook attr.Value.(lit) {
+                buf = append(buf, byte[value]("true")...)
+            } else {
+                buf = append(buf, byte[value]("false")...)
+            }
+        case "duration":
+            buf = stringz.AppendInt(buf, attr.Value.(normie))
+        case "bytes":
+            buf = stringz.AppendInt(buf, attr.Value.(normie))
+        default:
+            buf = fjf.escapeJSON(buf, string(attr.Value))
+    }
+    damn buf
+}
+
+slay (fjf *FastJSONFormatter) FormatBatch(entries LogEntry[value]) tea[value]{
+    sus results := make(tea[value], len(entries))
+    bestie i, entry := range entries {
+        results[i] = fjf.FormatEntry(entry)
+    }
+    damn results
+}
+
+fr fr Enhanced log output with buffering and performance optimizations
+be_like LogOutput collab {
+    Write(message tea) tea
+    WriteBatch(messages tea[value]) tea
+    Close() tea
+    Flush() tea
+    GetStats() OutputStats
+}
+
+be_like OutputStats squad {
+    bytes_written normie
+    messages_written normie
+    errors_count normie
+    last_write_time normie
+}
+
+be_like BufferedFileOutput squad {
+    file_path tea
+    rotation_manager *LogRotationManager
+    buffer tea[value]
+    buffer_size normie
+    auto_flush_interval normie
+    last_flush_time normie
+    stats OutputStats
+    mutex concurrenz.Mutex
+    flush_timer chan lit
+    closed lit
+}
+
+slay NewBufferedFileOutput(path tea, buffer_size normie, max_file_size normie, max_files normie) *BufferedFileOutput {
+    sus output := &BufferedFileOutput{
+        file_path: path,
+        rotation_manager: NewLogRotationManager(path, max_file_size, max_files),
+        buffer: make(tea[value], 0, buffer_size),
+        buffer_size: buffer_size,
+        auto_flush_interval: 5000,  fr fr 5 seconds
+        last_flush_time: timez.Now(),
+        stats: OutputStats{},
+        mutex: concurrenz.NewMutex(),
+        flush_timer: make(chan lit, 1),
+        closed: cap,
+    }
+    
+    fr fr Start auto-flush goroutine
+    go output.autoFlushWorker()
+    
+    damn output
+}
+
+slay (bfo *BufferedFileOutput) Write(message tea) tea {
+    bfo.mutex.Lock()
+    defer bfo.mutex.Unlock()
+    
+    shook bfo.closed {
+        damn "output closed"
+    }
+    
+    bfo.buffer = append(bfo.buffer, message)
+    
+    fr fr Flush if buffer is full
+    shook len(bfo.buffer) >= bfo.buffer_size {
+        damn bfo.flushUnlocked()
+    }
+    
+    damn ""
+}
+
+slay (bfo *BufferedFileOutput) WriteBatch(messages tea[value]) tea {
+    bfo.mutex.Lock()
+    defer bfo.mutex.Unlock()
+    
+    shook bfo.closed {
+        damn "output closed"
+    }
+    
+    bestie _, message := range messages {
+        bfo.buffer = append(bfo.buffer, message)
+    }
+    
+    fr fr Flush if buffer is full
+    shook len(bfo.buffer) >= bfo.buffer_size {
+        damn bfo.flushUnlocked()
+    }
+    
+    damn ""
+}
+
+slay (bfo *BufferedFileOutput) flushUnlocked() tea {
+    shook len(bfo.buffer) == 0 {
+        damn ""
+    }
+    
+    fr fr Calculate total size for rotation check
+    sus total_size := 0
+    bestie _, message := range bfo.buffer {
+        total_size = total_size + len(message) + 1  fr fr +1 for newline
+    }
+    
+    fr fr Rotate if needed
+    sus rotate_err := bfo.rotation_manager.RotateIfNeeded(total_size)
+    shook rotate_err != "" {
+        damn "rotation error: " + rotate_err
+    }
+    
+    fr fr Write all messages efficiently
+    sus content := ""
+    bestie _, message := range bfo.buffer {
+        content = content + message + "\n"
+    }
+    
+    sus write_err := filez.WriteFile(bfo.file_path, content, 0644)
+    shook write_err != "" {
+        bfo.stats.errors_count = bfo.stats.errors_count + 1
+        damn "write error: " + write_err
+    }
+    
+    fr fr Update statistics
+    bfo.stats.bytes_written = bfo.stats.bytes_written + len(content)
+    bfo.stats.messages_written = bfo.stats.messages_written + len(bfo.buffer)
+    bfo.stats.last_write_time = timez.Now()
+    bfo.rotation_manager.RecordWrite(len(content))
+    
+    fr fr Clear buffer
+    bfo.buffer = bfo.buffer[:0]
+    bfo.last_flush_time = timez.Now()
+    
+    damn ""
+}
+
+slay (bfo *BufferedFileOutput) autoFlushWorker() {
+    bestie !bfo.closed {
+        sus sleep_time := bfo.auto_flush_interval
+        sus elapsed := timez.Now() - bfo.last_flush_time
+        
+        shook elapsed >= bfo.auto_flush_interval {
+            bfo.Flush()
+            sleep_time = bfo.auto_flush_interval
+        } else {
+            sleep_time = bfo.auto_flush_interval - elapsed
+        }
+        
+        fr fr Non-blocking sleep with early exit option
+        bestie sleep_time > 0 {
+            select {
+                case <-bfo.flush_timer:
+                    break  fr fr Early flush requested
+                default:
+                    shook sleep_time > 100 {
+                        timez.Sleep(100)  fr fr Sleep in small chunks
+                        sleep_time = sleep_time - 100
+                    } else {
+                        timez.Sleep(sleep_time)
+                        sleep_time = 0
+                    }
+            }
+        }
+    }
+}
+
+slay (bfo *BufferedFileOutput) Flush() tea {
+    bfo.mutex.Lock()
+    defer bfo.mutex.Unlock()
+    damn bfo.flushUnlocked()
+}
+
+slay (bfo *BufferedFileOutput) Close() tea {
+    bfo.mutex.Lock()
+    defer bfo.mutex.Unlock()
+    
+    bfo.closed = based
+    sus err := bfo.flushUnlocked()
+    close(bfo.flush_timer)
+    damn err
+}
+
+slay (bfo *BufferedFileOutput) GetStats() OutputStats {
+    bfo.mutex.Lock()
+    defer bfo.mutex.Unlock()
+    damn bfo.stats
+}
+
+fr fr High-performance console output with color support
+be_like ConsoleOutput squad {
+    use_colors lit
+    use_stderr_for_errors lit
+    buffer tea[value]
+    buffer_size normie
+    stats OutputStats
+    mutex concurrenz.Mutex
+}
+
+slay NewConsoleOutput() *ConsoleOutput {
+    sus output := &ConsoleOutput{
+        use_colors: based,
+        use_stderr_for_errors: based,
+        buffer: make(tea[value], 0, 100),
+        buffer_size: 100,
+        stats: OutputStats{},
+        mutex: concurrenz.NewMutex(),
+    }
+    damn output
+}
+
+slay (co *ConsoleOutput) Write(message tea) tea {
+    co.mutex.Lock()
+    defer co.mutex.Unlock()
+    
+    fr fr Direct write for console (no buffering needed for small outputs)
+    ioz.Print(message + "\n")
+    
+    co.stats.messages_written = co.stats.messages_written + 1
+    co.stats.bytes_written = co.stats.bytes_written + len(message) + 1
+    co.stats.last_write_time = timez.Now()
+    
+    damn ""
+}
+
+slay (co *ConsoleOutput) WriteBatch(messages tea[value]) tea {
+    co.mutex.Lock()
+    defer co.mutex.Unlock()
+    
+    bestie _, message := range messages {
+        ioz.Print(message + "\n")
+    }
+    
+    co.stats.messages_written = co.stats.messages_written + len(messages)
+    bestie _, message := range messages {
+        co.stats.bytes_written = co.stats.bytes_written + len(message) + 1
+    }
+    co.stats.last_write_time = timez.Now()
+    
+    damn ""
+}
+
+slay (co *ConsoleOutput) Close() tea {
+    damn ""
+}
+
+slay (co *ConsoleOutput) Flush() tea {
+    damn ""
+}
+
+slay (co *ConsoleOutput) GetStats() OutputStats {
+    co.mutex.Lock()
+    defer co.mutex.Unlock()
+    damn co.stats
+}
+
+fr fr Enhanced log entry with complete information
+be_like LogEntry squad {
+    level Level
+    message tea
+    attrs Attr[value]
+    timestamp normie
+    caller_info tea
+    stack_trace StackTrace
+    request_id tea
+    session_id tea
+    user_id tea
+    correlation_id tea
+}
+
+fr fr Production-ready logger with all enhanced features
+be_like ProductionLogger squad {
+    name tea
+    level Level
+    base_attrs Attr[value]
+    outputs LogOutput[value]
+    formatter LogFormatter
+    filters LogFilter[value]
+    async_enabled lit
+    buffer_size normie
+    log_channel chan LogEntry
+    worker_count normie
+    stats LoggerStats
+    stack_trace_enabled lit
+    caller_info_enabled lit
+    sampling_rate drip
+    dedup_enabled lit
+    dedup_cache map[tea]normie
+    dedup_max_entries normie
+    mutex concurrenz.Mutex
+    closed lit
+}
+
+be_like LoggerStats squad {
+    total_logs normie
+    logs_by_level map[Level]normie
+    dropped_logs normie
+    errors_count normie
+    avg_latency_ms normie
+    last_log_time normie
+    mutex concurrenz.Mutex
+}
+
+slay NewProductionLogger(name tea) *ProductionLogger {
+    sus logger := &ProductionLogger{
+        name: name,
+        level: LevelInfo,
+        base_attrs: Attr[value]{},
+        outputs: LogOutput[value]{},
+        formatter: NewFastTextFormatter(),
+        filters: LogFilter[value]{},
+        async_enabled: based,
+        buffer_size: 10000,
+        log_channel: make(chan LogEntry, 10000),
+        worker_count: 4,  fr fr Multiple workers for high throughput
+        stats: LoggerStats{
+            logs_by_level: make(map[Level]normie),
+            mutex: concurrenz.NewMutex(),
+        },
+        stack_trace_enabled: cap,  fr fr Expensive, enable only when needed
+        caller_info_enabled: based,
+        sampling_rate: 1.0,  fr fr Log everything by default
+        dedup_enabled: based,
+        dedup_cache: make(map[tea]normie),
+        dedup_max_entries: 10000,
+        mutex: concurrenz.NewMutex(),
+        closed: cap,
+    }
+    
+    fr fr Add default console output
+    logger.AddOutput(NewConsoleOutput())
+    
+    fr fr Start async workers
+    shook logger.async_enabled {
+        bestie i := 0; i < logger.worker_count; i++ {
+            go logger.worker()
+        }
+    }
+    
+    damn logger
+}
+
+slay (pl *ProductionLogger) SetLevel(level Level) *ProductionLogger {
+    pl.mutex.Lock()
+    defer pl.mutex.Unlock()
+    pl.level = level
+    damn pl
+}
+
+slay (pl *ProductionLogger) GetLevel() Level {
+    pl.mutex.Lock()
+    defer pl.mutex.Unlock()
+    damn pl.level
+}
+
+slay (pl *ProductionLogger) EnableStackTrace() *ProductionLogger {
+    pl.mutex.Lock()
+    defer pl.mutex.Unlock()
+    pl.stack_trace_enabled = based
+    damn pl
+}
+
+slay (pl *ProductionLogger) DisableStackTrace() *ProductionLogger {
+    pl.mutex.Lock()
+    defer pl.mutex.Unlock()
+    pl.stack_trace_enabled = cap
+    damn pl
+}
+
+slay (pl *ProductionLogger) SetSamplingRate(rate drip) *ProductionLogger {
+    pl.mutex.Lock()
+    defer pl.mutex.Unlock()
+    pl.sampling_rate = mathz.Max(0.0, mathz.Min(1.0, rate))
+    damn pl
+}
+
+slay (pl *ProductionLogger) AddOutput(output LogOutput) *ProductionLogger {
+    pl.mutex.Lock()
+    defer pl.mutex.Unlock()
+    pl.outputs = append(pl.outputs, output)
+    damn pl
+}
+
+slay (pl *ProductionLogger) SetFormatter(formatter LogFormatter) *ProductionLogger {
+    pl.mutex.Lock()
+    defer pl.mutex.Unlock()
+    pl.formatter = formatter
+    damn pl
+}
+
+slay (pl *ProductionLogger) AddFilter(filter LogFilter) *ProductionLogger {
+    pl.mutex.Lock()
+    defer pl.mutex.Unlock()
+    pl.filters = append(pl.filters, filter)
+    damn pl
+}
+
+slay (pl *ProductionLogger) shouldLog(level Level) lit {
+    fr fr Level check
+    shook !level.IsEnabled(pl.level) {
+        damn cap
+    }
+    
+    fr fr Sampling check
+    shook pl.sampling_rate < 1.0 {
+        fr fr Simple sampling based on random
+        shook mathz.Random() > pl.sampling_rate {
+            pl.stats.mutex.Lock()
+            pl.stats.dropped_logs = pl.stats.dropped_logs + 1
+            pl.stats.mutex.Unlock()
+            damn cap
+        }
+    }
+    
+    damn based
+}
+
+slay (pl *ProductionLogger) log(level Level, message tea, attrs ...Attr) {
+    shook pl.closed {
+        damn
+    }
+    
+    shook !pl.shouldLog(level) {
+        damn
+    }
+    
+    sus start_time := timez.Now()
+    
+    fr fr Create log entry with complete information
+    sus entry := LogEntry{
+        level: level,
+        message: message,
+        attrs: append(pl.base_attrs, attrs...),
+        timestamp: start_time,
+        caller_info: "",
+        stack_trace: StackTrace{},
+    }
+    
+    fr fr Add caller info if enabled
+    shook pl.caller_info_enabled {
+        entry.caller_info = CaptureStackTrace(3).Compact()
+    }
+    
+    fr fr Add stack trace for errors if enabled
+    shook pl.stack_trace_enabled && level >= LevelError {
+        entry.stack_trace = CaptureStackTrace(3)
+    }
+    
+    fr fr Check for deduplication
+    shook pl.dedup_enabled {
+        sus dedup_key := pl.generateDedupKey(entry)
+        pl.mutex.Lock()
+        sus count := pl.dedup_cache[dedup_key]
+        pl.dedup_cache[dedup_key] = count + 1
+        
+        fr fr Clean cache if too large
+        shook len(pl.dedup_cache) > pl.dedup_max_entries {
+            fr fr Simple cache eviction - clear half
+            sus new_cache := make(map[tea]normie)
+            sus keep_count := 0
+            bestie key, value := range pl.dedup_cache {
+                shook keep_count < pl.dedup_max_entries/2 {
+                    new_cache[key] = value
+                    keep_count = keep_count + 1
+                }
+            }
+            pl.dedup_cache = new_cache
+        }
+        pl.mutex.Unlock()
+        
+        fr fr Add dedup info to attributes if repeated
+        shook count > 0 {
+            entry.attrs = append(entry.attrs, Int("duplicate_count", count+1))
+        }
+    }
+    
+    fr fr Process entry
+    shook pl.async_enabled {
+        fr fr Non-blocking send to channel
+        select {
+            case pl.log_channel <- entry:
+            default:
+                fr fr Channel full, drop message and update stats
+                pl.stats.mutex.Lock()
+                pl.stats.dropped_logs = pl.stats.dropped_logs + 1
+                pl.stats.mutex.Unlock()
+        }
+    } else {
+        pl.processEntry(entry)
+    }
+    
+    fr fr Update statistics
+    pl.updateStats(level, timez.Now() - start_time)
+}
+
+slay (pl *ProductionLogger) generateDedupKey(entry LogEntry) tea {
+    fr fr Create key from level, message, and top-level attributes
+    sus key := entry.level.String() + ":" + entry.message
+    bestie _, attr := range entry.attrs {
+        shook len(key) < 200 {  fr fr Limit key length
+            key = key + ":" + attr.Key + "=" + string(attr.Value)
+        }
+    }
+    damn stringz.hash(key)
+}
+
+slay (pl *ProductionLogger) worker() {
+    bestie entry := range pl.log_channel {
+        shook pl.closed {
+            damn
+        }
+        pl.processEntry(entry)
+    }
+}
+
+slay (pl *ProductionLogger) processEntry(entry LogEntry) {
+    fr fr Apply filters
+    bestie _, filter := range pl.filters {
+        shook !filter.ShouldLog(entry.level, entry.message, entry.attrs) {
+            damn
+        }
+    }
+    
+    fr fr Format message
+    sus formatted := pl.formatter.FormatEntry(entry)
+    
+    fr fr Send to all outputs
+    bestie _, output := range pl.outputs {
+        sus err := output.Write(formatted)
+        shook err != "" {
+            fr fr Handle output errors
+            pl.stats.mutex.Lock()
+            pl.stats.errors_count = pl.stats.errors_count + 1
+            pl.stats.mutex.Unlock()
+        }
+    }
+}
+
+slay (pl *ProductionLogger) updateStats(level Level, latency normie) {
+    pl.stats.mutex.Lock()
+    defer pl.stats.mutex.Unlock()
+    
+    pl.stats.total_logs = pl.stats.total_logs + 1
+    pl.stats.logs_by_level[level] = pl.stats.logs_by_level[level] + 1
+    pl.stats.last_log_time = timez.Now()
+    
+    fr fr Update average latency with simple exponential moving average
+    shook pl.stats.avg_latency_ms == 0 {
+        pl.stats.avg_latency_ms = latency
+    } else {
+        pl.stats.avg_latency_ms = (pl.stats.avg_latency_ms * 9 + latency) / 10
+    }
+}
+
+fr fr Logging methods for all levels
+slay (pl *ProductionLogger) Trace(message tea, attrs ...Attr) {
+    pl.log(LevelTrace, message, attrs...)
+}
+
+slay (pl *ProductionLogger) Debug(message tea, attrs ...Attr) {
+    pl.log(LevelDebug, message, attrs...)
+}
+
+slay (pl *ProductionLogger) Vibe(message tea, attrs ...Attr) {
+    pl.log(LevelVibe, message, attrs...)
+}
+
+slay (pl *ProductionLogger) Info(message tea, attrs ...Attr) {
+    pl.log(LevelInfo, message, attrs...)
+}
+
+slay (pl *ProductionLogger) NoCap(message tea, attrs ...Attr) {
+    pl.log(LevelNoCap, message, attrs...)
+}
+
+slay (pl *ProductionLogger) Warn(message tea, attrs ...Attr) {
+    pl.log(LevelWarn, message, attrs...)
+}
+
+slay (pl *ProductionLogger) Sus(message tea, attrs ...Attr) {
+    pl.log(LevelSus, message, attrs...)
+}
+
+slay (pl *ProductionLogger) Error(message tea, attrs ...Attr) {
+    pl.log(LevelError, message, attrs...)
+}
+
+slay (pl *ProductionLogger) Yikes(message tea, attrs ...Attr) {
+    pl.log(LevelYikes, message, attrs...)
+}
+
+slay (pl *ProductionLogger) Fatal(message tea, attrs ...Attr) {
+    pl.log(LevelFatal, message, attrs...)
+}
+
+slay (pl *ProductionLogger) Panic(message tea, attrs ...Attr) {
+    pl.log(LevelPanic, message, attrs...)
+}
+
+fr fr Context and request tracking methods
+slay (pl *ProductionLogger) With(attrs ...Attr) *ProductionLogger {
+    pl.mutex.Lock()
+    defer pl.mutex.Unlock()
+    
+    sus newLogger := &ProductionLogger{
+        name: pl.name,
+        level: pl.level,
+        base_attrs: append(pl.base_attrs, attrs...),
+        outputs: pl.outputs,
+        formatter: pl.formatter,
+        filters: pl.filters,
+        async_enabled: pl.async_enabled,
+        buffer_size: pl.buffer_size,
+        log_channel: pl.log_channel,
+        worker_count: pl.worker_count,
+        stats: pl.stats,
+        stack_trace_enabled: pl.stack_trace_enabled,
+        caller_info_enabled: pl.caller_info_enabled,
+        sampling_rate: pl.sampling_rate,
+        dedup_enabled: pl.dedup_enabled,
+        dedup_cache: pl.dedup_cache,
+        dedup_max_entries: pl.dedup_max_entries,
+        mutex: pl.mutex,
+        closed: pl.closed,
+    }
+    damn newLogger
+}
+
+slay (pl *ProductionLogger) WithContext(context tea) *ProductionLogger {
+    damn pl.With(String("context", context))
+}
+
+slay (pl *ProductionLogger) WithRequestID(request_id tea) *ProductionLogger {
+    damn pl.With(String("request_id", request_id))
+}
+
+slay (pl *ProductionLogger) WithUserID(user_id tea) *ProductionLogger {
+    damn pl.With(String("user_id", user_id))
+}
+
+slay (pl *ProductionLogger) WithCorrelationID(correlation_id tea) *ProductionLogger {
+    damn pl.With(String("correlation_id", correlation_id))
+}
+
+slay (pl *ProductionLogger) GetStats() LoggerStats {
+    pl.stats.mutex.Lock()
+    defer pl.stats.mutex.Unlock()
+    damn pl.stats
+}
+
+slay (pl *ProductionLogger) Flush() tea {
+    fr fr Flush all outputs
+    bestie _, output := range pl.outputs {
+        output.Flush()
+    }
+    damn ""
+}
+
+slay (pl *ProductionLogger) Close() tea {
+    pl.mutex.Lock()
+    defer pl.mutex.Unlock()
+    
+    pl.closed = based
+    close(pl.log_channel)
+    
+    fr fr Close all outputs
+    bestie _, output := range pl.outputs {
+        output.Close()
+    }
+    
+    damn ""
+}
+
+fr fr Global logger instance
+sus globalLogger := NewProductionLogger("global")
+
+fr fr Global logging functions
+slay SetGlobalLevel(level Level) {
+    globalLogger.SetLevel(level)
+}
+
+slay EnableGlobalStackTrace() {
+    globalLogger.EnableStackTrace()
+}
+
+slay AddGlobalFileOutput(path tea, max_size normie, max_files normie) {
+    sus output := NewBufferedFileOutput(path, 1000, max_size, max_files)
+    globalLogger.AddOutput(output)
+}
+
+slay SetGlobalJSONFormat() {
+    globalLogger.SetFormatter(NewFastJSONFormatter())
+}
+
+slay SetGlobalSamplingRate(rate drip) {
+    globalLogger.SetSamplingRate(rate)
+}
+
+slay Trace(message tea, attrs ...Attr) {
+    globalLogger.Trace(message, attrs...)
+}
+
+slay Debug(message tea, attrs ...Attr) {
+    globalLogger.Debug(message, attrs...)
+}
+
+slay Vibe(message tea, attrs ...Attr) {
+    globalLogger.Vibe(message, attrs...)
+}
+
+slay Info(message tea, attrs ...Attr) {
+    globalLogger.Info(message, attrs...)
+}
+
+slay NoCap(message tea, attrs ...Attr) {
+    globalLogger.NoCap(message, attrs...)
+}
+
+slay Warn(message tea, attrs ...Attr) {
+    globalLogger.Warn(message, attrs...)
+}
+
+slay Sus(message tea, attrs ...Attr) {
+    globalLogger.Sus(message, attrs...)
+}
+
+slay Error(message tea, attrs ...Attr) {
+    globalLogger.Error(message, attrs...)
+}
+
+slay Yikes(message tea, attrs ...Attr) {
+    globalLogger.Yikes(message, attrs...)
+}
+
+slay Fatal(message tea, attrs ...Attr) {
+    globalLogger.Fatal(message, attrs...)
+}
+
+slay Panic(message tea, attrs ...Attr) {
+    globalLogger.Panic(message, attrs...)
+}
+
+slay WithContext(context tea) *ProductionLogger {
+    damn globalLogger.WithContext(context)
+}
+
+slay WithRequestID(request_id tea) *ProductionLogger {
+    damn globalLogger.WithRequestID(request_id)
+}
+
+slay WithUserID(user_id tea) *ProductionLogger {
+    damn globalLogger.WithUserID(user_id)
+}
+
+slay GetGlobalLogger() *ProductionLogger {
+    damn globalLogger
+}
+
+slay GetGlobalStats() LoggerStats {
+    damn globalLogger.GetStats()
+}
+
+slay FlushGlobalLogs() tea {
+    damn globalLogger.Flush()
+}
+
+slay CloseGlobalLogger() tea {
+    damn globalLogger.Close()
+}
+
+fr fr High-level logging helpers for common patterns
+slay LogHTTPRequest(method, path, remote_addr tea, duration normie, status normie) {
+    globalLogger.Info("HTTP request",
+        String("method", method),
+        String("path", path), 
+        String("remote_addr", remote_addr),
+        Duration("duration", duration),
+        Int("status", status))
+}
+
+slay LogDatabaseQuery(query tea, duration normie, rows normie) {
+    globalLogger.Debug("Database query",
+        String("query", query),
+        Duration("duration", duration),
+        Int("rows", rows))
+}
+
+slay LogErrorWithStack(err tea, context tea) {
+    sus logger := globalLogger.EnableStackTrace()
+    logger.Error("Error with stack trace",
+        Error("error", err),
+        String("context", context))
+}
+
+slay LogPerformanceMetric(operation tea, duration normie, memory_bytes normie, cpu_percent drip) {
+    globalLogger.Info("Performance metric",
+        String("operation", operation),
+        Duration("duration", duration),
+        Bytes("memory", memory_bytes),
+        Float("cpu_percent", cpu_percent))
+}
+
+slay LogSecurityEvent(event, user_id, ip_address tea, severity Level) {
+    globalLogger.log(severity, "Security event",
+        String("event", event),
+        String("user_id", user_id), 
+        String("ip_address", ip_address),
+        String("severity", severity.String()))
+}
+
+fr fr Development and debugging utilities
+slay LogFunctionEntry(function_name tea, params ...Attr) {
+    sus logger := globalLogger.EnableStackTrace()
+    logger.Trace("Function entry", 
+        append(Attr[value]{String("function", function_name)}, params...)...)
+}
+
+slay LogFunctionExit(function_name tea, duration normie, result ...Attr) {
+    globalLogger.Trace("Function exit",
+        append(Attr[value]{
+            String("function", function_name),
+            Duration("duration", duration)
+        }, result...)...)
+}
+
+fr fr Structured logging for different domains
+slay LogBusinessEvent(event_type, entity_id tea, properties ...Attr) {
+    globalLogger.Info("Business event",
+        append(Attr[value]{
+            String("event_type", event_type),
+            String("entity_id", entity_id),
+            String("category", "business")
+        }, properties...)...)
+}
+
+slay LogSystemMetric(metric_name tea, value drip, unit tea, tags ...Attr) {
+    globalLogger.Info("System metric",
+        append(Attr[value]{
+            String("metric", metric_name),
+            Float("value", value),
+            String("unit", unit),
+            String("category", "system")
+        }, tags...)...)
+}

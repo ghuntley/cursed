@@ -342,7 +342,7 @@ vibez.spill("Decoded: " + name2 + " = " + value2)
 Run the comprehensive test suite:
 
 ```bash
-./zig-out/bin/cursed stdlib/httpz_v2/test_httpz_v2.csd
+./zig-out/bin/cursed stdlib/httpz_v2/test_httpz_v2.💀
 ```
 
 The test suite covers:

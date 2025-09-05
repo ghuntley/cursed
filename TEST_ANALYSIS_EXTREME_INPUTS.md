@@ -1,4 +1,4 @@
-# Test Analysis: 02_extreme_inputs.csd
+# Test Analysis: 02_extreme_inputs.💀
 
 ## Current Status
 The test compiles successfully but shows different outputs between interpreter and compiled modes.

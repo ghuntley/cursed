@@ -101,10 +101,10 @@ Perfect for:
 
 Run comprehensive tests:
 ```bash
-./zig-out/bin/cursed-zig stdlib/memz/test.csd
+./zig-out/bin/cursed-zig stdlib/memz/test.💀
 ```
 
 Memory safety validation:
 ```bash
-valgrind --leak-check=full ./zig-out/bin/cursed-zig stdlib/memz/test.csd
+valgrind --leak-check=full ./zig-out/bin/cursed-zig stdlib/memz/test.💀
 ```

@@ -321,7 +321,7 @@ test "error handling runtime" {
     try handler.pushFunction("test_function");
     
     // Test error creation
-    try handler.yikes("Test error message", "RuntimeError", "test.csd", 10, 5);
+    try handler.yikes("Test error message", "RuntimeError", "test.💀", 10, 5);
     
     try std.testing.expect(handler.hasError());
     

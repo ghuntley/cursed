@@ -79,10 +79,10 @@ server.start()
 **A:** Several debugging options:
 ```bash
 # Verbose interpreter mode
-cursed-zig --verbose program.csd
+cursed-zig --verbose program.💀
 
 # Generate debug symbols
-cursed-zig --compile --debug program.csd
+cursed-zig --compile --debug program.💀
 
 # Use GDB with compiled binaries
 gdb ./program
@@ -198,9 +198,9 @@ CURSED Source → Lexer → Parser → Type Checker → LLVM IR → Native Binar
 ### Q: Can I cross-compile CURSED programs?
 **A:** Yes, easy cross-compilation:
 ```bash
-cursed-zig --compile --target=x86_64-linux program.csd
-cursed-zig --compile --target=aarch64-macos program.csd
-cursed-zig --compile --target=wasm32-wasi program.csd
+cursed-zig --compile --target=x86_64-linux program.💀
+cursed-zig --compile --target=aarch64-macos program.💀
+cursed-zig --compile --target=wasm32-wasi program.💀
 ```
 
 ### Q: Does CURSED have a package manager?
@@ -303,7 +303,7 @@ zig build -Doptimize=Debug
 ### Q: Memory leaks in my program?
 **A:** Test with Valgrind:
 ```bash
-valgrind --leak-check=full ./zig-out/bin/cursed-zig program.csd
+valgrind --leak-check=full ./zig-out/bin/cursed-zig program.💀
 ```
 CURSED runtime should show zero leaks.
 

@@ -12,7 +12,7 @@ pub fn main() !void {
     defer std.process.argsFree(allocator, args);
     
     if (args.len < 2) {
-        print("Usage: cursed-llvm [options] <file.csd>\n", .{});
+        print("Usage: cursed-llvm [options] <file.💀.💀>\n", .{});
         print("Options:\n", .{});
         print("  --backend c|llvm     Compilation backend (default: llvm)\n", .{});
         print("  -O<level>           Optimization level (0-3, default: 2)\n", .{});

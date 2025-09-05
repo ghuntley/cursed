@@ -11,12 +11,12 @@ version = "0.1.0"
 # File patterns to monitor for changes
 # Use glob patterns with * wildcards
 watch_patterns = [
-    "*.csd",              # CURSED source files
+    "*.💀",              # CURSED source files
     "*.toml",             # Configuration files
     "*.md",               # Documentation files
     "Makefile",           # Build files
-    "src/**/*.csd",       # All CURSED files in src directory recursively
-    "examples/**/*.csd",  # Example programs
+    "src/**/*.💀",       # All CURSED files in src directory recursively
+    "examples/**/*.💀",  # Example programs
     "tests/**/*.rs",      # Test files (mixed projects)
     "docs/**/*.md",       # All documentation
 ]
@@ -87,7 +87,7 @@ coverage = false
 # Test pattern matching
 test_patterns = [
     "tests/**/*_test.rs",
-    "tests/**/*_test.csd",
+    "tests/**/*_test.💀",
 ]
 
 # Code quality automation

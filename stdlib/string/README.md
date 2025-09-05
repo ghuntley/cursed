@@ -343,16 +343,16 @@ The library includes comprehensive test coverage with 40+ test cases covering al
 
 ```bash
 # Run interpretation mode tests
-cargo run --bin cursed stdlib/string/test_string.csd
+cargo run --bin cursed stdlib/string/test_string.💀
 
 # Run compilation mode tests
-cargo run --bin cursed -- compile stdlib/string/test_string.csd
+cargo run --bin cursed -- compile stdlib/string/test_string.💀
 ./test_string
 
 # Verify both modes produce identical output
 test_both_modes() {
-    cargo run --bin cursed stdlib/string/test_string.csd > interp_output.txt
-    cargo run --bin cursed -- compile stdlib/string/test_string.csd
+    cargo run --bin cursed stdlib/string/test_string.💀 > interp_output.txt
+    cargo run --bin cursed -- compile stdlib/string/test_string.💀
     ./test_string > comp_output.txt
     diff interp_output.txt comp_output.txt
 }

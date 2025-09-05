@@ -63,8 +63,8 @@ def final_cleanup_cursed_file(filepath):
         return False
 
 def main():
-    # Find all .csd files in test_programs
-    pattern = "/home/ghuntley/cursed/test_suite/test_programs/**/*.csd"
+    # Find all .💀 files in test_programs
+    pattern = "/home/ghuntley/cursed/test_suite/test_programs/**/*.💀"
     files = glob.glob(pattern, recursive=True)
     
     print(f"Found {len(files)} CURSED test files for final cleanup...")

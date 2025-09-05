@@ -18,18 +18,18 @@ slay function_name(param1 type1, param2 type2) {
 ```
 
 **Files Fixed** (12 files):
-- `/test_suite/test_programs/performance/01_recursive_depth.csd`
-- `/test_suite/test_programs/performance/02_computation_intensive.csd`
-- `/test_suite/test_programs/functions/02_recursive_function.csd`
-- `/test_suite/test_programs/functions/04_function_parameters.csd`
-- `/test_suite/test_programs/functions/01_simple_function.csd`
-- `/test_suite/test_programs/functions/03_nested_function_calls.csd`
-- `/test_suite/test_programs/comprehensive/function_definitions_test.csd`
-- `/test_suite/test_programs/stress/stress_large_scale_processing.csd`
-- `/test_suite/test_programs/stress/stress_deep_nested_operations.csd`
-- `/test_suite/test_programs/edge_cases/02_empty_inputs.csd`
-- `/test_suite/test_programs/complex/02_fizzbuzz.csd`
-- `/test_suite/test_programs/feature/feature_comprehensive_syntax.csd`
+- `/test_suite/test_programs/performance/01_recursive_depth.💀`
+- `/test_suite/test_programs/performance/02_computation_intensive.💀`
+- `/test_suite/test_programs/functions/02_recursive_function.💀`
+- `/test_suite/test_programs/functions/04_function_parameters.💀`
+- `/test_suite/test_programs/functions/01_simple_function.💀`
+- `/test_suite/test_programs/functions/03_nested_function_calls.💀`
+- `/test_suite/test_programs/comprehensive/function_definitions_test.💀`
+- `/test_suite/test_programs/stress/stress_large_scale_processing.💀`
+- `/test_suite/test_programs/stress/stress_deep_nested_operations.💀`
+- `/test_suite/test_programs/edge_cases/02_empty_inputs.💀`
+- `/test_suite/test_programs/complex/02_fizzbuzz.💀`
+- `/test_suite/test_programs/feature/feature_comprehensive_syntax.💀`
 
 **Example Fix**:
 ```cursed
@@ -49,13 +49,13 @@ slay add_numbers(a normie, b normie) {
 **Action**: Moved files that are intentionally testing error conditions to `disabled/` directory to avoid false positives in valid syntax testing.
 
 **Files Moved** (7 files):
-- `errors/01_division_by_zero.csd` → `disabled/errors/01_division_by_zero.csd`
-- `errors/error_missing_package.csd` → `disabled/errors/error_missing_package.csd`
-- `errors/02_undefined_variable.csd` → `disabled/errors/02_undefined_variable.csd`
-- `errors/error_syntax_recovery.csd` → `disabled/errors/error_syntax_recovery.csd`
-- `errors/error_recovery_missing_imports.csd` → `disabled/errors/error_recovery_missing_imports.csd`
-- `regression/regression_parser_recovery.csd` → `disabled/regression/regression_parser_recovery.csd`
-- `feature/feature_error_recovery.csd` → `disabled/feature/feature_error_recovery.csd`
+- `errors/01_division_by_zero.💀` → `disabled/errors/01_division_by_zero.💀`
+- `errors/error_missing_package.💀` → `disabled/errors/error_missing_package.💀`
+- `errors/02_undefined_variable.💀` → `disabled/errors/02_undefined_variable.💀`
+- `errors/error_syntax_recovery.💀` → `disabled/errors/error_syntax_recovery.💀`
+- `errors/error_recovery_missing_imports.💀` → `disabled/errors/error_recovery_missing_imports.💀`
+- `regression/regression_parser_recovery.💀` → `disabled/regression/regression_parser_recovery.💀`
+- `feature/feature_error_recovery.💀` → `disabled/feature/feature_error_recovery.💀`
 
 ## Type Inference Strategy
 
@@ -95,7 +95,7 @@ yeet "module_name"
 
 ### Interpreter Mode Test
 ```bash
-$ ./zig-out/bin/cursed-compiler --interpret test_suite/test_programs/functions/01_simple_function.csd
+$ ./zig-out/bin/cursed-compiler --interpret test_suite/test_programs/functions/01_simple_function.💀
 "=== Simple Function Test ==="
 "Testing add_numbers:"
 10
@@ -107,7 +107,7 @@ $ ./zig-out/bin/cursed-compiler --interpret test_suite/test_programs/functions/0
 
 ### Compiled Mode Test
 ```bash
-$ ./zig-out/bin/cursed-compiler --compile test_suite/test_programs/functions/01_simple_function.csd -o test_validation
+$ ./zig-out/bin/cursed-compiler --compile test_suite/test_programs/functions/01_simple_function.💀 -o test_validation
 $ ./test_validation
 "=== Simple Function Test ==="
 "Testing add_numbers:"

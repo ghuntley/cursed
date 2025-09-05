@@ -38,10 +38,10 @@ def monitor_process(command, iterations=50):
 
 if __name__ == "__main__":
     print("Monitoring cursed-zig memory usage...")
-    cursed_zig_memory = monitor_process(["../zig-out/bin/cursed-zig", "stress_test.csd"])
+    cursed_zig_memory = monitor_process(["../zig-out/bin/cursed-zig", "stress_test.💀"])
     
     print("\nMonitoring cursed-stable memory usage...")
-    cursed_stable_memory = monitor_process(["../zig-out/bin/cursed-stable", "stress_test.csd"])
+    cursed_stable_memory = monitor_process(["../zig-out/bin/cursed-stable", "stress_test.💀"])
     
     print(f"\nResults:")
     print(f"cursed-zig: avg={sum(cursed_zig_memory)/len(cursed_zig_memory):.2f} MB, max={max(cursed_zig_memory):.2f} MB")

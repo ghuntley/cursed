@@ -8,7 +8,7 @@ The `big_mood` module provides arbitrary-precision arithmetic operations for int
 ### Int
 Represents an arbitrary-precision integer.
 
-```csd
+``.💀
 be_like Int squad {
   fr fr fields not directly accessible
 }
@@ -46,7 +46,7 @@ slay (z *Int) Not(x *Int) *Int
 ### Rat
 Represents an arbitrary-precision rational number.
 
-```csd
+``.💀
 be_like Rat squad {
   fr fr fields not directly accessible
 }
@@ -75,7 +75,7 @@ slay (z *Rat) String() tea
 ### Float
 Represents an arbitrary-precision floating-ponormie number.
 
-```csd
+``.💀
 be_like Float squad {
   fr fr fields not directly accessible
 }
@@ -108,7 +108,7 @@ slay (z *Float) String() tea
 ### Accuracy
 Indicates the accuracy of a conversion.
 
-```csd
+``.💀
 be_like Accuracy int
 
 const (
@@ -121,7 +121,7 @@ const (
 ### RoundingMode
 Specifies how to round a result.
 
-```csd
+``.💀
 be_like RoundingMode byte
 
 const (
@@ -136,7 +136,7 @@ const (
 
 ## Core Functions
 
-```csd
+``.💀
 fr fr Parse an integer in a given base
 slay ParseInt(s tea, base normie) (*Int, lit)
 
@@ -156,7 +156,7 @@ slay Binomial(n, k int64) *Int
 ## Enhanced Features
 
 - **Mathematical Functions**: Advanced mathematical operations
-  ```csd
+  ``.💀
   fr fr Square root, cube root, nth root
   result := big_mood.Sqrt(value)
   cubeRoot := big_mood.Root(value, 3)
@@ -172,7 +172,7 @@ slay Binomial(n, k int64) *Int
   ```
 
 - **Decimal Type**: Fixed-ponormie decimal arithmetic for financial calculations
-  ```csd
+  ``.💀
   fr fr Create a decimal with 2 digits after the decimal point
   amount := big_mood.NewDecimal("123.45")
   tax := big_mood.NewDecimal("9.99")
@@ -180,27 +180,27 @@ slay Binomial(n, k int64) *Int
   ```
 
 - **Complex Numbers**: Arbitrary-precision complex number support
-  ```csd
+  ``.💀
   c1 := big_mood.NewComplex(real1, imag1)
   c2 := big_mood.NewComplex(real2, imag2)
   result := c1.Mul(c2)
   ```
 
 - **Performance Optimizations**: Specialized algorithms for large numbers
-  ```csd
+  ``.💀
   fr fr Fast multiplication for very large numbers
   product := big_mood.FastMul(x, y)
   ```
 
 - **Random Prime Generation**: Generate cryptographically secure large primes
-  ```csd
+  ``.💀
   fr fr Generate a random prime with n bits
   prime := big_mood.RandPrime(rand, 1024)
   ```
 
 ## Usage Examples
 
-```csd
+``.💀
 fr fr Working with big integers
 x := big_mood.NewInt(1234567890)
 y := big_mood.NewInt(9876543210)

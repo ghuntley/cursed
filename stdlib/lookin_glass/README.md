@@ -347,7 +347,7 @@ slay validate_struct(v any) lit {
 
 Run the comprehensive test suite:
 ```bash
-cargo run --bin cursed stdlib/lookin_glass/test_lookin_glass.csd
+cargo run --bin cursed stdlib/lookin_glass/test_lookin_glass.💀
 ```
 
 The test suite covers:
@@ -365,10 +365,10 @@ The module works in both interpretation and compilation modes:
 
 ```bash
 # Interpretation mode
-cargo run --bin cursed stdlib/lookin_glass/test_lookin_glass.csd
+cargo run --bin cursed stdlib/lookin_glass/test_lookin_glass.💀
 
 # Compilation mode
-cargo run --bin cursed -- compile stdlib/lookin_glass/test_lookin_glass.csd
+cargo run --bin cursed -- compile stdlib/lookin_glass/test_lookin_glass.💀
 ./test_lookin_glass
 ```
 

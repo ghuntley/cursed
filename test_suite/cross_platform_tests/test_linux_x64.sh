@@ -7,7 +7,7 @@ set -e
 echo "Testing Linux x64 platform support..."
 
 # Create platform test
-cat > platform_test.csd << 'EOF'
+cat > platform_test.💀 << 'EOF'
 vibez.spill("Platform test for Linux x64")
 sus arch tea = "x64"
 sus platform tea = "linux"
@@ -16,8 +16,8 @@ vibez.spill("Platform:", platform)
 EOF
 
 # Test both modes
-./cursed-unified platform_test.csd
-./cursed-unified --compile platform_test.csd
+./cursed-unified platform_test.💀
+./cursed-unified --compile platform_test.💀
 
 if [ -f ./platform_test ]; then
     ./platform_test
@@ -25,7 +25,7 @@ if [ -f ./platform_test ]; then
 fi
 
 # Cleanup
-rm -f platform_test.csd
+rm -f platform_test.💀
 
 echo "Linux x64 platform test completed"
 exit 0

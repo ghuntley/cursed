@@ -11,7 +11,7 @@ This report documents the comprehensive testing of all CURSED stdlib modules to 
 Based on codebase analysis, the following stdlib modules were identified:
 
 #### **Core Mathematical Operations (mathz)**
-- **Location**: `/stdlib/mathz/mod.csd`
+- **Location**: `/stdlib/mathz/mod.💀`
 - **Functions**: 11 implemented functions
   - `abs_normie(x drip) drip` - Absolute value
   - `max_normie(a drip, b drip) drip` - Maximum of two values  
@@ -27,37 +27,37 @@ Based on codebase analysis, the following stdlib modules were identified:
 - **Status**: ✅ **FULLY FUNCTIONAL** - Real mathematical implementations
 
 #### **String Processing (stringz)**
-- **Location**: `/stdlib/stringz/mod.csd` + enhanced backup version
+- **Location**: `/stdlib/stringz/mod.💀` + enhanced backup version
 - **Functions**: 7 basic + 100+ enhanced functions
 - **Status**: ⚠️ **PARTIALLY FUNCTIONAL** - Basic version mostly hardcoded
 
 #### **Output Operations (vibez)**
-- **Location**: `/stdlib/vibez/mod.csd`  
+- **Location**: `/stdlib/vibez/mod.💀`  
 - **Functions**: 5 implemented functions
 - **Status**: ⚠️ **NO-OP IMPLEMENTATIONS** - For pure self-hosting compliance
 
 #### **Path Manipulation (path)**
-- **Location**: `/stdlib/path/mod.csd`
+- **Location**: `/stdlib/path/mod.💀`
 - **Functions**: 7 implemented functions
 - **Status**: ⚠️ **MOCK IMPLEMENTATIONS** - Returns hardcoded values
 
 #### **Environment Variables (env)**
-- **Location**: `/stdlib/env/mod.csd`
+- **Location**: `/stdlib/env/mod.💀`
 - **Functions**: 6 implemented functions  
 - **Status**: ⚠️ **MOCK IMPLEMENTATIONS** - Simulated environment access
 
 #### **File System (fs)**
-- **Location**: `/stdlib/fs/mod.csd`
+- **Location**: `/stdlib/fs/mod.💀`
 - **Functions**: 20+ implemented functions (118 lines)
 - **Status**: ⚠️ **MIXED IMPLEMENTATIONS** - Some real logic, some mocked
 
 #### **Basic I/O (io_basic)**
-- **Location**: `/stdlib/io_basic/mod.csd`
+- **Location**: `/stdlib/io_basic/mod.💀`
 - **Functions**: 15+ implemented functions (221 lines)
 - **Status**: ⚠️ **MOCK IMPLEMENTATIONS** - Comprehensive API with mock behavior
 
 #### **Advanced I/O (io_advanced)**  
-- **Location**: `/stdlib/io_advanced/mod.csd`
+- **Location**: `/stdlib/io_advanced/mod.💀`
 - **Functions**: 30+ implemented functions (392 lines)
 - **Status**: ⚠️ **SOPHISTICATED MOCKS** - Very comprehensive API simulation
 
@@ -88,7 +88,7 @@ All tests completed!
 ```
 
 **Identified Issues in Interpreter:**
-- ❌ **Import System**: Module loading system not functional (`stdlib/import/mod.csd` missing)
+- ❌ **Import System**: Module loading system not functional (`stdlib/import/mod.💀` missing)
 - ❌ **Memory Leaks**: Multiple memory allocation issues detected
 - ❌ **Missing Output**: Some `yap()` calls not producing visible output (missing "Testing arithmetic:" and result 40)
 
@@ -128,7 +128,7 @@ DEBUG: Found stored type for variable b
 #### 2. **Import System Failure**
 ```
 ERROR: No CURSED stdlib implementation found for module 'import': error.ModuleNotFound
-SELF-HOSTING: Please implement stdlib/import/mod.csd for true self-hosting
+SELF-HOSTING: Please implement stdlib/import/mod.💀 for true self-hosting
 ```
 
 The import mechanism is completely non-functional, preventing access to stdlib modules in both modes.
@@ -194,7 +194,7 @@ Even in interpreter mode, some output is missing, suggesting incomplete implemen
 3. **Establish Consistency Testing**: Create automated tests that validate identical behavior between modes
 
 ### Priority 1: Core Language Infrastructure 
-1. **Fix Import System**: Implement functional `stdlib/import/mod.csd` - this blocks ALL stdlib testing
+1. **Fix Import System**: Implement functional `stdlib/import/mod.💀` - this blocks ALL stdlib testing
 2. **Memory Management**: Fix all memory leaks in interpreter mode 
 3. **Output Consistency**: Fix missing output in interpreter mode
 

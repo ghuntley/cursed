@@ -4,7 +4,7 @@ This directory contains comprehensive examples demonstrating the advanced generi
 
 ## Examples Overview
 
-### 1. Generic Collections (`collections.csd`)
+### 1. Generic Collections (`collections.💀`)
 
 Demonstrates type-safe collections with comprehensive generic features:
 
@@ -22,7 +22,7 @@ Demonstrates type-safe collections with comprehensive generic features:
 - Covariance in collection types
 - Memory-safe operations
 
-### 2. Generic Algorithms (`algorithms.csd`)
+### 2. Generic Algorithms (`algorithms.💀`)
 
 Showcases advanced algorithmic programming with generics:
 
@@ -39,7 +39,7 @@ Showcases advanced algorithmic programming with generics:
 - Algorithm specialization based on type properties
 - Performance-optimized generic code
 
-### 3. Advanced Constraints (`advanced_constraints.csd`)
+### 3. Advanced Constraints (`advanced_constraints.💀`)
 
 Demonstrates sophisticated type system features:
 
@@ -57,7 +57,7 @@ Demonstrates sophisticated type system features:
 - Monadic composition patterns
 - Advanced type safety guarantees
 
-### 4. Complete System Demo (`complete_system_demo.csd`)
+### 4. Complete System Demo (`complete_system_demo.💀`)
 
 Real-world application demonstrating all features working together:
 
@@ -134,10 +134,10 @@ To compile and run these examples:
 
 ```bash
 # Compile individual examples
-cursed compile examples/generics/collections.csd
-cursed compile examples/generics/algorithms.csd
-cursed compile examples/generics/advanced_constraints.csd
-cursed compile examples/generics/complete_system_demo.csd
+cursed compile examples/generics/collections.💀
+cursed compile examples/generics/algorithms.💀
+cursed compile examples/generics/advanced_constraints.💀
+cursed compile examples/generics/complete_system_demo.💀
 
 # Run examples
 cursed run examples/generics/collections
@@ -202,7 +202,7 @@ cursed test examples/generics/
 cursed test --profile examples/generics/
 
 # Run specific constraint tests
-cursed test examples/generics/advanced_constraints.csd
+cursed test examples/generics/advanced_constraints.💀
 ```
 
 ## Documentation

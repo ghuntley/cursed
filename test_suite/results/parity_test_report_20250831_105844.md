@@ -52,11 +52,11 @@
 
 ### Interpreter Output:
 ```
-Error at /home/ghuntley/cursed/test_suite/test_programs/arithmetic/01_mixed_types.csd:6:10 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
-Error at /home/ghuntley/cursed/test_suite/test_programs/arithmetic/01_mixed_types.csd:6:10 - Synchronizing parser after error (context: synchronize)
+Error at /home/ghuntley/cursed/test_suite/test_programs/arithmetic/01_mixed_types.💀:6:10 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+Error at /home/ghuntley/cursed/test_suite/test_programs/arithmetic/01_mixed_types.💀:6:10 - Synchronizing parser after error (context: synchronize)
 INFO: Recovered at delimiter 'RightParen' after skipping 4 tokens
-Error at /home/ghuntley/cursed/test_suite/test_programs/arithmetic/01_mixed_types.csd:6:53 - Error parsing function statement
-Error at /home/ghuntley/cursed/test_suite/test_programs/arithmetic/01_mixed_types.csd:31:1 - Failed to parse statement
+Error at /home/ghuntley/cursed/test_suite/test_programs/arithmetic/01_mixed_types.💀:6:53 - Error parsing function statement
+Error at /home/ghuntley/cursed/test_suite/test_programs/arithmetic/01_mixed_types.💀:31:1 - Failed to parse statement
 
 === Error Recovery Statistics ===
 Total errors encountered: 2
@@ -141,11 +141,11 @@ error(gpa): memory address 0x704d73880800 leaked:
 --- /tmp/tmp.zF9katJ8eZ	2025-08-31 10:58:45.331514814 +0300
 +++ /tmp/tmp.Hm5udgh2sm	2025-08-31 10:58:45.332514810 +0300
 @@ -1,78 +0,0 @@
--Error at /home/ghuntley/cursed/test_suite/test_programs/arithmetic/01_mixed_types.csd:6:10 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
--Error at /home/ghuntley/cursed/test_suite/test_programs/arithmetic/01_mixed_types.csd:6:10 - Synchronizing parser after error (context: synchronize)
+-Error at /home/ghuntley/cursed/test_suite/test_programs/arithmetic/01_mixed_types.💀:6:10 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+-Error at /home/ghuntley/cursed/test_suite/test_programs/arithmetic/01_mixed_types.💀:6:10 - Synchronizing parser after error (context: synchronize)
 -INFO: Recovered at delimiter 'RightParen' after skipping 4 tokens
--Error at /home/ghuntley/cursed/test_suite/test_programs/arithmetic/01_mixed_types.csd:6:53 - Error parsing function statement
--Error at /home/ghuntley/cursed/test_suite/test_programs/arithmetic/01_mixed_types.csd:31:1 - Failed to parse statement
+-Error at /home/ghuntley/cursed/test_suite/test_programs/arithmetic/01_mixed_types.💀:6:53 - Error parsing function statement
+-Error at /home/ghuntley/cursed/test_suite/test_programs/arithmetic/01_mixed_types.💀:31:1 - Failed to parse statement
 -
 -=== Error Recovery Statistics ===
 -Total errors encountered: 2
@@ -229,11 +229,11 @@ error(gpa): memory address 0x704d73880800 leaked:
 
 ### Interpreter Output:
 ```
-Error at /home/ghuntley/cursed/test_suite/test_programs/arithmetic/02_edge_cases.csd:6:11 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
-Error at /home/ghuntley/cursed/test_suite/test_programs/arithmetic/02_edge_cases.csd:6:11 - Synchronizing parser after error (context: synchronize)
+Error at /home/ghuntley/cursed/test_suite/test_programs/arithmetic/02_edge_cases.💀:6:11 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+Error at /home/ghuntley/cursed/test_suite/test_programs/arithmetic/02_edge_cases.💀:6:11 - Synchronizing parser after error (context: synchronize)
 INFO: Recovered at delimiter 'RightParen' after skipping 3 tokens
-Error at /home/ghuntley/cursed/test_suite/test_programs/arithmetic/02_edge_cases.csd:6:53 - Error parsing function statement
-Error at /home/ghuntley/cursed/test_suite/test_programs/arithmetic/02_edge_cases.csd:23:1 - Failed to parse statement
+Error at /home/ghuntley/cursed/test_suite/test_programs/arithmetic/02_edge_cases.💀:6:53 - Error parsing function statement
+Error at /home/ghuntley/cursed/test_suite/test_programs/arithmetic/02_edge_cases.💀:23:1 - Failed to parse statement
 
 === Error Recovery Statistics ===
 Total errors encountered: 2
@@ -258,11 +258,11 @@ Executing 0 deferred statements
 --- /tmp/tmp.9cbvrM2bi1	2025-08-31 10:58:45.679513432 +0300
 +++ /tmp/tmp.nFbQHFtLYR	2025-08-31 10:58:45.679513432 +0300
 @@ -1,18 +0,0 @@
--Error at /home/ghuntley/cursed/test_suite/test_programs/arithmetic/02_edge_cases.csd:6:11 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
--Error at /home/ghuntley/cursed/test_suite/test_programs/arithmetic/02_edge_cases.csd:6:11 - Synchronizing parser after error (context: synchronize)
+-Error at /home/ghuntley/cursed/test_suite/test_programs/arithmetic/02_edge_cases.💀:6:11 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+-Error at /home/ghuntley/cursed/test_suite/test_programs/arithmetic/02_edge_cases.💀:6:11 - Synchronizing parser after error (context: synchronize)
 -INFO: Recovered at delimiter 'RightParen' after skipping 3 tokens
--Error at /home/ghuntley/cursed/test_suite/test_programs/arithmetic/02_edge_cases.csd:6:53 - Error parsing function statement
--Error at /home/ghuntley/cursed/test_suite/test_programs/arithmetic/02_edge_cases.csd:23:1 - Failed to parse statement
+-Error at /home/ghuntley/cursed/test_suite/test_programs/arithmetic/02_edge_cases.💀:6:53 - Error parsing function statement
+-Error at /home/ghuntley/cursed/test_suite/test_programs/arithmetic/02_edge_cases.💀:23:1 - Failed to parse statement
 -
 -=== Error Recovery Statistics ===
 -Total errors encountered: 2
@@ -286,11 +286,11 @@ Executing 0 deferred statements
 
 ### Interpreter Output:
 ```
-Error at /home/ghuntley/cursed/test_suite/test_programs/arithmetic/03_operator_precedence.csd:6:11 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
-Error at /home/ghuntley/cursed/test_suite/test_programs/arithmetic/03_operator_precedence.csd:6:11 - Synchronizing parser after error (context: synchronize)
+Error at /home/ghuntley/cursed/test_suite/test_programs/arithmetic/03_operator_precedence.💀:6:11 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+Error at /home/ghuntley/cursed/test_suite/test_programs/arithmetic/03_operator_precedence.💀:6:11 - Synchronizing parser after error (context: synchronize)
 INFO: Recovered at delimiter 'RightParen' after skipping 3 tokens
-Error at /home/ghuntley/cursed/test_suite/test_programs/arithmetic/03_operator_precedence.csd:6:51 - Error parsing function statement
-Error at /home/ghuntley/cursed/test_suite/test_programs/arithmetic/03_operator_precedence.csd:21:1 - Failed to parse statement
+Error at /home/ghuntley/cursed/test_suite/test_programs/arithmetic/03_operator_precedence.💀:6:51 - Error parsing function statement
+Error at /home/ghuntley/cursed/test_suite/test_programs/arithmetic/03_operator_precedence.💀:21:1 - Failed to parse statement
 
 === Error Recovery Statistics ===
 Total errors encountered: 2
@@ -315,11 +315,11 @@ Executing 0 deferred statements
 --- /tmp/tmp.jHO8oBgtjk	2025-08-31 10:58:46.026512053 +0300
 +++ /tmp/tmp.TFlCnWBecr	2025-08-31 10:58:46.026512053 +0300
 @@ -1,18 +0,0 @@
--Error at /home/ghuntley/cursed/test_suite/test_programs/arithmetic/03_operator_precedence.csd:6:11 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
--Error at /home/ghuntley/cursed/test_suite/test_programs/arithmetic/03_operator_precedence.csd:6:11 - Synchronizing parser after error (context: synchronize)
+-Error at /home/ghuntley/cursed/test_suite/test_programs/arithmetic/03_operator_precedence.💀:6:11 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+-Error at /home/ghuntley/cursed/test_suite/test_programs/arithmetic/03_operator_precedence.💀:6:11 - Synchronizing parser after error (context: synchronize)
 -INFO: Recovered at delimiter 'RightParen' after skipping 3 tokens
--Error at /home/ghuntley/cursed/test_suite/test_programs/arithmetic/03_operator_precedence.csd:6:51 - Error parsing function statement
--Error at /home/ghuntley/cursed/test_suite/test_programs/arithmetic/03_operator_precedence.csd:21:1 - Failed to parse statement
+-Error at /home/ghuntley/cursed/test_suite/test_programs/arithmetic/03_operator_precedence.💀:6:51 - Error parsing function statement
+-Error at /home/ghuntley/cursed/test_suite/test_programs/arithmetic/03_operator_precedence.💀:21:1 - Failed to parse statement
 -
 -=== Error Recovery Statistics ===
 -Total errors encountered: 2
@@ -343,13 +343,13 @@ Executing 0 deferred statements
 
 ### Interpreter Output:
 ```
-Error at /home/ghuntley/cursed/test_suite/test_programs/arithmetic/04_complex_expressions.csd:6:10 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
-Error at /home/ghuntley/cursed/test_suite/test_programs/arithmetic/04_complex_expressions.csd:6:10 - Synchronizing parser after error (context: synchronize)
+Error at /home/ghuntley/cursed/test_suite/test_programs/arithmetic/04_complex_expressions.💀:6:10 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+Error at /home/ghuntley/cursed/test_suite/test_programs/arithmetic/04_complex_expressions.💀:6:10 - Synchronizing parser after error (context: synchronize)
 INFO: Recovered at delimiter 'RightParen' after skipping 4 tokens
-Error at /home/ghuntley/cursed/test_suite/test_programs/arithmetic/04_complex_expressions.csd:6:51 - Error parsing function statement
+Error at /home/ghuntley/cursed/test_suite/test_programs/arithmetic/04_complex_expressions.💀:6:51 - Error parsing function statement
 INFO: Recovered at delimiter 'RightParen' after skipping 3 tokens
 INFO: Attempting additional statement recovery
-Error at /home/ghuntley/cursed/test_suite/test_programs/arithmetic/04_complex_expressions.csd:23:1 - Failed to parse statement
+Error at /home/ghuntley/cursed/test_suite/test_programs/arithmetic/04_complex_expressions.💀:23:1 - Failed to parse statement
 
 === Error Recovery Statistics ===
 Total errors encountered: 2
@@ -434,13 +434,13 @@ error(gpa): memory address 0x785aa7ac0800 leaked:
 --- /tmp/tmp.co178KIDnc	2025-08-31 10:58:46.679509459 +0300
 +++ /tmp/tmp.dOILds10ZL	2025-08-31 10:58:46.679509459 +0300
 @@ -1,80 +0,0 @@
--Error at /home/ghuntley/cursed/test_suite/test_programs/arithmetic/04_complex_expressions.csd:6:10 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
--Error at /home/ghuntley/cursed/test_suite/test_programs/arithmetic/04_complex_expressions.csd:6:10 - Synchronizing parser after error (context: synchronize)
+-Error at /home/ghuntley/cursed/test_suite/test_programs/arithmetic/04_complex_expressions.💀:6:10 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+-Error at /home/ghuntley/cursed/test_suite/test_programs/arithmetic/04_complex_expressions.💀:6:10 - Synchronizing parser after error (context: synchronize)
 -INFO: Recovered at delimiter 'RightParen' after skipping 4 tokens
--Error at /home/ghuntley/cursed/test_suite/test_programs/arithmetic/04_complex_expressions.csd:6:51 - Error parsing function statement
+-Error at /home/ghuntley/cursed/test_suite/test_programs/arithmetic/04_complex_expressions.💀:6:51 - Error parsing function statement
 -INFO: Recovered at delimiter 'RightParen' after skipping 3 tokens
 -INFO: Attempting additional statement recovery
--Error at /home/ghuntley/cursed/test_suite/test_programs/arithmetic/04_complex_expressions.csd:23:1 - Failed to parse statement
+-Error at /home/ghuntley/cursed/test_suite/test_programs/arithmetic/04_complex_expressions.💀:23:1 - Failed to parse statement
 -
 -=== Error Recovery Statistics ===
 -Total errors encountered: 2
@@ -524,11 +524,11 @@ error(gpa): memory address 0x785aa7ac0800 leaked:
 
 ### Interpreter Output:
 ```
-Error at /home/ghuntley/cursed/test_suite/test_programs/basic/01_hello_world.csd:6:11 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
-Error at /home/ghuntley/cursed/test_suite/test_programs/basic/01_hello_world.csd:6:11 - Synchronizing parser after error (context: synchronize)
+Error at /home/ghuntley/cursed/test_suite/test_programs/basic/01_hello_world.💀:6:11 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+Error at /home/ghuntley/cursed/test_suite/test_programs/basic/01_hello_world.💀:6:11 - Synchronizing parser after error (context: synchronize)
 INFO: Recovered at delimiter 'RightParen' after skipping 3 tokens
-Error at /home/ghuntley/cursed/test_suite/test_programs/basic/01_hello_world.csd:6:39 - Error parsing function statement
-Error at /home/ghuntley/cursed/test_suite/test_programs/basic/01_hello_world.csd:7:1 - Failed to parse statement
+Error at /home/ghuntley/cursed/test_suite/test_programs/basic/01_hello_world.💀:6:39 - Error parsing function statement
+Error at /home/ghuntley/cursed/test_suite/test_programs/basic/01_hello_world.💀:7:1 - Failed to parse statement
 
 === Error Recovery Statistics ===
 Total errors encountered: 2
@@ -553,11 +553,11 @@ Executing 0 deferred statements
 --- /tmp/tmp.rV6LhsdwGA	2025-08-31 10:58:47.028508073 +0300
 +++ /tmp/tmp.sqKWqJ6Tlc	2025-08-31 10:58:47.029508068 +0300
 @@ -1,18 +0,0 @@
--Error at /home/ghuntley/cursed/test_suite/test_programs/basic/01_hello_world.csd:6:11 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
--Error at /home/ghuntley/cursed/test_suite/test_programs/basic/01_hello_world.csd:6:11 - Synchronizing parser after error (context: synchronize)
+-Error at /home/ghuntley/cursed/test_suite/test_programs/basic/01_hello_world.💀:6:11 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+-Error at /home/ghuntley/cursed/test_suite/test_programs/basic/01_hello_world.💀:6:11 - Synchronizing parser after error (context: synchronize)
 -INFO: Recovered at delimiter 'RightParen' after skipping 3 tokens
--Error at /home/ghuntley/cursed/test_suite/test_programs/basic/01_hello_world.csd:6:39 - Error parsing function statement
--Error at /home/ghuntley/cursed/test_suite/test_programs/basic/01_hello_world.csd:7:1 - Failed to parse statement
+-Error at /home/ghuntley/cursed/test_suite/test_programs/basic/01_hello_world.💀:6:39 - Error parsing function statement
+-Error at /home/ghuntley/cursed/test_suite/test_programs/basic/01_hello_world.💀:7:1 - Failed to parse statement
 -
 -=== Error Recovery Statistics ===
 -Total errors encountered: 2
@@ -581,11 +581,11 @@ Executing 0 deferred statements
 
 ### Interpreter Output:
 ```
-Error at /home/ghuntley/cursed/test_suite/test_programs/basic/02_simple_arithmetic.csd:6:10 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
-Error at /home/ghuntley/cursed/test_suite/test_programs/basic/02_simple_arithmetic.csd:6:10 - Synchronizing parser after error (context: synchronize)
+Error at /home/ghuntley/cursed/test_suite/test_programs/basic/02_simple_arithmetic.💀:6:10 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+Error at /home/ghuntley/cursed/test_suite/test_programs/basic/02_simple_arithmetic.💀:6:10 - Synchronizing parser after error (context: synchronize)
 INFO: Recovered at delimiter 'RightParen' after skipping 4 tokens
-Error at /home/ghuntley/cursed/test_suite/test_programs/basic/02_simple_arithmetic.csd:6:49 - Error parsing function statement
-Error at /home/ghuntley/cursed/test_suite/test_programs/basic/02_simple_arithmetic.csd:24:1 - Failed to parse statement
+Error at /home/ghuntley/cursed/test_suite/test_programs/basic/02_simple_arithmetic.💀:6:49 - Error parsing function statement
+Error at /home/ghuntley/cursed/test_suite/test_programs/basic/02_simple_arithmetic.💀:24:1 - Failed to parse statement
 
 === Error Recovery Statistics ===
 Total errors encountered: 2
@@ -670,11 +670,11 @@ error(gpa): memory address 0x7c8e98be0800 leaked:
 --- /tmp/tmp.ZSvzUO7Cc1	2025-08-31 10:58:47.671505518 +0300
 +++ /tmp/tmp.XlgKEh5M7L	2025-08-31 10:58:47.671505518 +0300
 @@ -1,78 +0,0 @@
--Error at /home/ghuntley/cursed/test_suite/test_programs/basic/02_simple_arithmetic.csd:6:10 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
--Error at /home/ghuntley/cursed/test_suite/test_programs/basic/02_simple_arithmetic.csd:6:10 - Synchronizing parser after error (context: synchronize)
+-Error at /home/ghuntley/cursed/test_suite/test_programs/basic/02_simple_arithmetic.💀:6:10 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+-Error at /home/ghuntley/cursed/test_suite/test_programs/basic/02_simple_arithmetic.💀:6:10 - Synchronizing parser after error (context: synchronize)
 -INFO: Recovered at delimiter 'RightParen' after skipping 4 tokens
--Error at /home/ghuntley/cursed/test_suite/test_programs/basic/02_simple_arithmetic.csd:6:49 - Error parsing function statement
--Error at /home/ghuntley/cursed/test_suite/test_programs/basic/02_simple_arithmetic.csd:24:1 - Failed to parse statement
+-Error at /home/ghuntley/cursed/test_suite/test_programs/basic/02_simple_arithmetic.💀:6:49 - Error parsing function statement
+-Error at /home/ghuntley/cursed/test_suite/test_programs/basic/02_simple_arithmetic.💀:24:1 - Failed to parse statement
 -
 -=== Error Recovery Statistics ===
 -Total errors encountered: 2
@@ -758,11 +758,11 @@ error(gpa): memory address 0x7c8e98be0800 leaked:
 
 ### Interpreter Output:
 ```
-Error at /home/ghuntley/cursed/test_suite/test_programs/basic/03_variable_assignment.csd:6:10 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
-Error at /home/ghuntley/cursed/test_suite/test_programs/basic/03_variable_assignment.csd:6:10 - Synchronizing parser after error (context: synchronize)
+Error at /home/ghuntley/cursed/test_suite/test_programs/basic/03_variable_assignment.💀:6:10 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+Error at /home/ghuntley/cursed/test_suite/test_programs/basic/03_variable_assignment.💀:6:10 - Synchronizing parser after error (context: synchronize)
 INFO: Recovered at delimiter 'RightParen' after skipping 4 tokens
-Error at /home/ghuntley/cursed/test_suite/test_programs/basic/03_variable_assignment.csd:6:51 - Error parsing function statement
-Error at /home/ghuntley/cursed/test_suite/test_programs/basic/03_variable_assignment.csd:21:1 - Failed to parse statement
+Error at /home/ghuntley/cursed/test_suite/test_programs/basic/03_variable_assignment.💀:6:51 - Error parsing function statement
+Error at /home/ghuntley/cursed/test_suite/test_programs/basic/03_variable_assignment.💀:21:1 - Failed to parse statement
 
 === Error Recovery Statistics ===
 Total errors encountered: 2
@@ -847,11 +847,11 @@ error(gpa): memory address 0x790ae0640000 leaked:
 --- /tmp/tmp.8A6RLTTHcJ	2025-08-31 10:58:48.319575922 +0300
 +++ /tmp/tmp.vNVQvytGst	2025-08-31 10:58:48.319575922 +0300
 @@ -1,78 +0,0 @@
--Error at /home/ghuntley/cursed/test_suite/test_programs/basic/03_variable_assignment.csd:6:10 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
--Error at /home/ghuntley/cursed/test_suite/test_programs/basic/03_variable_assignment.csd:6:10 - Synchronizing parser after error (context: synchronize)
+-Error at /home/ghuntley/cursed/test_suite/test_programs/basic/03_variable_assignment.💀:6:10 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+-Error at /home/ghuntley/cursed/test_suite/test_programs/basic/03_variable_assignment.💀:6:10 - Synchronizing parser after error (context: synchronize)
 -INFO: Recovered at delimiter 'RightParen' after skipping 4 tokens
--Error at /home/ghuntley/cursed/test_suite/test_programs/basic/03_variable_assignment.csd:6:51 - Error parsing function statement
--Error at /home/ghuntley/cursed/test_suite/test_programs/basic/03_variable_assignment.csd:21:1 - Failed to parse statement
+-Error at /home/ghuntley/cursed/test_suite/test_programs/basic/03_variable_assignment.💀:6:51 - Error parsing function statement
+-Error at /home/ghuntley/cursed/test_suite/test_programs/basic/03_variable_assignment.💀:21:1 - Failed to parse statement
 -
 -=== Error Recovery Statistics ===
 -Total errors encountered: 2
@@ -935,22 +935,22 @@ error(gpa): memory address 0x790ae0640000 leaked:
 
 ### Interpreter Output:
 ```
-Error at /home/ghuntley/cursed/test_suite/test_programs/complex/01_nested_operations.csd:5:25 - Error parsing function statement
+Error at /home/ghuntley/cursed/test_suite/test_programs/complex/01_nested_operations.💀:5:25 - Error parsing function statement
 INFO: Recovered at statement keyword 'Lowkey' after skipping 1 tokens
 INFO: Attempting additional statement recovery
-Error at /home/ghuntley/cursed/test_suite/test_programs/complex/01_nested_operations.csd:23:9 - Failed to parse statement
+Error at /home/ghuntley/cursed/test_suite/test_programs/complex/01_nested_operations.💀:23:9 - Failed to parse statement
 INFO: Recovered at delimiter 'RightParen' after skipping 5 tokens
 INFO: Attempting additional statement recovery
-Error at /home/ghuntley/cursed/test_suite/test_programs/complex/01_nested_operations.csd:32:11 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
-Error at /home/ghuntley/cursed/test_suite/test_programs/complex/01_nested_operations.csd:32:11 - Synchronizing parser after error (context: synchronize)
+Error at /home/ghuntley/cursed/test_suite/test_programs/complex/01_nested_operations.💀:32:11 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+Error at /home/ghuntley/cursed/test_suite/test_programs/complex/01_nested_operations.💀:32:11 - Synchronizing parser after error (context: synchronize)
 INFO: Recovered at delimiter 'RightParen' after skipping 3 tokens
-Error at /home/ghuntley/cursed/test_suite/test_programs/complex/01_nested_operations.csd:32:39 - Failed to parse statement
+Error at /home/ghuntley/cursed/test_suite/test_programs/complex/01_nested_operations.💀:32:39 - Failed to parse statement
 INFO: Recovered at statement keyword 'Sus' after skipping 1 tokens
 INFO: Attempting additional statement recovery
-Error at /home/ghuntley/cursed/test_suite/test_programs/complex/01_nested_operations.csd:37:11 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
-Error at /home/ghuntley/cursed/test_suite/test_programs/complex/01_nested_operations.csd:37:11 - Synchronizing parser after error (context: synchronize)
+Error at /home/ghuntley/cursed/test_suite/test_programs/complex/01_nested_operations.💀:37:11 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+Error at /home/ghuntley/cursed/test_suite/test_programs/complex/01_nested_operations.💀:37:11 - Synchronizing parser after error (context: synchronize)
 INFO: Recovered at delimiter 'RightParen' after skipping 3 tokens
-Error at /home/ghuntley/cursed/test_suite/test_programs/complex/01_nested_operations.csd:37:22 - Failed to parse statement
+Error at /home/ghuntley/cursed/test_suite/test_programs/complex/01_nested_operations.💀:37:22 - Failed to parse statement
 INFO: Recovered at delimiter 'RightParen' after skipping 6 tokens
 INFO: Attempting additional statement recovery
 
@@ -1087,22 +1087,22 @@ error(gpa): memory address 0x7e0b38ee1000 leaked:
 --- /tmp/tmp.f53eifP68e	2025-08-31 10:58:48.955500417 +0300
 +++ /tmp/tmp.Wudfy70Bba	2025-08-31 10:58:48.955500417 +0300
 @@ -1,141 +0,0 @@
--Error at /home/ghuntley/cursed/test_suite/test_programs/complex/01_nested_operations.csd:5:25 - Error parsing function statement
+-Error at /home/ghuntley/cursed/test_suite/test_programs/complex/01_nested_operations.💀:5:25 - Error parsing function statement
 -INFO: Recovered at statement keyword 'Lowkey' after skipping 1 tokens
 -INFO: Attempting additional statement recovery
--Error at /home/ghuntley/cursed/test_suite/test_programs/complex/01_nested_operations.csd:23:9 - Failed to parse statement
+-Error at /home/ghuntley/cursed/test_suite/test_programs/complex/01_nested_operations.💀:23:9 - Failed to parse statement
 -INFO: Recovered at delimiter 'RightParen' after skipping 5 tokens
 -INFO: Attempting additional statement recovery
--Error at /home/ghuntley/cursed/test_suite/test_programs/complex/01_nested_operations.csd:32:11 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
--Error at /home/ghuntley/cursed/test_suite/test_programs/complex/01_nested_operations.csd:32:11 - Synchronizing parser after error (context: synchronize)
+-Error at /home/ghuntley/cursed/test_suite/test_programs/complex/01_nested_operations.💀:32:11 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+-Error at /home/ghuntley/cursed/test_suite/test_programs/complex/01_nested_operations.💀:32:11 - Synchronizing parser after error (context: synchronize)
 -INFO: Recovered at delimiter 'RightParen' after skipping 3 tokens
--Error at /home/ghuntley/cursed/test_suite/test_programs/complex/01_nested_operations.csd:32:39 - Failed to parse statement
+-Error at /home/ghuntley/cursed/test_suite/test_programs/complex/01_nested_operations.💀:32:39 - Failed to parse statement
 -INFO: Recovered at statement keyword 'Sus' after skipping 1 tokens
 -INFO: Attempting additional statement recovery
--Error at /home/ghuntley/cursed/test_suite/test_programs/complex/01_nested_operations.csd:37:11 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
--Error at /home/ghuntley/cursed/test_suite/test_programs/complex/01_nested_operations.csd:37:11 - Synchronizing parser after error (context: synchronize)
+-Error at /home/ghuntley/cursed/test_suite/test_programs/complex/01_nested_operations.💀:37:11 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+-Error at /home/ghuntley/cursed/test_suite/test_programs/complex/01_nested_operations.💀:37:11 - Synchronizing parser after error (context: synchronize)
 -INFO: Recovered at delimiter 'RightParen' after skipping 3 tokens
--Error at /home/ghuntley/cursed/test_suite/test_programs/complex/01_nested_operations.csd:37:22 - Failed to parse statement
+-Error at /home/ghuntley/cursed/test_suite/test_programs/complex/01_nested_operations.💀:37:22 - Failed to parse statement
 -INFO: Recovered at delimiter 'RightParen' after skipping 6 tokens
 -INFO: Attempting additional statement recovery
 -
@@ -1238,10 +1238,10 @@ error(gpa): memory address 0x7e0b38ee1000 leaked:
 
 ### Interpreter Output:
 ```
-Error at /home/ghuntley/cursed/test_suite/test_programs/complex/02_fizzbuzz.csd:5:16 - Error parsing function statement
+Error at /home/ghuntley/cursed/test_suite/test_programs/complex/02_fizzbuzz.💀:5:16 - Error parsing function statement
 INFO: Recovered at delimiter 'RightParen' after skipping 6 tokens
 INFO: Attempting additional statement recovery
-Error at /home/ghuntley/cursed/test_suite/test_programs/complex/02_fizzbuzz.csd:28:1 - Failed to parse statement
+Error at /home/ghuntley/cursed/test_suite/test_programs/complex/02_fizzbuzz.💀:28:1 - Failed to parse statement
 
 === Error Recovery Statistics ===
 Total errors encountered: 2
@@ -1266,10 +1266,10 @@ Executing 0 deferred statements
 --- /tmp/tmp.CZcmIrzqZz	2025-08-31 10:58:49.301499043 +0300
 +++ /tmp/tmp.dNeFNfhF5C	2025-08-31 10:58:49.302499039 +0300
 @@ -1,17 +0,0 @@
--Error at /home/ghuntley/cursed/test_suite/test_programs/complex/02_fizzbuzz.csd:5:16 - Error parsing function statement
+-Error at /home/ghuntley/cursed/test_suite/test_programs/complex/02_fizzbuzz.💀:5:16 - Error parsing function statement
 -INFO: Recovered at delimiter 'RightParen' after skipping 6 tokens
 -INFO: Attempting additional statement recovery
--Error at /home/ghuntley/cursed/test_suite/test_programs/complex/02_fizzbuzz.csd:28:1 - Failed to parse statement
+-Error at /home/ghuntley/cursed/test_suite/test_programs/complex/02_fizzbuzz.💀:28:1 - Failed to parse statement
 -
 -=== Error Recovery Statistics ===
 -Total errors encountered: 2
@@ -1293,13 +1293,13 @@ Executing 0 deferred statements
 
 ### Interpreter Output:
 ```
-Error at /home/ghuntley/cursed/test_suite/test_programs/control_flow/01_if_statements.csd:6:10 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
-Error at /home/ghuntley/cursed/test_suite/test_programs/control_flow/01_if_statements.csd:6:10 - Synchronizing parser after error (context: synchronize)
+Error at /home/ghuntley/cursed/test_suite/test_programs/control_flow/01_if_statements.💀:6:10 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+Error at /home/ghuntley/cursed/test_suite/test_programs/control_flow/01_if_statements.💀:6:10 - Synchronizing parser after error (context: synchronize)
 INFO: Recovered at delimiter 'RightParen' after skipping 4 tokens
-Error at /home/ghuntley/cursed/test_suite/test_programs/control_flow/01_if_statements.csd:6:44 - Error parsing function statement
+Error at /home/ghuntley/cursed/test_suite/test_programs/control_flow/01_if_statements.💀:6:44 - Error parsing function statement
 INFO: Recovered at delimiter 'RightParen' after skipping 7 tokens
 INFO: Attempting additional statement recovery
-Error at /home/ghuntley/cursed/test_suite/test_programs/control_flow/01_if_statements.csd:37:1 - Failed to parse statement
+Error at /home/ghuntley/cursed/test_suite/test_programs/control_flow/01_if_statements.💀:37:1 - Failed to parse statement
 
 === Error Recovery Statistics ===
 Total errors encountered: 2
@@ -1384,13 +1384,13 @@ error(gpa): memory address 0x7d1561980800 leaked:
 --- /tmp/tmp.n2cOaY6cHr	2025-08-31 10:58:49.964496409 +0300
 +++ /tmp/tmp.HvdGRsRqxH	2025-08-31 10:58:49.964496409 +0300
 @@ -1,80 +0,0 @@
--Error at /home/ghuntley/cursed/test_suite/test_programs/control_flow/01_if_statements.csd:6:10 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
--Error at /home/ghuntley/cursed/test_suite/test_programs/control_flow/01_if_statements.csd:6:10 - Synchronizing parser after error (context: synchronize)
+-Error at /home/ghuntley/cursed/test_suite/test_programs/control_flow/01_if_statements.💀:6:10 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+-Error at /home/ghuntley/cursed/test_suite/test_programs/control_flow/01_if_statements.💀:6:10 - Synchronizing parser after error (context: synchronize)
 -INFO: Recovered at delimiter 'RightParen' after skipping 4 tokens
--Error at /home/ghuntley/cursed/test_suite/test_programs/control_flow/01_if_statements.csd:6:44 - Error parsing function statement
+-Error at /home/ghuntley/cursed/test_suite/test_programs/control_flow/01_if_statements.💀:6:44 - Error parsing function statement
 -INFO: Recovered at delimiter 'RightParen' after skipping 7 tokens
 -INFO: Attempting additional statement recovery
--Error at /home/ghuntley/cursed/test_suite/test_programs/control_flow/01_if_statements.csd:37:1 - Failed to parse statement
+-Error at /home/ghuntley/cursed/test_suite/test_programs/control_flow/01_if_statements.💀:37:1 - Failed to parse statement
 -
 -=== Error Recovery Statistics ===
 -Total errors encountered: 2
@@ -1474,11 +1474,11 @@ error(gpa): memory address 0x7d1561980800 leaked:
 
 ### Interpreter Output:
 ```
-Error at /home/ghuntley/cursed/test_suite/test_programs/control_flow/02_loops.csd:6:10 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
-Error at /home/ghuntley/cursed/test_suite/test_programs/control_flow/02_loops.csd:6:10 - Synchronizing parser after error (context: synchronize)
+Error at /home/ghuntley/cursed/test_suite/test_programs/control_flow/02_loops.💀:6:10 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+Error at /home/ghuntley/cursed/test_suite/test_programs/control_flow/02_loops.💀:6:10 - Synchronizing parser after error (context: synchronize)
 INFO: Recovered at delimiter 'RightParen' after skipping 4 tokens
-Error at /home/ghuntley/cursed/test_suite/test_programs/control_flow/02_loops.csd:6:37 - Error parsing function statement
-Error at /home/ghuntley/cursed/test_suite/test_programs/control_flow/02_loops.csd:24:1 - Failed to parse statement
+Error at /home/ghuntley/cursed/test_suite/test_programs/control_flow/02_loops.💀:6:37 - Error parsing function statement
+Error at /home/ghuntley/cursed/test_suite/test_programs/control_flow/02_loops.💀:24:1 - Failed to parse statement
 
 === Error Recovery Statistics ===
 Total errors encountered: 2
@@ -1563,11 +1563,11 @@ error(gpa): memory address 0x78538a680000 leaked:
 --- /tmp/tmp.HMaszYtWQI	2025-08-31 10:58:50.595493903 +0300
 +++ /tmp/tmp.ZookWGevKB	2025-08-31 10:58:50.595493903 +0300
 @@ -1,78 +0,0 @@
--Error at /home/ghuntley/cursed/test_suite/test_programs/control_flow/02_loops.csd:6:10 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
--Error at /home/ghuntley/cursed/test_suite/test_programs/control_flow/02_loops.csd:6:10 - Synchronizing parser after error (context: synchronize)
+-Error at /home/ghuntley/cursed/test_suite/test_programs/control_flow/02_loops.💀:6:10 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+-Error at /home/ghuntley/cursed/test_suite/test_programs/control_flow/02_loops.💀:6:10 - Synchronizing parser after error (context: synchronize)
 -INFO: Recovered at delimiter 'RightParen' after skipping 4 tokens
--Error at /home/ghuntley/cursed/test_suite/test_programs/control_flow/02_loops.csd:6:37 - Error parsing function statement
--Error at /home/ghuntley/cursed/test_suite/test_programs/control_flow/02_loops.csd:24:1 - Failed to parse statement
+-Error at /home/ghuntley/cursed/test_suite/test_programs/control_flow/02_loops.💀:6:37 - Error parsing function statement
+-Error at /home/ghuntley/cursed/test_suite/test_programs/control_flow/02_loops.💀:24:1 - Failed to parse statement
 -
 -=== Error Recovery Statistics ===
 -Total errors encountered: 2
@@ -1651,11 +1651,11 @@ error(gpa): memory address 0x78538a680000 leaked:
 
 ### Interpreter Output:
 ```
-Error at /home/ghuntley/cursed/test_suite/test_programs/edge_cases/01_boundary_values.csd:6:11 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
-Error at /home/ghuntley/cursed/test_suite/test_programs/edge_cases/01_boundary_values.csd:6:11 - Synchronizing parser after error (context: synchronize)
+Error at /home/ghuntley/cursed/test_suite/test_programs/edge_cases/01_boundary_values.💀:6:11 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+Error at /home/ghuntley/cursed/test_suite/test_programs/edge_cases/01_boundary_values.💀:6:11 - Synchronizing parser after error (context: synchronize)
 INFO: Recovered at delimiter 'RightParen' after skipping 3 tokens
-Error at /home/ghuntley/cursed/test_suite/test_programs/edge_cases/01_boundary_values.csd:6:47 - Error parsing function statement
-Error at /home/ghuntley/cursed/test_suite/test_programs/edge_cases/01_boundary_values.csd:24:1 - Failed to parse statement
+Error at /home/ghuntley/cursed/test_suite/test_programs/edge_cases/01_boundary_values.💀:6:47 - Error parsing function statement
+Error at /home/ghuntley/cursed/test_suite/test_programs/edge_cases/01_boundary_values.💀:24:1 - Failed to parse statement
 
 === Error Recovery Statistics ===
 Total errors encountered: 2
@@ -1680,11 +1680,11 @@ Executing 0 deferred statements
 --- /tmp/tmp.ePqdKZ0ZVs	2025-08-31 10:58:50.947492505 +0300
 +++ /tmp/tmp.TJzpVfDGrB	2025-08-31 10:58:50.947492505 +0300
 @@ -1,18 +0,0 @@
--Error at /home/ghuntley/cursed/test_suite/test_programs/edge_cases/01_boundary_values.csd:6:11 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
--Error at /home/ghuntley/cursed/test_suite/test_programs/edge_cases/01_boundary_values.csd:6:11 - Synchronizing parser after error (context: synchronize)
+-Error at /home/ghuntley/cursed/test_suite/test_programs/edge_cases/01_boundary_values.💀:6:11 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+-Error at /home/ghuntley/cursed/test_suite/test_programs/edge_cases/01_boundary_values.💀:6:11 - Synchronizing parser after error (context: synchronize)
 -INFO: Recovered at delimiter 'RightParen' after skipping 3 tokens
--Error at /home/ghuntley/cursed/test_suite/test_programs/edge_cases/01_boundary_values.csd:6:47 - Error parsing function statement
--Error at /home/ghuntley/cursed/test_suite/test_programs/edge_cases/01_boundary_values.csd:24:1 - Failed to parse statement
+-Error at /home/ghuntley/cursed/test_suite/test_programs/edge_cases/01_boundary_values.💀:6:47 - Error parsing function statement
+-Error at /home/ghuntley/cursed/test_suite/test_programs/edge_cases/01_boundary_values.💀:24:1 - Failed to parse statement
 -
 -=== Error Recovery Statistics ===
 -Total errors encountered: 2
@@ -1708,8 +1708,8 @@ Executing 0 deferred statements
 
 ### Interpreter Output:
 ```
-Error at /home/ghuntley/cursed/test_suite/test_programs/edge_cases/02_empty_inputs.csd:5:20 - Error parsing function statement
-Error at /home/ghuntley/cursed/test_suite/test_programs/edge_cases/02_empty_inputs.csd:27:1 - Failed to parse statement
+Error at /home/ghuntley/cursed/test_suite/test_programs/edge_cases/02_empty_inputs.💀:5:20 - Error parsing function statement
+Error at /home/ghuntley/cursed/test_suite/test_programs/edge_cases/02_empty_inputs.💀:27:1 - Failed to parse statement
 
 === Error Recovery Statistics ===
 Total errors encountered: 2
@@ -1734,8 +1734,8 @@ Executing 0 deferred statements
 --- /tmp/tmp.C8JIP8fk0V	2025-08-31 10:58:51.300676359 +0300
 +++ /tmp/tmp.l1Da31y1uO	2025-08-31 10:58:51.300676359 +0300
 @@ -1,15 +0,0 @@
--Error at /home/ghuntley/cursed/test_suite/test_programs/edge_cases/02_empty_inputs.csd:5:20 - Error parsing function statement
--Error at /home/ghuntley/cursed/test_suite/test_programs/edge_cases/02_empty_inputs.csd:27:1 - Failed to parse statement
+-Error at /home/ghuntley/cursed/test_suite/test_programs/edge_cases/02_empty_inputs.💀:5:20 - Error parsing function statement
+-Error at /home/ghuntley/cursed/test_suite/test_programs/edge_cases/02_empty_inputs.💀:27:1 - Failed to parse statement
 -
 -=== Error Recovery Statistics ===
 -Total errors encountered: 2
@@ -1759,11 +1759,11 @@ Executing 0 deferred statements
 
 ### Interpreter Output:
 ```
-Error at /home/ghuntley/cursed/test_suite/test_programs/errors/01_division_by_zero.csd:6:11 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
-Error at /home/ghuntley/cursed/test_suite/test_programs/errors/01_division_by_zero.csd:6:11 - Synchronizing parser after error (context: synchronize)
+Error at /home/ghuntley/cursed/test_suite/test_programs/errors/01_division_by_zero.💀:6:11 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+Error at /home/ghuntley/cursed/test_suite/test_programs/errors/01_division_by_zero.💀:6:11 - Synchronizing parser after error (context: synchronize)
 INFO: Recovered at delimiter 'RightParen' after skipping 3 tokens
-Error at /home/ghuntley/cursed/test_suite/test_programs/errors/01_division_by_zero.csd:6:48 - Error parsing function statement
-Error at /home/ghuntley/cursed/test_suite/test_programs/errors/01_division_by_zero.csd:15:1 - Failed to parse statement
+Error at /home/ghuntley/cursed/test_suite/test_programs/errors/01_division_by_zero.💀:6:48 - Error parsing function statement
+Error at /home/ghuntley/cursed/test_suite/test_programs/errors/01_division_by_zero.💀:15:1 - Failed to parse statement
 
 === Error Recovery Statistics ===
 Total errors encountered: 2
@@ -1788,11 +1788,11 @@ Executing 0 deferred statements
 --- /tmp/tmp.Q7HrgfMszS	2025-08-31 10:58:51.648489720 +0300
 +++ /tmp/tmp.3LBbZFjyZT	2025-08-31 10:58:51.649489716 +0300
 @@ -1,18 +0,0 @@
--Error at /home/ghuntley/cursed/test_suite/test_programs/errors/01_division_by_zero.csd:6:11 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
--Error at /home/ghuntley/cursed/test_suite/test_programs/errors/01_division_by_zero.csd:6:11 - Synchronizing parser after error (context: synchronize)
+-Error at /home/ghuntley/cursed/test_suite/test_programs/errors/01_division_by_zero.💀:6:11 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+-Error at /home/ghuntley/cursed/test_suite/test_programs/errors/01_division_by_zero.💀:6:11 - Synchronizing parser after error (context: synchronize)
 -INFO: Recovered at delimiter 'RightParen' after skipping 3 tokens
--Error at /home/ghuntley/cursed/test_suite/test_programs/errors/01_division_by_zero.csd:6:48 - Error parsing function statement
--Error at /home/ghuntley/cursed/test_suite/test_programs/errors/01_division_by_zero.csd:15:1 - Failed to parse statement
+-Error at /home/ghuntley/cursed/test_suite/test_programs/errors/01_division_by_zero.💀:6:48 - Error parsing function statement
+-Error at /home/ghuntley/cursed/test_suite/test_programs/errors/01_division_by_zero.💀:15:1 - Failed to parse statement
 -
 -=== Error Recovery Statistics ===
 -Total errors encountered: 2
@@ -1816,11 +1816,11 @@ Executing 0 deferred statements
 
 ### Interpreter Output:
 ```
-Error at /home/ghuntley/cursed/test_suite/test_programs/errors/02_undefined_variable.csd:6:11 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
-Error at /home/ghuntley/cursed/test_suite/test_programs/errors/02_undefined_variable.csd:6:11 - Synchronizing parser after error (context: synchronize)
+Error at /home/ghuntley/cursed/test_suite/test_programs/errors/02_undefined_variable.💀:6:11 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+Error at /home/ghuntley/cursed/test_suite/test_programs/errors/02_undefined_variable.💀:6:11 - Synchronizing parser after error (context: synchronize)
 INFO: Recovered at delimiter 'RightParen' after skipping 3 tokens
-Error at /home/ghuntley/cursed/test_suite/test_programs/errors/02_undefined_variable.csd:6:50 - Error parsing function statement
-Error at /home/ghuntley/cursed/test_suite/test_programs/errors/02_undefined_variable.csd:12:1 - Failed to parse statement
+Error at /home/ghuntley/cursed/test_suite/test_programs/errors/02_undefined_variable.💀:6:50 - Error parsing function statement
+Error at /home/ghuntley/cursed/test_suite/test_programs/errors/02_undefined_variable.💀:12:1 - Failed to parse statement
 
 === Error Recovery Statistics ===
 Total errors encountered: 2
@@ -1845,11 +1845,11 @@ Executing 0 deferred statements
 --- /tmp/tmp.YJxunFFTN0	2025-08-31 10:58:52.001488318 +0300
 +++ /tmp/tmp.wQHFcVaPCQ	2025-08-31 10:58:52.001488318 +0300
 @@ -1,18 +0,0 @@
--Error at /home/ghuntley/cursed/test_suite/test_programs/errors/02_undefined_variable.csd:6:11 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
--Error at /home/ghuntley/cursed/test_suite/test_programs/errors/02_undefined_variable.csd:6:11 - Synchronizing parser after error (context: synchronize)
+-Error at /home/ghuntley/cursed/test_suite/test_programs/errors/02_undefined_variable.💀:6:11 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+-Error at /home/ghuntley/cursed/test_suite/test_programs/errors/02_undefined_variable.💀:6:11 - Synchronizing parser after error (context: synchronize)
 -INFO: Recovered at delimiter 'RightParen' after skipping 3 tokens
--Error at /home/ghuntley/cursed/test_suite/test_programs/errors/02_undefined_variable.csd:6:50 - Error parsing function statement
--Error at /home/ghuntley/cursed/test_suite/test_programs/errors/02_undefined_variable.csd:12:1 - Failed to parse statement
+-Error at /home/ghuntley/cursed/test_suite/test_programs/errors/02_undefined_variable.💀:6:50 - Error parsing function statement
+-Error at /home/ghuntley/cursed/test_suite/test_programs/errors/02_undefined_variable.💀:12:1 - Failed to parse statement
 -
 -=== Error Recovery Statistics ===
 -Total errors encountered: 2
@@ -1873,8 +1873,8 @@ Executing 0 deferred statements
 
 ### Interpreter Output:
 ```
-Error at /home/ghuntley/cursed/test_suite/test_programs/functions/01_simple_function.csd:5:19 - Error parsing function statement
-Error at /home/ghuntley/cursed/test_suite/test_programs/functions/01_simple_function.csd:25:1 - Failed to parse statement
+Error at /home/ghuntley/cursed/test_suite/test_programs/functions/01_simple_function.💀:5:19 - Error parsing function statement
+Error at /home/ghuntley/cursed/test_suite/test_programs/functions/01_simple_function.💀:25:1 - Failed to parse statement
 
 === Error Recovery Statistics ===
 Total errors encountered: 2
@@ -1899,8 +1899,8 @@ Executing 0 deferred statements
 --- /tmp/tmp.bMhwBgsthK	2025-08-31 10:58:52.352486924 +0300
 +++ /tmp/tmp.No9Wx8KUb7	2025-08-31 10:58:52.352486924 +0300
 @@ -1,15 +0,0 @@
--Error at /home/ghuntley/cursed/test_suite/test_programs/functions/01_simple_function.csd:5:19 - Error parsing function statement
--Error at /home/ghuntley/cursed/test_suite/test_programs/functions/01_simple_function.csd:25:1 - Failed to parse statement
+-Error at /home/ghuntley/cursed/test_suite/test_programs/functions/01_simple_function.💀:5:19 - Error parsing function statement
+-Error at /home/ghuntley/cursed/test_suite/test_programs/functions/01_simple_function.💀:25:1 - Failed to parse statement
 -
 -=== Error Recovery Statistics ===
 -Total errors encountered: 2
@@ -1924,10 +1924,10 @@ Executing 0 deferred statements
 
 ### Interpreter Output:
 ```
-Error at /home/ghuntley/cursed/test_suite/test_programs/functions/02_recursive_function.csd:5:17 - Error parsing function statement
+Error at /home/ghuntley/cursed/test_suite/test_programs/functions/02_recursive_function.💀:5:17 - Error parsing function statement
 INFO: Recovered at delimiter 'RightParen' after skipping 1 tokens
 INFO: Attempting additional statement recovery
-Error at /home/ghuntley/cursed/test_suite/test_programs/functions/02_recursive_function.csd:31:1 - Failed to parse statement
+Error at /home/ghuntley/cursed/test_suite/test_programs/functions/02_recursive_function.💀:31:1 - Failed to parse statement
 
 === Error Recovery Statistics ===
 Total errors encountered: 2
@@ -1952,10 +1952,10 @@ Executing 0 deferred statements
 --- /tmp/tmp.6Y3VCiVSC9	2025-08-31 10:58:52.700485541 +0300
 +++ /tmp/tmp.WMyWb4DrLR	2025-08-31 10:58:52.700485541 +0300
 @@ -1,17 +0,0 @@
--Error at /home/ghuntley/cursed/test_suite/test_programs/functions/02_recursive_function.csd:5:17 - Error parsing function statement
+-Error at /home/ghuntley/cursed/test_suite/test_programs/functions/02_recursive_function.💀:5:17 - Error parsing function statement
 -INFO: Recovered at delimiter 'RightParen' after skipping 1 tokens
 -INFO: Attempting additional statement recovery
--Error at /home/ghuntley/cursed/test_suite/test_programs/functions/02_recursive_function.csd:31:1 - Failed to parse statement
+-Error at /home/ghuntley/cursed/test_suite/test_programs/functions/02_recursive_function.💀:31:1 - Failed to parse statement
 -
 -=== Error Recovery Statistics ===
 -Total errors encountered: 2
@@ -1979,10 +1979,10 @@ Executing 0 deferred statements
 
 ### Interpreter Output:
 ```
-Error at /home/ghuntley/cursed/test_suite/test_programs/functions/03_nested_function_calls.csd:5:20 - Error parsing function statement
+Error at /home/ghuntley/cursed/test_suite/test_programs/functions/03_nested_function_calls.💀:5:20 - Error parsing function statement
 INFO: Recovered at delimiter 'RightParen' after skipping 4 tokens
 INFO: Attempting additional statement recovery
-Error at /home/ghuntley/cursed/test_suite/test_programs/functions/03_nested_function_calls.csd:33:1 - Failed to parse statement
+Error at /home/ghuntley/cursed/test_suite/test_programs/functions/03_nested_function_calls.💀:33:1 - Failed to parse statement
 
 === Error Recovery Statistics ===
 Total errors encountered: 2
@@ -2007,10 +2007,10 @@ Executing 0 deferred statements
 --- /tmp/tmp.GqOpUcb00e	2025-08-31 10:58:53.045484171 +0300
 +++ /tmp/tmp.3xe1qdgW4Y	2025-08-31 10:58:53.045484171 +0300
 @@ -1,17 +0,0 @@
--Error at /home/ghuntley/cursed/test_suite/test_programs/functions/03_nested_function_calls.csd:5:20 - Error parsing function statement
+-Error at /home/ghuntley/cursed/test_suite/test_programs/functions/03_nested_function_calls.💀:5:20 - Error parsing function statement
 -INFO: Recovered at delimiter 'RightParen' after skipping 4 tokens
 -INFO: Attempting additional statement recovery
--Error at /home/ghuntley/cursed/test_suite/test_programs/functions/03_nested_function_calls.csd:33:1 - Failed to parse statement
+-Error at /home/ghuntley/cursed/test_suite/test_programs/functions/03_nested_function_calls.💀:33:1 - Failed to parse statement
 -
 -=== Error Recovery Statistics ===
 -Total errors encountered: 2
@@ -2034,10 +2034,10 @@ Executing 0 deferred statements
 
 ### Interpreter Output:
 ```
-Error at /home/ghuntley/cursed/test_suite/test_programs/functions/04_function_parameters.csd:9:17 - Error parsing function statement
+Error at /home/ghuntley/cursed/test_suite/test_programs/functions/04_function_parameters.💀:9:17 - Error parsing function statement
 INFO: Recovered at delimiter 'RightParen' after skipping 6 tokens
 INFO: Attempting additional statement recovery
-Error at /home/ghuntley/cursed/test_suite/test_programs/functions/04_function_parameters.csd:33:1 - Failed to parse statement
+Error at /home/ghuntley/cursed/test_suite/test_programs/functions/04_function_parameters.💀:33:1 - Failed to parse statement
 
 === Error Recovery Statistics ===
 Total errors encountered: 2
@@ -2148,8 +2148,8 @@ COMPILE_ERROR: Binary not created at /home/ghuntley/cursed/test_suite/../04_func
 
 ### Interpreter Output:
 ```
-Error at /home/ghuntley/cursed/test_suite/test_programs/performance/01_recursive_depth.csd:5:22 - Error parsing function statement
-Error at /home/ghuntley/cursed/test_suite/test_programs/performance/01_recursive_depth.csd:25:1 - Failed to parse statement
+Error at /home/ghuntley/cursed/test_suite/test_programs/performance/01_recursive_depth.💀:5:22 - Error parsing function statement
+Error at /home/ghuntley/cursed/test_suite/test_programs/performance/01_recursive_depth.💀:25:1 - Failed to parse statement
 
 === Error Recovery Statistics ===
 Total errors encountered: 2
@@ -2174,8 +2174,8 @@ Executing 0 deferred statements
 --- /tmp/tmp.TV5i462T0T	2025-08-31 10:58:53.991480414 +0300
 +++ /tmp/tmp.qlSNUrQxEN	2025-08-31 10:58:53.992480410 +0300
 @@ -1,15 +0,0 @@
--Error at /home/ghuntley/cursed/test_suite/test_programs/performance/01_recursive_depth.csd:5:22 - Error parsing function statement
--Error at /home/ghuntley/cursed/test_suite/test_programs/performance/01_recursive_depth.csd:25:1 - Failed to parse statement
+-Error at /home/ghuntley/cursed/test_suite/test_programs/performance/01_recursive_depth.💀:5:22 - Error parsing function statement
+-Error at /home/ghuntley/cursed/test_suite/test_programs/performance/01_recursive_depth.💀:25:1 - Failed to parse statement
 -
 -=== Error Recovery Statistics ===
 -Total errors encountered: 2
@@ -2199,10 +2199,10 @@ Executing 0 deferred statements
 
 ### Interpreter Output:
 ```
-Error at /home/ghuntley/cursed/test_suite/test_programs/performance/02_computation_intensive.csd:5:17 - Error parsing function statement
+Error at /home/ghuntley/cursed/test_suite/test_programs/performance/02_computation_intensive.💀:5:17 - Error parsing function statement
 INFO: Recovered at delimiter 'RightParen' after skipping 6 tokens
 INFO: Attempting additional statement recovery
-Error at /home/ghuntley/cursed/test_suite/test_programs/performance/02_computation_intensive.csd:33:1 - Failed to parse statement
+Error at /home/ghuntley/cursed/test_suite/test_programs/performance/02_computation_intensive.💀:33:1 - Failed to parse statement
 
 === Error Recovery Statistics ===
 Total errors encountered: 2
@@ -2227,10 +2227,10 @@ Executing 0 deferred statements
 --- /tmp/tmp.Q8L85qbajt	2025-08-31 10:58:54.350478988 +0300
 +++ /tmp/tmp.l71V6EwD42	2025-08-31 10:58:54.350478988 +0300
 @@ -1,17 +0,0 @@
--Error at /home/ghuntley/cursed/test_suite/test_programs/performance/02_computation_intensive.csd:5:17 - Error parsing function statement
+-Error at /home/ghuntley/cursed/test_suite/test_programs/performance/02_computation_intensive.💀:5:17 - Error parsing function statement
 -INFO: Recovered at delimiter 'RightParen' after skipping 6 tokens
 -INFO: Attempting additional statement recovery
--Error at /home/ghuntley/cursed/test_suite/test_programs/performance/02_computation_intensive.csd:33:1 - Failed to parse statement
+-Error at /home/ghuntley/cursed/test_suite/test_programs/performance/02_computation_intensive.💀:33:1 - Failed to parse statement
 -
 -=== Error Recovery Statistics ===
 -Total errors encountered: 2
@@ -2254,13 +2254,13 @@ Executing 0 deferred statements
 
 ### Interpreter Output:
 ```
-Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/01_mathz_basic.csd:8:10 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
-Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/01_mathz_basic.csd:8:10 - Synchronizing parser after error (context: synchronize)
+Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/01_mathz_basic.💀:8:10 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/01_mathz_basic.💀:8:10 - Synchronizing parser after error (context: synchronize)
 INFO: Recovered at delimiter 'RightParen' after skipping 4 tokens
-Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/01_mathz_basic.csd:8:44 - Error parsing function statement
+Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/01_mathz_basic.💀:8:44 - Error parsing function statement
 INFO: Recovered at delimiter 'RightParen' after skipping 1 tokens
 INFO: Attempting additional statement recovery
-Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/01_mathz_basic.csd:27:1 - Failed to parse statement
+Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/01_mathz_basic.💀:27:1 - Failed to parse statement
 
 === Error Recovery Statistics ===
 Total errors encountered: 2
@@ -2279,11 +2279,11 @@ DEBUG: Variable 'using' not found in any environment after 1 hops
 DEBUG: Environment.get() hop 0: checking env@interpreter.Environment@7ffeebb68168 with 1 variables for 'self'
 DEBUG: Variable 'self' not found in any environment after 1 hops
 DEBUG: Variable 'using' not found, attempting lazy module loading...
-DEBUG: Could not open CURSED stdlib file stdlib/using/mod.csd: error.FileNotFound
+DEBUG: Could not open CURSED stdlib file stdlib/using/mod.💀: error.FileNotFound
 ERROR: No CURSED stdlib implementation found for module 'using': error.ModuleNotFound
-SELF-HOSTING: Please implement stdlib/using/mod.csd for true self-hosting
+SELF-HOSTING: Please implement stdlib/using/mod.💀 for true self-hosting
 DEBUG: Failed to load module 'using'
-❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/stdlib/01_mathz_basic.csd: error.UndefinedVariable
+❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/stdlib/01_mathz_basic.💀: error.UndefinedVariable
 Executing 0 deferred statements
 error(gpa): memory address 0x7c52bb380000 leaked: 
 /snap/zig/14937/lib/std/array_list.zig:1231:56: 0x128790e in ensureTotalCapacityPrecise (std.zig)
@@ -2400,11 +2400,11 @@ COMPILE_ERROR: Binary not created at /home/ghuntley/cursed/test_suite/../01_math
 
 ### Interpreter Output:
 ```
-Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/02_stringz_basic.csd:8:10 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
-Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/02_stringz_basic.csd:8:10 - Synchronizing parser after error (context: synchronize)
+Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/02_stringz_basic.💀:8:10 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/02_stringz_basic.💀:8:10 - Synchronizing parser after error (context: synchronize)
 INFO: Recovered at delimiter 'RightParen' after skipping 4 tokens
-Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/02_stringz_basic.csd:8:46 - Error parsing function statement
-Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/02_stringz_basic.csd:27:1 - Failed to parse statement
+Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/02_stringz_basic.💀:8:46 - Error parsing function statement
+Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/02_stringz_basic.💀:27:1 - Failed to parse statement
 
 === Error Recovery Statistics ===
 Total errors encountered: 2
@@ -2423,11 +2423,11 @@ DEBUG: Variable 'using' not found in any environment after 1 hops
 DEBUG: Environment.get() hop 0: checking env@interpreter.Environment@7ffdc3b0b608 with 1 variables for 'self'
 DEBUG: Variable 'self' not found in any environment after 1 hops
 DEBUG: Variable 'using' not found, attempting lazy module loading...
-DEBUG: Could not open CURSED stdlib file stdlib/using/mod.csd: error.FileNotFound
+DEBUG: Could not open CURSED stdlib file stdlib/using/mod.💀: error.FileNotFound
 ERROR: No CURSED stdlib implementation found for module 'using': error.ModuleNotFound
-SELF-HOSTING: Please implement stdlib/using/mod.csd for true self-hosting
+SELF-HOSTING: Please implement stdlib/using/mod.💀 for true self-hosting
 DEBUG: Failed to load module 'using'
-❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/stdlib/02_stringz_basic.csd: error.UndefinedVariable
+❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/stdlib/02_stringz_basic.💀: error.UndefinedVariable
 Executing 0 deferred statements
 error(gpa): memory address 0x7a6cbd960000 leaked: 
 /snap/zig/14937/lib/std/array_list.zig:1231:56: 0x128790e in ensureTotalCapacityPrecise (std.zig)
@@ -2544,13 +2544,13 @@ COMPILE_ERROR: Binary not created at /home/ghuntley/cursed/test_suite/../02_stri
 
 ### Interpreter Output:
 ```
-Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/03_mathz_advanced.csd:8:11 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
-Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/03_mathz_advanced.csd:8:11 - Synchronizing parser after error (context: synchronize)
+Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/03_mathz_advanced.💀:8:11 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/03_mathz_advanced.💀:8:11 - Synchronizing parser after error (context: synchronize)
 INFO: Recovered at delimiter 'RightParen' after skipping 3 tokens
-Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/03_mathz_advanced.csd:8:46 - Error parsing function statement
+Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/03_mathz_advanced.💀:8:46 - Error parsing function statement
 INFO: Recovered at delimiter 'RightParen' after skipping 13 tokens
 INFO: Attempting additional statement recovery
-Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/03_mathz_advanced.csd:26:1 - Failed to parse statement
+Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/03_mathz_advanced.💀:26:1 - Failed to parse statement
 
 === Error Recovery Statistics ===
 Total errors encountered: 2
@@ -2569,11 +2569,11 @@ DEBUG: Variable 'using' not found in any environment after 1 hops
 DEBUG: Environment.get() hop 0: checking env@interpreter.Environment@7fffa8e1bc28 with 1 variables for 'self'
 DEBUG: Variable 'self' not found in any environment after 1 hops
 DEBUG: Variable 'using' not found, attempting lazy module loading...
-DEBUG: Could not open CURSED stdlib file stdlib/using/mod.csd: error.FileNotFound
+DEBUG: Could not open CURSED stdlib file stdlib/using/mod.💀: error.FileNotFound
 ERROR: No CURSED stdlib implementation found for module 'using': error.ModuleNotFound
-SELF-HOSTING: Please implement stdlib/using/mod.csd for true self-hosting
+SELF-HOSTING: Please implement stdlib/using/mod.💀 for true self-hosting
 DEBUG: Failed to load module 'using'
-❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/stdlib/03_mathz_advanced.csd: error.UndefinedVariable
+❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/stdlib/03_mathz_advanced.💀: error.UndefinedVariable
 Executing 0 deferred statements
 error(gpa): memory address 0x78af0f100000 leaked: 
 /snap/zig/14937/lib/std/array_list.zig:1231:56: 0x128790e in ensureTotalCapacityPrecise (std.zig)
@@ -2674,9 +2674,9 @@ COMPILE_ERROR: Binary not created at /home/ghuntley/cursed/test_suite/../03_math
 -DEBUG: Environment.get() hop 1: checking env@interpreter.Environment@7fff3d5f81a8 with 1 variables for 'self'
 -DEBUG: Variable 'self' not found in any environment after 2 hops
 -DEBUG: Variable 'mathz' not found, attempting lazy module loading...
--DEBUG: Could not open CURSED stdlib file stdlib/mathz/mod.csd: error.FileNotFound
+-DEBUG: Could not open CURSED stdlib file stdlib/mathz/mod.💀: error.FileNotFound
 -ERROR: No CURSED stdlib implementation found for module 'mathz': error.ModuleNotFound
--SELF-HOSTING: Please implement stdlib/mathz/mod.csd for true self-hosting
+-SELF-HOSTING: Please implement stdlib/mathz/mod.💀 for true self-hosting
 -DEBUG: Failed to load module 'mathz'
 -thread 1688963 panic: integer overflow
 -/home/ghuntley/cursed/src-zig/interpreter.zig:466:9: 0xADDRESS in get (cursed_compiler_main.zig)
@@ -2741,13 +2741,13 @@ COMPILE_ERROR: Binary not created at /home/ghuntley/cursed/test_suite/../03_math
 
 ### Interpreter Output:
 ```
-Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/04_collections_basic.csd:8:10 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
-Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/04_collections_basic.csd:8:10 - Synchronizing parser after error (context: synchronize)
+Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/04_collections_basic.💀:8:10 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/04_collections_basic.💀:8:10 - Synchronizing parser after error (context: synchronize)
 INFO: Recovered at delimiter 'RightParen' after skipping 4 tokens
-Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/04_collections_basic.csd:8:49 - Error parsing function statement
+Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/04_collections_basic.💀:8:49 - Error parsing function statement
 INFO: Recovered at delimiter 'RightParen' after skipping 6 tokens
 INFO: Attempting additional statement recovery
-Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/04_collections_basic.csd:27:1 - Failed to parse statement
+Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/04_collections_basic.💀:27:1 - Failed to parse statement
 
 === Error Recovery Statistics ===
 Total errors encountered: 2
@@ -2766,11 +2766,11 @@ DEBUG: Variable 'using' not found in any environment after 1 hops
 DEBUG: Environment.get() hop 0: checking env@interpreter.Environment@7ffec1083738 with 1 variables for 'self'
 DEBUG: Variable 'self' not found in any environment after 1 hops
 DEBUG: Variable 'using' not found, attempting lazy module loading...
-DEBUG: Could not open CURSED stdlib file stdlib/using/mod.csd: error.FileNotFound
+DEBUG: Could not open CURSED stdlib file stdlib/using/mod.💀: error.FileNotFound
 ERROR: No CURSED stdlib implementation found for module 'using': error.ModuleNotFound
-SELF-HOSTING: Please implement stdlib/using/mod.csd for true self-hosting
+SELF-HOSTING: Please implement stdlib/using/mod.💀 for true self-hosting
 DEBUG: Failed to load module 'using'
-❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/stdlib/04_collections_basic.csd: error.UndefinedVariable
+❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/stdlib/04_collections_basic.💀: error.UndefinedVariable
 Executing 0 deferred statements
 error(gpa): memory address 0x79de200e0000 leaked: 
 /snap/zig/14937/lib/std/array_list.zig:1231:56: 0x128790e in ensureTotalCapacityPrecise (std.zig)
@@ -2887,11 +2887,11 @@ COMPILE_ERROR: Binary not created at /home/ghuntley/cursed/test_suite/../04_coll
 
 ### Interpreter Output:
 ```
-Error at /home/ghuntley/cursed/test_suite/test_programs/strings/01_string_operations.csd:6:10 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
-Error at /home/ghuntley/cursed/test_suite/test_programs/strings/01_string_operations.csd:6:10 - Synchronizing parser after error (context: synchronize)
+Error at /home/ghuntley/cursed/test_suite/test_programs/strings/01_string_operations.💀:6:10 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+Error at /home/ghuntley/cursed/test_suite/test_programs/strings/01_string_operations.💀:6:10 - Synchronizing parser after error (context: synchronize)
 INFO: Recovered at delimiter 'RightParen' after skipping 4 tokens
-Error at /home/ghuntley/cursed/test_suite/test_programs/strings/01_string_operations.csd:6:49 - Error parsing function statement
-Error at /home/ghuntley/cursed/test_suite/test_programs/strings/01_string_operations.csd:29:1 - Failed to parse statement
+Error at /home/ghuntley/cursed/test_suite/test_programs/strings/01_string_operations.💀:6:49 - Error parsing function statement
+Error at /home/ghuntley/cursed/test_suite/test_programs/strings/01_string_operations.💀:29:1 - Failed to parse statement
 
 === Error Recovery Statistics ===
 Total errors encountered: 2
@@ -2976,11 +2976,11 @@ error(gpa): memory address 0x74f7a6980800 leaked:
 --- /tmp/tmp.01h9RHbtDV	2025-08-31 10:58:57.441466713 +0300
 +++ /tmp/tmp.8Asq62uJvY	2025-08-31 10:58:57.441466713 +0300
 @@ -1,78 +0,0 @@
--Error at /home/ghuntley/cursed/test_suite/test_programs/strings/01_string_operations.csd:6:10 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
--Error at /home/ghuntley/cursed/test_suite/test_programs/strings/01_string_operations.csd:6:10 - Synchronizing parser after error (context: synchronize)
+-Error at /home/ghuntley/cursed/test_suite/test_programs/strings/01_string_operations.💀:6:10 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+-Error at /home/ghuntley/cursed/test_suite/test_programs/strings/01_string_operations.💀:6:10 - Synchronizing parser after error (context: synchronize)
 -INFO: Recovered at delimiter 'RightParen' after skipping 4 tokens
--Error at /home/ghuntley/cursed/test_suite/test_programs/strings/01_string_operations.csd:6:49 - Error parsing function statement
--Error at /home/ghuntley/cursed/test_suite/test_programs/strings/01_string_operations.csd:29:1 - Failed to parse statement
+-Error at /home/ghuntley/cursed/test_suite/test_programs/strings/01_string_operations.💀:6:49 - Error parsing function statement
+-Error at /home/ghuntley/cursed/test_suite/test_programs/strings/01_string_operations.💀:29:1 - Failed to parse statement
 -
 -=== Error Recovery Statistics ===
 -Total errors encountered: 2

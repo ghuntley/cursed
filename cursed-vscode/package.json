@@ -11,7 +11,7 @@
         "languages": [{
             "id": "cursed",
             "aliases": ["CURSED", "cursed"],
-            "extensions": [".csd"],
+            "extensions": [".💀"],
             "configuration": "./language-configuration.json"
         }],
         "grammars": [{

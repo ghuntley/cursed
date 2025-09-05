@@ -401,18 +401,18 @@ slay create_performance_config() TLSConfig {
 ### Unit Testing
 ```bash
 # Run TLS module tests
-cargo run --bin cursed stdlib/tls_vibe/test_tls_vibe.csd
+cargo run --bin cursed stdlib/tls_vibe/test_tls_vibe.💀
 
 # Test compilation mode
-cargo run --bin cursed -- compile stdlib/tls_vibe/test_tls_vibe.csd
+cargo run --bin cursed -- compile stdlib/tls_vibe/test_tls_vibe.💀
 ./test_tls_vibe
 ```
 
 ### Integration Testing
 ```bash
 # Test with real TLS connections
-cargo run --bin cursed examples/tls_client_example.csd
-cargo run --bin cursed examples/tls_server_example.csd
+cargo run --bin cursed examples/tls_client_example.💀
+cargo run --bin cursed examples/tls_server_example.💀
 ```
 
 ## Dependencies

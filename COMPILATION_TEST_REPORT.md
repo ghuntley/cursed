@@ -6,12 +6,12 @@ I've created and tested CURSED programs to verify stdlib improvements in compile
 
 ## Test Files Created
 
-1. **test_mathz_compiled.csd** - Tests mathz module functions (abs_normie, add_two, etc.)
-2. **test_stringz_compiled.csd** - Tests stringz module functions (length, concat, etc.)
-3. **test_assignment_compiled.csd** - Tests assignment statements (x = 10, i = i + 1)
-4. **test_mixed_compiled.csd** - Tests multiple modules together
-5. **test_simple_compiled.csd** - Basic arithmetic without imports
-6. **test_ultra_simple_compiled.csd** - Minimal variable declaration
+1. **test_mathz_compiled.💀** - Tests mathz module functions (abs_normie, add_two, etc.)
+2. **test_stringz_compiled.💀** - Tests stringz module functions (length, concat, etc.)
+3. **test_assignment_compiled.💀** - Tests assignment statements (x = 10, i = i + 1)
+4. **test_mixed_compiled.💀** - Tests multiple modules together
+5. **test_simple_compiled.💀** - Basic arithmetic without imports
+6. **test_ultra_simple_compiled.💀** - Minimal variable declaration
 
 ## Results
 

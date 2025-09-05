@@ -113,8 +113,8 @@ jobs:
       run: |
         if [ -f zig-out/bin/cursed-zig ]; then
           echo "Testing basic functionality..."
-          echo 'vibez.spill("Hello from Zig ${{ matrix.zig-version }}")' > compat_test.csd
-          ./zig-out/bin/cursed-zig compat_test.csd || echo "Runtime test failed"
+          echo 'vibez.spill("Hello from Zig ${{ matrix.zig-version }}")' > compat_test.💀
+          ./zig-out/bin/cursed-zig compat_test.💀 || echo "Runtime test failed"
         else
           echo "No binary produced - build may have failed"
           exit 1

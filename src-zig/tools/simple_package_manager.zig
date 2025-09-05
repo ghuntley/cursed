@@ -18,7 +18,7 @@ const PackageManifest = struct {
             .name = "",
             .version = "0.1.0",
             .description = "",
-            .main = "src/main.csd",
+            .main = "src/main.💀",
             .dependencies = std.StringHashMap([]const u8){},
         };
     }
@@ -39,7 +39,7 @@ pub fn cmdInit(allocator: Allocator, project_name: []const u8) !void {
         \\  "name": "{s}",
         \\  "version": "0.1.0",
         \\  "description": "A CURSED project",
-        \\  "main": "src/main.csd",
+        \\  "main": "src/main.💀",
         \\  "dependencies": {{}}
         \\}}
     , .{project_name});
@@ -52,7 +52,7 @@ pub fn cmdInit(allocator: Allocator, project_name: []const u8) !void {
     // Create basic project structure
     std.fs.cwd().makePath("src") catch {};
     
-    const main_file = try std.fs.cwd().createFile("src/main.csd", .{});
+    const main_file = try std.fs.cwd().createFile("src/main.💀", .{});
     defer main_file.close();
     try main_file.writer().writeAll(
         \\fr fr Main entry point for CURSED project

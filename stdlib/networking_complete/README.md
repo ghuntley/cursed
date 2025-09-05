@@ -255,16 +255,16 @@ The module includes comprehensive tests covering:
 ### Running Tests
 ```bash
 # Test interpretation mode
-cargo run --bin cursed stdlib/networking_complete/test_networking_complete.csd
+cargo run --bin cursed stdlib/networking_complete/test_networking_complete.💀
 
 # Test compilation mode
-cargo run --bin cursed -- compile stdlib/networking_complete/test_networking_complete.csd
+cargo run --bin cursed -- compile stdlib/networking_complete/test_networking_complete.💀
 ./test_networking_complete
 
 # Both-mode verification
 test_both_modes() {
-    cargo run --bin cursed stdlib/networking_complete/test_networking_complete.csd > interp_output.txt
-    cargo run --bin cursed -- compile stdlib/networking_complete/test_networking_complete.csd
+    cargo run --bin cursed stdlib/networking_complete/test_networking_complete.💀 > interp_output.txt
+    cargo run --bin cursed -- compile stdlib/networking_complete/test_networking_complete.💀
     ./test_networking_complete > comp_output.txt
     diff interp_output.txt comp_output.txt
 }

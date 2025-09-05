@@ -97,7 +97,7 @@ facts result = risky_operation()?;  // Error propagation
 ## Running the Examples
 
 Each example directory contains:
-- **Source code** (`.csd` files) - Complete implementations
+- **Source code** (`.💀` files) - Complete implementations
 - **Documentation** - Detailed explanations and API docs
 - **Tests** - Unit tests and integration tests
 - **Build configuration** - Compilation and optimization settings
@@ -118,11 +118,11 @@ make test
 ```bash
 # Language features
 cd examples/comprehensive/language_features/basic_syntax
-cursed run main.csd
+cursed run main.💀
 
 # Standard library modules  
 cd examples/comprehensive/stdlib_modules/math_operations
-cursed run math_demo.csd
+cursed run math_demo.💀
 
 # Real-world applications
 cd examples/comprehensive/real_world_applications/web_server

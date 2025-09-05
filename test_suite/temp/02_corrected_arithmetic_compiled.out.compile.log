@@ -10,7 +10,7 @@
 🔧 Step 2: Linking object file with gcc...
 ✅ Successfully compiled to: 02_corrected_arithmetic
 🎉 Compilation pipeline completed successfully!
-🎉 Successfully compiled /home/ghuntley/cursed/test_suite/test_programs/parser_fixes/02_corrected_arithmetic.csd to 02_corrected_arithmetic
+🎉 Successfully compiled /home/ghuntley/cursed/test_suite/test_programs/parser_fixes/02_corrected_arithmetic.💀 to 02_corrected_arithmetic
 🧹 Cleaning up LLVM IR Pipeline...
 ✅ LLVM IR Pipeline cleanup complete
 error(gpa): memory address 0x7bd0c1500000 leaked: 

@@ -205,12 +205,12 @@ vibe_life.set_cwd("/home/user/myproject")
 
 # Create source file
 sus code tea = "slay main() {\n    vibez.spill(\"Hello, World!\")\n}\n"
-vibe_life.create_file("main.csd", code)
+vibe_life.create_file("main.💀", code)
 
 # Read and verify
-if vibe_life.file_exists("main.csd") {
-    sus content tea = vibe_life.read_file("main.csd")
-    vibez.spill("File size: " + core.tea(vibe_life.get_file_size("main.csd")))
+if vibe_life.file_exists("main.💀") {
+    sus content tea = vibe_life.read_file("main.💀")
+    vibez.spill("File size: " + core.tea(vibe_life.get_file_size("main.💀")))
     vibez.spill("Content: " + content)
 }
 
@@ -229,7 +229,7 @@ yeet "vibe_life"
 
 # Working with paths
 sus base_path tea = "/home/user/projects"
-sus file_name tea = "main.csd"
+sus file_name tea = "main.💀"
 sus full_path tea = vibe_life.join_path(base_path, file_name)
 
 vibez.spill("Full path: " + full_path)
@@ -289,16 +289,16 @@ Comprehensive test coverage includes:
 
 ```bash
 # Test interpretation mode
-cargo run --bin cursed stdlib/vibe_life/test_vibe_life.csd
+cargo run --bin cursed stdlib/vibe_life/test_vibe_life.💀
 
 # Test compilation mode
-cargo run --bin cursed -- compile stdlib/vibe_life/test_vibe_life.csd
+cargo run --bin cursed -- compile stdlib/vibe_life/test_vibe_life.💀
 ./test_vibe_life
 
 # Verify both modes produce identical output
 test_both_modes() {
-    cargo run --bin cursed stdlib/vibe_life/test_vibe_life.csd > interp.txt
-    cargo run --bin cursed -- compile stdlib/vibe_life/test_vibe_life.csd
+    cargo run --bin cursed stdlib/vibe_life/test_vibe_life.💀 > interp.txt
+    cargo run --bin cursed -- compile stdlib/vibe_life/test_vibe_life.💀
     ./test_vibe_life > comp.txt
     diff interp.txt comp.txt
 }

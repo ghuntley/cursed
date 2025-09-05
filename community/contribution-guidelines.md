@@ -71,7 +71,7 @@ zig build
 
 # Make your changes
 # Run tests: zig build test
-# Validate: ./zig-out/bin/cursed-zig comprehensive_stdlib_test.csd
+# Validate: ./zig-out/bin/cursed-zig comprehensive_stdlib_test.💀
 ```
 
 ### 3. Pull Request

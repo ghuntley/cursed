@@ -907,7 +907,7 @@ mod performance_tests {
     
     #[test]
     fn test_compilation_speed() {
-        let source_code = include_str!("test_programs/medium_program.csd");
+        let source_code = include_str!("test_programs/medium_program.💀");
         let start = Instant::now();
         
         let result = compile_source(source_code);

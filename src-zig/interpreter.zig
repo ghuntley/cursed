@@ -755,7 +755,7 @@ pub const Interpreter = struct {
             .channel_storage = std.HashMap(u64, ArrayList(Value), std.hash_map.AutoContext(u64), std.hash_map.default_max_load_percentage).init(allocator),
             .next_goroutine_id = 0,
             .defer_stack = ArrayList(DeferEntry){},
-            .error_handler = cursed_error.ErrorHandler.init(allocator, "main.csd"),
+            .error_handler = cursed_error.ErrorHandler.init(allocator, "main.💀"),
             .call_stack_depth = 0,
             .max_call_stack_depth = MAX_CALL_STACK_DEPTH,
             .current_file = null,
@@ -1053,9 +1053,9 @@ pub const Interpreter = struct {
         
         // Try multiple possible paths for the module
         const possible_paths = [_][]const u8{
-            try std.fmt.allocPrint(temp_allocator, "stdlib/{s}/mod.csd", .{module_name}),
-            try std.fmt.allocPrint(temp_allocator, "stdlib/layer1/{s}.csd", .{module_name}),
-            try std.fmt.allocPrint(temp_allocator, "stdlib/{s}/{s}.csd", .{ module_name, module_name }),
+            try std.fmt.allocPrint(temp_allocator, "stdlib/{s}/mod.💀", .{module_name}),
+            try std.fmt.allocPrint(temp_allocator, "stdlib/layer1/{s}.💀", .{module_name}),
+            try std.fmt.allocPrint(temp_allocator, "stdlib/{s}/{s}.💀", .{ module_name, module_name }),
         };
         
         var loaded_successfully = false;
@@ -1178,15 +1178,15 @@ pub const Interpreter = struct {
     }
 
     fn loadCursedStdlibModule(self: *Interpreter, module_name: []const u8) InterpreterError!void {
-        // Try to load CURSED stdlib module from stdlib/{module_name}/mod.csd
+        // Try to load CURSED stdlib module from stdlib/{module_name}/mod.💀.💀
         // First try relative to current directory, then try from parent directory
-        const local_path = try std.fmt.allocPrint(self.allocator, "stdlib/{s}/mod.csd", .{module_name});
+        const local_path = try std.fmt.allocPrint(self.allocator, "stdlib/{s}/mod.💀", .{module_name});
         defer self.allocator.free(local_path);
         
-        const parent_path = try std.fmt.allocPrint(self.allocator, "../stdlib/{s}/mod.csd", .{module_name});
+        const parent_path = try std.fmt.allocPrint(self.allocator, "../stdlib/{s}/mod.💀", .{module_name});
         defer self.allocator.free(parent_path);
         
-        const layer1_path = try std.fmt.allocPrint(self.allocator, "../stdlib/layer1/{s}.csd", .{module_name});
+        const layer1_path = try std.fmt.allocPrint(self.allocator, "../stdlib/layer1/{s}.💀", .{module_name});
         defer self.allocator.free(layer1_path);
         
         // Try local path first, then parent path, then layer1 path
@@ -1470,7 +1470,7 @@ pub const Interpreter = struct {
             return;
         } else |err| {
             std.debug.print("ERROR: No CURSED stdlib implementation found for module '{s}': {}\n", .{ module_name, err });
-            std.debug.print("SELF-HOSTING: Please implement stdlib/{s}/mod.csd for true self-hosting\n", .{module_name});
+            std.debug.print("SELF-HOSTING: Please implement stdlib/{s}/mod.💀.💀 for true self-hosting\n", .{module_name});
             // Fallback to Zig builtins
             return self.loadZigBuiltinModule(module_name);
         }

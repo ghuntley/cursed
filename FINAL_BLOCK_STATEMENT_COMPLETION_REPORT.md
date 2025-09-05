@@ -69,9 +69,9 @@ DEBUG: Executing statement type: Return
 
 ## 🧪 Test Files Created
 
-1. **`test_complete_function.csd`** - Basic function with return statement
-2. **`test_stdlib_call_in_function.csd`** - Function calling mathz.add_two()
-3. **`test_final_self_hosting_proof.csd`** - Complete self-hosting demonstration
+1. **`test_complete_function.💀`** - Basic function with return statement
+2. **`test_stdlib_call_in_function.💀`** - Function calling mathz.add_two()
+3. **`test_final_self_hosting_proof.💀`** - Complete self-hosting demonstration
 
 ## 🚀 Next Steps for Full Verification
 

@@ -283,10 +283,10 @@ Run the comprehensive test suite:
 
 ```bash
 # Test in interpretation mode
-cargo run --bin cursed stdlib/x509_certs_tea/test_x509_certs_tea.csd
+cargo run --bin cursed stdlib/x509_certs_tea/test_x509_certs_tea.💀
 
 # Test in compilation mode
-cargo run --bin cursed -- compile stdlib/x509_certs_tea/test_x509_certs_tea.csd
+cargo run --bin cursed -- compile stdlib/x509_certs_tea/test_x509_certs_tea.💀
 ./test_x509_certs_tea
 ```
 

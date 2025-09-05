@@ -43,7 +43,7 @@
           "cursed"
         ],
         "extensions": [
-          ".csd",
+          ".💀",
           ".cursed"
         ],
         "configuration": "./language-configuration.json",
@@ -147,7 +147,7 @@
       ],
       "explorer/context": [
         {
-          "when": "resourceExtname == .csd",
+          "when": "resourceExtname == .💀",
           "command": "cursed.run",
           "group": "navigation@1"
         }
@@ -215,7 +215,7 @@
               "program": {
                 "type": "string",
                 "description": "Absolute path to a CURSED source file",
-                "default": "${workspaceFolder}/main.csd"
+                "default": "${workspaceFolder}/main.💀"
               },
               "args": {
                 "type": "array",
@@ -250,7 +250,7 @@
             "type": "cursed",
             "request": "launch",
             "name": "Launch CURSED Program",
-            "program": "${workspaceFolder}/main.csd",
+            "program": "${workspaceFolder}/main.💀",
             "args": [],
             "cwd": "${workspaceFolder}",
             "stopOnEntry": false
@@ -264,7 +264,7 @@
               "type": "cursed",
               "request": "launch",
               "name": "Launch CURSED Program",
-              "program": "^\"\\${workspaceFolder}/main.csd\"",
+              "program": "^\"\\${workspaceFolder}/main.💀\"",
               "args": [],
               "cwd": "^\"\\${workspaceFolder}\"",
               "stopOnEntry": false

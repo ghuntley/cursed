@@ -627,14 +627,14 @@ test "error codegen integration" {
     const entry_block = c.LLVMAppendBasicBlockInContext(context, test_func, "entry");
     c.LLVMPositionBuilderAtEnd(builder, entry_block);
     
-    error_codegen.setCurrentFunction(test_func, "test.csd");
+    error_codegen.setCurrentFunction(test_func, "test.💀");
     
     // Test error creation
     const error_value = error_codegen.generateYikes(
         "Test error message",
         42,
         0, // Runtime error
-        "test.csd",
+        "test.💀",
         10,
         5
     );
@@ -643,7 +643,7 @@ test "error codegen integration" {
     // Test error context
     const context_value = error_codegen.generateErrorContext(
         "test_function",
-        "test.csd",
+        "test.💀",
         10,
         5
     );

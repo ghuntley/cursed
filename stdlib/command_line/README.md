@@ -285,16 +285,16 @@ Run the comprehensive test suite:
 
 ```bash
 # Test interpretation mode
-cargo run --bin cursed stdlib/command_line/test_command_line.csd
+cargo run --bin cursed stdlib/command_line/test_command_line.💀
 
 # Test compilation mode  
-cargo run --bin cursed -- compile stdlib/command_line/test_command_line.csd
+cargo run --bin cursed -- compile stdlib/command_line/test_command_line.💀
 ./test_command_line
 
 # Both-mode verification
 test_both_modes() {
-    cargo run --bin cursed stdlib/command_line/test_command_line.csd > interp_output.txt
-    cargo run --bin cursed -- compile stdlib/command_line/test_command_line.csd
+    cargo run --bin cursed stdlib/command_line/test_command_line.💀 > interp_output.txt
+    cargo run --bin cursed -- compile stdlib/command_line/test_command_line.💀
     ./test_command_line > comp_output.txt
     diff interp_output.txt comp_output.txt
 }

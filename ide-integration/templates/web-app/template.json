@@ -92,7 +92,7 @@
     "Set up your database and update the DATABASE_URL in .env",
     "Configure Redis connection if enabled",
     "Run 'zig build' to compile the project",
-    "Run 'cursed-zig src/main.csd' to start the development server",
+    "Run 'cursed-zig src/main.💀' to start the development server",
     "Visit http://localhost:8080/health to verify the server is running",
     "Read the README.md for detailed setup and usage instructions"
   ],

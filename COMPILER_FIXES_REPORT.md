@@ -53,7 +53,7 @@
    - Advanced control flow
 
 ### Remaining Failing Test
-- **Test**: `disabled/errors/02_undefined_variable.csd`
+- **Test**: `disabled/errors/02_undefined_variable.💀`
 - **Issue**: Different error message formats between interpreter and compiled modes
 - **Status**: Interpreter panics correctly but with stack trace, compiled mode exits with error code
 - **Next Steps**: Standardize error message formatting across execution modes
@@ -77,7 +77,7 @@
 - **Branch**: zig  
 - **Files Modified**: 
   - `src-zig/interpreter.zig` - Enhanced undefined variable detection
-  - `test_suite/test_programs/errors/02_undefined_variable.csd` - Added error test case
+  - `test_suite/test_programs/errors/02_undefined_variable.💀` - Added error test case
 - **Commit Message**: "Fix division by zero and undefined variable handling in compiler and interpreter"
 
 ## Conclusion

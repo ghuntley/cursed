@@ -1,6 +1,6 @@
 ERROR: No CURSED stdlib implementation found for module 'vibez': error.ModuleNotFound
-SELF-HOSTING: Please implement stdlib/vibez/mod.csd for true self-hosting
-❌ Runtime error in test_programs/edge_cases/edge_case_complex_expressions.csd: error.ModuleNotFound
+SELF-HOSTING: Please implement stdlib/vibez/mod.💀 for true self-hosting
+❌ Runtime error in test_programs/edge_cases/edge_case_complex_expressions.💀: error.ModuleNotFound
 error: ModuleNotFound
 /snap/zig/14937/lib/std/posix.zig:1861:23: 0x10fa273 in openatZ (std.zig)
             .NOENT => return error.FileNotFound,

@@ -1,7 +1,7 @@
 # CURSED Pure Self-Hosting Implementation Plan
 
 ## Current Status
-✅ **Pure CURSED Interpreter Achieved**: Successfully implemented interpreter that loads and executes CURSED stdlib modules (.csd files) without Zig runtime dependencies
+✅ **Pure CURSED Interpreter Achieved**: Successfully implemented interpreter that loads and executes CURSED stdlib modules (.💀 files) without Zig runtime dependencies
 ✅ **Core Stdlib Modules Implemented**: mathz, stringz, path, env, vibez, fs, time, io_basic, io_advanced, crypto_enhanced, network_enhanced
 ✅ **Memory Management Fixed**: Resolved AST lifetime issues and memory leaks in parser
 ⚠️ **LLVM Backend Partially Fixed**: Basic compilation works but stdlib functions and binary operations fail
@@ -27,9 +27,9 @@
 
 #### 1.1 Diagnose LLVM IR Generation Issues
 - [ ] Create minimal test cases for failing operations:
-  - `test_llvm_binary_ops.csd`: Test `5 + 3`, `x * y`, etc.
-  - `test_llvm_stdlib_calls.csd`: Test `mathz.add_two(5, 3)`
-  - `test_llvm_variable_scope.csd`: Test local vs global variables
+  - `test_llvm_binary_ops.💀`: Test `5 + 3`, `x * y`, etc.
+  - `test_llvm_stdlib_calls.💀`: Test `mathz.add_two(5, 3)`
+  - `test_llvm_variable_scope.💀`: Test local vs global variables
 - [ ] Add debug output to `llvm_ir_pipeline.zig` to trace IR generation
 - [ ] Identify specific points where IR generation fails or produces incorrect code
 
@@ -62,7 +62,7 @@
 
 #### 2.2 Automated Testing Framework
 - [ ] Create `run_comprehensive_tests.sh` script
-- [ ] Test each `.csd` file in both interpreter and compiled modes
+- [ ] Test each `.💀` file in both interpreter and compiled modes
 - [ ] Compare outputs between modes to ensure parity
 - [ ] Generate test reports with pass/fail status
 
@@ -127,12 +127,12 @@
 ## Immediate Priority Actions (Today)
 
 ### Action 1: Fix LLVM Binary Operations
-- Create `test_llvm_debug_binary.csd` with simple arithmetic
+- Create `test_llvm_debug_binary.💀` with simple arithmetic
 - Debug `generateBinaryExpression()` in LLVM backend
 - Fix IR generation for basic operations
 
 ### Action 2: Fix LLVM Stdlib Function Calls
-- Create `test_llvm_debug_stdlib.csd` with `mathz.add_two(5, 3)`
+- Create `test_llvm_debug_stdlib.💀` with `mathz.add_two(5, 3)`
 - Debug `generateCallExpression()` for stdlib functions
 - Ensure proper function signature and parameter handling
 
@@ -147,10 +147,10 @@
 zig build
 
 # Test interpreter mode
-./zig-out/bin/cursed-compiler --interpret test_file.csd
+./zig-out/bin/cursed-compiler --interpret test_file.💀
 
 # Test compiled mode
-./zig-out/bin/cursed-compiler --compile test_file.csd -o test_binary
+./zig-out/bin/cursed-compiler --compile test_file.💀 -o test_binary
 ./test_binary
 
 # Run comprehensive tests
@@ -169,8 +169,8 @@ zig build
 - `/home/ghuntley/cursed/src-zig/llvm_ir_pipeline.zig`: LLVM backend implementation
 - `/home/ghuntley/cursed/src-zig/interpreter.zig`: Interpreter implementation
 - `/home/ghuntley/cursed/src-zig/parser.zig`: Parser with memory management fixes
-- `/home/ghuntley/cursed/stdlib/*/mod.csd`: Standard library modules
-- Test files: `test_*.csd` for validation
+- `/home/ghuntley/cursed/stdlib/*/mod.💀`: Standard library modules
+- Test files: `test_*.💀` for validation
 
 ## Notes
 - Focus on getting basic LLVM compilation working before adding new features

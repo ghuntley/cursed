@@ -16,7 +16,7 @@
   },
   "tests": [
     {
-      "name": "boundary_conditions.csd",
+      "name": "boundary_conditions.💀",
       "category": "edge_cases",
       "status": "pass",
       "duration": 0.0017743110656738281,
@@ -24,7 +24,7 @@
       "memory_usage": null
     },
     {
-      "name": "malformed_input.csd",
+      "name": "malformed_input.💀",
       "category": "edge_cases",
       "status": "pass",
       "duration": 0.0016469955444335938,
@@ -32,7 +32,7 @@
       "memory_usage": null
     },
     {
-      "name": "benchmark_suite.csd",
+      "name": "benchmark_suite.💀",
       "category": "performance",
       "status": "pass",
       "duration": 0.001321554183959961,
@@ -40,7 +40,7 @@
       "memory_usage": null
     },
     {
-      "name": "module_integration.csd",
+      "name": "module_integration.💀",
       "category": "integration",
       "status": "pass",
       "duration": 0.0012102127075195312,
@@ -48,7 +48,7 @@
       "memory_usage": null
     },
     {
-      "name": "resource_exhaustion.csd",
+      "name": "resource_exhaustion.💀",
       "category": "stress",
       "status": "pass",
       "duration": 0.0009074211120605469,
@@ -56,7 +56,7 @@
       "memory_usage": null
     },
     {
-      "name": "injection_prevention.csd",
+      "name": "injection_prevention.💀",
       "category": "security",
       "status": "pass",
       "duration": 0.0008370876312255859,
@@ -64,7 +64,7 @@
       "memory_usage": null
     },
     {
-      "name": "platform_validation.csd",
+      "name": "platform_validation.💀",
       "category": "cross_platform",
       "status": "pass",
       "duration": 0.0009067058563232422,

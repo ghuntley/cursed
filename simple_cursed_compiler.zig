@@ -10,7 +10,7 @@ pub fn main() !void {
     defer std.process.argsFree(allocator, args);
 
     if (args.len < 2) {
-        print("Usage: simple_cursed_compiler <file.csd>\n", .{});
+        print("Usage: simple_cursed_compiler <file.💀.💀>\n", .{});
         return;
     }
 

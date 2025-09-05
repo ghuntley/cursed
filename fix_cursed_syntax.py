@@ -40,11 +40,11 @@ def main():
     """Fix all CURSED files in test suite"""
     test_dir = "/home/ghuntley/cursed/test_suite/test_programs"
     
-    # Find all .csd files
+    # Find all .💀 files
     csd_files = []
     for root, dirs, files in os.walk(test_dir):
         for file in files:
-            if file.endswith('.csd'):
+            if file.endswith('.💀'):
                 csd_files.append(os.path.join(root, file))
     
     print(f"Found {len(csd_files)} CURSED files to check")

@@ -3,7 +3,7 @@ version = "0.1.0"
 description = "A reusable CURSED library"
 authors = ["Your Name <your.email@example.com>"]
 license = "MIT"
-main = "src/lib.csd"
+main = "src/lib.💀"
 
 [dev_dependencies]
 testz = "^1.0.0"

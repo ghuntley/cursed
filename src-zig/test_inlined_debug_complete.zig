@@ -53,7 +53,7 @@ pub const InlinedDebugTestSuite = struct {
             8,  // inline site column
             3,  // original line
             1,  // original column
-            "math.csd"
+            "math.💀"
         );
         
         // Test creating debug info for inlined function
@@ -79,8 +79,8 @@ pub const InlinedDebugTestSuite = struct {
         defer inlined_debug_generator.deinit();
         
         // Create nested inline contexts
-        const context1 = inlined_debug.InlineContext.init("helper", "main", 10, 5, 1, 1, "test.csd");
-        const context2 = inlined_debug.InlineContext.init("sub_helper", "helper", 15, 3, 2, 1, "test.csd");
+        const context1 = inlined_debug.InlineContext.init("helper", "main", 10, 5, 1, 1, "test.💀");
+        const context2 = inlined_debug.InlineContext.init("sub_helper", "helper", 15, 3, 2, 1, "test.💀");
         
         // Test nested inline stack
         try inlined_debug_generator.pushInlineContext(&context1);
@@ -111,7 +111,7 @@ pub const InlinedDebugTestSuite = struct {
         var inlined_debug_generator = try inlined_debug.InlinedFunctionDebugGenerator.init(self.allocator, context, di_builder);
         defer inlined_debug_generator.deinit();
         
-        const inline_context = inlined_debug.InlineContext.init("func", "main", 10, 5, 1, 1, "test.csd");
+        const inline_context = inlined_debug.InlineContext.init("func", "main", 10, 5, 1, 1, "test.💀");
         
         // Test tracking inlined variables
         try inlined_debug_generator.trackInlinedVariable(
@@ -178,7 +178,7 @@ pub const InlinedDebugTestSuite = struct {
         try testing.expect(is_valid_empty);
         
         // Add some test data
-        const inline_context = inlined_debug.InlineContext.init("func", "main", 10, 5, 1, 1, "test.csd");
+        const inline_context = inlined_debug.InlineContext.init("func", "main", 10, 5, 1, 1, "test.💀");
         try inlined_debug_generator.trackInlinedVariable("var1", "var1_inlined", &inline_context, null, null);
         
         // Test validation with incomplete data (should still be valid since we handle nulls)
@@ -199,7 +199,7 @@ pub const InlinedDebugTestSuite = struct {
         defer inlined_debug_generator.deinit();
         
         // Add some test data
-        const inline_context = inlined_debug.InlineContext.init("test_func", "main", 10, 5, 1, 1, "test.csd");
+        const inline_context = inlined_debug.InlineContext.init("test_func", "main", 10, 5, 1, 1, "test.💀");
         try inlined_debug_generator.trackInlinedVariable("x", "x_inlined", &inline_context, null, null);
         
         // Generate report
@@ -225,7 +225,7 @@ pub const InlinedDebugTestSuite = struct {
         var inlined_debug_generator = try inlined_debug.InlinedFunctionDebugGenerator.init(self.allocator, context, di_builder);
         defer inlined_debug_generator.deinit();
         
-        const inline_context = inlined_debug.InlineContext.init("func", "main", 15, 8, 3, 1, "test.csd");
+        const inline_context = inlined_debug.InlineContext.init("func", "main", 15, 8, 3, 1, "test.💀");
         const mock_instruction: c.LLVMValueRef = null;
         
         // Test creating inlined debug location
@@ -254,7 +254,7 @@ pub const InlinedDebugTestSuite = struct {
         defer inlined_debug_generator.deinit();
         
         // Add some test data
-        const inline_context = inlined_debug.InlineContext.init("func", "main", 10, 5, 1, 1, "test.csd");
+        const inline_context = inlined_debug.InlineContext.init("func", "main", 10, 5, 1, 1, "test.💀");
         try inlined_debug_generator.trackInlinedVariable("var", "var_inlined", &inline_context, null, null);
         
         // Test cleanup (should not crash)

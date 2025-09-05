@@ -289,10 +289,10 @@ Run the comprehensive test suite:
 
 ```bash
 # Test interpretation mode
-cargo run --bin cursed stdlib/web/test_web.csd
+cargo run --bin cursed stdlib/web/test_web.💀
 
 # Test compilation mode
-cargo run --bin cursed -- compile stdlib/web/test_web.csd
+cargo run --bin cursed -- compile stdlib/web/test_web.💀
 ./test_web
 ```
 

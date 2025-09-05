@@ -36,15 +36,15 @@ export PATH=$PATH:$(pwd)/target/release
 cargo run --bin cursed --version
 
 # Run a simple test
-echo 'vibez.spill("Hello, CURSED!")' > hello.csd
-cargo run --bin cursed hello.csd
+echo 'vibez.spill("Hello, CURSED!")' > hello.💀
+cargo run --bin cursed hello.💀
 ```
 
 ## First Program
 
 Let's start with the traditional "Hello, World!" program:
 
-**File: `hello_world.csd`**
+**File: `hello_world.💀`**
 ```cursed
 vibez.spill("Hello, World!")
 ```
@@ -53,13 +53,13 @@ vibez.spill("Hello, World!")
 
 #### Interpretation Mode (Development)
 ```bash
-cargo run --bin cursed hello_world.csd
+cargo run --bin cursed hello_world.💀
 ```
 
 #### Compilation Mode (Production)
 ```bash
 # Compile to native executable
-cargo run --bin cursed -- compile hello_world.csd
+cargo run --bin cursed -- compile hello_world.💀
 
 # Run the compiled executable
 ./hello_world

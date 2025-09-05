@@ -190,7 +190,7 @@ The validation module is optimized for performance:
 
 Run the comprehensive test suite:
 ```bash
-cargo run --bin cursed stdlib/validation/test_validation.csd
+cargo run --bin cursed stdlib/validation/test_validation.💀
 ```
 
 ## Status

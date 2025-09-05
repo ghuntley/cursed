@@ -32,13 +32,13 @@ A complete web development framework built entirely in CURSED, providing modern 
 
 ```
 stdlib/
-├── web_framework/mod.csd    # Main web framework module
-├── template/mod.csd         # Template engine module
+├── web_framework/mod.💀    # Main web framework module
+├── template/mod.💀         # Template engine module
 └── [existing modules]       # json_tea, stringz, main_character, etc.
 
 examples/
 └── cursed_blog_app/         # Complete blog application example
-    ├── main.csd            # Main application code
+    ├── main.💀            # Main application code
     └── public/             # Static assets
         ├── css/style.css   # Stylesheet
         └── js/app.js       # Client-side JavaScript
@@ -141,10 +141,10 @@ The `examples/cursed_blog_app/` demonstrates a full-featured blog with:
 
 ```bash
 # Run in interpreter mode
-cursed examples/cursed_blog_app/main.csd
+cursed examples/cursed_blog_app/main.💀
 
 # Try compilation (experimental)
-cursed compile examples/cursed_blog_app/main.csd -o blog_app
+cursed compile examples/cursed_blog_app/main.💀 -o blog_app
 ./blog_app
 ```
 
@@ -305,10 +305,10 @@ public/
 ### Run Framework Tests
 ```bash
 # Test in interpreter mode
-cursed test_web_framework.csd
+cursed test_web_framework.💀
 
 # Test compilation (may have limitations)
-cursed compile test_web_framework.csd -o test_framework
+cursed compile test_web_framework.💀 -o test_framework
 ./test_framework
 ```
 
@@ -403,13 +403,13 @@ Start building your next web application with CURSED today! 🚀
 ### Quick Commands
 ```bash
 # Test the framework
-cursed test_web_framework.csd
+cursed test_web_framework.💀
 
 # Run the blog example
-cursed examples/cursed_blog_app/main.csd
+cursed examples/cursed_blog_app/main.💀
 
 # Build for production (experimental)
-cursed compile examples/cursed_blog_app/main.csd -o blog_server
+cursed compile examples/cursed_blog_app/main.💀 -o blog_server
 ./blog_server
 ```
 

@@ -1,10 +1,10 @@
-Error at /home/ghuntley/cursed/test_suite/test_programs/arithmetic/04_complex_expressions.csd:6:10 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
-Error at /home/ghuntley/cursed/test_suite/test_programs/arithmetic/04_complex_expressions.csd:6:10 - Synchronizing parser after error (context: synchronize)
+Error at /home/ghuntley/cursed/test_suite/test_programs/arithmetic/04_complex_expressions.💀:6:10 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+Error at /home/ghuntley/cursed/test_suite/test_programs/arithmetic/04_complex_expressions.💀:6:10 - Synchronizing parser after error (context: synchronize)
 INFO: Recovered at delimiter 'RightParen' after skipping 4 tokens
-Error at /home/ghuntley/cursed/test_suite/test_programs/arithmetic/04_complex_expressions.csd:6:51 - Error parsing function statement
+Error at /home/ghuntley/cursed/test_suite/test_programs/arithmetic/04_complex_expressions.💀:6:51 - Error parsing function statement
 INFO: Recovered at delimiter 'RightParen' after skipping 3 tokens
 INFO: Attempting additional statement recovery
-Error at /home/ghuntley/cursed/test_suite/test_programs/arithmetic/04_complex_expressions.csd:23:1 - Failed to parse statement
+Error at /home/ghuntley/cursed/test_suite/test_programs/arithmetic/04_complex_expressions.💀:23:1 - Failed to parse statement
 
 === Error Recovery Statistics ===
 Total errors encountered: 2
@@ -37,7 +37,7 @@ Total tokens skipped: 7
 ================================
 📦 Processing import: vibez
 DEBUG: Loading and compiling CURSED module: vibez
-DEBUG: Successfully read CURSED module stdlib/vibez/mod.csd (655 bytes)
+DEBUG: Successfully read CURSED module stdlib/vibez/mod.💀 (655 bytes)
 DEBUG: Successfully parsed CURSED module vibez (6 statements)
 DEBUG: Compiling CURSED stdlib function: vibez.spill
 DEBUG: Compiling CURSED stdlib function: vibez.spillln_message

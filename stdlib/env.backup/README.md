@@ -191,14 +191,14 @@ bestie var in interesting {
 ```bash
 echo 'yeet "env"
 vibez.spillf("Platform: {}", env.platform())
-vibez.spillf("Home: {}", env.home_dir())' > env_test.csd
+vibez.spillf("Home: {}", env.home_dir())' > env_test.💀
 
-./cursed-unified env_test.csd
+./cursed-unified env_test.💀
 ```
 
 ### Compilation Mode
 ```bash
-./cursed-unified --compile env_test.csd
+./cursed-unified --compile env_test.💀
 ./env_test
 ```
 

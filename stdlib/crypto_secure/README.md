@@ -123,10 +123,10 @@ yeet "crypto_secure"  # Production-grade cryptography
 
 ```bash
 # Test secure crypto module
-cargo run --bin cursed stdlib/crypto_secure/test_crypto_secure.csd
+cargo run --bin cursed stdlib/crypto_secure/test_crypto_secure.💀
 
 # Test both modes
-cargo run --bin cursed -- compile stdlib/crypto_secure/test_crypto_secure.csd
+cargo run --bin cursed -- compile stdlib/crypto_secure/test_crypto_secure.💀
 ./test_crypto_secure
 ```
 

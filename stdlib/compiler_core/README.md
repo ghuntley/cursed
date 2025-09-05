@@ -103,7 +103,7 @@ Comprehensive error handling throughout compilation:
 Comprehensive test suite validates all compiler phases:
 
 ```bash
-cargo run --bin cursed stdlib/compiler_core/test_compiler_core.csd
+cargo run --bin cursed stdlib/compiler_core/test_compiler_core.💀
 ```
 
 Tests cover:

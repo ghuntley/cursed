@@ -127,11 +127,11 @@ close_client(&client)
 
 ### Core Components
 
-- **`core.csd`**: JSON-RPC 2.0 protocol implementation, request/response handling
-- **`server.csd`**: HTTP-based RPC server with concurrent request processing
-- **`client.csd`**: HTTP-based RPC client with connection pooling and retry logic  
-- **`middleware.csd`**: Middleware system for logging, metrics, validation, caching
-- **`test.csd`**: Comprehensive test suite covering all functionality
+- **`core.💀`**: JSON-RPC 2.0 protocol implementation, request/response handling
+- **`server.💀`**: HTTP-based RPC server with concurrent request processing
+- **`client.💀`**: HTTP-based RPC client with connection pooling and retry logic  
+- **`middleware.💀`**: Middleware system for logging, metrics, validation, caching
+- **`test.💀`**: Comprehensive test suite covering all functionality
 
 ### Request/Response Flow
 
@@ -379,7 +379,7 @@ squad RpcClientConfig {
 
 ```bash
 # Run comprehensive test suite
-./zig-out/bin/cursed-zig stdlib/rpcz/test.csd
+./zig-out/bin/cursed-zig stdlib/rpcz/test.💀
 ```
 
 ### Test Coverage

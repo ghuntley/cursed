@@ -368,7 +368,7 @@ export class CursedCodeGenerationProvider implements vscode.Disposable {
             }
         } else {
             // Create new file
-            const fileName = `${projectName}.csd`;
+            const fileName = `${projectName}.💀`;
             const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
             if (workspaceFolder) {
                 const filePath = vscode.Uri.joinPath(workspaceFolder.uri, fileName);
@@ -487,7 +487,7 @@ export class CursedCodeGenerationProvider implements vscode.Disposable {
     }
     
     private async createTestFile(document: vscode.TextDocument, functions: FunctionInfo[], options: TestOptions): Promise<string> {
-        const fileName = document.fileName.split('/').pop()?.replace('.csd', '') || 'module';
+        const fileName = document.fileName.split('/').pop()?.replace('.💀', '') || 'module';
         
         let testFile = `// Tests for ${fileName}\n`;
         testFile += 'yeet "testz"\n';

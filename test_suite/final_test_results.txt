@@ -7,22 +7,22 @@ Working from: /home/ghuntley/cursed/test_suite/.. (for stdlib loading)
 Scanning for test files...
 Found 73 test files
 
-[1m[1/73] Testing: arithmetic/01_mixed_types.csd[0m
+[1m[1/73] Testing: arithmetic/01_mixed_types.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[2/73] Testing: arithmetic/02_edge_cases.csd[0m
+[1m[2/73] Testing: arithmetic/02_edge_cases.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[3/73] Testing: arithmetic/03_operator_precedence.csd[0m
+[1m[3/73] Testing: arithmetic/03_operator_precedence.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[4/73] Testing: arithmetic/04_complex_expressions.csd[0m
+[1m[4/73] Testing: arithmetic/04_complex_expressions.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[5/73] Testing: arithmetic/arithmetic_basic_operations.csd[0m
+[1m[5/73] Testing: arithmetic/arithmetic_basic_operations.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[6/73] Testing: arithmetic/feature_arithmetic_operations.csd[0m
+[1m[6/73] Testing: arithmetic/feature_arithmetic_operations.💀[0m
   Result: [33mFAIL (different outputs)[0m
   [36mInterpreter (exit: 0):[0m
     "=== Arithmetic Operations Test ===" 
@@ -105,22 +105,22 @@ Found 73 test files
     00000120: 6c65 7465 203d 3d3d 22                   lete ==="
 
 ---
-[1m[7/73] Testing: basic/01_hello_world.csd[0m
+[1m[7/73] Testing: basic/01_hello_world.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[8/73] Testing: basic/02_simple_arithmetic.csd[0m
+[1m[8/73] Testing: basic/02_simple_arithmetic.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[9/73] Testing: basic/03_variable_assignment.csd[0m
+[1m[9/73] Testing: basic/03_variable_assignment.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[10/73] Testing: basic/basic_hello_world.csd[0m
+[1m[10/73] Testing: basic/basic_hello_world.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[11/73] Testing: basic/hello_world_simple.csd[0m
+[1m[11/73] Testing: basic/hello_world_simple.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[12/73] Testing: complex/01_nested_operations.csd[0m
+[1m[12/73] Testing: complex/01_nested_operations.💀[0m
   Result: [31mCOMPILE ERROR (interpreted worked)[0m
   [36mInterpreter (exit: 0):[0m
     "=== Nested Operations Test ===" 
@@ -138,16 +138,16 @@ Found 73 test files
     Runtime error (exit 127)
 
 ---
-[1m[13/73] Testing: complex/02_fizzbuzz.csd[0m
+[1m[13/73] Testing: complex/02_fizzbuzz.💀[0m
   Result: [33mFAIL (different outputs)[0m
   [36mInterpreter (exit: 0):[0m
-    Error at /home/ghuntley/cursed/test_suite/test_programs/complex/02_fizzbuzz.csd:10:11 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
-    Error at /home/ghuntley/cursed/test_suite/test_programs/complex/02_fizzbuzz.csd:10:11 - Synchronizing parser after error (context: synchronize)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/complex/02_fizzbuzz.💀:10:11 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/complex/02_fizzbuzz.💀:10:11 - Synchronizing parser after error (context: synchronize)
     INFO: Recovered at statement keyword 'Ready' after skipping 1 tokens
-    Error at /home/ghuntley/cursed/test_suite/test_programs/complex/02_fizzbuzz.csd:10:16 - Error parsing function statement
+    Error at /home/ghuntley/cursed/test_suite/test_programs/complex/02_fizzbuzz.💀:10:16 - Error parsing function statement
     INFO: Recovered at statement keyword 'Slay' after skipping 1 tokens
     INFO: Attempting additional statement recovery
-    Error at /home/ghuntley/cursed/test_suite/test_programs/complex/02_fizzbuzz.csd:21:1 - Failed to parse statement
+    Error at /home/ghuntley/cursed/test_suite/test_programs/complex/02_fizzbuzz.💀:21:1 - Failed to parse statement
     INFO: Recovered at delimiter 'RightParen' after skipping 3 tokens
     INFO: Attempting additional statement recovery
     
@@ -178,7 +178,7 @@ Found 73 test files
     00000010: 6875 6e74 6c65 792f 6375 7273 6564 2f74  huntley/cursed/t
     00000020: 6573 745f 7375 6974 652f 7465 7374 5f70  est_suite/test_p
     00000030: 726f 6772 616d 732f 636f 6d70 6c65 782f  rograms/complex/
-    00000040: 3032 5f66 697a 7a62 757a 7a2e 6373 643a  02_fizzbuzz.csd:
+    00000040: 3032 5f66 697a 7a62 757a 7a2e 6373 643a  02_fizzbuzz.💀:
     00000050: 3130 3a31 3120 2d20 4572 726f 7220 7061  10:11 - Error pa
     00000060: 7273 696e 6720 636f 6d70 6c65 7820 6578  rsing complex ex
     00000070: 7072 6573 7369 6f6e 2073 7461 7465 6d65  pression stateme
@@ -192,7 +192,7 @@ Found 73 test files
     000000f0: 6375 7273 6564 2f74 6573 745f 7375 6974  cursed/test_suit
     00000100: 652f 7465 7374 5f70 726f 6772 616d 732f  e/test_programs/
     00000110: 636f 6d70 6c65 782f 3032 5f66 697a 7a62  complex/02_fizzb
-    00000120: 757a 7a2e 6373 643a 3130 3a31 3120 2d20  uzz.csd:10:11 - 
+    00000120: 757a 7a2e 6373 643a 3130 3a31 3120 2d20  uzz.💀:10:11 - 
     00000130: 5379 6e63 6872 6f6e 697a 696e 6720 7061  Synchronizing pa
     00000140: 7273 6572 2061 6674 6572 2065 7272 6f72  rser after error
     00000150: 2028 636f 6e74 6578 743a 2073 796e 6368   (context: synch
@@ -205,7 +205,7 @@ Found 73 test files
     000001c0: 746c 6579 2f63 7572 7365 642f 7465 7374  tley/cursed/test
     000001d0: 5f73 7569 7465 2f74 6573 745f 7072 6f67  _suite/test_prog
     000001e0: 7261 6d73 2f63 6f6d 706c 6578 2f30 325f  rams/complex/02_
-    000001f0: 6669 7a7a 6275 7a7a 2e63 7364 3a31 303a  fizzbuzz.csd:10:
+    000001f0: 6669 7a7a 6275 7a7a 2e63 7364 3a31 303a  fizzbuzz.💀:10:
     00000200: 3136 202d 2045 7272 6f72 2070 6172 7369  16 - Error parsi
     00000210: 6e67 2066 756e 6374 696f 6e20 7374 6174  ng function stat
     00000220: 656d 656e 740a 494e 464f 3a20 5265 636f  ement.INFO: Reco
@@ -220,7 +220,7 @@ Found 73 test files
     000002b0: 2f63 7572 7365 642f 7465 7374 5f73 7569  /cursed/test_sui
     000002c0: 7465 2f74 6573 745f 7072 6f67 7261 6d73  te/test_programs
     000002d0: 2f63 6f6d 706c 6578 2f30 325f 6669 7a7a  /complex/02_fizz
-    000002e0: 6275 7a7a 2e63 7364 3a32 313a 3120 2d20  buzz.csd:21:1 - 
+    000002e0: 6275 7a7a 2e63 7364 3a32 313a 3120 2d20  buzz.💀:21:1 - 
     000002f0: 4661 696c 6564 2074 6f20 7061 7273 6520  Failed to parse 
     00000300: 7374 6174 656d 656e 740a 494e 464f 3a20  statement.INFO: 
     00000310: 5265 636f 7665 7265 6420 6174 2064 656c  Recovered at del
@@ -262,14 +262,14 @@ Found 73 test files
     (no output)
 
 ---
-[1m[14/73] Testing: control_flow/01_if_statements.csd[0m
+[1m[14/73] Testing: control_flow/01_if_statements.💀[0m
   Result: [33mFAIL (different outputs)[0m
   [36mInterpreter (exit: 0):[0m
-    Error at /home/ghuntley/cursed/test_suite/test_programs/control_flow/01_if_statements.csd:28:7 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
-    Error at /home/ghuntley/cursed/test_suite/test_programs/control_flow/01_if_statements.csd:28:7 - Synchronizing parser after error (context: synchronize)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/control_flow/01_if_statements.💀:28:7 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/control_flow/01_if_statements.💀:28:7 - Synchronizing parser after error (context: synchronize)
     INFO: Recovered at statement keyword 'Ready' after skipping 1 tokens
-    Error at /home/ghuntley/cursed/test_suite/test_programs/control_flow/01_if_statements.csd:28:12 - Error parsing function statement
-    Error at /home/ghuntley/cursed/test_suite/test_programs/control_flow/01_if_statements.csd:37:1 - Failed to parse statement
+    Error at /home/ghuntley/cursed/test_suite/test_programs/control_flow/01_if_statements.💀:28:12 - Error parsing function statement
+    Error at /home/ghuntley/cursed/test_suite/test_programs/control_flow/01_if_statements.💀:37:1 - Failed to parse statement
     
     === Error Recovery Statistics ===
     Total errors encountered: 2
@@ -299,7 +299,7 @@ Found 73 test files
     00000020: 6573 745f 7375 6974 652f 7465 7374 5f70  est_suite/test_p
     00000030: 726f 6772 616d 732f 636f 6e74 726f 6c5f  rograms/control_
     00000040: 666c 6f77 2f30 315f 6966 5f73 7461 7465  flow/01_if_state
-    00000050: 6d65 6e74 732e 6373 643a 3238 3a37 202d  ments.csd:28:7 -
+    00000050: 6d65 6e74 732e 6373 643a 3238 3a37 202d  ments.💀:28:7 -
     00000060: 2045 7272 6f72 2070 6172 7369 6e67 2063   Error parsing c
     00000070: 6f6d 706c 6578 2065 7870 7265 7373 696f  omplex expressio
     00000080: 6e20 7374 6174 656d 656e 7420 2d20 6368  n statement - ch
@@ -313,7 +313,7 @@ Found 73 test files
     00000100: 7465 7374 5f73 7569 7465 2f74 6573 745f  test_suite/test_
     00000110: 7072 6f67 7261 6d73 2f63 6f6e 7472 6f6c  programs/control
     00000120: 5f66 6c6f 772f 3031 5f69 665f 7374 6174  _flow/01_if_stat
-    00000130: 656d 656e 7473 2e63 7364 3a32 383a 3720  ements.csd:28:7 
+    00000130: 656d 656e 7473 2e63 7364 3a32 383a 3720  ements.💀:28:7 
     00000140: 2d20 5379 6e63 6872 6f6e 697a 696e 6720  - Synchronizing 
     00000150: 7061 7273 6572 2061 6674 6572 2065 7272  parser after err
     00000160: 6f72 2028 636f 6e74 6578 743a 2073 796e  or (context: syn
@@ -327,7 +327,7 @@ Found 73 test files
     000001e0: 7374 5f73 7569 7465 2f74 6573 745f 7072  st_suite/test_pr
     000001f0: 6f67 7261 6d73 2f63 6f6e 7472 6f6c 5f66  ograms/control_f
     00000200: 6c6f 772f 3031 5f69 665f 7374 6174 656d  low/01_if_statem
-    00000210: 656e 7473 2e63 7364 3a32 383a 3132 202d  ents.csd:28:12 -
+    00000210: 656e 7473 2e63 7364 3a32 383a 3132 202d  ents.💀:28:12 -
     00000220: 2045 7272 6f72 2070 6172 7369 6e67 2066   Error parsing f
     00000230: 756e 6374 696f 6e20 7374 6174 656d 656e  unction statemen
     00000240: 740a 4572 726f 7220 6174 202f 686f 6d65  t.Error at /home
@@ -335,7 +335,7 @@ Found 73 test files
     00000260: 2f74 6573 745f 7375 6974 652f 7465 7374  /test_suite/test
     00000270: 5f70 726f 6772 616d 732f 636f 6e74 726f  _programs/contro
     00000280: 6c5f 666c 6f77 2f30 315f 6966 5f73 7461  l_flow/01_if_sta
-    00000290: 7465 6d65 6e74 732e 6373 643a 3337 3a31  tements.csd:37:1
+    00000290: 7465 6d65 6e74 732e 6373 643a 3337 3a31  tements.💀:37:1
     000002a0: 202d 2046 6169 6c65 6420 746f 2070 6172   - Failed to par
     000002b0: 7365 2073 7461 7465 6d65 6e74 0a0a 3d3d  se statement..==
     000002c0: 3d20 4572 726f 7220 5265 636f 7665 7279  = Error Recovery
@@ -370,7 +370,7 @@ Found 73 test files
     (no output)
 
 ---
-[1m[15/73] Testing: control_flow/02_loops.csd[0m
+[1m[15/73] Testing: control_flow/02_loops.💀[0m
   Result: [31mINTERPRETER ERROR (compiled worked)[0m
   [36mInterpreter (exit: 134):[0m
     "=== Loops Test ===" 
@@ -430,40 +430,40 @@ Found 73 test files
     "=== Test Complete ==="
 
 ---
-[1m[16/73] Testing: control_flow/control_flow_comprehensive.csd[0m
+[1m[16/73] Testing: control_flow/control_flow_comprehensive.💀[0m
   Result: [33mFAIL (different error messages)[0m
   [36mInterpreter (exit: 134):[0m
-    Error at /home/ghuntley/cursed/test_suite/test_programs/control_flow/control_flow_comprehensive.csd:14:5 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
-    Error at /home/ghuntley/cursed/test_suite/test_programs/control_flow/control_flow_comprehensive.csd:14:5 - Synchronizing parser after error (context: synchronize)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/control_flow/control_flow_comprehensive.💀:14:5 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/control_flow/control_flow_comprehensive.💀:14:5 - Synchronizing parser after error (context: synchronize)
     INFO: Recovered at delimiter 'RightParen' after skipping 10 tokens
-    Error at /home/ghuntley/cursed/test_suite/test_programs/control_flow/control_flow_comprehensive.csd:15:42 - Error parsing function statement
+    Error at /home/ghuntley/cursed/test_suite/test_programs/control_flow/control_flow_comprehensive.💀:15:42 - Error parsing function statement
     INFO: Recovered at delimiter 'RightParen' after skipping 7 tokens
     INFO: Attempting additional statement recovery
-    Error at /home/ghuntley/cursed/test_suite/test_programs/control_flow/control_flow_comprehensive.csd:21:5 - Failed to parse statement
+    Error at /home/ghuntley/cursed/test_suite/test_programs/control_flow/control_flow_comprehensive.💀:21:5 - Failed to parse statement
     INFO: Recovered at semicolon after skipping 6 tokens
     INFO: Attempting additional statement recovery
-    Error at /home/ghuntley/cursed/test_suite/test_programs/control_flow/control_flow_comprehensive.csd:34:5 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
-    Error at /home/ghuntley/cursed/test_suite/test_programs/control_flow/control_flow_comprehensive.csd:34:5 - Synchronizing parser after error (context: synchronize)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/control_flow/control_flow_comprehensive.💀:34:5 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/control_flow/control_flow_comprehensive.💀:34:5 - Synchronizing parser after error (context: synchronize)
     INFO: Recovered at delimiter 'RightParen' after skipping 6 tokens
-    Error at /home/ghuntley/cursed/test_suite/test_programs/control_flow/control_flow_comprehensive.csd:34:16 - Failed to parse statement
+    Error at /home/ghuntley/cursed/test_suite/test_programs/control_flow/control_flow_comprehensive.💀:34:16 - Failed to parse statement
     INFO: Recovered at delimiter 'RightParen' after skipping 6 tokens
     INFO: Attempting additional statement recovery
-    Error at /home/ghuntley/cursed/test_suite/test_programs/control_flow/control_flow_comprehensive.csd:44:5 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
-    Error at /home/ghuntley/cursed/test_suite/test_programs/control_flow/control_flow_comprehensive.csd:44:5 - Synchronizing parser after error (context: synchronize)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/control_flow/control_flow_comprehensive.💀:44:5 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/control_flow/control_flow_comprehensive.💀:44:5 - Synchronizing parser after error (context: synchronize)
     INFO: Recovered at delimiter 'RightParen' after skipping 10 tokens
-    Error at /home/ghuntley/cursed/test_suite/test_programs/control_flow/control_flow_comprehensive.csd:45:30 - Failed to parse statement
+    Error at /home/ghuntley/cursed/test_suite/test_programs/control_flow/control_flow_comprehensive.💀:45:30 - Failed to parse statement
     INFO: Recovered at semicolon after skipping 1 tokens
     INFO: Attempting additional statement recovery
-    Error at /home/ghuntley/cursed/test_suite/test_programs/control_flow/control_flow_comprehensive.csd:56:5 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
-    Error at /home/ghuntley/cursed/test_suite/test_programs/control_flow/control_flow_comprehensive.csd:56:5 - Synchronizing parser after error (context: synchronize)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/control_flow/control_flow_comprehensive.💀:56:5 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/control_flow/control_flow_comprehensive.💀:56:5 - Synchronizing parser after error (context: synchronize)
     INFO: Recovered at delimiter 'RightParen' after skipping 8 tokens
-    Error at /home/ghuntley/cursed/test_suite/test_programs/control_flow/control_flow_comprehensive.csd:57:45 - Failed to parse statement
+    Error at /home/ghuntley/cursed/test_suite/test_programs/control_flow/control_flow_comprehensive.💀:57:45 - Failed to parse statement
     INFO: Recovered at semicolon after skipping 1 tokens
     INFO: Attempting additional statement recovery
-    Error at /home/ghuntley/cursed/test_suite/test_programs/control_flow/control_flow_comprehensive.csd:64:15 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
-    Error at /home/ghuntley/cursed/test_suite/test_programs/control_flow/control_flow_comprehensive.csd:64:15 - Synchronizing parser after error (context: synchronize)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/control_flow/control_flow_comprehensive.💀:64:15 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/control_flow/control_flow_comprehensive.💀:64:15 - Synchronizing parser after error (context: synchronize)
     INFO: Recovered at delimiter 'RightParen' after skipping 3 tokens
-    Error at /home/ghuntley/cursed/test_suite/test_programs/control_flow/control_flow_comprehensive.csd:64:56 - Failed to parse statement
+    Error at /home/ghuntley/cursed/test_suite/test_programs/control_flow/control_flow_comprehensive.💀:64:56 - Failed to parse statement
     INFO: Recovered at semicolon after skipping 1 tokens
     INFO: Attempting additional statement recovery
     
@@ -477,7 +477,7 @@ Found 73 test files
     ================================
     "Grade F" 
     Unsupported expression type in interpreter: Literal
-    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/control_flow/control_flow_comprehensive.csd: error.UndefinedFunction
+    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/control_flow/control_flow_comprehensive.💀: error.UndefinedFunction
     thread 1860114 panic: incorrect alignment
     /home/ghuntley/cursed/src-zig/interpreter.zig:2128:21: 0x12b85d5 in evaluateCall (cursed_compiler_main.zig)
                         return InterpreterError.UndefinedFunction;
@@ -535,7 +535,7 @@ Found 73 test files
     Runtime error (exit 127)
 
 ---
-[1m[17/73] Testing: control_flow/control_flow_if_else.csd[0m
+[1m[17/73] Testing: control_flow/control_flow_if_else.💀[0m
   Result: [33mFAIL (different error messages)[0m
   [36mInterpreter (exit: 134):[0m
     thread 1860143 panic: integer overflow
@@ -586,7 +586,7 @@ Found 73 test files
     Runtime error (exit 127)
 
 ---
-[1m[18/73] Testing: control_flow/feature_control_flow_comprehensive.csd[0m
+[1m[18/73] Testing: control_flow/feature_control_flow_comprehensive.💀[0m
   Result: [31mCOMPILE ERROR (interpreted worked)[0m
   [36mInterpreter (exit: 0):[0m
     "=== Control Flow Test ===" 
@@ -604,10 +604,10 @@ Found 73 test files
     Runtime error (exit 127)
 
 ---
-[1m[19/73] Testing: edge_cases/01_boundary_values.csd[0m
+[1m[19/73] Testing: edge_cases/01_boundary_values.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[20/73] Testing: edge_cases/02_empty_inputs.csd[0m
+[1m[20/73] Testing: edge_cases/02_empty_inputs.💀[0m
   Result: [33mFAIL (different error messages)[0m
   [36mInterpreter (exit: 134):[0m
     "=== Empty Inputs Test ===" 
@@ -678,21 +678,21 @@ Found 73 test files
     Runtime error (exit 127)
 
 ---
-[1m[21/73] Testing: edge_cases/edge_case_boundary_values.csd[0m
+[1m[21/73] Testing: edge_cases/edge_case_boundary_values.💀[0m
   Result: [31mCOMPILE ERROR (interpreted worked)[0m
   [36mInterpreter (exit: 0):[0m
-    Error at /home/ghuntley/cursed/test_suite/test_programs/edge_cases/edge_case_boundary_values.csd:31:5 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
-    Error at /home/ghuntley/cursed/test_suite/test_programs/edge_cases/edge_case_boundary_values.csd:31:5 - Synchronizing parser after error (context: synchronize)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/edge_cases/edge_case_boundary_values.💀:31:5 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/edge_cases/edge_case_boundary_values.💀:31:5 - Synchronizing parser after error (context: synchronize)
     INFO: Recovered at statement keyword 'Sus' after skipping 5 tokens
-    Error at /home/ghuntley/cursed/test_suite/test_programs/edge_cases/edge_case_boundary_values.csd:32:9 - Error parsing function statement
+    Error at /home/ghuntley/cursed/test_suite/test_programs/edge_cases/edge_case_boundary_values.💀:32:9 - Error parsing function statement
     INFO: Recovered at delimiter 'RightParen' after skipping 7 tokens
     INFO: Attempting additional statement recovery
-    Error at /home/ghuntley/cursed/test_suite/test_programs/edge_cases/edge_case_boundary_values.csd:39:5 - Failed to parse statement
+    Error at /home/ghuntley/cursed/test_suite/test_programs/edge_cases/edge_case_boundary_values.💀:39:5 - Failed to parse statement
     INFO: Recovered at semicolon after skipping 6 tokens
     INFO: Attempting additional statement recovery
-    Error at /home/ghuntley/cursed/test_suite/test_programs/edge_cases/edge_case_boundary_values.csd:65:1 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
-    Error at /home/ghuntley/cursed/test_suite/test_programs/edge_cases/edge_case_boundary_values.csd:65:1 - Synchronizing parser after error (context: synchronize)
-    Error at /home/ghuntley/cursed/test_suite/test_programs/edge_cases/edge_case_boundary_values.csd:65:1 - Failed to parse statement
+    Error at /home/ghuntley/cursed/test_suite/test_programs/edge_cases/edge_case_boundary_values.💀:65:1 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/edge_cases/edge_case_boundary_values.💀:65:1 - Synchronizing parser after error (context: synchronize)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/edge_cases/edge_case_boundary_values.💀:65:1 - Failed to parse statement
     
     === Error Recovery Statistics ===
     Total errors encountered: 3
@@ -702,7 +702,7 @@ Found 73 test files
     Delimiter recoveries: 0
     Total tokens skipped: 19
     ================================
-    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/edge_cases/edge_case_boundary_values.csd: error.UndefinedFunction
+    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/edge_cases/edge_case_boundary_values.💀: error.UndefinedFunction
     
     === Error Recovery Statistics ===
     Total errors encountered: 3
@@ -717,16 +717,16 @@ Found 73 test files
     Runtime error (exit 127)
 
 ---
-[1m[22/73] Testing: edge_cases/edge_case_complex_expressions.csd[0m
+[1m[22/73] Testing: edge_cases/edge_case_complex_expressions.💀[0m
   Result: [31mCOMPILE ERROR (interpreted worked)[0m
   [36mInterpreter (exit: 0):[0m
-    Error at /home/ghuntley/cursed/test_suite/test_programs/edge_cases/edge_case_complex_expressions.csd:32:5 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
-    Error at /home/ghuntley/cursed/test_suite/test_programs/edge_cases/edge_case_complex_expressions.csd:32:5 - Synchronizing parser after error (context: synchronize)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/edge_cases/edge_case_complex_expressions.💀:32:5 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/edge_cases/edge_case_complex_expressions.💀:32:5 - Synchronizing parser after error (context: synchronize)
     INFO: Recovered at delimiter 'RightParen' after skipping 6 tokens
-    Error at /home/ghuntley/cursed/test_suite/test_programs/edge_cases/edge_case_complex_expressions.csd:32:15 - Error parsing function statement
+    Error at /home/ghuntley/cursed/test_suite/test_programs/edge_cases/edge_case_complex_expressions.💀:32:15 - Error parsing function statement
     INFO: Recovered at delimiter 'RightParen' after skipping 7 tokens
     INFO: Attempting additional statement recovery
-    Error at /home/ghuntley/cursed/test_suite/test_programs/edge_cases/edge_case_complex_expressions.csd:49:1 - Failed to parse statement
+    Error at /home/ghuntley/cursed/test_suite/test_programs/edge_cases/edge_case_complex_expressions.💀:49:1 - Failed to parse statement
     
     === Error Recovery Statistics ===
     Total errors encountered: 2
@@ -750,7 +750,7 @@ Found 73 test files
     Runtime error (exit 127)
 
 ---
-[1m[23/73] Testing: edge_cases/edge_case_operator_precedence.csd[0m
+[1m[23/73] Testing: edge_cases/edge_case_operator_precedence.💀[0m
   Result: [33mFAIL (different error messages)[0m
   [36mInterpreter (exit: 134):[0m
     thread 1860273 panic: integer overflow
@@ -801,7 +801,7 @@ Found 73 test files
     Runtime error (exit 127)
 
 ---
-[1m[24/73] Testing: errors/01_division_by_zero.csd[0m
+[1m[24/73] Testing: errors/01_division_by_zero.💀[0m
   Result: [31mINTERPRETER ERROR (compiled worked)[0m
   [36mInterpreter (exit: 134):[0m
     "=== Division by Zero Test ===" 
@@ -861,7 +861,7 @@ Found 73 test files
     "This line should not execute if error handling works"
 
 ---
-[1m[25/73] Testing: errors/02_undefined_variable.csd[0m
+[1m[25/73] Testing: errors/02_undefined_variable.💀[0m
   Result: [31mCOMPILE ERROR (interpreted worked)[0m
   [36mInterpreter (exit: 0):[0m
     "=== Undefined Variable Test ===" 
@@ -873,7 +873,7 @@ Found 73 test files
     Runtime error (exit 127)
 
 ---
-[1m[26/73] Testing: errors/error_missing_package.csd[0m
+[1m[26/73] Testing: errors/error_missing_package.💀[0m
   Result: [31mCOMPILE ERROR (interpreted worked)[0m
   [36mInterpreter (exit: 0):[0m
     (no output)
@@ -882,7 +882,7 @@ Found 73 test files
     Runtime error (exit 127)
 
 ---
-[1m[27/73] Testing: errors/error_recovery_missing_imports.csd[0m
+[1m[27/73] Testing: errors/error_recovery_missing_imports.💀[0m
   Result: [31mCOMPILE ERROR (interpreted worked)[0m
   [36mInterpreter (exit: 0):[0m
     "This should cause an import error" 
@@ -892,7 +892,7 @@ Found 73 test files
     Runtime error (exit 127)
 
 ---
-[1m[28/73] Testing: errors/error_syntax_recovery.csd[0m
+[1m[28/73] Testing: errors/error_syntax_recovery.💀[0m
   Result: [31mCOMPILE ERROR (interpreted worked)[0m
   [36mInterpreter (exit: 0):[0m
     (no output)
@@ -901,4 +901,4 @@ Found 73 test files
     Runtime error (exit 127)
 
 ---
-[1m[29/73] Testing: feature/feature_comprehensive_syntax.csd[0m
+[1m[29/73] Testing: feature/feature_comprehensive_syntax.💀[0m

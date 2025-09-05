@@ -380,7 +380,7 @@ vibez.spill("Registered types: " + int_to_string_dynamic(len(all_types)))
 
 Run the comprehensive test suite:
 ```bash
-cargo run --bin cursed stdlib/reflection/test_reflection.csd
+cargo run --bin cursed stdlib/reflection/test_reflection.💀
 ```
 
 The test suite covers:
@@ -419,7 +419,7 @@ The reflection system integrates seamlessly with:
 
 ## Examples
 
-See `stdlib/reflection/test_reflection.csd` for comprehensive usage examples and the complete test suite demonstrating all reflection capabilities.
+See `stdlib/reflection/test_reflection.💀` for comprehensive usage examples and the complete test suite demonstrating all reflection capabilities.
 
 ---
 

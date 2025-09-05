@@ -270,7 +270,7 @@ vibez.spill(final_page)
 
 Run the comprehensive test suite:
 ```bash
-cargo run --bin cursed stdlib/rizz_template/test_rizz_template.csd
+cargo run --bin cursed stdlib/rizz_template/test_rizz_template.💀
 ```
 
 The test suite includes:

@@ -273,11 +273,11 @@ if table_info.success {
 ### Running Tests
 ```bash
 # Run SQLite-specific tests
-cargo run --bin cursed stdlib/database_drivers/test_sqlite.csd
+cargo run --bin cursed stdlib/database_drivers/test_sqlite.💀
 
 # Test both interpretation and compilation modes
-cargo run --bin cursed stdlib/database_drivers/test_sqlite.csd
-cargo run --bin cursed -- compile stdlib/database_drivers/test_sqlite.csd
+cargo run --bin cursed stdlib/database_drivers/test_sqlite.💀
+cargo run --bin cursed -- compile stdlib/database_drivers/test_sqlite.💀
 ./test_sqlite
 ```
 

@@ -17,257 +17,257 @@
             <div class="doc-item" id="next">
                 <h4>next</h4>
                 <pre class="signature"><code>slay next(mut sus self) -> Option<Self::Item></code></pre>
-                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.csd#L10">advanced_constraints.csd:10</a></p>
+                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.💀#L10">advanced_constraints.💀:10</a></p>
             </div>
             <div class="doc-item" id="size_hint">
                 <h4>size_hint</h4>
                 <pre class="signature"><code>slay size_hint(sus self) -> Pair<Integer, Option<Integer>></code></pre>
-                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.csd#L11">advanced_constraints.csd:11</a></p>
+                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.💀#L11">advanced_constraints.💀:11</a></p>
             </div>
             <div class="doc-item" id="collect<C>">
                 <h4>collect<C></h4>
                 <pre class="signature"><code>slay collect<C>(mut sus self) -> C where C: FromIterator<Self::Item> {</code></pre>
-                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.csd#L14">advanced_constraints.csd:14</a></p>
+                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.💀#L14">advanced_constraints.💀:14</a></p>
             </div>
             <div class="doc-item" id="fold<B>">
                 <h4>fold<B></h4>
                 <pre class="signature"><code>slay fold<B>(mut sus self, init: B, f: fn(B, Self::Item) -> B) -> B {</code></pre>
-                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.csd#L18">advanced_constraints.csd:18</a></p>
+                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.💀#L18">advanced_constraints.💀:18</a></p>
             </div>
             <div class="doc-item" id="for_each<F>">
                 <h4>for_each<F></h4>
                 <pre class="signature"><code>slay for_each<F>(mut sus self, f: F) where F: Fn(Self::Item) {</code></pre>
-                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.csd#L29">advanced_constraints.csd:29</a></p>
+                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.💀#L29">advanced_constraints.💀:29</a></p>
             </div>
             <div class="doc-item" id="map<B, F>">
                 <h4>map<B, F></h4>
                 <pre class="signature"><code>slay map<B, F>(sus self, f: F) -> Map<Self, F> where F: Fn(Self::Item) -> B {</code></pre>
-                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.csd#L38">advanced_constraints.csd:38</a></p>
+                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.💀#L38">advanced_constraints.💀:38</a></p>
             </div>
             <div class="doc-item" id="filter<P>">
                 <h4>filter<P></h4>
                 <pre class="signature"><code>slay filter<P>(sus self, predicate: P) -> Filter<Self, P> where P: Fn(sus Self::Item) -> Boolean {</code></pre>
-                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.csd#L42">advanced_constraints.csd:42</a></p>
+                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.💀#L42">advanced_constraints.💀:42</a></p>
             </div>
             <div class="doc-item" id="enumerate">
                 <h4>enumerate</h4>
                 <pre class="signature"><code>slay enumerate(sus self) -> Enumerate<Self> {</code></pre>
-                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.csd#L46">advanced_constraints.csd:46</a></p>
+                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.💀#L46">advanced_constraints.💀:46</a></p>
             </div>
             <div class="doc-item" id="zip<U>">
                 <h4>zip<U></h4>
                 <pre class="signature"><code>slay zip<U>(sus self, other: U) -> Zip<Self, U> where U: Iterator {</code></pre>
-                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.csd#L50">advanced_constraints.csd:50</a></p>
+                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.💀#L50">advanced_constraints.💀:50</a></p>
             </div>
             <div class="doc-item" id="len">
                 <h4>len</h4>
                 <pre class="signature"><code>slay len(sus self) -> Integer</code></pre>
-                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.csd#L60">advanced_constraints.csd:60</a></p>
+                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.💀#L60">advanced_constraints.💀:60</a></p>
             </div>
             <div class="doc-item" id="is_empty">
                 <h4>is_empty</h4>
                 <pre class="signature"><code>slay is_empty(sus self) -> Boolean { self.len() == 0 }</code></pre>
-                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.csd#L61">advanced_constraints.csd:61</a></p>
+                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.💀#L61">advanced_constraints.💀:61</a></p>
             </div>
             <div class="doc-item" id="iter">
                 <h4>iter</h4>
                 <pre class="signature"><code>slay iter(sus self) -> Self::IntoIter</code></pre>
-                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.csd#L62">advanced_constraints.csd:62</a></p>
+                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.💀#L62">advanced_constraints.💀:62</a></p>
             </div>
             <div class="doc-item" id="contains">
                 <h4>contains</h4>
                 <pre class="signature"><code>slay contains(sus self, item: sus Self::Item) -> Boolean where Self::Item: Eq</code></pre>
-                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.csd#L63">advanced_constraints.csd:63</a></p>
+                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.💀#L63">advanced_constraints.💀:63</a></p>
             </div>
             <div class="doc-item" id="from_iter<I>">
                 <h4>from_iter<I></h4>
                 <pre class="signature"><code>slay from_iter<I>(iter: I) -> Self where I: Iterator<Item = T></code></pre>
-                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.csd#L68">advanced_constraints.csd:68</a></p>
+                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.💀#L68">advanced_constraints.💀:68</a></p>
             </div>
             <div class="doc-item" id="map<A, B>">
                 <h4>map<A, B></h4>
                 <pre class="signature"><code>slay map<A, B>(fa: F<A>, f: fn(A) -> B) -> F<B></code></pre>
-                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.csd#L73">advanced_constraints.csd:73</a></p>
+                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.💀#L73">advanced_constraints.💀:73</a></p>
             </div>
             <div class="doc-item" id="pure<A>">
                 <h4>pure<A></h4>
                 <pre class="signature"><code>slay pure<A>(value: A) -> F<A></code></pre>
-                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.csd#L78">advanced_constraints.csd:78</a></p>
+                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.💀#L78">advanced_constraints.💀:78</a></p>
             </div>
             <div class="doc-item" id="apply<A, B>">
                 <h4>apply<A, B></h4>
                 <pre class="signature"><code>slay apply<A, B>(fab: F<fn(A) -> B>, fa: F<A>) -> F<B></code></pre>
-                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.csd#L79">advanced_constraints.csd:79</a></p>
+                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.💀#L79">advanced_constraints.💀:79</a></p>
             </div>
             <div class="doc-item" id="bind<A, B>">
                 <h4>bind<A, B></h4>
                 <pre class="signature"><code>slay bind<A, B>(ma: M<A>, f: fn(A) -> M<B>) -> M<B></code></pre>
-                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.csd#L84">advanced_constraints.csd:84</a></p>
+                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.💀#L84">advanced_constraints.💀:84</a></p>
             </div>
             <div class="doc-item" id="return<A>">
                 <h4>return<A></h4>
                 <pre class="signature"><code>slay return<A>(value: A) -> M<A> { Self::pure(value) }</code></pre>
-                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.csd#L85">advanced_constraints.csd:85</a></p>
+                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.💀#L85">advanced_constraints.💀:85</a></p>
             </div>
             <div class="doc-item" id="push">
                 <h4>push</h4>
                 <pre class="signature"><code>slay push(mut sus self, item: T) {</code></pre>
-                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.csd#L107">advanced_constraints.csd:107</a></p>
+                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.💀#L107">advanced_constraints.💀:107</a></p>
             </div>
             <div class="doc-item" id="pop">
                 <h4>pop</h4>
                 <pre class="signature"><code>slay pop(mut sus self) -> Option<T> {</code></pre>
-                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.csd#L112">advanced_constraints.csd:112</a></p>
+                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.💀#L112">advanced_constraints.💀:112</a></p>
             </div>
             <div class="doc-item" id="peek">
                 <h4>peek</h4>
                 <pre class="signature"><code>slay peek(sus self) -> Option<sus T> {</code></pre>
-                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.csd#L128">advanced_constraints.csd:128</a></p>
+                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.💀#L128">advanced_constraints.💀:128</a></p>
             </div>
             <div class="doc-item" id="len">
                 <h4>len</h4>
                 <pre class="signature"><code>slay len(sus self) -> Integer {</code></pre>
-                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.csd#L132">advanced_constraints.csd:132</a></p>
+                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.💀#L132">advanced_constraints.💀:132</a></p>
             </div>
             <div class="doc-item" id="is_empty">
                 <h4>is_empty</h4>
                 <pre class="signature"><code>slay is_empty(sus self) -> Boolean {</code></pre>
-                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.csd#L136">advanced_constraints.csd:136</a></p>
+                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.💀#L136">advanced_constraints.💀:136</a></p>
             </div>
             <div class="doc-item" id="bubble_up">
                 <h4>bubble_up</h4>
                 <pre class="signature"><code>slay bubble_up(mut sus self, index: Integer) {</code></pre>
-                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.csd#L141">advanced_constraints.csd:141</a></p>
+                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.💀#L141">advanced_constraints.💀:141</a></p>
             </div>
             <div class="doc-item" id="bubble_down">
                 <h4>bubble_down</h4>
                 <pre class="signature"><code>slay bubble_down(mut sus self, index: Integer) {</code></pre>
-                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.csd#L151">advanced_constraints.csd:151</a></p>
+                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.💀#L151">advanced_constraints.💀:151</a></p>
             </div>
             <div class="doc-item" id="compare_items">
                 <h4>compare_items</h4>
                 <pre class="signature"><code>slay compare_items(sus self, i: Integer, j: Integer) -> Ordering {</code></pre>
-                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.csd#L172">advanced_constraints.csd:172</a></p>
+                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.💀#L172">advanced_constraints.💀:172</a></p>
             </div>
             <div class="doc-item" id="swap">
                 <h4>swap</h4>
                 <pre class="signature"><code>slay swap(mut sus self, i: Integer, j: Integer) {</code></pre>
-                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.csd#L178">advanced_constraints.csd:178</a></p>
+                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.💀#L178">advanced_constraints.💀:178</a></p>
             </div>
             <div class="doc-item" id="get">
                 <h4>get</h4>
                 <pre class="signature"><code>slay get(mut sus self, key: sus K) -> Option<V> {</code></pre>
-                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.csd#L210">advanced_constraints.csd:210</a></p>
+                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.💀#L210">advanced_constraints.💀:210</a></p>
             </div>
             <div class="doc-item" id="put">
                 <h4>put</h4>
                 <pre class="signature"><code>slay put(mut sus self, key: K, value: V) {</code></pre>
-                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.csd#L220">advanced_constraints.csd:220</a></p>
+                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.💀#L220">advanced_constraints.💀:220</a></p>
             </div>
             <div class="doc-item" id="remove">
                 <h4>remove</h4>
                 <pre class="signature"><code>slay remove(mut sus self, key: sus K) -> Option<V> {</code></pre>
-                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.csd#L230">advanced_constraints.csd:230</a></p>
+                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.💀#L230">advanced_constraints.💀:230</a></p>
             </div>
             <div class="doc-item" id="clear">
                 <h4>clear</h4>
                 <pre class="signature"><code>slay clear(mut sus self) {</code></pre>
-                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.csd#L238">advanced_constraints.csd:238</a></p>
+                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.💀#L238">advanced_constraints.💀:238</a></p>
             </div>
             <div class="doc-item" id="len">
                 <h4>len</h4>
                 <pre class="signature"><code>slay len(sus self) -> Integer {</code></pre>
-                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.csd#L243">advanced_constraints.csd:243</a></p>
+                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.💀#L243">advanced_constraints.💀:243</a></p>
             </div>
             <div class="doc-item" id="evict">
                 <h4>evict</h4>
                 <pre class="signature"><code>slay evict(mut sus self) {</code></pre>
-                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.csd#L248">advanced_constraints.csd:248</a></p>
+                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.💀#L248">advanced_constraints.💀:248</a></p>
             </div>
             <div class="doc-item" id="evict_lru">
                 <h4>evict_lru</h4>
                 <pre class="signature"><code>slay evict_lru(mut sus self) {</code></pre>
-                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.csd#L256">advanced_constraints.csd:256</a></p>
+                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.💀#L256">advanced_constraints.💀:256</a></p>
             </div>
             <div class="doc-item" id="update_access">
                 <h4>update_access</h4>
                 <pre class="signature"><code>slay update_access(mut sus self, key: K) {</code></pre>
-                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.csd#L263">advanced_constraints.csd:263</a></p>
+                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.💀#L263">advanced_constraints.💀:263</a></p>
             </div>
             <div class="doc-item" id="remove_from_access_order">
                 <h4>remove_from_access_order</h4>
                 <pre class="signature"><code>slay remove_from_access_order(mut sus self, key: sus K) {</code></pre>
-                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.csd#L268">advanced_constraints.csd:268</a></p>
+                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.💀#L268">advanced_constraints.💀:268</a></p>
             </div>
             <div class="doc-item" id="run">
                 <h4>run</h4>
                 <pre class="signature"><code>slay run(sus self, initial_state: S) -> Pair<A, S> {</code></pre>
-                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.csd#L306">advanced_constraints.csd:306</a></p>
+                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.💀#L306">advanced_constraints.💀:306</a></p>
             </div>
             <div class="doc-item" id="map<B>">
                 <h4>map<B></h4>
                 <pre class="signature"><code>slay map<B>(sus self, f: fn(A) -> B) -> State<S, B> {</code></pre>
-                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.csd#L310">advanced_constraints.csd:310</a></p>
+                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.💀#L310">advanced_constraints.💀:310</a></p>
             </div>
             <div class="doc-item" id="bind<B>">
                 <h4>bind<B></h4>
                 <pre class="signature"><code>slay bind<B>(sus self, f: fn(A) -> State<S, B>) -> State<S, B> {</code></pre>
-                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.csd#L319">advanced_constraints.csd:319</a></p>
+                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.💀#L319">advanced_constraints.💀:319</a></p>
             </div>
             <div class="doc-item" id="open">
                 <h4>open</h4>
                 <pre class="signature"><code>slay open(sus self) -> Connection<Open> where State = Closed {</code></pre>
-                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.csd#L367">advanced_constraints.csd:367</a></p>
+                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.💀#L367">advanced_constraints.💀:367</a></p>
             </div>
             <div class="doc-item" id="authenticate">
                 <h4>authenticate</h4>
                 <pre class="signature"><code>slay authenticate(sus self, credentials: String) -> Result<Connection<Authenticated>, String> where State = Open {</code></pre>
-                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.csd#L375">advanced_constraints.csd:375</a></p>
+                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.💀#L375">advanced_constraints.💀:375</a></p>
             </div>
             <div class="doc-item" id="send_data">
                 <h4>send_data</h4>
                 <pre class="signature"><code>slay send_data(sus self, data: String) where State = Authenticated {</code></pre>
-                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.csd#L387">advanced_constraints.csd:387</a></p>
+                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.💀#L387">advanced_constraints.💀:387</a></p>
             </div>
             <div class="doc-item" id="close">
                 <h4>close</h4>
                 <pre class="signature"><code>slay close(sus self) -> Connection<Closed> {</code></pre>
-                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.csd#L392">advanced_constraints.csd:392</a></p>
+                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.💀#L392">advanced_constraints.💀:392</a></p>
             </div>
             <div class="doc-item" id="poll">
                 <h4>poll</h4>
                 <pre class="signature"><code>slay poll(mut sus self, context: sus Context) -> Poll<T></code></pre>
-                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.csd#L402">advanced_constraints.csd:402</a></p>
+                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.💀#L402">advanced_constraints.💀:402</a></p>
             </div>
             <div class="doc-item" id="map<U>">
                 <h4>map<U></h4>
                 <pre class="signature"><code>slay map<U>(sus self, f: fn(T) -> U) -> Map<Self, fn(T) -> U> {</code></pre>
-                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.csd#L404">advanced_constraints.csd:404</a></p>
+                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.💀#L404">advanced_constraints.💀:404</a></p>
             </div>
             <div class="doc-item" id="bind<U>">
                 <h4>bind<U></h4>
                 <pre class="signature"><code>slay bind<U>(sus self, f: fn(T) -> Future<U>) -> Bind<Self, fn(T) -> Future<U>> {</code></pre>
-                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.csd#L408">advanced_constraints.csd:408</a></p>
+                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.💀#L408">advanced_constraints.💀:408</a></p>
             </div>
             <div class="doc-item" id="join<U>">
                 <h4>join<U></h4>
                 <pre class="signature"><code>slay join<U>(sus self, other: Future<U>) -> Join<Self, Future<U>> {</code></pre>
-                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.csd#L412">advanced_constraints.csd:412</a></p>
+                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.💀#L412">advanced_constraints.💀:412</a></p>
             </div>
             <div class="doc-item" id="eval<T>">
                 <h4>eval<T></h4>
                 <pre class="signature"><code>slay eval<T>(expr: Expr<T>) -> T {</code></pre>
-                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.csd#L431">advanced_constraints.csd:431</a></p>
+                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.💀#L431">advanced_constraints.💀:431</a></p>
             </div>
             <div class="doc-item" id="demonstrate_advanced_constraints">
                 <h4>demonstrate_advanced_constraints</h4>
                 <pre class="signature"><code>slay demonstrate_advanced_constraints() {</code></pre>
-                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.csd#L448">advanced_constraints.csd:448</a></p>
+                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.💀#L448">advanced_constraints.💀:448</a></p>
             </div>
             <div class="doc-item" id="main">
                 <h4>main</h4>
                 <pre class="signature"><code>slay main() {</code></pre>
-                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.csd#L512">advanced_constraints.csd:512</a></p>
+                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.💀#L512">advanced_constraints.💀:512</a></p>
             </div>
         </section>
         <section id="interfaces">
@@ -275,92 +275,92 @@
             <div class="doc-item" id="Iterator<T>">
                 <h4>Iterator<T></h4>
                 <pre class="signature"><code>collab Iterator<T> {</code></pre>
-                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.csd#L5">advanced_constraints.csd:5</a></p>
+                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.💀#L5">advanced_constraints.💀:5</a></p>
             </div>
             <div class="doc-item" id="Collection<T>">
                 <h4>Collection<T></h4>
                 <pre class="signature"><code>collab Collection<T> {</code></pre>
-                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.csd#L56">advanced_constraints.csd:56</a></p>
+                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.💀#L56">advanced_constraints.💀:56</a></p>
             </div>
             <div class="doc-item" id="FromIterator<T>">
                 <h4>FromIterator<T></h4>
                 <pre class="signature"><code>collab FromIterator<T> {</code></pre>
-                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.csd#L67">advanced_constraints.csd:67</a></p>
+                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.💀#L67">advanced_constraints.💀:67</a></p>
             </div>
             <div class="doc-item" id="Functor<F>">
                 <h4>Functor<F></h4>
                 <pre class="signature"><code>collab Functor<F> {</code></pre>
-                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.csd#L72">advanced_constraints.csd:72</a></p>
+                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.💀#L72">advanced_constraints.💀:72</a></p>
             </div>
             <div class="doc-item" id="Applicative<F>: Functor<F>">
                 <h4>Applicative<F>: Functor<F></h4>
                 <pre class="signature"><code>collab Applicative<F>: Functor<F> {</code></pre>
-                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.csd#L77">advanced_constraints.csd:77</a></p>
+                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.💀#L77">advanced_constraints.💀:77</a></p>
             </div>
             <div class="doc-item" id="Monad<M>: Applicative<M>">
                 <h4>Monad<M>: Applicative<M></h4>
                 <pre class="signature"><code>collab Monad<M>: Applicative<M> {</code></pre>
-                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.csd#L83">advanced_constraints.csd:83</a></p>
+                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.💀#L83">advanced_constraints.💀:83</a></p>
             </div>
             <div class="doc-item" id="PriorityQueue<T> where T: Ord + Clone">
                 <h4>PriorityQueue<T> where T: Ord + Clone</h4>
                 <pre class="signature"><code>collab PriorityQueue<T> where T: Ord + Clone {</code></pre>
-                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.csd#L89">advanced_constraints.csd:89</a></p>
+                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.💀#L89">advanced_constraints.💀:89</a></p>
             </div>
             <div class="doc-item" id="Cache<K, V> where K: Hash + Eq + Clone, V: Clone">
                 <h4>Cache<K, V> where K: Hash + Eq + Clone, V: Clone</h4>
                 <pre class="signature"><code>collab Cache<K, V> where K: Hash + Eq + Clone, V: Clone {</code></pre>
-                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.csd#L186">advanced_constraints.csd:186</a></p>
+                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.💀#L186">advanced_constraints.💀:186</a></p>
             </div>
             <div class="doc-item" id="CacheEntry<V>">
                 <h4>CacheEntry<V></h4>
                 <pre class="signature"><code>collab CacheEntry<V> {</code></pre>
-                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.csd#L278">advanced_constraints.csd:278</a></p>
+                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.💀#L278">advanced_constraints.💀:278</a></p>
             </div>
             <div class="doc-item" id="State<S, A>">
                 <h4>State<S, A></h4>
                 <pre class="signature"><code>collab State<S, A> {</code></pre>
-                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.csd#L299">advanced_constraints.csd:299</a></p>
+                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.💀#L299">advanced_constraints.💀:299</a></p>
             </div>
             <div class="doc-item" id="TypeList<T>">
                 <h4>TypeList<T></h4>
                 <pre class="signature"><code>collab TypeList<T> {</code></pre>
-                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.csd#L330">advanced_constraints.csd:330</a></p>
+                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.💀#L330">advanced_constraints.💀:330</a></p>
             </div>
             <div class="doc-item" id="PhantomData<T>">
                 <h4>PhantomData<T></h4>
                 <pre class="signature"><code>collab PhantomData<T> {</code></pre>
-                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.csd#L338">advanced_constraints.csd:338</a></p>
+                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.💀#L338">advanced_constraints.💀:338</a></p>
             </div>
             <div class="doc-item" id="StateMachine<State>">
                 <h4>StateMachine<State></h4>
                 <pre class="signature"><code>collab StateMachine<State> {</code></pre>
-                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.csd#L347">advanced_constraints.csd:347</a></p>
+                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.💀#L347">advanced_constraints.💀:347</a></p>
             </div>
             <div class="doc-item" id="Closed">
                 <h4>Closed</h4>
                 <pre class="signature"><code>collab Closed {}</code></pre>
-                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.csd#L358">advanced_constraints.csd:358</a></p>
+                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.💀#L358">advanced_constraints.💀:358</a></p>
             </div>
             <div class="doc-item" id="Open">
                 <h4>Open</h4>
                 <pre class="signature"><code>collab Open {}</code></pre>
-                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.csd#L359">advanced_constraints.csd:359</a></p>
+                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.💀#L359">advanced_constraints.💀:359</a></p>
             </div>
             <div class="doc-item" id="Authenticated">
                 <h4>Authenticated</h4>
                 <pre class="signature"><code>collab Authenticated {}</code></pre>
-                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.csd#L360">advanced_constraints.csd:360</a></p>
+                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.💀#L360">advanced_constraints.💀:360</a></p>
             </div>
             <div class="doc-item" id="Connection<State>">
                 <h4>Connection<State></h4>
                 <pre class="signature"><code>collab Connection<State> {</code></pre>
-                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.csd#L362">advanced_constraints.csd:362</a></p>
+                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.💀#L362">advanced_constraints.💀:362</a></p>
             </div>
             <div class="doc-item" id="Future<T>">
                 <h4>Future<T></h4>
                 <pre class="signature"><code>collab Future<T> {</code></pre>
-                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.csd#L401">advanced_constraints.csd:401</a></p>
+                <p class="source">Source: <a href="file://./examples/generics/advanced_constraints.💀#L401">advanced_constraints.💀:401</a></p>
             </div>
         </section>
     </main>

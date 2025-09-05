@@ -387,13 +387,13 @@ The logging system includes comprehensive error handling:
 
 ```bash
 # Run basic functionality tests
-./zig-out/bin/cursed-zig test_real_logging.csd
+./zig-out/bin/cursed-zig test_real_logging.💀
 
 # Run performance benchmarks
-./zig-out/bin/cursed-zig benchmark_logging.csd
+./zig-out/bin/cursed-zig benchmark_logging.💀
 
 # Run concurrent stress tests
-./zig-out/bin/cursed-zig concurrent_stress_test.csd
+./zig-out/bin/cursed-zig concurrent_stress_test.💀
 ```
 
 ### Test Coverage

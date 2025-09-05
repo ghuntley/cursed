@@ -26,4 +26,4 @@ benchmark_suite = "0.7.0"
 
 [lib]
 name = "productivity_core"
-path = "src/lib.csd"
+path = "src/lib.💀"

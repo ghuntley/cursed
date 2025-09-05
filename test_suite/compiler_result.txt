@@ -37,7 +37,7 @@
 🔍 DEBUG: Found zero as variable reference
 🔍 DEBUG: Found type info for variable zero
 DEBUG: Loading and compiling CURSED module: mathz
-DEBUG: Could not read CURSED module stdlib/mathz/mod.csd: error.FileNotFound
+DEBUG: Could not read CURSED module stdlib/mathz/mod.💀: error.FileNotFound
 🔍 DEBUG: Looking up identifier: zero
 🔍 DEBUG: Found zero as variable reference
 🔍 DEBUG: Found type info for variable zero
@@ -45,7 +45,7 @@ DEBUG: Could not read CURSED module stdlib/mathz/mod.csd: error.FileNotFound
 🔍 DEBUG: Found negative as variable reference
 🔍 DEBUG: Found type info for variable negative
 DEBUG: Loading and compiling CURSED module: mathz
-DEBUG: Could not read CURSED module stdlib/mathz/mod.csd: error.FileNotFound
+DEBUG: Could not read CURSED module stdlib/mathz/mod.💀: error.FileNotFound
 🔍 DEBUG: Looking up identifier: negative
 🔍 DEBUG: Found negative as variable reference
 🔍 DEBUG: Found type info for variable negative
@@ -64,7 +64,7 @@ DEBUG: Could not read CURSED module stdlib/mathz/mod.csd: error.FileNotFound
 🔍 DEBUG: Found large as variable reference
 🔍 DEBUG: Found type info for variable large
 DEBUG: Loading and compiling CURSED module: mathz
-DEBUG: Could not read CURSED module stdlib/mathz/mod.csd: error.FileNotFound
+DEBUG: Could not read CURSED module stdlib/mathz/mod.💀: error.FileNotFound
 🔍 DEBUG: Looking up identifier: large
 🔍 DEBUG: Found large as variable reference
 🔍 DEBUG: Found type info for variable large
@@ -312,6 +312,6 @@ DEBUG: Could not read CURSED module stdlib/mathz/mod.csd: error.FileNotFound
 🔧 Step 2: Linking object file with gcc...
 ✅ Successfully compiled to: compiled_boundary_test
 🎉 Compilation pipeline completed successfully!
-🎉 Successfully compiled test_programs/edge_cases/01_boundary_values.csd to compiled_boundary_test
+🎉 Successfully compiled test_programs/edge_cases/01_boundary_values.💀 to compiled_boundary_test
 🧹 Cleaning up LLVM IR Pipeline...
 ✅ LLVM IR Pipeline cleanup complete

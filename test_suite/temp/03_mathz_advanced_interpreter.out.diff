@@ -4,7 +4,7 @@
 -"=== Advanced Mathz Test ==="
 -"Power function:"
 -ERROR: No CURSED stdlib implementation found for module 'mathz': error.ModuleNotFound
--SELF-HOSTING: Please implement stdlib/mathz/mod.csd for true self-hosting
+-SELF-HOSTING: Please implement stdlib/mathz/mod.💀 for true self-hosting
 -thread 1724961 panic: integer overflow
 -/home/ghuntley/cursed/src-zig/interpreter.zig:465:9: 0xADDRESS in get (cursed_compiler_main.zig)
 -        return InterpreterError.UndefinedVariable;

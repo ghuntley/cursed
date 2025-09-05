@@ -513,7 +513,7 @@ pub fn formatDirectory(allocator: Allocator, dir_path: []const u8, config: Forma
     
     var iterator = dir.iterate();
     while (try iterator.next()) |entry| {
-        if (entry.kind == .file and std.mem.endsWith(u8, entry.name, ".csd")) {
+        if (entry.kind == .file and std.mem.endsWith(u8, entry.name, ".💀")) {
             const full_path = try std.fs.path.join(allocator, &[_][]const u8{ dir_path, entry.name });
             defer allocator.free(full_path);
             

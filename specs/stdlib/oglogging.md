@@ -37,8 +37,8 @@ The `oglogging` package defines flags that control the output format:
 Ldate         fr fr Include date: 2025/04/13
 Ltime         fr fr Include time: 15:04:05
 Lmicroseconds fr fr Include microseconds: 15:04:05.123456
-Llongfile     fr fr Include full file path and line: /path/to/file.csd:23
-Lshortfile    fr fr Include just filename and line: file.csd:23
+Llongfile     fr fr Include full file path and line: /path/to/file.💀:23
+Lshortfile    fr fr Include just filename and line: file.💀:23
 LUTC          fr fr Use UTC time instead of local time
 Lmsgprefix    fr fr Move prefix to before the message instead of line start
 LstdFlags     fr fr Default flags: Ldate | Ltime
@@ -88,7 +88,7 @@ slay main() {
     
     oglogging.spill("Starting application...")
     
-    fr fr Output: bestie: 2025/04/13 15:04:05 main.csd:9: Starting application...
+    fr fr Output: bestie: 2025/04/13 15:04:05 main.💀:9: Starting application...
 }
 ```
 

@@ -204,10 +204,10 @@ Run the comprehensive test suite:
 
 ```bash
 # Test interpretation mode
-cargo run --bin cursed stdlib/hash_drip/test_hash_drip.csd
+cargo run --bin cursed stdlib/hash_drip/test_hash_drip.💀
 
 # Test compilation mode
-cargo run --bin cursed -- compile stdlib/hash_drip/test_hash_drip.csd
+cargo run --bin cursed -- compile stdlib/hash_drip/test_hash_drip.💀
 ./test_hash_drip
 ```
 

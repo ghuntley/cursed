@@ -47,23 +47,23 @@ minimum-cursed-version = "1.0.0"
 # Examples configuration
 [[example]]
 name = "basic-server"
-path = "examples/basic_server.csd"
+path = "examples/basic_server.💀"
 description = "A basic HTTP server example"
 
 [[example]]
 name = "cli-tool"
-path = "examples/cli_tool.csd"
+path = "examples/cli_tool.💀"
 description = "Command-line tool example"
 
 # Binary configuration
 [[bin]]
 name = "my-app"
-path = "src/main.csd"
+path = "src/main.💀"
 description = "Main application binary"
 
 [[bin]]
 name = "my-app-cli"
-path = "src/cli.csd"
+path = "src/cli.💀"
 description = "CLI tool binary"
 
 # Test configuration

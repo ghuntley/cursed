@@ -201,16 +201,16 @@ Run comprehensive tests to verify all functionality:
 
 ```bash
 # Test interpretation mode
-cargo run --bin cursed stdlib/error_management/test_error_management.csd
+cargo run --bin cursed stdlib/error_management/test_error_management.💀
 
 # Test compilation mode  
-cargo run --bin cursed -- compile stdlib/error_management/test_error_management.csd
+cargo run --bin cursed -- compile stdlib/error_management/test_error_management.💀
 ./test_error_management
 
 # Verify both modes produce identical results
 test_both_modes() {
-    cargo run --bin cursed stdlib/error_management/test_error_management.csd > interp_output.txt
-    cargo run --bin cursed -- compile stdlib/error_management/test_error_management.csd
+    cargo run --bin cursed stdlib/error_management/test_error_management.💀 > interp_output.txt
+    cargo run --bin cursed -- compile stdlib/error_management/test_error_management.💀
     ./test_error_management > comp_output.txt
     diff interp_output.txt comp_output.txt
 }

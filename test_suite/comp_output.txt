@@ -134,11 +134,11 @@
 🔍 DEBUG: Found complex_bool as variable reference
 🔍 DEBUG: Found type info for variable complex_bool
 DEBUG: Loading and compiling CURSED module: mathz
-DEBUG: Could not read CURSED module stdlib/mathz/mod.csd: error.FileNotFound
+DEBUG: Could not read CURSED module stdlib/mathz/mod.💀: error.FileNotFound
 DEBUG: Loading and compiling CURSED module: mathz
-DEBUG: Could not read CURSED module stdlib/mathz/mod.csd: error.FileNotFound
+DEBUG: Could not read CURSED module stdlib/mathz/mod.💀: error.FileNotFound
 DEBUG: Loading and compiling CURSED module: mathz
-DEBUG: Could not read CURSED module stdlib/mathz/mod.csd: error.FileNotFound
+DEBUG: Could not read CURSED module stdlib/mathz/mod.💀: error.FileNotFound
 ⚠️ Unhandled method call: mathz.max
 🔍 DEBUG: Looking up identifier: nested_result
 🔍 DEBUG: Found nested_result as variable reference
@@ -171,7 +171,7 @@ DEBUG: Could not read CURSED module stdlib/mathz/mod.csd: error.FileNotFound
 🔍 DEBUG: Generating binary operation: <
 🔍 DEBUG: Generating left operand
 DEBUG: Loading and compiling CURSED module: mathz
-DEBUG: Could not read CURSED module stdlib/mathz/mod.csd: error.FileNotFound
+DEBUG: Could not read CURSED module stdlib/mathz/mod.💀: error.FileNotFound
 🔍 DEBUG: Generating binary operation: -
 🔍 DEBUG: Generating left operand
 🔍 DEBUG: Looking up identifier: c
@@ -307,13 +307,13 @@ DEBUG: Could not read CURSED module stdlib/mathz/mod.csd: error.FileNotFound
 DEBUG: Skipping vibez module loading - using built-in printf handling
 📦 Processing import: mathz
 DEBUG: Loading and compiling CURSED module: mathz
-DEBUG: Could not read CURSED module stdlib/mathz/mod.csd: error.FileNotFound
+DEBUG: Could not read CURSED module stdlib/mathz/mod.💀: error.FileNotFound
 🔍 DEBUG: Successfully ensured main function
 ✅ LLVM IR written to: temp_binary.ll
 🔧 Step 1: Compiling IR to object file with llc-18...
 🔧 Step 2: Linking object file with gcc...
 ✅ Successfully compiled to: temp_binary
 🎉 Compilation pipeline completed successfully!
-🎉 Successfully compiled test_programs/edge_cases/edge_case_complex_expressions.csd to temp_binary
+🎉 Successfully compiled test_programs/edge_cases/edge_case_complex_expressions.💀 to temp_binary
 🧹 Cleaning up LLVM IR Pipeline...
 ✅ LLVM IR Pipeline cleanup complete

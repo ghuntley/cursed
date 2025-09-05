@@ -16,7 +16,7 @@ The CURSED Production Collections Library provides enterprise-ready data structu
 ## 📊 Data Structures
 
 ### 1. Robin Hood Hash Table
-**File**: `production_collections.csd` - `RobinHoodHashTable`
+**File**: `production_collections.💀` - `RobinHoodHashTable`
 
 **Features**:
 - O(1) average insert, lookup, and delete operations
@@ -39,7 +39,7 @@ sus contains lit = HashMap_contains_key(map, "key")
 - Space: O(n)
 
 ### 2. AVL Tree (Self-Balancing Binary Search Tree)
-**File**: `production_collections.csd` - `BalancedTree`
+**File**: `production_collections.💀` - `BalancedTree`
 
 **Features**:
 - Guaranteed O(log n) operations through automatic balancing
@@ -61,7 +61,7 @@ sus value tea = Tree_search(tree, "key")
 - Space: O(n)
 
 ### 3. Priority Queue (Binary Max-Heap)
-**File**: `production_collections.csd` - `PriorityQueue`
+**File**: `production_collections.💀` - `PriorityQueue`
 
 **Features**:
 - Binary heap implementation with array storage
@@ -174,10 +174,10 @@ sus iqr drip = Statistics_interquartile_range(data)
 ### Running Tests
 ```bash
 # Run comprehensive test suite
-./zig-out/bin/cursed-zig stdlib/collections/test_production_collections.csd
+./zig-out/bin/cursed-zig stdlib/collections/test_production_collections.💀
 
 # Run performance benchmarks
-./zig-out/bin/cursed-zig stdlib/collections/performance_benchmarks_production.csd
+./zig-out/bin/cursed-zig stdlib/collections/performance_benchmarks_production.💀
 ```
 
 ### Test Coverage

@@ -11,14 +11,14 @@ To run any example:
 make build
 
 # Run an example
-./target/debug/cursed examples/channels/hello_channels.csd
+./target/debug/cursed examples/channels/hello_channels.💀
 ```
 
 ## Example Overview
 
 ### 1. Basic Channel Operations
 
-**File:** [`hello_channels.csd`](hello_channels.csd)  
+**File:** [`hello_channels.💀`](hello_channels.💀)  
 **Concepts:** Channel creation, send/receive, buffered vs unbuffered, closing channels
 
 This example introduces the fundamental concepts of channels in CURSED:
@@ -35,7 +35,7 @@ This example introduces the fundamental concepts of channels in CURSED:
 
 ### 2. Producer-Consumer Pattern
 
-**File:** [`producer_consumer.csd`](producer_consumer.csd)  
+**File:** [`producer_consumer.💀`](producer_consumer.💀)  
 **Concepts:** Work distribution, multiple producers/consumers, inventory monitoring
 
 Demonstrates the classic producer-consumer pattern with:
@@ -53,7 +53,7 @@ Demonstrates the classic producer-consumer pattern with:
 
 ### 3. Worker Pool Pattern
 
-**File:** [`worker_pool.csd`](worker_pool.csd)  
+**File:** [`worker_pool.💀`](worker_pool.💀)  
 **Concepts:** Parallel job processing, error handling, priority queues
 
 Shows how to implement scalable parallel processing:
@@ -71,7 +71,7 @@ Shows how to implement scalable parallel processing:
 
 ### 4. Pipeline Processing
 
-**File:** [`pipeline.csd`](pipeline.csd)  
+**File:** [`pipeline.💀`](pipeline.💀)  
 **Concepts:** Multi-stage processing, data transformation, parallel pipelines
 
 Demonstrates data processing pipelines with:
@@ -89,7 +89,7 @@ Demonstrates data processing pipelines with:
 
 ### 5. Fan-in and Fan-out Patterns
 
-**File:** [`fan_in_out.csd`](fan_in_out.csd)  
+**File:** [`fan_in_out.💀`](fan_in_out.💀)  
 **Concepts:** Work distribution/aggregation, load balancing, scatter-gather
 
 Advanced patterns for work distribution and collection:
@@ -107,7 +107,7 @@ Advanced patterns for work distribution and collection:
 
 ### 6. Advanced Select Operations
 
-**File:** [`channel_select.csd`](channel_select.csd)  
+**File:** [`channel_select.💀`](channel_select.💀)  
 **Concepts:** Multi-channel coordination, timeouts, priority handling, rate limiting
 
 Complex channel coordination patterns using `vibe_check` (select):
@@ -140,29 +140,29 @@ make build
 
 ```bash
 # Basic channel operations
-./target/debug/cursed examples/channels/hello_channels.csd
+./target/debug/cursed examples/channels/hello_channels.💀
 
 # Producer-consumer pattern
-./target/debug/cursed examples/channels/producer_consumer.csd
+./target/debug/cursed examples/channels/producer_consumer.💀
 
 # Worker pool processing
-./target/debug/cursed examples/channels/worker_pool.csd
+./target/debug/cursed examples/channels/worker_pool.💀
 
 # Pipeline processing
-./target/debug/cursed examples/channels/pipeline.csd
+./target/debug/cursed examples/channels/pipeline.💀
 
 # Fan-in/fan-out patterns
-./target/debug/cursed examples/channels/fan_in_out.csd
+./target/debug/cursed examples/channels/fan_in_out.💀
 
 # Advanced select operations
-./target/debug/cursed examples/channels/channel_select.csd
+./target/debug/cursed examples/channels/channel_select.💀
 ```
 
 ### Run All Examples
 
 ```bash
 # Run all channel examples in sequence
-for example in examples/channels/*.csd; do
+for example in examples/channels/*.💀; do
     echo "Running $example..."
     ./target/debug/cursed "$example"
     echo "Completed $example"
@@ -179,7 +179,7 @@ Each example produces detailed output showing:
 - Error handling and edge cases
 - Pattern-specific behavior demonstrations
 
-Example output from `hello_channels.csd`:
+Example output from `hello_channels.💀`:
 ```
 === CURSED Channel Hello World ===
 Creating channels...
@@ -241,12 +241,12 @@ Examples demonstrate various error handling patterns:
 
 | Pattern | Use Case | Key Benefits | Example File |
 |---------|----------|--------------|--------------|
-| **Producer-Consumer** | Work distribution | Decoupling, load balancing | `producer_consumer.csd` |
-| **Worker Pool** | Parallel processing | Resource control, scalability | `worker_pool.csd` |
-| **Pipeline** | Sequential processing | Modularity, parallelism | `pipeline.csd` |
-| **Fan-out** | Work distribution | Parallel execution | `fan_in_out.csd` |
-| **Fan-in** | Result aggregation | Data merging, coordination | `fan_in_out.csd` |
-| **Select** | Multi-channel coordination | Non-blocking, timeouts | `channel_select.csd` |
+| **Producer-Consumer** | Work distribution | Decoupling, load balancing | `producer_consumer.💀` |
+| **Worker Pool** | Parallel processing | Resource control, scalability | `worker_pool.💀` |
+| **Pipeline** | Sequential processing | Modularity, parallelism | `pipeline.💀` |
+| **Fan-out** | Work distribution | Parallel execution | `fan_in_out.💀` |
+| **Fan-in** | Result aggregation | Data merging, coordination | `fan_in_out.💀` |
+| **Select** | Multi-channel coordination | Non-blocking, timeouts | `channel_select.💀` |
 
 ## Troubleshooting
 

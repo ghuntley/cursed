@@ -44,9 +44,9 @@
 ### Test Results
 | Test Case | Interpreter | Compilation | Binary Execution |
 |-----------|-------------|-------------|------------------|
-| minimal_print_test.csd | ✅ Works | ✅ Works | ✅ Works |
-| time_basic_test.csd | ✅ Works | ✅ Works | ❌ Exit -1 |
-| test_time_simple.csd | ✅ Works | ✅ Works | ❌ Exit -1 |
+| minimal_print_test.💀 | ✅ Works | ✅ Works | ✅ Works |
+| time_basic_test.💀 | ✅ Works | ✅ Works | ❌ Exit -1 |
+| test_time_simple.💀 | ✅ Works | ✅ Works | ❌ Exit -1 |
 
 ### Next Steps
 To fully resolve the binary execution issue, investigate:

@@ -69,10 +69,10 @@ vibez.spill(info)
 
 ```bash
 # Test interpretation mode
-cargo run --bin cursed stdlib/core/test_core.csd
+cargo run --bin cursed stdlib/core/test_core.💀
 
 # Test compilation mode
-cargo run --bin cursed -- compile stdlib/core/test_core.csd
+cargo run --bin cursed -- compile stdlib/core/test_core.💀
 ./test_core
 ```
 

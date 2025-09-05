@@ -304,7 +304,7 @@ slay fragmentation_example() {
 ```bash
 # Build and run performance tests
 zig build
-./zig-out/bin/cursed-zig stdlib/memory/test_advanced_pools.csd
+./zig-out/bin/cursed-zig stdlib/memory/test_advanced_pools.💀
 ```
 
 ### Test Categories

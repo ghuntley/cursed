@@ -58,8 +58,8 @@ export function activate(context: vscode.ExtensionContext) {
             { scheme: 'file', language: 'cursed' }
         ],
         synchronize: {
-            // Notify the server about file changes to .csd files
-            fileEvents: vscode.workspace.createFileSystemWatcher('**/*.csd')
+            // Notify the server about file changes to .💀 files
+            fileEvents: vscode.workspace.createFileSystemWatcher('**/*.💀')
         },
         initializationOptions: {
             workspaceRoot: vscode.workspace.workspaceFolders?.[0]?.uri.fsPath

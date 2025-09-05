@@ -65,7 +65,7 @@ pub fn main() !void {
 
 fn printUsage() void {
     print("CURSED Compiler - Real Implementation\n\n", .{});
-    print("Usage: cursed-zig [options] <file.csd>\n\n", .{});
+    print("Usage: cursed-zig [options] <file.💀.💀>\n\n", .{});
     print("Options:\n", .{});
     print("  --compile     Compile to native executable\n", .{});
     print("  --debug       Enable debug output\n", .{});

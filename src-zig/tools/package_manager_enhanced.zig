@@ -1588,7 +1588,7 @@ pub fn cmdInit(allocator: Allocator, args: [][]const u8) !void {
     try std.fs.cwd().makePath("tests");
     
     // Create main source file
-    const src_file = try std.fs.cwd().createFile("src/lib.csd", .{});
+    const src_file = try std.fs.cwd().createFile("src/lib.💀", .{});
     defer src_file.close();
     
     try src_file.writer().writeAll(
@@ -1601,7 +1601,7 @@ pub fn cmdInit(allocator: Allocator, args: [][]const u8) !void {
     );
     
     // Create test file
-    const test_file = try std.fs.cwd().createFile("tests/lib_test.csd", .{});
+    const test_file = try std.fs.cwd().createFile("tests/lib_test.💀", .{});
     defer test_file.close();
     
     try test_file.writer().writeAll(
@@ -1619,7 +1619,7 @@ pub fn cmdInit(allocator: Allocator, args: [][]const u8) !void {
     
     print("Initialized new CURSED package in current directory\n", .{});
     print("Edit CursedPackage.toml to customize package metadata\n", .{});
-    print("Add your code to src/lib.csd\n", .{});
+    print("Add your code to src/lib.💀.💀\n", .{});
     print("Run tests with: cursed pkg test\n", .{});
 }
 

@@ -26,14 +26,14 @@ pub fn main() !void {
 
     if (args.len < 2) {
         print("🐛 CURSED Interactive Debugger v1.0\n", .{});
-        print("Usage: cursed-debug <program.csd> [options]\n", .{});
+        print("Usage: cursed-debug <program.💀.💀> [options]\n", .{});
         print("\nOptions:\n", .{});
         print("  --help, -h     Show this help message\n", .{});
         print("  --version, -v  Show version information\n", .{});
         print("  --verbose      Enable verbose debugging output\n", .{});
         print("\nExamples:\n", .{});
-        print("  cursed-debug myprogram.csd\n", .{});
-        print("  cursed-debug --verbose complex_program.csd\n", .{});
+        print("  cursed-debug myprogram.💀.💀\n", .{});
+        print("  cursed-debug --verbose complex_program.💀.💀\n", .{});
         return;
     }
 
@@ -100,7 +100,7 @@ fn printHelp() void {
     print("  expression evaluation, and stack trace analysis.\n\n", .{});
     
     print("USAGE:\n", .{});
-    print("  cursed-debug <program.csd> [options]\n\n", .{});
+    print("  cursed-debug <program.💀.💀> [options]\n\n", .{});
     
     print("OPTIONS:\n", .{});
     print("  --help, -h     Show this help message\n", .{});
@@ -129,13 +129,13 @@ fn printHelp() void {
     
     print("EXAMPLES:\n", .{});
     print("  # Debug a simple program\n", .{});
-    print("  cursed-debug hello.csd\n\n", .{});
+    print("  cursed-debug hello.💀.💀\n\n", .{});
     
     print("  # Debug with verbose output\n", .{});
-    print("  cursed-debug --verbose complex_program.csd\n\n", .{});
+    print("  cursed-debug --verbose complex_program.💀.💀\n\n", .{});
     
     print("  # Interactive debugging session\n", .{});
-    print("  cursed-debug myapp.csd\n", .{});
+    print("  cursed-debug myapp.💀.💀\n", .{});
     print("  (cursed-debug) break 10\n", .{});
     print("  (cursed-debug) run\n", .{});
     print("  (cursed-debug) print my_variable\n", .{});

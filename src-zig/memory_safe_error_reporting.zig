@@ -702,7 +702,7 @@ test "memory safe error reporting system" {
     var reporter = ErrorReporter.init(allocator, 10);
     defer reporter.deinit();
     
-    const location = SourceLocation.init("test.csd", 1, 5, 4);
+    const location = SourceLocation.init("test.💀", 1, 5, 4);
     
     try reporter.reportError(.E201_UndefinedVariable, "Variable 'x' is not defined", location);
     try reporter.reportWarning(.E203_TypeMismatch, "Implicit conversion may lose precision", location);
@@ -718,7 +718,7 @@ test "memory safe error reporting system" {
     
     var debug_info = DebugInfo.init(&debug_arena, .Full);
     
-    try debug_info.addLineInfo(1, 5, "test.csd", 100);
+    try debug_info.addLineInfo(1, 5, "test.💀", 100);
     const scope_id = try debug_info.enterScope(.Function, 100, null);
     debug_info.exitScope(scope_id, 200);
     

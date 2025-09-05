@@ -6,7 +6,7 @@ I examined the CURSED language's JSON module implementation and cross-module fun
 
 ## JSON Module Implementation Analysis
 
-### JSON Module (`stdlib/json/mod.csd`)
+### JSON Module (`stdlib/json/mod.💀`)
 **Status: ✅ Well-implemented**
 
 **Core Functions Available:**
@@ -29,7 +29,7 @@ I examined the CURSED language's JSON module implementation and cross-module fun
 - Pretty printing and minification
 - Error handling with descriptive messages
 
-### JSONZ Module (`stdlib/jsonz/mod.csd`) 
+### JSONZ Module (`stdlib/jsonz/mod.💀`) 
 **Status: ✅ Production-ready, feature-complete**
 
 **Advanced Features:**
@@ -145,8 +145,8 @@ yeet "fs"      // File system operations
 ## Testing Infrastructure
 
 ### Available Test Suites
-- 25+ JSONZ regression tests (`tests/regression/stdlib/basic/jsonz_test_*.csd`)
-- Dedicated JSON test files (`stdlib/json/test_*.csd`)
+- 25+ JSONZ regression tests (`tests/regression/stdlib/basic/jsonz_test_*.💀`)
+- Dedicated JSON test files (`stdlib/json/test_*.💀`)
 - Cross-module integration examples
 - Performance benchmarks
 

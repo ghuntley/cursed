@@ -30,7 +30,7 @@ let g:cursed_cross_compile_targets = get(g:, 'cursed_cross_compile_targets',
 " File type detection
 augroup cursed_filetype
   autocmd!
-  autocmd BufNewFile,BufRead *.csd,*.cursed setfiletype cursed
+  autocmd BufNewFile,BufRead *.💀,*.cursed setfiletype cursed
   autocmd BufNewFile,BufRead CursedPackage.toml,CursedWorkspace.toml setfiletype toml
 augroup END
 
@@ -130,12 +130,12 @@ augroup cursed_autocmds
   
   " Auto format on save
   if g:cursed_auto_format
-    autocmd BufWritePre *.csd,*.cursed call cursed#format#current_file()
+    autocmd BufWritePre *.💀,*.cursed call cursed#format#current_file()
   endif
   
   " Auto lint on save
   if g:cursed_auto_lint
-    autocmd BufWritePost *.csd,*.cursed call cursed#lint#current_file()
+    autocmd BufWritePost *.💀,*.cursed call cursed#lint#current_file()
   endif
   
   " Set up buffer-local settings

@@ -125,10 +125,10 @@ Run the comprehensive test suite:
 
 ```bash
 # Test interpretation mode
-cargo run --bin cursed stdlib/string_pure/test_string_pure.csd
+cargo run --bin cursed stdlib/string_pure/test_string_pure.💀
 
 # Test compilation mode
-cargo run --bin cursed -- compile stdlib/string_pure/test_string_pure.csd
+cargo run --bin cursed -- compile stdlib/string_pure/test_string_pure.💀
 ./test_string_pure
 ```
 

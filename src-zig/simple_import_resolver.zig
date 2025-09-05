@@ -113,7 +113,7 @@ fn resolveStdlibImportLegacy(allocator: Allocator, module_name: []const u8, stdl
 
     try stdlib_path.append(self.allocator, '/');
     try stdlib_path.appendSlice(allocator, module_name);
-    try stdlib_path.appendSlice(allocator, "/mod.csd");
+    try stdlib_path.appendSlice(allocator, "/mod.💀");
 
     // Check if file exists
     cwd.access(stdlib_path.items, .{}) catch return false;

@@ -728,7 +728,7 @@ pub const RegistryClient = struct {
         defer self.allocator.free(readme_content);
         
         // Build archive format
-        const header1 = try std.fmt.allocPrint(self.allocator, "FILE:src/main.csd:SIZE:{}\n", .{main_file.len});
+        const header1 = try std.fmt.allocPrint(self.allocator, "FILE:src/main.💀.💀:SIZE:{}\n", .{main_file.len});
         defer self.allocator.free(header1);
         try package_data.appendSlice(header1);
         try package_data.appendSlice(main_file);

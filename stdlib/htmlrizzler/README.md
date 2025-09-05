@@ -273,7 +273,7 @@ lowkey htmlrizzler.validate_html(html_to_check) {
 Run the comprehensive test suite:
 
 ```bash
-cargo run --bin cursed stdlib/htmlrizzler/test_htmlrizzler.csd
+cargo run --bin cursed stdlib/htmlrizzler/test_htmlrizzler.💀
 ```
 
 The test suite covers:

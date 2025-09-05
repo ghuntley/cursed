@@ -94,12 +94,12 @@ fn addIndentedLine(result: *std.ArrayList(u8), allocator: std.mem.Allocator, lin
 fn printUsage() void {
     print("CURSED Code Formatter v1.0.0\n\n", .{});
     print("USAGE:\n", .{});
-    print("    cursed-fmt <file.csd>\n\n", .{});
+    print("    cursed-fmt <file.💀.💀>\n\n", .{});
     print("FEATURES:\n", .{});
     print("    • Consistent indentation (4 spaces)\n", .{});
     print("    • Normalized whitespace\n", .{});
     print("    • Proper brace formatting\n\n", .{});
     print("EXAMPLES:\n", .{});
-    print("    cursed-fmt hello.csd\n", .{});
-    print("    cursed-fmt src/main.csd\n", .{});
+    print("    cursed-fmt hello.💀.💀\n", .{});
+    print("    cursed-fmt src/main.💀.💀\n", .{});
 }

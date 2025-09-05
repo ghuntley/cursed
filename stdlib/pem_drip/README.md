@@ -265,10 +265,10 @@ The module includes comprehensive tests covering:
 
 ```bash
 # Test interpretation mode
-cargo run --bin cursed stdlib/pem_drip/test_pem_drip.csd
+cargo run --bin cursed stdlib/pem_drip/test_pem_drip.💀
 
 # Test compilation mode
-cargo run --bin cursed -- compile stdlib/pem_drip/test_pem_drip.csd
+cargo run --bin cursed -- compile stdlib/pem_drip/test_pem_drip.💀
 ./test_pem_drip
 ```
 

@@ -244,10 +244,10 @@ The module includes comprehensive tests covering:
 
 ```bash
 # Run tests in interpretation mode
-cargo run --bin cursed stdlib/vibe_lock/test_vibe_lock.csd
+cargo run --bin cursed stdlib/vibe_lock/test_vibe_lock.💀
 
 # Run tests in compilation mode
-cargo run --bin cursed -- compile stdlib/vibe_lock/test_vibe_lock.csd
+cargo run --bin cursed -- compile stdlib/vibe_lock/test_vibe_lock.💀
 ./test_vibe_lock
 ```
 

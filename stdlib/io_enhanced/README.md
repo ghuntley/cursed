@@ -196,7 +196,7 @@ Checks if any errors were recorded.
 yeet "io_enhanced"
 
 // Read source file with error handling
-(sus source SourceFile, sus err tea) = SourceFile_read("main.csd")
+(sus source SourceFile, sus err tea) = SourceFile_read("main.💀")
 lowkey err != "" {
     vibez.spill("Failed to read source: " + err)
     damn
@@ -246,7 +246,7 @@ buffer = CodeBuffer_write_line(buffer, "}")
 
 // Write generated code to file
 sus generated_code tea = CodeBuffer_to_string(buffer)
-sus write_err tea = write_code_file("generated.csd", buffer)
+sus write_err tea = write_code_file("generated.💀", buffer)
 lowkey write_err == "" {
     vibez.spill("Generated code written successfully")
 }
@@ -328,7 +328,7 @@ lowkey err == "" {
 }
 
 // Write build manifest
-sus files []tea = []tea{"main.csd", "utils.csd", "types.csd"}
+sus files []tea = []tea{"main.💀", "utils.💀", "types.💀"}
 sus dependencies []tea = []tea{"testz", "stringz", "io"}
 sus manifest_err tea = write_build_manifest("build/manifest.txt", files, dependencies)
 ```
@@ -359,9 +359,9 @@ squad IndentationManager {
 ```cursed
 // Advanced string processing for code generation
 slay module_path_to_file_path(module_name tea) tea {
-    // Convert "foo.bar.baz" to "foo/bar/baz.csd"
+    // Convert "foo.bar.baz" to "foo/bar/baz.💀"
     sus path tea = string_replace(module_name, ".", "/")
-    damn path + ".csd"
+    damn path + ".💀"
 }
 
 slay split_lines(content tea) []tea {
@@ -494,7 +494,7 @@ slay safe_write_with_retry(filename tea, content tea, max_retries normie) tea {
 ```bash
 # Run I/O enhancement tests
 zig build test
-./zig-out/bin/cursed-zig stdlib/io_enhanced/test_io_enhanced.csd
+./zig-out/bin/cursed-zig stdlib/io_enhanced/test_io_enhanced.💀
 ```
 
 ### Test Categories

@@ -17,37 +17,37 @@
             <div class="doc-item" id="load_config">
                 <h4>load_config</h4>
                 <pre class="signature"><code>slay load_config() -> Result<AppConfig, EnvError> {</code></pre>
-                <p class="source">Source: <a href="file://./examples/env_config_management.csd#L36">env_config_management.csd:36</a></p>
+                <p class="source">Source: <a href="file://./examples/env_config_management.💀#L36">env_config_management.💀:36</a></p>
             </div>
             <div class="doc-item" id="display_config">
                 <h4>display_config</h4>
                 <pre class="signature"><code>slay display_config(config: &AppConfig) -> Result<(), IoError> {</code></pre>
-                <p class="source">Source: <a href="file://./examples/env_config_management.csd#L94">env_config_management.csd:94</a></p>
+                <p class="source">Source: <a href="file://./examples/env_config_management.💀#L94">env_config_management.💀:94</a></p>
             </div>
             <div class="doc-item" id="setup_development_env">
                 <h4>setup_development_env</h4>
                 <pre class="signature"><code>slay setup_development_env() -> Result<(), EnvError> {</code></pre>
-                <p class="source">Source: <a href="file://./examples/env_config_management.csd#L134">env_config_management.csd:134</a></p>
+                <p class="source">Source: <a href="file://./examples/env_config_management.💀#L134">env_config_management.💀:134</a></p>
             </div>
             <div class="doc-item" id="setup_production_env">
                 <h4>setup_production_env</h4>
                 <pre class="signature"><code>slay setup_production_env() -> Result<(), EnvError> {</code></pre>
-                <p class="source">Source: <a href="file://./examples/env_config_management.csd#L162">env_config_management.csd:162</a></p>
+                <p class="source">Source: <a href="file://./examples/env_config_management.💀#L162">env_config_management.💀:162</a></p>
             </div>
             <div class="doc-item" id="validate_config">
                 <h4>validate_config</h4>
                 <pre class="signature"><code>slay validate_config(config: &AppConfig) -> Result<(), String> {</code></pre>
-                <p class="source">Source: <a href="file://./examples/env_config_management.csd#L190">env_config_management.csd:190</a></p>
+                <p class="source">Source: <a href="file://./examples/env_config_management.💀#L190">env_config_management.💀:190</a></p>
             </div>
             <div class="doc-item" id="generate_docker_env_file">
                 <h4>generate_docker_env_file</h4>
                 <pre class="signature"><code>slay generate_docker_env_file(config: &AppConfig) -> Result<String, IoError> {</code></pre>
-                <p class="source">Source: <a href="file://./examples/env_config_management.csd#L235">env_config_management.csd:235</a></p>
+                <p class="source">Source: <a href="file://./examples/env_config_management.💀#L235">env_config_management.💀:235</a></p>
             </div>
             <div class="doc-item" id="main">
                 <h4>main</h4>
                 <pre class="signature"><code>slay main() {</code></pre>
-                <p class="source">Source: <a href="file://./examples/env_config_management.csd#L257">env_config_management.csd:257</a></p>
+                <p class="source">Source: <a href="file://./examples/env_config_management.💀#L257">env_config_management.💀:257</a></p>
             </div>
         </section>
         <section id="structs">
@@ -55,7 +55,7 @@
             <div class="doc-item" id="AppConfig">
                 <h4>AppConfig</h4>
                 <pre class="signature"><code>squad AppConfig {</code></pre>
-                <p class="source">Source: <a href="file://./examples/env_config_management.csd#L11">env_config_management.csd:11</a></p>
+                <p class="source">Source: <a href="file://./examples/env_config_management.💀#L11">env_config_management.💀:11</a></p>
             </div>
         </section>
         <section id="constants">
@@ -63,102 +63,102 @@
             <div class="doc-item" id="app_name">
                 <h4>app_name</h4>
                 <pre class="signature"><code>facts app_name = get_env_with_default("APP_NAME", "cursed-app");</code></pre>
-                <p class="source">Source: <a href="file://./examples/env_config_management.csd#L40">env_config_management.csd:40</a></p>
+                <p class="source">Source: <a href="file://./examples/env_config_management.💀#L40">env_config_management.💀:40</a></p>
             </div>
             <div class="doc-item" id="version">
                 <h4>version</h4>
                 <pre class="signature"><code>facts version = get_env_with_default("APP_VERSION", "1.0.0");</code></pre>
-                <p class="source">Source: <a href="file://./examples/env_config_management.csd#L41">env_config_management.csd:41</a></p>
+                <p class="source">Source: <a href="file://./examples/env_config_management.💀#L41">env_config_management.💀:41</a></p>
             </div>
             <div class="doc-item" id="environment">
                 <h4>environment</h4>
                 <pre class="signature"><code>facts environment = get_env_with_default("ENVIRONMENT", "development");</code></pre>
-                <p class="source">Source: <a href="file://./examples/env_config_management.csd#L42">env_config_management.csd:42</a></p>
+                <p class="source">Source: <a href="file://./examples/env_config_management.💀#L42">env_config_management.💀:42</a></p>
             </div>
             <div class="doc-item" id="debug">
                 <h4>debug</h4>
                 <pre class="signature"><code>facts debug = parse_env_with_default("DEBUG", cap)?;</code></pre>
-                <p class="source">Source: <a href="file://./examples/env_config_management.csd#L43">env_config_management.csd:43</a></p>
+                <p class="source">Source: <a href="file://./examples/env_config_management.💀#L43">env_config_management.💀:43</a></p>
             </div>
             <div class="doc-item" id="server_host">
                 <h4>server_host</h4>
                 <pre class="signature"><code>facts server_host = get_env_with_default("SERVER_HOST", "localhost");</code></pre>
-                <p class="source">Source: <a href="file://./examples/env_config_management.csd#L46">env_config_management.csd:46</a></p>
+                <p class="source">Source: <a href="file://./examples/env_config_management.💀#L46">env_config_management.💀:46</a></p>
             </div>
             <div class="doc-item" id="server_port">
                 <h4>server_port</h4>
                 <pre class="signature"><code>facts server_port = get_numeric_env("SERVER_PORT", 1024, 65535).unwrap_or(8080);</code></pre>
-                <p class="source">Source: <a href="file://./examples/env_config_management.csd#L47">env_config_management.csd:47</a></p>
+                <p class="source">Source: <a href="file://./examples/env_config_management.💀#L47">env_config_management.💀:47</a></p>
             </div>
             <div class="doc-item" id="server_workers">
                 <h4>server_workers</h4>
                 <pre class="signature"><code>facts server_workers = get_numeric_env("SERVER_WORKERS", 1, 32).unwrap_or(4);</code></pre>
-                <p class="source">Source: <a href="file://./examples/env_config_management.csd#L48">env_config_management.csd:48</a></p>
+                <p class="source">Source: <a href="file://./examples/env_config_management.💀#L48">env_config_management.💀:48</a></p>
             </div>
             <div class="doc-item" id="db_url_template">
                 <h4>db_url_template</h4>
                 <pre class="signature"><code>facts db_url_template = get_env_with_default(</code></pre>
-                <p class="source">Source: <a href="file://./examples/env_config_management.csd#L56">env_config_management.csd:56</a></p>
+                <p class="source">Source: <a href="file://./examples/env_config_management.💀#L56">env_config_management.💀:56</a></p>
             </div>
             <div class="doc-item" id="db_url">
                 <h4>db_url</h4>
                 <pre class="signature"><code>facts db_url = expand_env_vars(&db_url_template)?;</code></pre>
-                <p class="source">Source: <a href="file://./examples/env_config_management.csd#L60">env_config_management.csd:60</a></p>
+                <p class="source">Source: <a href="file://./examples/env_config_management.💀#L60">env_config_management.💀:60</a></p>
             </div>
             <div class="doc-item" id="db_pool_size">
                 <h4>db_pool_size</h4>
                 <pre class="signature"><code>facts db_pool_size = parse_env_with_default("DB_POOL_SIZE", 10u32)?;</code></pre>
-                <p class="source">Source: <a href="file://./examples/env_config_management.csd#L62">env_config_management.csd:62</a></p>
+                <p class="source">Source: <a href="file://./examples/env_config_management.💀#L62">env_config_management.💀:62</a></p>
             </div>
             <div class="doc-item" id="db_timeout">
                 <h4>db_timeout</h4>
                 <pre class="signature"><code>facts db_timeout = parse_env_duration("DB_TIMEOUT").unwrap_or(Duration::from_secs(30));</code></pre>
-                <p class="source">Source: <a href="file://./examples/env_config_management.csd#L63">env_config_management.csd:63</a></p>
+                <p class="source">Source: <a href="file://./examples/env_config_management.💀#L63">env_config_management.💀:63</a></p>
             </div>
             <div class="doc-item" id="cache_enabled">
                 <h4>cache_enabled</h4>
                 <pre class="signature"><code>facts cache_enabled = get_bool_env("CACHE_ENABLED").unwrap_or(based);</code></pre>
-                <p class="source">Source: <a href="file://./examples/env_config_management.csd#L66">env_config_management.csd:66</a></p>
+                <p class="source">Source: <a href="file://./examples/env_config_management.💀#L66">env_config_management.💀:66</a></p>
             </div>
             <div class="doc-item" id="cache_ttl">
                 <h4>cache_ttl</h4>
                 <pre class="signature"><code>facts cache_ttl = parse_env_duration("CACHE_TTL").unwrap_or(Duration::from_secs(300));</code></pre>
-                <p class="source">Source: <a href="file://./examples/env_config_management.csd#L67">env_config_management.csd:67</a></p>
+                <p class="source">Source: <a href="file://./examples/env_config_management.💀#L67">env_config_management.💀:67</a></p>
             </div>
             <div class="doc-item" id="cache_size">
                 <h4>cache_size</h4>
                 <pre class="signature"><code>facts cache_size = parse_env_memory_size("CACHE_SIZE").unwrap_or(64 * 1024 * 1024); // 64MB default</code></pre>
-                <p class="source">Source: <a href="file://./examples/env_config_management.csd#L68">env_config_management.csd:68</a></p>
+                <p class="source">Source: <a href="file://./examples/env_config_management.💀#L68">env_config_management.💀:68</a></p>
             </div>
             <div class="doc-item" id="features">
                 <h4>features</h4>
                 <pre class="signature"><code>facts features = parse_env_list("FEATURES").unwrap_or_else(|_| vec![</code></pre>
-                <p class="source">Source: <a href="file://./examples/env_config_management.csd#L71">env_config_management.csd:71</a></p>
+                <p class="source">Source: <a href="file://./examples/env_config_management.💀#L71">env_config_management.💀:71</a></p>
             </div>
             <div class="doc-item" id="dev_config">
                 <h4>dev_config</h4>
                 <pre class="signature"><code>facts dev_config = load_config()?;</code></pre>
-                <p class="source">Source: <a href="file://./examples/env_config_management.csd#L265">env_config_management.csd:265</a></p>
+                <p class="source">Source: <a href="file://./examples/env_config_management.💀#L265">env_config_management.💀:265</a></p>
             </div>
             <div class="doc-item" id="docker_env">
                 <h4>docker_env</h4>
                 <pre class="signature"><code>facts docker_env = generate_docker_env_file(&dev_config)?;</code></pre>
-                <p class="source">Source: <a href="file://./examples/env_config_management.csd#L277">env_config_management.csd:277</a></p>
+                <p class="source">Source: <a href="file://./examples/env_config_management.💀#L277">env_config_management.💀:277</a></p>
             </div>
             <div class="doc-item" id="prod_config">
                 <h4>prod_config</h4>
                 <pre class="signature"><code>facts prod_config = load_config()?;</code></pre>
-                <p class="source">Source: <a href="file://./examples/env_config_management.csd#L290">env_config_management.csd:290</a></p>
+                <p class="source">Source: <a href="file://./examples/env_config_management.💀#L290">env_config_management.💀:290</a></p>
             </div>
             <div class="doc-item" id="override_config">
                 <h4>override_config</h4>
                 <pre class="signature"><code>facts override_config = load_config()?;</code></pre>
-                <p class="source">Source: <a href="file://./examples/env_config_management.csd#L316">env_config_management.csd:316</a></p>
+                <p class="source">Source: <a href="file://./examples/env_config_management.💀#L316">env_config_management.💀:316</a></p>
             </div>
             <div class="doc-item" id="cleanup_vars">
                 <h4>cleanup_vars</h4>
                 <pre class="signature"><code>facts cleanup_vars = [</code></pre>
-                <p class="source">Source: <a href="file://./examples/env_config_management.csd#L345">env_config_management.csd:345</a></p>
+                <p class="source">Source: <a href="file://./examples/env_config_management.💀#L345">env_config_management.💀:345</a></p>
             </div>
         </section>
     </main>

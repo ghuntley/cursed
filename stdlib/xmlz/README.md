@@ -527,7 +527,7 @@ slay process_large_xml_log(file_path tea) drip {
 **Why extensive XML testing?** XML's complexity (namespaces, encoding, DTDs, well-formedness rules) creates many failure modes that can lead to security vulnerabilities.
 
 ```cursed
-// stdlib/xmlz/test_xmlz.csd
+// stdlib/xmlz/test_xmlz.💀
 yeet "testz"
 yeet "xmlz"
 
@@ -637,16 +637,16 @@ slay main() {
 ### Integration Tests
 ```bash
 # Test with real XML documents
-./zig-out/bin/cursed-zig stdlib/xmlz/integration_test.csd sample.xml
+./zig-out/bin/cursed-zig stdlib/xmlz/integration_test.💀 sample.xml
 
 # Memory safety testing
-valgrind --leak-check=full ./zig-out/bin/cursed-zig stdlib/xmlz/memory_test.csd
+valgrind --leak-check=full ./zig-out/bin/cursed-zig stdlib/xmlz/memory_test.💀
 
 # Performance benchmarks
-./zig-out/bin/cursed-zig stdlib/xmlz/benchmark_test.csd
+./zig-out/bin/cursed-zig stdlib/xmlz/benchmark_test.💀
 
 # Streaming large file test
-./zig-out/bin/cursed-zig stdlib/xmlz/streaming_test.csd large_document.xml
+./zig-out/bin/cursed-zig stdlib/xmlz/streaming_test.💀 large_document.xml
 ```
 
 ## Implementation Choices Explained

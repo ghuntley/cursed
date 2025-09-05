@@ -14,8 +14,8 @@
 ### 1. Compiler Crashes/Segmentation Faults (Critical Priority)
 
 **Pattern:** Parser segmentation faults during complex expressions
-- `validation/validation_function_definitions.csd` - Segfaults during function parsing
-- `validation/validation_stdlib_collections_complete.csd` - Segfaults during array/collection parsing
+- `validation/validation_function_definitions.💀` - Segfaults during function parsing
+- `validation/validation_stdlib_collections_complete.💀` - Segfaults during array/collection parsing
 
 **Root Cause:** Memory management issues in parser, likely in `parseExpression()` or `allocateExpression()` functions.
 
@@ -30,9 +30,9 @@ left = try infix_fn.?(self, left);
 ### 2. Float Precision Inconsistencies (Medium Priority)
 
 **Pattern:** Different float formatting between interpreter and compiler
-- `regression/regression_string_float_precision.csd`
-- `validation/validation_float_precision.csd` 
-- `validation/validation_stdlib_complete.csd`
+- `regression/regression_string_float_precision.💀`
+- `validation/validation_float_precision.💀` 
+- `validation/validation_stdlib_complete.💀`
 
 **Examples:**
 - Interpreter: `123.45679`, `1.00000e-6`
@@ -43,8 +43,8 @@ left = try infix_fn.?(self, left);
 ### 3. Stdlib Module Function Missing (Medium Priority)
 
 **Pattern:** UndefinedFunction errors for stdlib methods
-- `validation/validation_stdlib_mathz_complete.csd` - Missing mathz.* functions
-- `validation/validation_stdlib_stringz_complete.csd` - Missing stringz.* functions
+- `validation/validation_stdlib_mathz_complete.💀` - Missing mathz.* functions
+- `validation/validation_stdlib_stringz_complete.💀` - Missing stringz.* functions
 
 **Error Pattern:**
 ```
@@ -73,17 +73,17 @@ return try self.evaluateMethodCall(object_as_member, method_call.arguments.items
 ## Detailed Failure Breakdown
 
 ### Parser/Memory Issues (Segfaults) - 2 tests
-1. `validation/validation_function_definitions.csd` - Function parameter parsing crash
-2. `validation/validation_stdlib_collections_complete.csd` - Array/collection parsing crash
+1. `validation/validation_function_definitions.💀` - Function parameter parsing crash
+2. `validation/validation_stdlib_collections_complete.💀` - Array/collection parsing crash
 
 ### Float Precision Mismatches - 3 tests  
-1. `regression/regression_string_float_precision.csd`
-2. `validation/validation_float_precision.csd`
-3. `validation/validation_stdlib_complete.csd`
+1. `regression/regression_string_float_precision.💀`
+2. `validation/validation_float_precision.💀`
+3. `validation/validation_stdlib_complete.💀`
 
 ### Missing Stdlib Functions - 2 tests
-1. `validation/validation_stdlib_mathz_complete.csd`
-2. `validation/validation_stdlib_stringz_complete.csd`
+1. `validation/validation_stdlib_mathz_complete.💀`
+2. `validation/validation_stdlib_stringz_complete.💀`
 
 ### Compilation Failures - 13+ tests
 - Various tests across `errors/`, `edge_cases/`, `memory/`, `regression/` categories
@@ -120,16 +120,16 @@ return try self.evaluateMethodCall(object_as_member, method_call.arguments.items
 **Critical Finding:** Many failing tests contain invalid CURSED syntax according to specs:
 
 ### 1. Invalid Type Syntax
-- `validation/validation_function_definitions.csd` uses `drip normie` instead of just `normie`
+- `validation/validation_function_definitions.💀` uses `drip normie` instead of just `normie`
 - Spec shows function signatures should be: `slay func(param Type) ReturnType`
 - NOT: `slay func(param drip Type) drip ReturnType`
 
 ### 2. Invalid Package Declarations  
-- `validation/validation_function_definitions.csd` uses `vibe main_character;` 
+- `validation/validation_function_definitions.💀` uses `vibe main_character;` 
 - Should be `vibe main_character` (no semicolon per grammar specs)
 
 ### 3. Undefined Variable Test Validity
-- `errors/02_undefined_variable.csd` expects both modes to fail identically
+- `errors/02_undefined_variable.💀` expects both modes to fail identically
 - This is actually a VALID test - undefined variables should cause consistent errors
 - The discrepancy here indicates a real compiler bug
 

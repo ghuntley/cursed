@@ -50,12 +50,12 @@ pub const CursedProject = struct {
         
         // Default main file search order
         const potential_mains = [_][]const u8{
-            "main.csd",
-            "src/main.csd", 
-            "lib.csd",
-            "src/lib.csd",
-            "mod.csd",
-            "src/mod.csd",
+            "main.💀",
+            "src/main.💀", 
+            "lib.💀",
+            "src/lib.💀",
+            "mod.💀",
+            "src/mod.💀",
         };
         
         for (potential_mains) |potential_main| {
@@ -397,7 +397,7 @@ pub const CursedBuilder = struct {
         const test_step = self.b.step("cursed-test", "Run CURSED tests");
         
         // Find all test files
-        const test_files = try self.findFilesWithExtension("tests", ".csd");
+        const test_files = try self.findFilesWithExtension("tests", ".💀");
         defer test_files.deinit();
         defer for (test_files.items) |file| {
             self.allocator.free(file);
@@ -432,7 +432,7 @@ pub const CursedBuilder = struct {
     fn createBenchmarkStep(self: *CursedBuilder, target: std.Build.ResolvedTarget) !*std.Build.Step {
         const bench_step = self.b.step("cursed-bench", "Run CURSED benchmarks");
         
-        const bench_files = try self.findFilesWithExtension("benchmarks", ".csd");
+        const bench_files = try self.findFilesWithExtension("benchmarks", ".💀");
         defer bench_files.deinit();
         defer for (bench_files.items) |file| {
             self.allocator.free(file);

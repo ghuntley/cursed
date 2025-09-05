@@ -5,14 +5,14 @@ Learn the essentials of CURSED programming in just 30 minutes. This hands-on tut
 ## Your First CURSED Program
 
 ```cursed
-# hello.csd
+# hello.💀
 yeet "vibez"
 
 vibez.spill("Hello, CURSED! 🔥")
 ```
 
 ```bash
-cursed-zig hello.csd
+cursed-zig hello.💀
 # Output: Hello, CURSED! 🔥
 ```
 
@@ -200,7 +200,7 @@ vibez.spill("Uppercase:", upper)
 Let's build a number guessing game:
 
 ```cursed
-# guessing_game.csd
+# guessing_game.💀
 yeet "vibez"
 yeet "mathz"
 
@@ -280,19 +280,19 @@ vibez.spill("Current time:", timez.format(now))
 
 ### Interpreter Mode (Development)
 ```bash
-cursed-zig program.csd
+cursed-zig program.💀
 ```
 
 ### Compile to Binary (Production)
 ```bash
-cursed-zig --compile program.csd
+cursed-zig --compile program.💀
 ./program
 ```
 
 ### Cross-Compilation
 ```bash
-cursed-zig --compile --target=x86_64-linux program.csd
-cursed-zig --compile --target=wasm32-wasi program.csd
+cursed-zig --compile --target=x86_64-linux program.💀
+cursed-zig --compile --target=wasm32-wasi program.💀
 ```
 
 ## Next Steps

@@ -23,7 +23,7 @@ String concatenation using `+` operator for strings now supported in the runtime
 - **Assignment statements**: `i = i + 1` ✅ (previously fixed)
 - **Type inference**: Works correctly
 
-**Test**: [`test_arithmetic.csd`](file:///home/ghuntley/cursed/test_arithmetic.csd)
+**Test**: [`test_arithmetic.💀`](file:///home/ghuntley/cursed/test_arithmetic.💀)
 ```cursed
 slay test_math() {
     x := 10
@@ -43,7 +43,7 @@ slay test_math() {
 - **String storage**: `hello := "Hello"` ✅
 - **String display**: `vibez.spill(hello)` ✅
 
-**Test**: [`test_simple_string.csd`](file:///home/ghuntley/cursed/test_simple_string.csd)
+**Test**: [`test_simple_string.💀`](file:///home/ghuntley/cursed/test_simple_string.💀)
 ```cursed
 slay test_string() {
     hello := "Hello"
@@ -63,7 +63,7 @@ slay test_string() {
   - `mathz.power_int(base, exp)`
   - `mathz.clamp(value, min, max)`
 
-**Test**: [`test_stdlib_simple.csd`](file:///home/ghuntley/cursed/test_stdlib_simple.csd)
+**Test**: [`test_stdlib_simple.💀`](file:///home/ghuntley/cursed/test_stdlib_simple.💀)
 ```cursed
 slay test_mathz() {
     result := mathz.add_two(10, 5)  // Works: 15
@@ -93,8 +93,8 @@ DEBUG: Evaluating expression type: Unary      // ← Should be Binary operand
 **Error**: `integer overflow` in `evaluateUnary()` when processing unary `+` on strings.
 
 **Test Cases Failing**:
-- [`test_two_strings.csd`](file:///home/ghuntley/cursed/test_two_strings.csd): `hello + world`
-- [`test_concat_cursed.csd`](file:///home/ghuntley/cursed/test_concat_cursed.csd): Complex concatenation
+- [`test_two_strings.💀`](file:///home/ghuntley/cursed/test_two_strings.💀): `hello + world`
+- [`test_concat_cursed.💀`](file:///home/ghuntley/cursed/test_concat_cursed.💀): Complex concatenation
 
 ### ❌ Compilation Mode Status
 **Current Status**: Both `-i` and `-c` flags execute in interpreter mode

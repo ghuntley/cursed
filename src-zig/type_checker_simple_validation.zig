@@ -339,7 +339,7 @@ pub const TypeCheckerValidation = struct {
         var checker = SimpleTypeChecker.init(self.allocator);
         defer checker.deinit();
         
-        // Simulate checking basic_test.csd program
+        // Simulate checking basic_test.💀.💀 program
         try self.simulateBasicCursedProgram(&checker);
         
         // Report any errors found

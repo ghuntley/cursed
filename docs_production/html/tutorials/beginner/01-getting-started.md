@@ -34,7 +34,7 @@ For the best development experience, install:
 
 ## Your First CURSED Program
 
-Create a file called `hello.csd`:
+Create a file called `hello.💀`:
 
 ```cursed
 vibez.spill("Hello, CURSED!")
@@ -43,7 +43,7 @@ vibez.spill("Hello, CURSED!")
 Run it:
 
 ```bash
-cargo run --bin cursed hello.csd
+cargo run --bin cursed hello.💀
 ```
 
 Output:
@@ -79,12 +79,12 @@ CURSED supports both modes:
 
 ### Interpretation (Development)
 ```bash
-cargo run --bin cursed program.csd
+cargo run --bin cursed program.💀
 ```
 
 ### Native Compilation (Production)
 ```bash
-cargo run --bin cursed -- compile program.csd
+cargo run --bin cursed -- compile program.💀
 ./program
 ```
 

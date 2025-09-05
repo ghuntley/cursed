@@ -157,16 +157,16 @@ Run the comprehensive test suite:
 
 ```bash
 # Test interpretation mode
-cargo run --bin cursed stdlib/signal_handling/test_signal_handling.csd
+cargo run --bin cursed stdlib/signal_handling/test_signal_handling.💀
 
 # Test compilation mode
-cargo run --bin cursed -- compile stdlib/signal_handling/test_signal_handling.csd
+cargo run --bin cursed -- compile stdlib/signal_handling/test_signal_handling.💀
 ./test_signal_handling
 
 # Both-mode verification
 test_both_modes() {
-    cargo run --bin cursed stdlib/signal_handling/test_signal_handling.csd > interp_output.txt
-    cargo run --bin cursed -- compile stdlib/signal_handling/test_signal_handling.csd
+    cargo run --bin cursed stdlib/signal_handling/test_signal_handling.💀 > interp_output.txt
+    cargo run --bin cursed -- compile stdlib/signal_handling/test_signal_handling.💀
     ./test_signal_handling > comp_output.txt
     diff interp_output.txt comp_output.txt
 }

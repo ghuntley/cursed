@@ -81,9 +81,9 @@ pub const ImportResolver = struct {
 
         // Try different file patterns with both original and mapped names
         const patterns = [_][]const u8{
-            "{s}/{s}/mod.csd",
-            "{s}/{s}.csd",
-            "{s}/{s}/lib.csd",
+            "{s}/{s}/mod.💀",
+            "{s}/{s}.💀",
+            "{s}/{s}/lib.💀",
         };
 
         // Try with mapped name first
@@ -128,9 +128,9 @@ pub const ImportResolver = struct {
     fn resolveLocalModule(self: *ImportResolver, module_name: []const u8) !?[]const u8 {
         for (self.search_paths.items) |search_path| {
             const patterns = [_][]const u8{
-                "{s}/{s}.csd",
-                "{s}/{s}/mod.csd",
-                "{s}/{s}/lib.csd",
+                "{s}/{s}.💀",
+                "{s}/{s}/mod.💀",
+                "{s}/{s}/lib.💀",
             };
 
             for (patterns) |pattern| {

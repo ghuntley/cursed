@@ -398,10 +398,10 @@ Run the comprehensive test suite:
 
 ```bash
 # Test interpretation mode
-cargo run --bin cursed stdlib/database/test_database.csd
+cargo run --bin cursed stdlib/database/test_database.💀
 
 # Test compilation mode
-cargo run --bin cursed -- compile stdlib/database/test_database.csd
+cargo run --bin cursed -- compile stdlib/database/test_database.💀
 ./test_database
 ```
 

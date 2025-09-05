@@ -55,7 +55,7 @@ This project uses one external dependency:
 simple_dependency/
 ├── CursedPackage.toml    # Package manifest with dependency
 ├── src/
-│   └── main.csd         # Calculator implementation
+│   └── main.💀         # Calculator implementation
 ├── README.md            # This file
 └── target/              # Build artifacts (generated)
 ```

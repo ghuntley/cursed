@@ -39,14 +39,14 @@ pub fn main() !void {
     ;
     
     // Add source file to engine
-    try engine.addSourceFile("demo.csd", source_code);
+    try engine.addSourceFile("demo.💀", source_code);
     
     print("=== CURSED Error Diagnostics System Demo ===\n\n", .{});
     
     // Demonstrate various error types
     
     // 1. Type mismatch error
-    const type_mismatch_span = SourceSpan.init("demo.csd", 2, 20, 2, 45, 39, 64);
+    const type_mismatch_span = SourceSpan.init("demo.💀", 2, 20, 2, 45, 39, 64);
     try engine.reportError(
         .S003_TypeMismatch,
         "Cannot assign 'tea' to variable of type 'normie'",
@@ -54,7 +54,7 @@ pub fn main() !void {
     );
     
     // 2. Missing expression error  
-    const missing_expr_span = SourceSpan.init("demo.csd", 3, 13, 3, 13, 77, 77);
+    const missing_expr_span = SourceSpan.init("demo.💀", 3, 13, 3, 13, 77, 77);
     try engine.reportError(
         .P005_MissingExpression,
         "Expected expression after '='",
@@ -62,7 +62,7 @@ pub fn main() !void {
     );
     
     // 3. Undefined variable error
-    const undefined_var_span = SourceSpan.init("demo.csd", 4, 17, 4, 32, 95, 110);
+    const undefined_var_span = SourceSpan.init("demo.💀", 4, 17, 4, 32, 95, 110);
     try engine.reportError(
         .S001_UndefinedVariable,
         "Variable 'undefinedVariable' is not defined in current scope",
@@ -70,7 +70,7 @@ pub fn main() !void {
     );
     
     // 4. Immutable assignment error
-    const immutable_span = SourceSpan.init("demo.csd", 7, 5, 7, 13, 140, 148);
+    const immutable_span = SourceSpan.init("demo.💀", 7, 5, 7, 13, 140, 148);
     try engine.reportError(
         .S020_ImmutableAssignment,
         "Cannot assign to immutable variable 'constant'",
@@ -78,7 +78,7 @@ pub fn main() !void {
     );
     
     // 5. Unbalanced braces error (multi-line)
-    const unbalanced_span = SourceSpan.init("demo.csd", 9, 48, 10, 36, 187, 224);
+    const unbalanced_span = SourceSpan.init("demo.💀", 9, 48, 10, 36, 187, 224);
     try engine.reportError(
         .P008_UnbalancedBraces,
         "Missing closing brace for 'bestie' loop",
@@ -86,7 +86,7 @@ pub fn main() !void {
     );
     
     // 6. Undefined field error
-    const undefined_field_span = SourceSpan.init("demo.csd", 17, 24, 17, 30, 350, 356);
+    const undefined_field_span = SourceSpan.init("demo.💀", 17, 24, 17, 30, 350, 356);
     try engine.reportError(
         .S008_UndefinedField,
         "Struct 'Person' has no field named 'height'",
@@ -94,7 +94,7 @@ pub fn main() !void {
     );
     
     // 7. Warning for unused variable
-    const unused_var_span = SourceSpan.init("demo.csd", 16, 9, 16, 15, 320, 326);
+    const unused_var_span = SourceSpan.init("demo.💀", 16, 9, 16, 15, 320, 326);
     try engine.reportWarning(
         .S007_UnreachableCode,
         "Variable 'person' is defined but never used",
@@ -102,7 +102,7 @@ pub fn main() !void {
     );
     
     // 8. Hint for better syntax
-    const hint_span = SourceSpan.init("demo.csd", 2, 5, 2, 17, 24, 36);
+    const hint_span = SourceSpan.init("demo.💀", 2, 5, 2, 17, 24, 36);
     try engine.reportHint(
         .P007_InvalidType,
         "Consider using explicit type annotation for clarity",
@@ -150,14 +150,14 @@ pub fn demonstrateLexerIntegration() !void {
     defer engine.deinit();
     
     const bad_source = "sus x tea = \"unterminated string";
-    try engine.addSourceFile("lexer_test.csd", bad_source);
+    try engine.addSourceFile("lexer_test.💀", bad_source);
     
     // Simulate lexer error
     try diagnostics.lexerError(
         &engine,
         .L001_UnterminatedString,
         "String literal is missing closing quote",
-        "lexer_test.csd",
+        "lexer_test.💀",
         1,
         13,
         12
@@ -183,14 +183,14 @@ pub fn demonstrateParserIntegration() !void {
         \\    // missing closing brace
     ;
     
-    try engine.addSourceFile("parser_test.csd", bad_source);
+    try engine.addSourceFile("parser_test.💀", bad_source);
     
     // Simulate parser error
     try diagnostics.parserError(
         &engine,
         .P003_UnexpectedEOF,
         "Unexpected end of file, expected closing brace",
-        "parser_test.csd",
+        "parser_test.💀",
         1, 1,    // start line, column
         3, 24,   // end line, column  
         0, 42    // start offset, end offset
@@ -217,14 +217,14 @@ pub fn demonstrateSemanticIntegration() !void {
         \\}
     ;
     
-    try engine.addSourceFile("semantic_test.csd", bad_source);
+    try engine.addSourceFile("semantic_test.💀", bad_source);
     
     // Primary error span
-    const primary_span = SourceSpan.init("semantic_test.csd", 3, 17, 3, 18, 47, 48);
+    const primary_span = SourceSpan.init("semantic_test.💀", 3, 17, 3, 18, 47, 48);
     
     // Related span for variable definition
     const related_spans = [_]SourceSpan{
-        SourceSpan.init("semantic_test.csd", 2, 9, 2, 10, 20, 21),
+        SourceSpan.init("semantic_test.💀", 2, 9, 2, 10, 20, 21),
     };
     
     // Simulate semantic error with related information

@@ -506,10 +506,10 @@ The module includes comprehensive test coverage:
 
 ```bash
 # Run all ORM tests
-cargo run --bin cursed stdlib/database_orm/test_database_orm.csd
+cargo run --bin cursed stdlib/database_orm/test_database_orm.💀
 
 # Test specific functionality
-cargo run --bin cursed -- compile stdlib/database_orm/test_database_orm.csd
+cargo run --bin cursed -- compile stdlib/database_orm/test_database_orm.💀
 ./test_database_orm
 ```
 

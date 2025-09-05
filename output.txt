@@ -13,7 +13,7 @@ DEBUG: Variable 'mathz' not found in any environment after 1 hops
 DEBUG: Environment.get() hop 0: checking env@interpreter.Environment@7ffd511499e8 with 2 variables for 'self'
 DEBUG: Variable 'self' not found in any environment after 1 hops
 DEBUG: Variable 'mathz' not found, attempting lazy module loading...
-DEBUG: Successfully read CURSED stdlib file stdlib/mathz/mod.csd (10849 bytes)
+DEBUG: Successfully read CURSED stdlib file stdlib/mathz/mod.💀 (10849 bytes)
 Error at unknown:39:33 - Error parsing function statement
 INFO: Recovered at statement keyword 'Sus' after skipping 5 tokens
 INFO: Attempting additional statement recovery
@@ -77,7 +77,7 @@ Expression recoveries: 0
 Delimiter recoveries: 0
 Total tokens skipped: 73
 ================================
-DEBUG: Successfully parsed CURSED stdlib stdlib/mathz/mod.csd (59 statements)
+DEBUG: Successfully parsed CURSED stdlib stdlib/mathz/mod.💀 (59 statements)
 DEBUG: Executing statement type: Function
 DEBUG: Executing statement type: Function
 DEBUG: Executing statement type: Function
@@ -92,7 +92,7 @@ DEBUG: Variable 'i' not found in any environment after 1 hops
 DEBUG: Environment.get() hop 0: checking env@interpreter.Environment@7952de840240 with 0 variables for 'self'
 DEBUG: Variable 'self' not found in any environment after 1 hops
 DEBUG: Variable 'i' not found, attempting lazy module loading...
-DEBUG: Could not open CURSED stdlib file stdlib/i/mod.csd: error.FileNotFound
+DEBUG: Could not open CURSED stdlib file stdlib/i/mod.💀: error.FileNotFound
 DEBUG: Failed to load i from CURSED stdlib (error.ModuleNotFound), falling back to Zig implementation
 DEBUG: Stored module i in environment@interpreter.Environment@7952de840240, now has 1 variables
 DEBUG: self.globals is at @interpreter.Environment@7ffd5114ab38
@@ -106,7 +106,7 @@ DEBUG: Variable 'n' not found in any environment after 1 hops
 DEBUG: Environment.get() hop 0: checking env@interpreter.Environment@7952de840240 with 1 variables for 'self'
 DEBUG: Variable 'self' not found in any environment after 1 hops
 DEBUG: Variable 'n' not found, attempting lazy module loading...
-DEBUG: Could not open CURSED stdlib file stdlib/n/mod.csd: error.FileNotFound
+DEBUG: Could not open CURSED stdlib file stdlib/n/mod.💀: error.FileNotFound
 DEBUG: Failed to load n from CURSED stdlib (error.ModuleNotFound), falling back to Zig implementation
 DEBUG: Stored module n in environment@interpreter.Environment@7952de840240, now has 2 variables
 DEBUG: self.globals is at @interpreter.Environment@7ffd5114ab38
@@ -114,7 +114,7 @@ DEBUG: Loaded Zig builtin module n with 0 functions
 DEBUG: Environment.get() hop 0: checking env@interpreter.Environment@7952de840240 with 2 variables for 'n'
 DEBUG: Found 'n' in environment@interpreter.Environment@7952de840240
 DEBUG: Successfully loaded module 'n' on demand
-DEBUG: Failed to execute statement in CURSED stdlib stdlib/mathz/mod.csd: error.TypeMismatch
+DEBUG: Failed to execute statement in CURSED stdlib stdlib/mathz/mod.💀: error.TypeMismatch
 DEBUG: Failed to load mathz from CURSED stdlib (error.TypeMismatch), falling back to Zig implementation
 DEBUG: Stored module mathz in environment@interpreter.Environment@7ffd511499e8, now has 3 variables
 DEBUG: self.globals is at @interpreter.Environment@7ffd5114ab38
@@ -124,7 +124,7 @@ DEBUG: Found 'mathz' in environment@interpreter.Environment@7ffd511499e8
 DEBUG: Successfully loaded module 'mathz' on demand
 DEBUG: Object evaluated to type: Module
 DEBUG: Function 'add_two' not found in module
-❌ Runtime error in test_cursed_math_verification.csd: error.UndefinedFunction
+❌ Runtime error in test_cursed_math_verification.💀: error.UndefinedFunction
 Executing 0 deferred statements
 error(gpa): memory address 0x7952d6fc0000 leaked: 
 /home/ghuntley/cursed/src-zig/parser.zig:3828:42: 0x13f9810 in allocateUnaryExpression (cursed_compiler_main.zig)

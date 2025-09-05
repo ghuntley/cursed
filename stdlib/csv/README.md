@@ -268,7 +268,7 @@ The module includes comprehensive tests covering:
 
 Run tests with:
 ```bash
-cargo run --bin cursed stdlib/csv/test_csv.csd
+cargo run --bin cursed stdlib/csv/test_csv.💀
 ```
 
 ## Integration

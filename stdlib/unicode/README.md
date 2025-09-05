@@ -334,7 +334,7 @@ The module includes extensive test coverage with 500+ test cases covering:
 Run tests with:
 
 ```bash
-cargo run --bin cursed stdlib/unicode/test_unicode.csd
+cargo run --bin cursed stdlib/unicode/test_unicode.💀
 ```
 
 ## Compatibility

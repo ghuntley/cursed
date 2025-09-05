@@ -325,10 +325,10 @@ The module includes a comprehensive test suite with over 40 test functions cover
 
 ```bash
 # Interpretation mode
-cargo run --bin cursed stdlib/json_tea/test_json_tea.csd
+cargo run --bin cursed stdlib/json_tea/test_json_tea.💀
 
 # Compilation mode
-cargo run --bin cursed -- compile stdlib/json_tea/test_json_tea.csd
+cargo run --bin cursed -- compile stdlib/json_tea/test_json_tea.💀
 ./test_json_tea
 ```
 

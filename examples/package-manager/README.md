@@ -36,7 +36,7 @@ The CURSED package manager is built into the CURSED toolchain:
 zig build cursed-pkg
 
 # Or use it directly with the interpreter
-./zig-out/bin/cursed-zig tools/cursed-pkg/main.csd
+./zig-out/bin/cursed-zig tools/cursed-pkg/main.💀
 ```
 
 ## Usage
@@ -193,7 +193,7 @@ The lock file ensures reproducible builds by pinning exact versions:
 A comprehensive mathematical library demonstrating package structure:
 
 ```cursed
-# examples/package-manager/mathlib/src/mod.csd
+# examples/package-manager/mathlib/src/mod.💀
 yeet "mathz"
 yeet "vibez"
 
@@ -221,7 +221,7 @@ slay demo() {
 Demonstrates using packages as dependencies:
 
 ```cursed
-# examples/package-manager/scientific-calc/src/mod.csd
+# examples/package-manager/scientific-calc/src/mod.💀
 yeet "mathlib"  # External dependency
 yeet "stringz"
 yeet "vibez"
@@ -245,25 +245,25 @@ The CURSED package manager consists of several key components:
 
 ### Core Modules
 
-1. **Registry Client** (`stdlib/packagz/registry.csd`)
+1. **Registry Client** (`stdlib/packagz/registry.💀`)
    - HTTP-based communication with package registries
    - Authentication (API keys, OAuth, certificates)
    - Multiple registry support with fallbacks
    - Caching and offline support
 
-2. **Dependency Resolver** (`stdlib/packagz/resolver.csd`)
+2. **Dependency Resolver** (`stdlib/packagz/resolver.💀`)
    - Advanced constraint satisfaction solver
    - Conflict detection and resolution
    - Topological sorting for installation order
    - Support for optional dependencies
 
-3. **Lock File Manager** (`stdlib/packagz/lockfile.csd`)
+3. **Lock File Manager** (`stdlib/packagz/lockfile.💀`)
    - Reproducible build guarantees
    - Integrity checking with checksums
    - Version compatibility validation
    - Cross-platform lock files
 
-4. **Package Manager Core** (`stdlib/packagz/mod.csd`)
+4. **Package Manager Core** (`stdlib/packagz/mod.💀`)
    - High-level package operations
    - Installation and removal
    - Version management
@@ -271,7 +271,7 @@ The CURSED package manager consists of several key components:
 
 ### CLI Interface
 
-The command-line interface (`tools/cursed-pkg/main.csd`) provides:
+The command-line interface (`tools/cursed-pkg/main.💀`) provides:
 - Argument parsing and validation
 - User-friendly error messages
 - Progress indicators
@@ -433,7 +433,7 @@ Comprehensive test coverage:
 
 ```bash
 # Run package manager tests
-./zig-out/bin/cursed-zig examples/package-manager/test_package_manager.csd
+./zig-out/bin/cursed-zig examples/package-manager/test_package_manager.💀
 
 # Test specific functionality
 cursed-pkg --test-registry
@@ -474,7 +474,7 @@ zig build cursed-pkg
 zig test src-zig/cursed_pkg.zig
 
 # Test examples
-./zig-out/bin/cursed-zig examples/package-manager/test_package_manager.csd
+./zig-out/bin/cursed-zig examples/package-manager/test_package_manager.💀
 ```
 
 ## Roadmap

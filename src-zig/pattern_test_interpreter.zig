@@ -11,7 +11,7 @@ pub fn main() !void {
     defer std.process.argsFree(allocator, args);
 
     if (args.len < 2) {
-        print("Usage: pattern_test_interpreter <file.csd>\n", .{});
+        print("Usage: pattern_test_interpreter <file.💀.💀>\n", .{});
         return;
     }
 

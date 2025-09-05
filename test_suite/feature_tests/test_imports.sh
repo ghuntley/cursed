@@ -5,7 +5,7 @@
 set -e
 
 # Test basic import functionality
-cat > import_test.csd << 'EOF'
+cat > import_test.💀 << 'EOF'
 yeet "testz"
 
 test_start("import test")
@@ -13,9 +13,9 @@ print_test_summary()
 EOF
 
 echo "Testing import system..."
-./cursed-unified import_test.csd
+./cursed-unified import_test.💀
 
 # Cleanup
-rm -f import_test.csd
+rm -f import_test.💀
 
 exit 0

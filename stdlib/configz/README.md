@@ -408,27 +408,27 @@ The configz package consists of several specialized modules:
 
 ### Core Modules
 
-- **[`mod.csd`](./mod.csd)** - Main configuration management system
-- **[`demo.csd`](./demo.csd)** - Comprehensive demonstration of all features
-- **[`test_configz.csd`](./test_configz.csd)** - Complete test suite
+- **[`mod.💀`](./mod.💀)** - Main configuration management system
+- **[`demo.💀`](./demo.💀)** - Comprehensive demonstration of all features
+- **[`test_configz.💀`](./test_configz.💀)** - Complete test suite
 
 ### Advanced Modules
 
-- **[`env_integration.csd`](./env_integration.csd)** - Advanced environment variable processing
-- **[`yaml_parser.csd`](./yaml_parser.csd)** - Comprehensive YAML parsing engine
-- **[`hot_reload.csd`](./hot_reload.csd)** - Hot reloading and file watching system
-- **[`validation.csd`](./validation.csd)** - Advanced configuration validation system
+- **[`env_integration.💀`](./env_integration.💀)** - Advanced environment variable processing
+- **[`yaml_parser.💀`](./yaml_parser.💀)** - Comprehensive YAML parsing engine
+- **[`hot_reload.💀`](./hot_reload.💀)** - Hot reloading and file watching system
+- **[`validation.💀`](./validation.💀)** - Advanced configuration validation system
 
 ## Quick Test
 
 Run the comprehensive test suite:
 ```bash
-./zig-out/bin/cursed-zig stdlib/configz/test_configz.csd
+./zig-out/bin/cursed-zig stdlib/configz/test_configz.💀
 ```
 
 Run the interactive demo:
 ```bash
-./zig-out/bin/cursed-zig stdlib/configz/demo.csd
+./zig-out/bin/cursed-zig stdlib/configz/demo.💀
 ```
 
 ## Memory Safety

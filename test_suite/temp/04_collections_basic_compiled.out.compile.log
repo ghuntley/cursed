@@ -1,10 +1,10 @@
-Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/04_collections_basic.csd:7:10 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
-Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/04_collections_basic.csd:7:10 - Synchronizing parser after error (context: synchronize)
+Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/04_collections_basic.💀:7:10 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/04_collections_basic.💀:7:10 - Synchronizing parser after error (context: synchronize)
 INFO: Recovered at delimiter 'RightParen' after skipping 4 tokens
-Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/04_collections_basic.csd:7:49 - Error parsing function statement
+Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/04_collections_basic.💀:7:49 - Error parsing function statement
 INFO: Recovered at delimiter 'RightParen' after skipping 6 tokens
 INFO: Attempting additional statement recovery
-Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/04_collections_basic.csd:26:1 - Failed to parse statement
+Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/04_collections_basic.💀:26:1 - Failed to parse statement
 
 === Error Recovery Statistics ===
 Total errors encountered: 2
@@ -37,7 +37,7 @@ Total tokens skipped: 10
 ================================
 📦 Processing import: collections
 DEBUG: Loading and compiling CURSED module: collections
-DEBUG: Successfully read CURSED module stdlib/collections/mod.csd (25450 bytes)
+DEBUG: Successfully read CURSED module stdlib/collections/mod.💀 (25450 bytes)
 Error at unknown:17:10 - Error parsing function statement
 INFO: Recovered at delimiter 'RightParen' after skipping 5 tokens
 INFO: Attempting additional statement recovery

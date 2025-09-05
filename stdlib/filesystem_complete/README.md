@@ -254,7 +254,7 @@ The module includes comprehensive tests covering all functionality:
 
 ```bash
 # Run all filesystem tests
-cargo run --bin cursed stdlib/filesystem_complete/test_filesystem_complete.csd
+cargo run --bin cursed stdlib/filesystem_complete/test_filesystem_complete.💀
 
 # Test specific functionality
 cargo run --bin cursed test --filter filesystem_complete

@@ -343,7 +343,7 @@ Runs complete test suite for all database drivers.
 ```bash
 # Run database tests
 zig build test
-./zig-out/bin/cursed-zig stdlib/database_production/test_database_production.csd
+./zig-out/bin/cursed-zig stdlib/database_production/test_database_production.💀
 ```
 
 ### Integration Testing

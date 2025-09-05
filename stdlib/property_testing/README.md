@@ -151,16 +151,16 @@ Run the comprehensive test suite:
 
 ```bash
 # Test interpretation mode
-cargo run --bin cursed stdlib/property_testing/test_property_testing.csd
+cargo run --bin cursed stdlib/property_testing/test_property_testing.💀
 
 # Test compilation mode  
-cargo run --bin cursed -- compile stdlib/property_testing/test_property_testing.csd
+cargo run --bin cursed -- compile stdlib/property_testing/test_property_testing.💀
 ./test_property_testing
 
 # Both-mode verification
 test_both_modes() {
-    cargo run --bin cursed stdlib/property_testing/test_property_testing.csd > interp_output.txt
-    cargo run --bin cursed -- compile stdlib/property_testing/test_property_testing.csd
+    cargo run --bin cursed stdlib/property_testing/test_property_testing.💀 > interp_output.txt
+    cargo run --bin cursed -- compile stdlib/property_testing/test_property_testing.💀
     ./test_property_testing > comp_output.txt
     diff interp_output.txt comp_output.txt
 }

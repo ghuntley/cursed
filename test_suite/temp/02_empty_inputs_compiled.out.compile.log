@@ -1,8 +1,8 @@
-Error at /home/ghuntley/cursed/test_suite/test_programs/edge_cases/02_empty_inputs.csd:13:10 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
-Error at /home/ghuntley/cursed/test_suite/test_programs/edge_cases/02_empty_inputs.csd:13:10 - Synchronizing parser after error (context: synchronize)
+Error at /home/ghuntley/cursed/test_suite/test_programs/edge_cases/02_empty_inputs.💀:13:10 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+Error at /home/ghuntley/cursed/test_suite/test_programs/edge_cases/02_empty_inputs.💀:13:10 - Synchronizing parser after error (context: synchronize)
 INFO: Recovered at delimiter 'RightParen' after skipping 4 tokens
-Error at /home/ghuntley/cursed/test_suite/test_programs/edge_cases/02_empty_inputs.csd:13:44 - Error parsing function statement
-Error at /home/ghuntley/cursed/test_suite/test_programs/edge_cases/02_empty_inputs.csd:27:1 - Failed to parse statement
+Error at /home/ghuntley/cursed/test_suite/test_programs/edge_cases/02_empty_inputs.💀:13:44 - Error parsing function statement
+Error at /home/ghuntley/cursed/test_suite/test_programs/edge_cases/02_empty_inputs.💀:27:1 - Failed to parse statement
 
 === Error Recovery Statistics ===
 Total errors encountered: 2

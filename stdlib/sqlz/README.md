@@ -303,7 +303,7 @@ PoolConfig{
 ## Testing
 Run the comprehensive test suite:
 ```bash
-./zig-out/bin/cursed stdlib/sqlz/test_sqlz.csd
+./zig-out/bin/cursed stdlib/sqlz/test_sqlz.💀
 ```
 
 The test suite covers:

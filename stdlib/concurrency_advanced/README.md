@@ -254,10 +254,10 @@ sus has_deadlock lit = concurrency_advanced.deadlock_check(detector, resource_gr
 
 ```bash
 # Run all concurrency tests
-cargo run --bin cursed stdlib/concurrency_advanced/test_concurrency_advanced.csd
+cargo run --bin cursed stdlib/concurrency_advanced/test_concurrency_advanced.💀
 
 # Test both interpretation and compilation modes
-cargo run --bin cursed -- compile stdlib/concurrency_advanced/test_concurrency_advanced.csd
+cargo run --bin cursed -- compile stdlib/concurrency_advanced/test_concurrency_advanced.💀
 ./test_concurrency_advanced
 ```
 

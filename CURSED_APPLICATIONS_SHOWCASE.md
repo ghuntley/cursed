@@ -6,7 +6,7 @@ This showcase demonstrates that **CURSED is ready for real-world application dev
 
 ## 📦 What's Been Built
 
-### 1. Enhanced Database Module (`stdlib/database_enhanced/mod.csd`)
+### 1. Enhanced Database Module (`stdlib/database_enhanced/mod.💀`)
 **Production-ready database abstraction layer**
 
 **Features:**
@@ -41,7 +41,7 @@ slay rollback_transaction(conn DatabaseConnection) lit
 slay execute_query(conn DatabaseConnection, query tea) QueryResult
 ```
 
-### 2. Todo List Application (`applications/todo_app/main.csd`)
+### 2. Todo List Application (`applications/todo_app/main.💀`)
 **Complete task management system with web interface**
 
 **Features:**
@@ -67,7 +67,7 @@ slay execute_query(conn DatabaseConnection, query tea) QueryResult
 - Category management
 - Responsive design with modern CSS
 
-### 3. Blog Engine (`applications/blog_engine/main.csd`)
+### 3. Blog Engine (`applications/blog_engine/main.💀`)
 **Full-featured content management system**
 
 **Features:**
@@ -93,7 +93,7 @@ slay execute_query(conn DatabaseConnection, query tea) QueryResult
 - View counting and analytics
 - RSS feed generation
 
-### 4. Contact Management System (`applications/contact_manager/main.csd`)
+### 4. Contact Management System (`applications/contact_manager/main.💀`)
 **Enterprise-grade contact relationship management**
 
 **Features:**
@@ -163,9 +163,9 @@ Data Storage
 - **Database Tests**: CRUD operations across all backends
 
 ### Test Files
-- `applications/tests/database_enhanced_tests.csd` - Database layer tests
-- `applications/tests/todo_app_tests.csd` - Todo application tests
-- `applications/run_all_tests.csd` - Comprehensive test runner
+- `applications/tests/database_enhanced_tests.💀` - Database layer tests
+- `applications/tests/todo_app_tests.💀` - Todo application tests
+- `applications/run_all_tests.💀` - Comprehensive test runner
 
 ### Both Modes Tested
 - **Interpreter Mode**: Development-friendly with immediate feedback
@@ -177,7 +177,7 @@ Data Storage
 ### 1. Todo Application
 ```bash
 # Start the todo application
-cursed applications/todo_app/main.csd
+cursed applications/todo_app/main.💀
 
 # Access the application
 # Web Interface: http://localhost:8080
@@ -187,7 +187,7 @@ cursed applications/todo_app/main.csd
 ### 2. Blog Engine
 ```bash
 # Start the blog engine
-cursed applications/blog_engine/main.csd
+cursed applications/blog_engine/main.💀
 
 # Access the application  
 # Website: http://localhost:3000
@@ -198,7 +198,7 @@ cursed applications/blog_engine/main.csd
 ### 3. Contact Manager
 ```bash
 # Start the contact manager
-cursed applications/contact_manager/main.csd
+cursed applications/contact_manager/main.💀
 
 # Access the application
 # Dashboard: http://localhost:8088
@@ -208,7 +208,7 @@ cursed applications/contact_manager/main.csd
 ### 4. Run All Tests
 ```bash
 # Execute comprehensive test suite
-cursed applications/run_all_tests.csd
+cursed applications/run_all_tests.💀
 
 # View test reports in ./test_output/
 ```

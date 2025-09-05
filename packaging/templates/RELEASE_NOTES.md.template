@@ -121,10 +121,10 @@ docker scout cves cursed/compiler:{{VERSION}}
 
 ```bash
 # Create a simple program
-echo 'vibez.spill("Hello, CURSED!")' > hello.csd
+echo 'vibez.spill("Hello, CURSED!")' > hello.💀
 
 # Run it
-cursed-zig hello.csd
+cursed-zig hello.💀
 ```
 
 ### Using the Standard Library
@@ -185,10 +185,10 @@ Verify your installation:
 cursed-zig --version
 
 # Run built-in tests
-cursed-zig test stdlib/testz/test_testz.csd
+cursed-zig test stdlib/testz/test_testz.💀
 
 # Benchmark performance
-cursed-zig --benchmark examples/fibonacci.csd
+cursed-zig --benchmark examples/fibonacci.💀
 ```
 
 ## ⚠️ Breaking Changes

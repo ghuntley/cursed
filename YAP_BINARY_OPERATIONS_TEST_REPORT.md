@@ -8,7 +8,7 @@ This report documents the verification of yap() function fixes and binary operat
 ### 1. yap() Function Tests
 
 #### Simple yap() calls
-- **Test file**: `test_yap_minimal.csd`
+- **Test file**: `test_yap_minimal.💀`
 - **Interpreter mode**: ✅ **WORKING**
 - **Output**: 
   ```
@@ -19,7 +19,7 @@ This report documents the verification of yap() function fixes and binary operat
 ### 2. Binary Operations Tests
 
 #### Integer arithmetic in interpreter mode
-- **Test file**: `test_arithmetic_only.csd`
+- **Test file**: `test_arithmetic_only.💀`
 - **Interpreter mode**: ✅ **WORKING**
 - **Results**:
   ```
@@ -44,7 +44,7 @@ This report documents the verification of yap() function fixes and binary operat
 ### 3. Mixed Type Operations
 
 #### Integer + Float operations in interpreter mode
-- **Test file**: `test_mixed_types.csd`
+- **Test file**: `test_mixed_types.💀`
 - **Interpreter mode**: ✅ **WORKING**
 - **Results**:
   ```

@@ -108,10 +108,10 @@ The module includes comprehensive test coverage with 70+ test cases covering:
 
 ```bash
 # Run tests in interpretation mode
-cargo run --bin cursed stdlib/no_cap/test_no_cap.csd
+cargo run --bin cursed stdlib/no_cap/test_no_cap.💀
 
 # Run tests in compilation mode
-cargo run --bin cursed -- compile stdlib/no_cap/test_no_cap.csd
+cargo run --bin cursed -- compile stdlib/no_cap/test_no_cap.💀
 ./test_no_cap
 ```
 

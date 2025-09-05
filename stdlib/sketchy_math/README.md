@@ -244,16 +244,16 @@ vibez.spill(fast_log(1.1))     // ~0.1 (linear approximation)
 ### Run Comprehensive Test Suite
 ```bash
 # Interpretation mode
-cargo run --bin cursed stdlib/sketchy_math/test_sketchy_math.csd
+cargo run --bin cursed stdlib/sketchy_math/test_sketchy_math.💀
 
 # Native compilation mode
-cargo run --bin cursed -- compile stdlib/sketchy_math/test_sketchy_math.csd
+cargo run --bin cursed -- compile stdlib/sketchy_math/test_sketchy_math.💀
 ./test_sketchy_math
 
 # Both modes comparison
 test_both_modes() {
-    cargo run --bin cursed stdlib/sketchy_math/test_sketchy_math.csd > interp.txt
-    cargo run --bin cursed -- compile stdlib/sketchy_math/test_sketchy_math.csd
+    cargo run --bin cursed stdlib/sketchy_math/test_sketchy_math.💀 > interp.txt
+    cargo run --bin cursed -- compile stdlib/sketchy_math/test_sketchy_math.💀
     ./test_sketchy_math > comp.txt
     diff interp.txt comp.txt
 }

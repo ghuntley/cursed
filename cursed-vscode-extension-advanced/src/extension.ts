@@ -123,7 +123,7 @@ function initializeLanguageClient(context: vscode.ExtensionContext) {
         ],
         synchronize: {
             fileEvents: [
-                vscode.workspace.createFileSystemWatcher('**/*.csd'),
+                vscode.workspace.createFileSystemWatcher('**/*.💀'),
                 vscode.workspace.createFileSystemWatcher('**/cursed.toml'),
                 vscode.workspace.createFileSystemWatcher('**/Cursed.toml')
             ]
@@ -596,7 +596,7 @@ function registerCommands(context: vscode.ExtensionContext) {
     context.subscriptions.push(
         vscode.commands.registerCommand('cursed.run', async () => {
             const terminal = vscode.window.createTerminal('CURSED Run');
-            terminal.sendText('zig build && ./zig-out/bin/cursed-zig main.csd');
+            terminal.sendText('zig build && ./zig-out/bin/cursed-zig main.💀');
             terminal.show();
         })
     );
@@ -649,7 +649,7 @@ function registerCommands(context: vscode.ExtensionContext) {
         vscode.commands.registerCommand('cursed.newFile', async () => {
             const fileName = await vscode.window.showInputBox({
                 prompt: 'Enter file name',
-                placeHolder: 'example.csd'
+                placeHolder: 'example.💀'
             });
             
             if (!fileName) {
@@ -693,7 +693,7 @@ function setupTestController(context: vscode.ExtensionContext) {
 
 function setupFileWatchers(context: vscode.ExtensionContext) {
     // Watch for CURSED files
-    const cursedWatcher = vscode.workspace.createFileSystemWatcher('**/*.csd');
+    const cursedWatcher = vscode.workspace.createFileSystemWatcher('**/*.💀');
     
     cursedWatcher.onDidCreate((uri) => {
         outputChannel.appendLine(`Created: ${uri.fsPath}`);

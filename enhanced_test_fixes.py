@@ -138,18 +138,18 @@ def main():
         print(f"Test programs directory not found: {test_programs_dir}")
         return 1
         
-    # Find all .csd files
+    # Find all .💀 files
     csd_files = []
     for root, dirs, files in os.walk(test_programs_dir):
         for file in files:
-            if file.endswith('.csd'):
+            if file.endswith('.💀'):
                 csd_files.append(Path(root) / file)
                 
     if not csd_files:
-        print("No .csd files found in test programs directory")
+        print("No .💀 files found in test programs directory")
         return 1
         
-    print(f"Applying enhanced fixes to {len(csd_files)} .csd files")
+    print(f"Applying enhanced fixes to {len(csd_files)} .💀 files")
     print("=" * 60)
     
     files_processed = 0

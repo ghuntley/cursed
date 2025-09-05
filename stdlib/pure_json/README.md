@@ -416,7 +416,7 @@ The module includes comprehensive test coverage:
 
 ```bash
 # Run module tests
-./cursed-unified stdlib/pure_json/test_pure_json.csd
+./cursed-unified stdlib/pure_json/test_pure_json.💀
 
 # Test specific functionality
 echo 'yeet "testz"
@@ -426,9 +426,9 @@ test_start("JSON parsing test")
 sus (value, error) = json_parse("{\"test\": 123}")
 assert_eq_string(error, "")
 assert_eq_string(value.get_type(), "object")
-print_test_summary()' > test_basic.csd
+print_test_summary()' > test_basic.💀
 
-./cursed-unified test_basic.csd
+./cursed-unified test_basic.💀
 ```
 
 ## Performance Characteristics

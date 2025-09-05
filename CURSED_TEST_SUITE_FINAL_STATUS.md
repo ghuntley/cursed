@@ -51,8 +51,8 @@ Generated: September 1, 2025
 ## 🧪 New Comprehensive Test Coverage
 
 ### Edge Case Tests Added:
-- **[overflow_edge_cases.csd](test_suite/test_programs/arithmetic/overflow_edge_cases.csd)** - Tests integer overflow promotion at 32-bit boundaries
-- **[division_semantics_test.csd](test_suite/test_programs/arithmetic/division_semantics_test.csd)** - Validates integer vs float division rules
+- **[overflow_edge_cases.💀](test_suite/test_programs/arithmetic/overflow_edge_cases.💀)** - Tests integer overflow promotion at 32-bit boundaries
+- **[division_semantics_test.💀](test_suite/test_programs/arithmetic/division_semantics_test.💀)** - Validates integer vs float division rules
 
 ### Test Categories Passing:
 - ✅ **Basic Programs**: Hello world, simple arithmetic, variable assignment

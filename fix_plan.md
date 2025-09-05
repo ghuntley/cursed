@@ -90,9 +90,9 @@ The compiler has achieved **exceptional functional improvements** with proper st
 
 ### ✅ **STDLIB IMPLEMENTATION VERIFICATION COMPLETE**
 - **CONFIRMED**: All core stdlib modules implemented in CURSED as required:
-  - ✅ **mathz/mod.csd** - Mathematical functions in pure CURSED
-  - ✅ **stringz/mod.csd** - String operations in pure CURSED  
-  - ✅ **vibez/mod.csd** - Output functions in pure CURSED
+  - ✅ **mathz/mod.💀** - Mathematical functions in pure CURSED
+  - ✅ **stringz/mod.💀** - String operations in pure CURSED  
+  - ✅ **vibez/mod.💀** - Output functions in pure CURSED
 - **NO ZIG MIGRATION NEEDED** - User requirement satisfied
 
 ### ✅ **STDLIB FUNCTION COMPATIBILITY BREAKTHROUGH**
@@ -391,10 +391,10 @@ The last remaining "Instruction does not dominate all uses!" error was caused by
 - **Native bridge implementation** - Native helper functions like string_concat_native working correctly
 - **Module infrastructure overhaul** - Replaced placeholder implementations with functional CURSED stdlib code
 - **Mathz.pow() vs mathz.power() naming fix** - Corrected test calls to use mathz.power() instead of mathz.pow() across multiple test files
-- **LLVM stdlib compilation improvements** - stdlib/01_stdlib_integration_basic.csd now compiles and runs correctly
+- **LLVM stdlib compilation improvements** - stdlib/01_stdlib_integration_basic.💀 now compiles and runs correctly
 - **Collections module enhancements** - Enhanced stdlib collections module with missing functions (new_array, push, get)
 - **Test suite pass rate improvement** - Improved from 65% to 66% (67 to 68 passing tests)
-- **Collections module loading issue resolved** - Fixed array syntax problems in stdlib/collections/mod.csd that were causing silent program failures. Removed problematic `normie[value]` parameter syntax and array literal return values. Collections module functions (length, new_array, push, get) now load and execute correctly.
+- **Collections module loading issue resolved** - Fixed array syntax problems in stdlib/collections/mod.💀 that were causing silent program failures. Removed problematic `normie[value]` parameter syntax and array literal return values. Collections module functions (length, new_array, push, get) now load and execute correctly.
 - **Interpreter errors eliminated** - Reduced interpreter errors from 1 to 0 in test suite, maintaining 66% pass rate
 - **Root cause identified** - Array literal syntax `{1, 2, 3}` and array type parameters `normie[value]` in CURSED stdlib modules cause silent execution failures
 - **LLVM backend segfault fix** - Fixed critical segmentation fault in LLVM IR generation for array access operations. Added temporary placeholder values for array indexing to prevent crashes during compilation. Tests that previously caused segfaults (exit code 134) now compile and execute successfully.
@@ -550,7 +550,7 @@ cd test_suite
 ### Individual Test Debugging
 ```bash
 # Test specific categories
-find test_programs/basic -name "*.csd" | head -5 | while read f; do
+find test_programs/basic -name "*.💀" | head -5 | while read f; do
     echo "Testing: $f"
     ../zig-out/bin/cursed-compiler --interpret "$f"
     echo "---"

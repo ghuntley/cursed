@@ -227,7 +227,7 @@ pub const ProductionPackageManager = struct {
         defer self.allocator.free(src_dir);
         try std.fs.cwd().makePath(src_dir);
         
-        const main_file = try std.fs.path.join(self.allocator, &[_][]const u8{src_dir, "lib.csd"});
+        const main_file = try std.fs.path.join(self.allocator, &[_][]const u8{src_dir, "lib.💀"});
         defer self.allocator.free(main_file);
         
         const file = try std.fs.cwd().createFile(main_file, .{});
@@ -378,7 +378,7 @@ pub const ProductionPackageManager = struct {
         }
         
         // Create main library file
-        const lib_file = try std.fs.cwd().createFile("src/lib.csd", .{});
+        const lib_file = try std.fs.cwd().createFile("src/lib.💀", .{});
         defer lib_file.close();
         
         try lib_file.writer().print(
@@ -408,7 +408,7 @@ pub const ProductionPackageManager = struct {
         , .{project_name});
         
         // Create comprehensive test file
-        const test_file = try std.fs.cwd().createFile("tests/lib_test.csd", .{});
+        const test_file = try std.fs.cwd().createFile("tests/lib_test.💀", .{});
         defer test_file.close();
         
         try test_file.writer().writeAll(
@@ -433,7 +433,7 @@ pub const ProductionPackageManager = struct {
         );
         
         // Create example file
-        const example_file = try std.fs.cwd().createFile("examples/basic_usage.csd", .{});
+        const example_file = try std.fs.cwd().createFile("examples/basic_usage.💀", .{});
         defer example_file.close();
         
         try example_file.writer().print(
@@ -482,10 +482,10 @@ pub const ProductionPackageManager = struct {
             \\cursed-pkg install
             \\
             \\# Run tests
-            \\cursed tests/lib_test.csd
+            \\cursed tests/lib_test.💀.💀
             \\
             \\# Run examples
-            \\cursed examples/basic_usage.csd
+            \\cursed examples/basic_usage.💀.💀
             \\```
             \\
             \\## License

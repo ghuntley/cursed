@@ -112,20 +112,20 @@ jobs:
     - name: Run Integration Tests
       shell: bash
       run: |
-        echo 'vibez.spill("Hello, CI from ${{ matrix.os }}-${{ matrix.arch }}!")' > test_ci.csd
-        ./zig-out/bin/cursed-zig test_ci.csd 2>/dev/null || echo "Integration test failed - expected during migration"
+        echo 'vibez.spill("Hello, CI from ${{ matrix.os }}-${{ matrix.arch }}!")' > test_ci.💀
+        ./zig-out/bin/cursed-zig test_ci.💀 2>/dev/null || echo "Integration test failed - expected during migration"
 
     - name: Run Memory Safety Tests (Linux only)
       if: matrix.os == 'linux'
       run: |
-        echo 'sus x drip = 42; vibez.spill("Memory test:", x)' > memory_test.csd
-        timeout 30s valgrind --error-exitcode=1 --leak-check=full ./zig-out/bin/cursed-zig memory_test.csd 2>/dev/null || echo "Memory test failed - expected during migration"
+        echo 'sus x drip = 42; vibez.spill("Memory test:", x)' > memory_test.💀
+        timeout 30s valgrind --error-exitcode=1 --leak-check=full ./zig-out/bin/cursed-zig memory_test.💀 2>/dev/null || echo "Memory test failed - expected during migration"
 
     - name: Test Standard Library
       shell: bash
       run: |
-        echo 'yeet "mathz"; vibez.spill("Math test: abs(-5) =", abs_normie(-5))' > stdlib_test.csd
-        ./zig-out/bin/cursed-zig stdlib_test.csd 2>/dev/null || echo "Stdlib test failed - expected during migration"
+        echo 'yeet "mathz"; vibez.spill("Math test: abs(-5) =", abs_normie(-5))' > stdlib_test.💀
+        ./zig-out/bin/cursed-zig stdlib_test.💀 2>/dev/null || echo "Stdlib test failed - expected during migration"
 
     - name: Cross-compile for Target
       if: matrix.os == 'linux'
@@ -321,19 +321,19 @@ jobs:
         
         # Interpreter performance test
         echo "Interpreter performance test:"
-        echo 'sus i drip = 0; bestie (i < 10000) { i = i + 1 } vibez.spill("Completed", i, "iterations")' > perf_test.csd
-        timeout 10s time ./zig-out/bin/cursed-zig perf_test.csd 2>/dev/null || echo "Performance test completed"
+        echo 'sus i drip = 0; bestie (i < 10000) { i = i + 1 } vibez.spill("Completed", i, "iterations")' > perf_test.💀
+        timeout 10s time ./zig-out/bin/cursed-zig perf_test.💀 2>/dev/null || echo "Performance test completed"
         
         echo "✓ Performance benchmarks completed"
 
     - name: Memory Usage Analysis
       run: |
         echo "Memory usage analysis:"
-        echo 'sus arr []; sus i drip = 0; bestie (i < 1000) { arr = arr + [i]; i = i + 1 } vibez.spill("Array length:", len_normie(arr))' > memory_test.csd
+        echo 'sus arr []; sus i drip = 0; bestie (i < 1000) { arr = arr + [i]; i = i + 1 } vibez.spill("Array length:", len_normie(arr))' > memory_test.💀
         
         if command -v valgrind >/dev/null 2>&1; then
           echo "Running memory analysis with Valgrind..."
-          timeout 30s valgrind --tool=massif --massif-out-file=massif.out ./zig-out/bin/cursed-zig memory_test.csd 2>/dev/null || true
+          timeout 30s valgrind --tool=massif --massif-out-file=massif.out ./zig-out/bin/cursed-zig memory_test.💀 2>/dev/null || true
           if [ -f massif.out ]; then
             echo "Peak memory usage:"
             grep mem_heap_B massif.out | sort -n | tail -1 || echo "Could not extract memory data"
@@ -367,16 +367,16 @@ jobs:
         echo "Testing various CURSED program patterns..."
         
         # Test basic arithmetic
-        echo 'sus a drip = 5; sus b drip = 3; vibez.spill("5 + 3 =", a + b)' > test_arithmetic.csd
-        ./zig-out/bin/cursed-zig test_arithmetic.csd 2>/dev/null || echo "Arithmetic test failed"
+        echo 'sus a drip = 5; sus b drip = 3; vibez.spill("5 + 3 =", a + b)' > test_arithmetic.💀
+        ./zig-out/bin/cursed-zig test_arithmetic.💀 2>/dev/null || echo "Arithmetic test failed"
         
         # Test control structures  
-        echo 'sus x drip = 10; ready (x > 5) { vibez.spill("x is greater than 5") } otherwise { vibez.spill("x is not greater than 5") }' > test_control.csd
-        ./zig-out/bin/cursed-zig test_control.csd 2>/dev/null || echo "Control structure test failed"
+        echo 'sus x drip = 10; ready (x > 5) { vibez.spill("x is greater than 5") } otherwise { vibez.spill("x is not greater than 5") }' > test_control.💀
+        ./zig-out/bin/cursed-zig test_control.💀 2>/dev/null || echo "Control structure test failed"
         
         # Test arrays
-        echo 'sus arr [] = [1, 2, 3, 4, 5]; vibez.spill("Array:", arr, "Length:", len_normie(arr))' > test_arrays.csd  
-        ./zig-out/bin/cursed-zig test_arrays.csd 2>/dev/null || echo "Array test failed"
+        echo 'sus arr [] = [1, 2, 3, 4, 5]; vibez.spill("Array:", arr, "Length:", len_normie(arr))' > test_arrays.💀  
+        ./zig-out/bin/cursed-zig test_arrays.💀 2>/dev/null || echo "Array test failed"
         
         echo "✓ Multiple program tests completed"
 
@@ -385,16 +385,16 @@ jobs:
         echo "Testing error handling and edge cases..."
         
         # Test syntax error handling
-        echo 'sus x drip = ; vibez.spill("This should cause an error")' > test_syntax_error.csd
-        if ./zig-out/bin/cursed-zig test_syntax_error.csd 2>/dev/null; then
+        echo 'sus x drip = ; vibez.spill("This should cause an error")' > test_syntax_error.💀
+        if ./zig-out/bin/cursed-zig test_syntax_error.💀 2>/dev/null; then
           echo "⚠ Syntax error was not caught"
         else
           echo "✓ Syntax error properly detected"
         fi
         
         # Test runtime error handling
-        echo 'sus arr [] = []; vibez.spill(arr[100])' > test_runtime_error.csd  
-        if ./zig-out/bin/cursed-zig test_runtime_error.csd 2>/dev/null; then
+        echo 'sus arr [] = []; vibez.spill(arr[100])' > test_runtime_error.💀  
+        if ./zig-out/bin/cursed-zig test_runtime_error.💀 2>/dev/null; then
           echo "⚠ Runtime error was not caught"
         else
           echo "✓ Runtime error properly detected"

@@ -4,7 +4,7 @@ This directory contains comprehensive tests for the CURSED collections standard 
 
 ## Test Coverage
 
-The `test_collections.csd` file provides complete test coverage for all collection types:
+The `test_collections.💀` file provides complete test coverage for all collection types:
 
 ### Array/Vector Operations
 - `array_new()` - Create empty array
@@ -113,7 +113,7 @@ The collections library provides efficient data structures:
 
 ```bash
 # Run collections tests specifically
-cargo run --bin cursed stdlib/collections/test_collections.csd
+cargo run --bin cursed stdlib/collections/test_collections.💀
 
 # Run all stdlib tests
 cargo run --bin cursed test

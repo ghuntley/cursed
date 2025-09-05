@@ -168,7 +168,7 @@ sketchy result.success {
 ```cursed
 // Build compilation pipeline
 sus pipeline Pipeline = exec_slay.create_pipeline()
-exec_slay.pipe_command(&pipeline, "cursed --emit-llvm program.csd")
+exec_slay.pipe_command(&pipeline, "cursed --emit-llvm program.💀")
 exec_slay.pipe_command(&pipeline, "opt -O2 program.ll -o program_opt.ll")
 exec_slay.pipe_command(&pipeline, "llc program_opt.ll -o program.o")
 exec_slay.pipe_command(&pipeline, "clang program.o -o program")
@@ -198,7 +198,7 @@ sus result ProcessResult = exec_slay.execute_command(builder)
 
 ```cursed
 // Compile CURSED program with optimization
-sus source_file tea = "my_program.csd"
+sus source_file tea = "my_program.💀"
 sus executable tea = "my_program"
 sus optimize lit = based
 
@@ -238,7 +238,7 @@ sus final_result ProcessResult = exec_slay.wait_for_process(handle)
 The exec_slay module is critical for CURSED's self-hosting capabilities:
 
 ### Compiler Pipeline Integration
-- **Source Compilation**: Compile .csd files to LLVM IR
+- **Source Compilation**: Compile .💀 files to LLVM IR
 - **Optimization**: Apply LLVM optimization passes
 - **Code Generation**: Generate native object files
 - **Linking**: Link with runtime library to create executables
@@ -257,11 +257,11 @@ The exec_slay module is critical for CURSED's self-hosting capabilities:
 
 ```bash
 # Test exec_slay module
-cargo run --bin cursed stdlib/exec_slay/test_exec_slay.csd
+cargo run --bin cursed stdlib/exec_slay/test_exec_slay.💀
 
 # Test both interpretation and compilation modes
-cargo run --bin cursed stdlib/exec_slay/test_exec_slay.csd
-cargo run --bin cursed -- compile stdlib/exec_slay/test_exec_slay.csd
+cargo run --bin cursed stdlib/exec_slay/test_exec_slay.💀
+cargo run --bin cursed -- compile stdlib/exec_slay/test_exec_slay.💀
 ./test_exec_slay
 ```
 

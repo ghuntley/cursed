@@ -307,7 +307,7 @@ Common error conditions:
 Run the comprehensive test suite:
 
 ```bash
-./zig-out/bin/cursed-zig stdlib/binz/test_binz.csd
+./zig-out/bin/cursed-zig stdlib/binz/test_binz.💀
 ```
 
 Test categories:

@@ -191,7 +191,7 @@ The module includes comprehensive tests covering:
 
 Run tests with:
 ```bash
-cargo run --bin cursed stdlib/error_drip/test_error_drip.csd
+cargo run --bin cursed stdlib/error_drip/test_error_drip.💀
 ```
 
 ## Implementation Notes

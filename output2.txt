@@ -9,7 +9,7 @@ DEBUG: Variable 'mathz' not found in any environment after 1 hops
 DEBUG: Environment.get() hop 0: checking env@interpreter.Environment@7fffb2c208f8 with 0 variables for 'self'
 DEBUG: Variable 'self' not found in any environment after 1 hops
 DEBUG: Variable 'mathz' not found, attempting lazy module loading...
-DEBUG: Successfully read CURSED stdlib file stdlib/mathz/mod.csd (10849 bytes)
+DEBUG: Successfully read CURSED stdlib file stdlib/mathz/mod.💀 (10849 bytes)
 Error at unknown:39:33 - Error parsing function statement
 INFO: Recovered at statement keyword 'Sus' after skipping 5 tokens
 INFO: Attempting additional statement recovery
@@ -73,7 +73,7 @@ Expression recoveries: 0
 Delimiter recoveries: 0
 Total tokens skipped: 73
 ================================
-DEBUG: Successfully parsed CURSED stdlib stdlib/mathz/mod.csd (59 statements)
+DEBUG: Successfully parsed CURSED stdlib stdlib/mathz/mod.💀 (59 statements)
 DEBUG: Executing statement type: Function
 DEBUG: Executing statement type: Function
 DEBUG: Executing statement type: Function
@@ -88,7 +88,7 @@ DEBUG: Variable 'i' not found in any environment after 1 hops
 DEBUG: Environment.get() hop 0: checking env@interpreter.Environment@7cc227040080 with 0 variables for 'self'
 DEBUG: Variable 'self' not found in any environment after 1 hops
 DEBUG: Variable 'i' not found, attempting lazy module loading...
-DEBUG: Could not open CURSED stdlib file stdlib/i/mod.csd: error.FileNotFound
+DEBUG: Could not open CURSED stdlib file stdlib/i/mod.💀: error.FileNotFound
 DEBUG: Failed to load i from CURSED stdlib (error.ModuleNotFound), falling back to Zig implementation
 DEBUG: Stored module i in environment@interpreter.Environment@7cc227040080, now has 1 variables
 DEBUG: self.globals is at @interpreter.Environment@7fffb2c21a48
@@ -102,7 +102,7 @@ DEBUG: Variable 'n' not found in any environment after 1 hops
 DEBUG: Environment.get() hop 0: checking env@interpreter.Environment@7cc227040080 with 1 variables for 'self'
 DEBUG: Variable 'self' not found in any environment after 1 hops
 DEBUG: Variable 'n' not found, attempting lazy module loading...
-DEBUG: Could not open CURSED stdlib file stdlib/n/mod.csd: error.FileNotFound
+DEBUG: Could not open CURSED stdlib file stdlib/n/mod.💀: error.FileNotFound
 DEBUG: Failed to load n from CURSED stdlib (error.ModuleNotFound), falling back to Zig implementation
 DEBUG: Stored module n in environment@interpreter.Environment@7cc227040080, now has 2 variables
 DEBUG: self.globals is at @interpreter.Environment@7fffb2c21a48
@@ -110,7 +110,7 @@ DEBUG: Loaded Zig builtin module n with 0 functions
 DEBUG: Environment.get() hop 0: checking env@interpreter.Environment@7cc227040080 with 2 variables for 'n'
 DEBUG: Found 'n' in environment@interpreter.Environment@7cc227040080
 DEBUG: Successfully loaded module 'n' on demand
-DEBUG: Failed to execute statement in CURSED stdlib stdlib/mathz/mod.csd: error.TypeMismatch
+DEBUG: Failed to execute statement in CURSED stdlib stdlib/mathz/mod.💀: error.TypeMismatch
 DEBUG: Failed to load mathz from CURSED stdlib (error.TypeMismatch), falling back to Zig implementation
 DEBUG: Stored module mathz in environment@interpreter.Environment@7fffb2c208f8, now has 1 variables
 DEBUG: self.globals is at @interpreter.Environment@7fffb2c21a48
@@ -132,7 +132,7 @@ DEBUG: Variable 'vibez' not found in any environment after 1 hops
 DEBUG: Environment.get() hop 0: checking env@interpreter.Environment@7fffb2c208f8 with 2 variables for 'self'
 DEBUG: Variable 'self' not found in any environment after 1 hops
 DEBUG: Variable 'vibez' not found, attempting lazy module loading...
-DEBUG: Successfully read CURSED stdlib file stdlib/vibez/mod.csd (21579 bytes)
+DEBUG: Successfully read CURSED stdlib file stdlib/vibez/mod.💀 (21579 bytes)
 Error at unknown:11:42 - Expected ']'. Expected .RightBracket, got .Star (context: consume)
 Error at unknown:11:42 - Error parsing function statement
 INFO: Recovered at statement keyword 'Slay' after skipping 2 tokens
@@ -385,31 +385,31 @@ Expression recoveries: 0
 Delimiter recoveries: 0
 Total tokens skipped: 324
 ================================
-DEBUG: Successfully parsed CURSED stdlib stdlib/vibez/mod.csd (123 statements)
+DEBUG: Successfully parsed CURSED stdlib stdlib/vibez/mod.💀 (123 statements)
 DEBUG: Executing statement type: Import
 DEBUG: *** EXECUTING IMPORT STATEMENT: enhanced_unicode_encoding ***
-DEBUG: Could not open CURSED stdlib file stdlib/enhanced_unicode_encoding/mod.csd: error.FileNotFound
+DEBUG: Could not open CURSED stdlib file stdlib/enhanced_unicode_encoding/mod.💀: error.FileNotFound
 DEBUG: Failed to load enhanced_unicode_encoding from CURSED stdlib (error.ModuleNotFound), falling back to Zig implementation
 DEBUG: Stored module enhanced_unicode_encoding in environment@interpreter.Environment@7cc227040100, now has 1 variables
 DEBUG: self.globals is at @interpreter.Environment@7fffb2c21a48
 DEBUG: Loaded Zig builtin module enhanced_unicode_encoding with 0 functions
 DEBUG: Executing statement type: Import
 DEBUG: *** EXECUTING IMPORT STATEMENT: printf_style_formatting ***
-DEBUG: Could not open CURSED stdlib file stdlib/printf_style_formatting/mod.csd: error.FileNotFound
+DEBUG: Could not open CURSED stdlib file stdlib/printf_style_formatting/mod.💀: error.FileNotFound
 DEBUG: Failed to load printf_style_formatting from CURSED stdlib (error.ModuleNotFound), falling back to Zig implementation
 DEBUG: Stored module printf_style_formatting in environment@interpreter.Environment@7cc227040100, now has 2 variables
 DEBUG: self.globals is at @interpreter.Environment@7fffb2c21a48
 DEBUG: Loaded Zig builtin module printf_style_formatting with 0 functions
 DEBUG: Executing statement type: Import
 DEBUG: *** EXECUTING IMPORT STATEMENT: filesystem_integration ***
-DEBUG: Could not open CURSED stdlib file stdlib/filesystem_integration/mod.csd: error.FileNotFound
+DEBUG: Could not open CURSED stdlib file stdlib/filesystem_integration/mod.💀: error.FileNotFound
 DEBUG: Failed to load filesystem_integration from CURSED stdlib (error.ModuleNotFound), falling back to Zig implementation
 DEBUG: Stored module filesystem_integration in environment@interpreter.Environment@7cc227040100, now has 3 variables
 DEBUG: self.globals is at @interpreter.Environment@7fffb2c21a48
 DEBUG: Loaded Zig builtin module filesystem_integration with 0 functions
 DEBUG: Executing statement type: Import
 DEBUG: *** EXECUTING IMPORT STATEMENT: enhanced_string_handling ***
-DEBUG: Could not open CURSED stdlib file stdlib/enhanced_string_handling/mod.csd: error.FileNotFound
+DEBUG: Could not open CURSED stdlib file stdlib/enhanced_string_handling/mod.💀: error.FileNotFound
 DEBUG: Failed to load enhanced_string_handling from CURSED stdlib (error.ModuleNotFound), falling back to Zig implementation
 DEBUG: Stored module enhanced_string_handling in environment@interpreter.Environment@7cc227040100, now has 4 variables
 DEBUG: self.globals is at @interpreter.Environment@7fffb2c21a48
@@ -421,7 +421,7 @@ DEBUG: Variable 'outer' not found in any environment after 1 hops
 DEBUG: Environment.get() hop 0: checking env@interpreter.Environment@7cc227040100 with 4 variables for 'self'
 DEBUG: Variable 'self' not found in any environment after 1 hops
 DEBUG: Variable 'outer' not found, attempting lazy module loading...
-DEBUG: Could not open CURSED stdlib file stdlib/outer/mod.csd: error.FileNotFound
+DEBUG: Could not open CURSED stdlib file stdlib/outer/mod.💀: error.FileNotFound
 DEBUG: Failed to load outer from CURSED stdlib (error.ModuleNotFound), falling back to Zig implementation
 DEBUG: Stored module outer in environment@interpreter.Environment@7cc227040100, now has 5 variables
 DEBUG: self.globals is at @interpreter.Environment@7fffb2c21a48
@@ -437,7 +437,7 @@ DEBUG: Variable 'msg' not found in any environment after 1 hops
 DEBUG: Environment.get() hop 0: checking env@interpreter.Environment@7cc227040100 with 5 variables for 'self'
 DEBUG: Variable 'self' not found in any environment after 1 hops
 DEBUG: Variable 'msg' not found, attempting lazy module loading...
-DEBUG: Could not open CURSED stdlib file stdlib/msg/mod.csd: error.FileNotFound
+DEBUG: Could not open CURSED stdlib file stdlib/msg/mod.💀: error.FileNotFound
 DEBUG: Failed to load msg from CURSED stdlib (error.ModuleNotFound), falling back to Zig implementation
 DEBUG: Stored module msg in environment@interpreter.Environment@7cc227040100, now has 6 variables
 DEBUG: self.globals is at @interpreter.Environment@7fffb2c21a48
@@ -446,7 +446,7 @@ DEBUG: Environment.get() hop 0: checking env@interpreter.Environment@7cc22704010
 DEBUG: Found 'msg' in environment@interpreter.Environment@7cc227040100
 DEBUG: Successfully loaded module 'msg' on demand
 DEBUG: Evaluating expression type: Boolean
-DEBUG: Failed to execute statement in CURSED stdlib stdlib/vibez/mod.csd: error.TypeMismatch
+DEBUG: Failed to execute statement in CURSED stdlib stdlib/vibez/mod.💀: error.TypeMismatch
 DEBUG: Failed to load vibez from CURSED stdlib (error.TypeMismatch), falling back to Zig implementation
 DEBUG: Stored module vibez in environment@interpreter.Environment@7fffb2c208f8, now has 3 variables
 DEBUG: self.globals is at @interpreter.Environment@7fffb2c21a48
@@ -460,7 +460,7 @@ DEBUG: Evaluating expression type: String
 DEBUG: Evaluating expression type: Identifier
 DEBUG: Environment.get() hop 0: checking env@interpreter.Environment@7fffb2c208f8 with 3 variables for 'add_result'
 DEBUG: Found 'add_result' in environment@interpreter.Environment@7fffb2c208f8
-❌ Runtime error in test_fallback_mathz.csd: error.InvalidArgumentCount
+❌ Runtime error in test_fallback_mathz.💀: error.InvalidArgumentCount
 Executing 0 deferred statements
 error(gpa): memory address 0x7cc21f780020 leaked: 
 /home/ghuntley/cursed/src-zig/parser.zig:3828:42: 0x13f9810 in allocateUnaryExpression (cursed_compiler_main.zig)

@@ -24,7 +24,7 @@ zig build
 
 # Run specific application
 cd reference-apps/cli-tool
-../../zig-out/bin/cursed-zig main.csd --help
+../../zig-out/bin/cursed-zig main.💀 --help
 
 # Cross-platform test
 cd reference-apps

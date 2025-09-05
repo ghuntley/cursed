@@ -7,7 +7,7 @@ const ArrayList = std.ArrayList;
 const Allocator = std.mem.Allocator;
 
 const VERSION = "1.0.0";
-const CURSED_FORMATTER_PATH = "tools/enhanced_formatter.csd";
+const CURSED_FORMATTER_PATH = "tools/enhanced_formatter.💀";
 const CURSED_INTERPRETER = "cursed-unified";
 
 fn printHelp() void {
@@ -30,8 +30,8 @@ fn printHelp() void {
         \\    --test                  Run formatter tests
         \\
         \\EXAMPLES:
-        \\    cursed-fmt src/main.csd              Format and display main.csd
-        \\    cursed-fmt --write src/*.csd         Format all .csd files in src/
+        \\    cursed-fmt src/main.💀.💀              Format and display main.💀.💀
+        \\    cursed-fmt --write src/*.💀         Format all .💀 files in src/
         \\    cursed-fmt --check src/              Check if src/ files are formatted
         \\    echo "sus x drip=42" | cursed-fmt --stdin  Format stdin input
         \\
@@ -85,7 +85,7 @@ fn formatFile(file_path: []const u8, options: FormatOptions) !void {
     defer std.heap.page_allocator.free(file_content);
     
     // Create temporary file for input
-    const temp_input = "temp_input.csd";
+    const temp_input = "temp_input.💀";
     const temp_file = std.fs.cwd().createFile(temp_input, .{}) catch |err| {
         print("❌ Error creating temporary file: {}\n", .{err});
         return;
@@ -182,7 +182,7 @@ fn formatStdin(options: FormatOptions) !void {
     defer std.heap.page_allocator.free(input);
     
     // Create temporary file for input
-    const temp_input = "temp_stdin.csd";
+    const temp_input = "temp_stdin.💀";
     const temp_file = std.fs.cwd().createFile(temp_input, .{}) catch |err| {
         print("❌ Error creating temporary file: {}\n", .{err});
         return;

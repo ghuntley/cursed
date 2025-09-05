@@ -24,18 +24,18 @@ testz = "1.0.0"
 [targets]
 # Server-side application
 [targets.server]
-main = "src/server/main.csd"
+main = "src/server/main.💀"
 build_mode = "native"
 optimization_level = "3"
 
 # Client-side application (WebAssembly)
 [targets.client]
-main = "src/client/main.csd"
+main = "src/client/main.💀"
 build_mode = "wasm"
 output_dir = "web/static"
 
 [testing]
-test_patterns = ["test_*.csd", "*_test.csd", "tests/*.csd"]
+test_patterns = ["test_*.💀", "*_test.💀", "tests/*.💀"]
 parallel_tests = true
 
 [scripts]

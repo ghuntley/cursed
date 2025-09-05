@@ -118,7 +118,7 @@ console.log(tree.rootNode.toString());
 ### With VS Code
 
 1. Install the CURSED Language Support extension
-2. Open a `.csd` file
+2. Open a `.💀` file
 3. Enjoy syntax highlighting and code snippets
 
 ## Grammar Structure
@@ -161,7 +161,7 @@ npm run build
 npx tree-sitter test
 
 # Parse a file
-npx tree-sitter parse examples/hello.csd
+npx tree-sitter parse examples/hello.💀
 ```
 
 ### Adding New Features
@@ -188,7 +188,7 @@ The included VS Code extension provides:
 2. Run `npm install`
 3. Run `npm run compile`
 4. Press F5 to launch extension development host
-5. Open a `.csd` file to test
+5. Open a `.💀` file to test
 
 ## Contributing
 

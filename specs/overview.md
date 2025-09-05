@@ -54,9 +54,9 @@ Each stage will expand the language's feature set until it reaches its complete 
 
 CURSED uses a simple module system based on packages:
 
-*   **Package Declaration:** Every source file (`.csd`) belongs to a package, declared at the top using `vibe PackageName;`.
+*   **Package Declaration:** Every source file (`.💀`) belongs to a package, declared at the top using `vibe PackageName;`.
 *   **Exports:** Symbols (functions, variables, types) starting with an **uppercase** letter are exported (public) from their package. Symbols starting with a lowercase letter are private.
-*   **Imports:** The `yeet` keyword imports other packages. `yeet "path/to/package";` imports the package found at `path/to/package.csd`. Standard library packages have predefined paths.
+*   **Imports:** The `yeet` keyword imports other packages. `yeet "path/to/package";` imports the package found at `path/to/package.💀`. Standard library packages have predefined paths.
 *   **Qualified Access:** Imported symbols are *always* accessed using the package name (or an import alias) as a qualifier, e.g., `packageName.ExportedSymbol`.
 *   **Import Aliases:** An optional alias can be provided during import: `yeet aliasName "path/to/package";`. Access is then done via `aliasName.ExportedSymbol`.
 

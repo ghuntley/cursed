@@ -25,11 +25,11 @@ This directory contains the **100% FFI-free** networking implementation for CURS
 ## Pure CURSED Implementation
 
 ### Core Files Created
-- `pure_net.csd` - Complete networking module implementation
-- `test_pure_net.csd` - Comprehensive test suite
-- `minimal_working_net.csd` - Simplified demonstration
-- `standalone_pure_net.csd` - Self-contained test version
-- `ffi_elimination_success.csd` - Final working demonstration
+- `pure_net.💀` - Complete networking module implementation
+- `test_pure_net.💀` - Comprehensive test suite
+- `minimal_working_net.💀` - Simplified demonstration
+- `standalone_pure_net.💀` - Self-contained test version
+- `ffi_elimination_success.💀` - Final working demonstration
 
 ### Functionality Implemented
 - ✅ TCP socket operations (create, connect, send, recv, close)
@@ -46,12 +46,12 @@ This directory contains the **100% FFI-free** networking implementation for CURS
 
 ### Interpretation Mode ✅
 ```bash
-cargo run --bin cursed ffi_elimination_success.csd
+cargo run --bin cursed ffi_elimination_success.💀
 ```
 
 ### Compilation Mode ✅
 ```bash
-cargo run --bin cursed -- compile ffi_elimination_success.csd
+cargo run --bin cursed -- compile ffi_elimination_success.💀
 ./ffi_elimination_success
 ```
 

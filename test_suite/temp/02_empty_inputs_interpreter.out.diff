@@ -1,8 +1,8 @@
 --- /tmp/tmp.E4A63qK3h6	2025-08-31 11:45:05.761784962 +0300
 +++ /tmp/tmp.i18KzDBEWW	2025-08-31 11:45:05.761784962 +0300
 @@ -1,13 +0,0 @@
--Error at /home/ghuntley/cursed/test_suite/test_programs/edge_cases/02_empty_inputs.csd:5:20 - Error parsing function statement
--Error at /home/ghuntley/cursed/test_suite/test_programs/edge_cases/02_empty_inputs.csd:27:1 - Failed to parse statement
+-Error at /home/ghuntley/cursed/test_suite/test_programs/edge_cases/02_empty_inputs.💀:5:20 - Error parsing function statement
+-Error at /home/ghuntley/cursed/test_suite/test_programs/edge_cases/02_empty_inputs.💀:27:1 - Failed to parse statement
 -
 -=== Error Recovery Statistics ===
 -Total errors encountered: 2

@@ -487,7 +487,7 @@ slay test_runtime_functions() {
 ```bash
 # Run runtime bridge tests
 zig build test
-./zig-out/bin/cursed-zig stdlib/pure_cursed_runtime/test_pure_cursed_runtime.csd
+./zig-out/bin/cursed-zig stdlib/pure_cursed_runtime/test_pure_cursed_runtime.💀
 ```
 
 ## Dependencies

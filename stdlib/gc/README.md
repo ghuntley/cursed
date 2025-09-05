@@ -73,14 +73,14 @@ gc.enable()
 ```bash
 echo 'yeet "gc"
 gc.collect()
-vibez.spill("GC collection complete")' > gc_test.csd
+vibez.spill("GC collection complete")' > gc_test.💀
 
-./cursed-unified gc_test.csd
+./cursed-unified gc_test.💀
 ```
 
 ### Compilation Mode
 ```bash
-./cursed-unified --compile gc_test.csd
+./cursed-unified --compile gc_test.💀
 ./gc_test
 ```
 

@@ -110,8 +110,8 @@ pub fn main() !void {
 fn printUsage() void {
     print("CURSED Compiler - Enhanced Implementation v1.0.0\n", .{});
     print("The Gen Z Programming Language with native compilation\n", .{});
-    print("\nUsage: cursed-compile <file.csd> [OPTIONS]\n", .{});
-    print("       cursed-compile compile <file.csd> [OPTIONS]\n", .{});
+    print("\nUsage: cursed-compile <file.💀.💀> [OPTIONS]\n", .{});
+    print("       cursed-compile compile <file.💀.💀> [OPTIONS]\n", .{});
     print("       cursed-compile --version\n", .{});
     print("       cursed-compile --help\n", .{});
     print("\nOptions:\n", .{});
@@ -123,9 +123,9 @@ fn printUsage() void {
     print("  c        Transpile to C, then compile with GCC\n", .{});
     print("  llvm     Generate LLVM IR, then compile with clang\n", .{});
     print("\nExamples:\n", .{});
-    print("  cursed-compile hello.csd\n", .{});
-    print("  cursed-compile hello.csd --backend llvm -o hello_native\n", .{});
-    print("  cursed-compile hello.csd --optimize=3 --verbose\n", .{});
+    print("  cursed-compile hello.💀.💀\n", .{});
+    print("  cursed-compile hello.💀.💀 --backend llvm -o hello_native\n", .{});
+    print("  cursed-compile hello.💀.💀 --optimize=3 --verbose\n", .{});
     print("\nSupported CURSED Features:\n", .{});
     print("  • Variable declarations: sus varname type = value\n", .{});
     print("  • Types: drip (int), meal (float), tea (string), lit (bool)\n", .{});

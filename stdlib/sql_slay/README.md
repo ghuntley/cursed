@@ -221,10 +221,10 @@ Run the comprehensive test suite:
 
 ```bash
 # Test interpretation mode
-cargo run --bin cursed stdlib/sql_slay/test_sql_slay.csd
+cargo run --bin cursed stdlib/sql_slay/test_sql_slay.💀
 
 # Test compilation mode
-cargo run --bin cursed -- compile stdlib/sql_slay/test_sql_slay.csd
+cargo run --bin cursed -- compile stdlib/sql_slay/test_sql_slay.💀
 ./test_sql_slay
 ```
 

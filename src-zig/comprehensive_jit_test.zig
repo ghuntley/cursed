@@ -89,13 +89,13 @@ fn testMultipleExecutions(allocator: Allocator) !void {
 
 fn testFileExecution(allocator: Allocator) !void {
     // Read our test file
-    const file_content = std.fs.cwd().readFileAlloc(allocator, "test_jit_comprehensive.csd", 1024) catch |err| {
+    const file_content = std.fs.cwd().readFileAlloc(allocator, "test_jit_comprehensive.💀", 1024) catch |err| {
         print("⚠️ Could not read test file: {any}\n", .{err});
         return;
     };
     defer allocator.free(file_content);
 
-    print("📁 Executing file: test_jit_comprehensive.csd ({} bytes)\n", .{file_content.len});
+    print("📁 Executing file: test_jit_comprehensive.💀.💀 ({} bytes)\n", .{file_content.len});
 
     var jit = SimpleJIT.init(allocator);
     defer jit.deinit();

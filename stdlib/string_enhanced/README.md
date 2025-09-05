@@ -241,7 +241,7 @@ Convert a module path to a file path.
 yeet "string_enhanced"
 
 sus file_path tea = module_path_to_file_path("std::collections")
-# Returns: "std/collections.csd"
+# Returns: "std/collections.💀"
 ```
 
 #### `file_path_to_module_path(file_path tea) tea`
@@ -250,7 +250,7 @@ Convert a file path to a module path.
 ```cursed
 yeet "string_enhanced"
 
-sus module_path tea = file_path_to_module_path("std/collections.csd")
+sus module_path tea = file_path_to_module_path("std/collections.💀")
 # Returns: "std::collections"
 ```
 
@@ -417,7 +417,7 @@ slay resolve_module_imports(imports []tea) []tea {
 
 sus imports []tea = ["../std::collections", "utils::string"]
 sus resolved []tea = resolve_module_imports(imports)
-# Returns: ["std/collections.csd", "utils/string.csd"]
+# Returns: ["std/collections.💀", "utils/string.💀"]
 ```
 
 ### String Interning System
@@ -448,7 +448,7 @@ The module includes comprehensive test coverage:
 
 ```bash
 # Run module tests
-./cursed-unified stdlib/string_enhanced/test_string_enhanced.csd
+./cursed-unified stdlib/string_enhanced/test_string_enhanced.💀
 
 # Test specific functionality
 echo 'yeet "testz"
@@ -458,9 +458,9 @@ test_start("string scanning test")
 sus scanner StringScanner = StringScanner_new("hello123")
 sus ch sip = StringScanner_current_char(scanner)
 assert_eq_string(string_from_char(ch), "h")
-print_test_summary()' > test_scanning.csd
+print_test_summary()' > test_scanning.💀
 
-./cursed-unified test_scanning.csd
+./cursed-unified test_scanning.💀
 ```
 
 ## Performance Characteristics

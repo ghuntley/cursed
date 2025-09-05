@@ -345,7 +345,7 @@ The envz module uses a runtime bridge pattern where critical functions are imple
 ## Testing
 Run the comprehensive test suite:
 ```bash
-./zig-out/bin/cursed stdlib/envz/test_envz.csd
+./zig-out/bin/cursed stdlib/envz/test_envz.💀
 ```
 
 The test suite covers:

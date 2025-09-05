@@ -2,16 +2,16 @@
 +++ /tmp/tmp.TcZVRKWZhs	2025-08-31 12:06:46.946538801 +0300
 @@ -1,3 +1,4 @@
 +COMPILE_ERROR: Exit code 0
- Error at /home/ghuntley/cursed/test_suite/test_programs/features/feature_stdlib_integration.csd:7:10 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
- Error at /home/ghuntley/cursed/test_suite/test_programs/features/feature_stdlib_integration.csd:7:10 - Synchronizing parser after error (context: synchronize)
+ Error at /home/ghuntley/cursed/test_suite/test_programs/features/feature_stdlib_integration.💀:7:10 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+ Error at /home/ghuntley/cursed/test_suite/test_programs/features/feature_stdlib_integration.💀:7:10 - Synchronizing parser after error (context: synchronize)
  INFO: Recovered at delimiter 'RightParen' after skipping 4 tokens
 @@ -12,87 +13,100 @@
  Delimiter recoveries: 0
  Total tokens skipped: 4
  ================================
 -ERROR: No CURSED stdlib implementation found for module 'mathz': error.ModuleNotFound
--SELF-HOSTING: Please implement stdlib/mathz/mod.csd for true self-hosting
--❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/features/feature_stdlib_integration.csd: error.ModuleNotFound
+-SELF-HOSTING: Please implement stdlib/mathz/mod.💀 for true self-hosting
+-❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/features/feature_stdlib_integration.💀: error.ModuleNotFound
 -Executing 0 deferred statements
 -error(gpa): memory address 0xADDRESS leaked: 
 -/snap/zig/14937/lib/std/array_list.zig:1231:56: 0xADDRESS in ensureTotalCapacityPrecise (std.zig)
@@ -37,7 +37,7 @@
 +================================
 +📦 Processing import: mathz
 +DEBUG: Loading and compiling CURSED module: mathz
-+DEBUG: Successfully read CURSED module stdlib/mathz/mod.csd (1357 bytes)
++DEBUG: Successfully read CURSED module stdlib/mathz/mod.💀 (1357 bytes)
 +DEBUG: Successfully parsed CURSED module mathz (11 statements)
 +DEBUG: Compiling CURSED stdlib function: mathz.abs
 +DEBUG: Compiling CURSED stdlib function: mathz.max
@@ -53,7 +53,7 @@
 +DEBUG: Successfully compiled CURSED module: mathz
 +📦 Processing import: vibez
 +DEBUG: Loading and compiling CURSED module: vibez
-+DEBUG: Successfully read CURSED module stdlib/vibez/mod.csd (655 bytes)
++DEBUG: Successfully read CURSED module stdlib/vibez/mod.💀 (655 bytes)
 +DEBUG: Successfully parsed CURSED module vibez (6 statements)
 +DEBUG: Compiling CURSED stdlib function: vibez.spill
 +thread 1725585 panic: reached unreachable code

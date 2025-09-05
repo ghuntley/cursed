@@ -120,7 +120,7 @@ bestie i < SCHEDULER_QUANTUM {
 
 Run comprehensive tests with:
 ```bash
-cargo run --bin cursed stdlib/goroutine_core/test_goroutine_core.csd
+cargo run --bin cursed stdlib/goroutine_core/test_goroutine_core.💀
 ```
 
 The test suite covers:

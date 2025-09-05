@@ -1,0 +1,74 @@
+# Variables and Types in CURSED
+#
+# CURSED has expressive type names that make code readable:
+# - tea (string)
+# - drip (integer) 
+# - lit (boolean)
+# - sus (variable declaration)
+
+yeet "vibez"
+
+# String variables (tea)
+sus name tea = "CURSED Developer"
+sus language tea = "CURSED"
+sus message tea = "Programming is " + "awesome!"
+
+vibez.spill("Name:", name)
+vibez.spill("Language:", language)
+vibez.spill("Message:", message)
+
+# Integer variables (drip)
+sus age drip = 25
+sus year drip = 2025
+sus calculation drip = 10 + 20 * 2
+
+vibez.spill("Age:", age)
+vibez.spill("Year:", year)
+vibez.spill("Calculation result:", calculation)
+
+# Boolean variables (lit)
+sus is_awesome lit = based    # true
+sus is_boring lit = cringe    # false
+sus is_ready lit = age >= 18
+
+vibez.spill("Is CURSED awesome?", is_awesome)
+vibez.spill("Is programming boring?", is_boring)
+vibez.spill("Is ready?", is_ready)
+
+# Variable reassignment
+sus counter drip = 0
+vibez.spill("Counter starts at:", counter)
+
+counter = counter + 1
+vibez.spill("Counter after increment:", counter)
+
+counter = counter * 5
+vibez.spill("Counter after multiplication:", counter)
+
+# Type inference - CURSED can figure out types
+sus auto_string = "This is automatically a tea (string)"
+sus auto_number = 42
+sus auto_boolean = based
+
+vibez.spill("Auto string:", auto_string)
+vibez.spill("Auto number:", auto_number)
+vibez.spill("Auto boolean:", auto_boolean)
+
+# Constants (cannot be changed after declaration)
+sus PI drip = 314159  # Note: This would be constant in a real implementation
+sus APP_NAME tea = "CURSED Calculator"
+
+vibez.spill("Pi (scaled):", PI)
+vibez.spill("App name:", APP_NAME)
+
+# Multiple variable declaration
+sus x drip = 10
+sus y drip = 20
+sus sum drip = x + y
+
+vibez.spill("X:", x, "Y:", y, "Sum:", sum)
+
+# Try this example:
+# cursed-zig 02-variables.💀
+#
+# Expected output shows all variable values and their types in action

@@ -6,7 +6,7 @@ const print = std.debug.print;
 const ArrayList = std.ArrayList;
 
 const VERSION = "1.0.0";
-const CURSED_LSP_PATH = "tools/enhanced_lsp_server.csd";
+const CURSED_LSP_PATH = "tools/enhanced_lsp_server.💀";
 const CURSED_INTERPRETER = "cursed-unified";
 
 fn printHelp() void {

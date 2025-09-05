@@ -1,6 +1,6 @@
 //! Real Plugin Loading System
 //! Implements dynamic library loading, symbol resolution, and plugin lifecycle management
-//! Replaces the simulation in stdlib/plugin_system/mod.csd with actual FFI-based loading
+//! Replaces the simulation in stdlib/plugin_system/mod.💀.💀 with actual FFI-based loading
 
 const std = @import("std");
 const ArrayList = std.ArrayList;
@@ -370,7 +370,7 @@ pub const PluginRegistry = struct {
             const is_plugin = std.mem.eql(u8, ext, ".so") or 
                              std.mem.eql(u8, ext, ".dylib") or 
                              std.mem.eql(u8, ext, ".dll") or
-                             std.mem.eql(u8, ext, ".csd_plugin");
+                             std.mem.eql(u8, ext, ".💀_plugin");
             
             if (is_plugin) {
                 const full_path = try std.fs.path.join(self.allocator, &[_][]const u8{ directory, entry.name });
@@ -454,7 +454,7 @@ pub const PluginRegistry = struct {
     
     // Read plugin metadata from manifest or embedded data
     fn readPluginMetadata(self: *PluginRegistry, path: []const u8) !PluginMetadata {
-        // Look for .csd_plugin.json metadata file
+        // Look for .💀_plugin.json metadata file
         const metadata_path = try std.fmt.allocPrint(self.allocator, "{s}.json", .{path});
         defer self.allocator.free(metadata_path);
         

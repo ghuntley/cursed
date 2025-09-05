@@ -1,40 +1,40 @@
-Error at test_memory_comprehensive.csd:11:3 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
-Error at test_memory_comprehensive.csd:11:3 - Synchronizing parser after error (context: synchronize)
+Error at test_memory_comprehensive.💀:11:3 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+Error at test_memory_comprehensive.💀:11:3 - Synchronizing parser after error (context: synchronize)
 INFO: Recovered at delimiter 'RightParen' after skipping 7 tokens
-Error at test_memory_comprehensive.csd:12:38 - Failed to parse statement
+Error at test_memory_comprehensive.💀:12:38 - Failed to parse statement
 INFO: Recovered at delimiter 'RightBrace' after skipping 1 tokens
 INFO: Attempting additional statement recovery
-Error at test_memory_comprehensive.csd:21:7 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
-Error at test_memory_comprehensive.csd:21:7 - Synchronizing parser after error (context: synchronize)
+Error at test_memory_comprehensive.💀:21:7 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+Error at test_memory_comprehensive.💀:21:7 - Synchronizing parser after error (context: synchronize)
 INFO: Recovered at delimiter 'RightParen' after skipping 7 tokens
-Error at test_memory_comprehensive.csd:22:42 - Failed to parse statement
+Error at test_memory_comprehensive.💀:22:42 - Failed to parse statement
 INFO: Recovered at delimiter 'RightBrace' after skipping 1 tokens
 INFO: Attempting additional statement recovery
-Error at test_memory_comprehensive.csd:32:3 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
-Error at test_memory_comprehensive.csd:32:3 - Synchronizing parser after error (context: synchronize)
+Error at test_memory_comprehensive.💀:32:3 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+Error at test_memory_comprehensive.💀:32:3 - Synchronizing parser after error (context: synchronize)
 INFO: Recovered at delimiter 'RightParen' after skipping 7 tokens
-Error at test_memory_comprehensive.csd:33:40 - Failed to parse statement
+Error at test_memory_comprehensive.💀:33:40 - Failed to parse statement
 INFO: Recovered at delimiter 'RightBrace' after skipping 1 tokens
 INFO: Attempting additional statement recovery
-Error at test_memory_comprehensive.csd:50:7 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
-Error at test_memory_comprehensive.csd:50:7 - Synchronizing parser after error (context: synchronize)
+Error at test_memory_comprehensive.💀:50:7 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+Error at test_memory_comprehensive.💀:50:7 - Synchronizing parser after error (context: synchronize)
 INFO: Recovered at delimiter 'RightParen' after skipping 7 tokens
-Error at test_memory_comprehensive.csd:51:43 - Failed to parse statement
+Error at test_memory_comprehensive.💀:51:43 - Failed to parse statement
 INFO: Recovered at delimiter 'RightBrace' after skipping 1 tokens
 INFO: Attempting additional statement recovery
-Error at test_memory_comprehensive.csd:64:3 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
-Error at test_memory_comprehensive.csd:64:3 - Synchronizing parser after error (context: synchronize)
+Error at test_memory_comprehensive.💀:64:3 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+Error at test_memory_comprehensive.💀:64:3 - Synchronizing parser after error (context: synchronize)
 INFO: Recovered at delimiter 'RightParen' after skipping 7 tokens
-Error at test_memory_comprehensive.csd:65:46 - Failed to parse statement
+Error at test_memory_comprehensive.💀:65:46 - Failed to parse statement
 INFO: Recovered at delimiter 'RightBrace' after skipping 1 tokens
 INFO: Attempting additional statement recovery
-Error at test_memory_comprehensive.csd:70:16 - Error parsing package declaration (context: parseProgram)
-Error at test_memory_comprehensive.csd:70:16 - Synchronizing parser after error (context: synchronize)
+Error at test_memory_comprehensive.💀:70:16 - Error parsing package declaration (context: parseProgram)
+Error at test_memory_comprehensive.💀:70:16 - Synchronizing parser after error (context: synchronize)
 INFO: Recovered at delimiter 'RightParen' after skipping 5 tokens
-Error at test_memory_comprehensive.csd:70:42 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
-Error at test_memory_comprehensive.csd:70:42 - Synchronizing parser after error (context: synchronize)
+Error at test_memory_comprehensive.💀:70:42 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+Error at test_memory_comprehensive.💀:70:42 - Synchronizing parser after error (context: synchronize)
 INFO: Recovered at delimiter 'RightParen' after skipping 6 tokens
-Error at test_memory_comprehensive.csd:71:18 - Failed to parse statement
+Error at test_memory_comprehensive.💀:71:18 - Failed to parse statement
 INFO: Recovered at delimiter 'RightParen' after skipping 11 tokens
 INFO: Attempting additional statement recovery
 
@@ -84,7 +84,7 @@ DEBUG: Environment.get() hop 0: checking env@interpreter.Environment@7ffd2b0854c
 DEBUG: Variable 'yo' not found in any environment after 1 hops
 DEBUG: Environment.get() hop 0: checking env@interpreter.Environment@7ffd2b0854c8 with 2 variables for 'self'
 DEBUG: Variable 'self' not found in any environment after 1 hops
-❌ Runtime error in test_memory_comprehensive.csd: error.UndefinedVariable
+❌ Runtime error in test_memory_comprehensive.💀: error.UndefinedVariable
 Executing 0 deferred statements
 error(gpa): memory address 0x798a97140000 leaked: 
 /home/ghuntley/cursed/src-zig/parser.zig:3895:42: 0x13f95b3 in allocateMethodCall (cursed_compiler_main.zig)

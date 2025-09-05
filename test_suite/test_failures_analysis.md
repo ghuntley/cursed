@@ -1,7 +1,7 @@
 # CURSED Test Suite Failure Analysis
 
 ## Executive Summary
-The CURSED test suite fails completely due to critical memory management issues in the interpreter. Test execution stops at test 11/68 (`complex/01_nested_operations.csd`) due to extensive memory leaks.
+The CURSED test suite fails completely due to critical memory management issues in the interpreter. Test execution stops at test 11/68 (`complex/01_nested_operations.💀`) due to extensive memory leaks.
 
 ## Critical Issues Found
 
@@ -36,19 +36,19 @@ The CURSED test suite fails completely due to critical memory management issues 
 ## Test Results
 
 ### Tests That Pass (1-10):
-- `arithmetic/01_mixed_types.csd` ✅
-- `arithmetic/02_edge_cases.csd` ✅
-- `arithmetic/03_operator_precedence.csd` ✅
-- `arithmetic/04_complex_expressions.csd` ✅
-- `arithmetic/arithmetic_basic_operations.csd` ✅
-- `basic/01_hello_world.csd` ✅
-- `basic/02_simple_arithmetic.csd` ✅
-- `basic/03_variable_assignment.csd` ✅
-- `basic/basic_hello_world.csd` ✅
-- `basic/hello_world_simple.csd` ✅
+- `arithmetic/01_mixed_types.💀` ✅
+- `arithmetic/02_edge_cases.💀` ✅
+- `arithmetic/03_operator_precedence.💀` ✅
+- `arithmetic/04_complex_expressions.💀` ✅
+- `arithmetic/arithmetic_basic_operations.💀` ✅
+- `basic/01_hello_world.💀` ✅
+- `basic/02_simple_arithmetic.💀` ✅
+- `basic/03_variable_assignment.💀` ✅
+- `basic/basic_hello_world.💀` ✅
+- `basic/hello_world_simple.💀` ✅
 
 ### Tests That Fail (11-68):
-- **First Failing Test**: `complex/01_nested_operations.csd`
+- **First Failing Test**: `complex/01_nested_operations.💀`
 - **Failure Mode**: Memory leak cascade causing interpreter crash
 - **Remaining Tests**: Cannot be executed due to test suite termination
 

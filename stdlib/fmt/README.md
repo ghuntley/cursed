@@ -80,7 +80,7 @@ vibez.spill(header)
 ## Testing
 
 ```bash
-cargo run --bin cursed stdlib/fmt/test_fmt.csd
+cargo run --bin cursed stdlib/fmt/test_fmt.💀
 ```
 
 ## Status

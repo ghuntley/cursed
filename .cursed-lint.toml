@@ -105,13 +105,13 @@ weak-random = "warning"
 [ignore]
 # Files and directories to ignore
 files = [
-    "*.generated.csd",
-    "vendor/**/*.csd",
-    "third_party/**/*.csd"
+    "*.generated.💀",
+    "vendor/**/*.💀",
+    "third_party/**/*.💀"
 ]
 
 # Specific rules to ignore for specific files
 [ignore.rules]
-"test_*.csd" = ["unused-function", "magic-numbers"]
-"demo_*.csd" = ["hardcoded-secret", "line-too-long"]
-"legacy_*.csd" = ["use-slay", "use-squad", "prefer-vibez"]
+"test_*.💀" = ["unused-function", "magic-numbers"]
+"demo_*.💀" = ["hardcoded-secret", "line-too-long"]
+"legacy_*.💀" = ["use-slay", "use-squad", "prefer-vibez"]

@@ -43,10 +43,10 @@ sus result tea = "Pattern " + "found"
 
 ```bash
 # Test basic functionality (works)
-cargo run --bin cursed stdlib/regex_vibez/test_simple_functions.csd
+cargo run --bin cursed stdlib/regex_vibez/test_simple_functions.💀
 
 # Test compilation mode (works)
-cargo run --bin cursed -- compile stdlib/regex_vibez/test_simple_functions.csd
+cargo run --bin cursed -- compile stdlib/regex_vibez/test_simple_functions.💀
 ./test_simple_functions
 
 # Both modes work with basic string operations

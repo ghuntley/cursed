@@ -1073,7 +1073,7 @@ test "built-in macro expansion" {
             Token{ .kind = .String, .lexeme = "\"Hello\"", .line = 1, .column = 1, .offset = 0 }
         },
         .location = .{
-            .file = "test.csd",
+            .file = "test.💀",
             .line = 1,
             .column = 1,
             .byte_offset = 0,

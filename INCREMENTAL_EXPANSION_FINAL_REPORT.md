@@ -16,20 +16,20 @@ Successfully continued incremental expansion of the CURSED standard library with
 - **Result**: ✅ Basic compilation now works for simple programs
 
 ### 2. **Environment Variables Module** 🌍  
-- **Implementation**: [`stdlib/env/mod.csd`](file:///home/ghuntley/cursed/stdlib/env/mod.csd) (64 lines)
+- **Implementation**: [`stdlib/env/mod.💀`](file:///home/ghuntley/cursed/stdlib/env/mod.💀) (64 lines)
 - **Functions**: `get_env()`, `set_env()`, `has_env()`, `list_env()`, `unset_env()`
 - **Status**: ✅ Complete and tested in interpreter mode
 - **Approach**: Pure CURSED implementation with mock environment values
 
 ### 3. **Comprehensive I/O Module** 📥📤
-- **Basic Module**: [`stdlib/io_basic/mod.csd`](file:///home/ghuntley/cursed/stdlib/io_basic/mod.csd) (165 lines)
-- **Advanced Module**: [`stdlib/io_advanced/mod.csd`](file:///home/ghuntley/cursed/stdlib/io_advanced/mod.csd) (400+ lines)  
+- **Basic Module**: [`stdlib/io_basic/mod.💀`](file:///home/ghuntley/cursed/stdlib/io_basic/mod.💀) (165 lines)
+- **Advanced Module**: [`stdlib/io_advanced/mod.💀`](file:///home/ghuntley/cursed/stdlib/io_advanced/mod.💀) (400+ lines)  
 - **Functions**: `read_line()`, `print_line()`, `print_int()`, `read_int()`, `flush()`, etc.
 - **Documentation**: [`IO_MODULE_DOCUMENTATION.md`](file:///home/ghuntley/cursed/stdlib/IO_MODULE_DOCUMENTATION.md) (47 pages)
 - **Status**: ✅ Complete two-tier implementation with full API documentation
 
 ### 4. **JSON & Cross-Module Integration** 🔗
-- **Verified**: Both [`json`](file:///home/ghuntley/cursed/stdlib/json/mod.csd) and [`jsonz`](file:///home/ghuntley/cursed/stdlib/jsonz/mod.csd) modules fully functional
+- **Verified**: Both [`json`](file:///home/ghuntley/cursed/stdlib/json/mod.💀) and [`jsonz`](file:///home/ghuntley/cursed/stdlib/jsonz/mod.💀) modules fully functional
 - **Cross-module**: JSON + StringZ, JSON + MathZ, JSON + TimeZ integration confirmed
 - **Status**: ✅ Production-ready with extensive test suites (25+ regression tests)
 
@@ -59,18 +59,18 @@ Successfully continued incremental expansion of the CURSED standard library with
 ## 📊 Current Standard Library Status
 
 ### **Completed Core Modules**
-- [`mathz`](file:///home/ghuntley/cursed/stdlib/mathz/mod.csd): Mathematical operations (82 lines)
-- [`stringz`](file:///home/ghuntley/cursed/stdlib/stringz/mod.csd): String manipulation (27 lines) - **ENHANCED**
-- [`env`](file:///home/ghuntley/cursed/stdlib/env/mod.csd): Environment variables (64 lines) - **NEW**
-- [`io_basic`](file:///home/ghuntley/cursed/stdlib/io_basic/mod.csd): I/O operations (165 lines) - **NEW**  
-- [`io_advanced`](file:///home/ghuntley/cursed/stdlib/io_advanced/mod.csd): Advanced I/O (400+ lines) - **NEW**
+- [`mathz`](file:///home/ghuntley/cursed/stdlib/mathz/mod.💀): Mathematical operations (82 lines)
+- [`stringz`](file:///home/ghuntley/cursed/stdlib/stringz/mod.💀): String manipulation (27 lines) - **ENHANCED**
+- [`env`](file:///home/ghuntley/cursed/stdlib/env/mod.💀): Environment variables (64 lines) - **NEW**
+- [`io_basic`](file:///home/ghuntley/cursed/stdlib/io_basic/mod.💀): I/O operations (165 lines) - **NEW**  
+- [`io_advanced`](file:///home/ghuntley/cursed/stdlib/io_advanced/mod.💀): Advanced I/O (400+ lines) - **NEW**
 
 ### **Verified Production-Ready Modules**  
-- [`collections`](file:///home/ghuntley/cursed/stdlib/collections/mod.csd): Data structures (1000+ lines)
-- [`fs`](file:///home/ghuntley/cursed/stdlib/fs/mod.csd): File system (883 lines)
-- [`time`](file:///home/ghuntley/cursed/stdlib/time/mod.csd): Time/date (536+ lines)
-- [`json`](file:///home/ghuntley/cursed/stdlib/json/mod.csd)/[`jsonz`](file:///home/ghuntley/cursed/stdlib/jsonz/mod.csd): JSON processing
-- [`net`](file:///home/ghuntley/cursed/stdlib/net/mod.csd), [`crypto`](file:///home/ghuntley/cursed/stdlib/crypto/mod.csd), [`regex`](file:///home/ghuntley/cursed/stdlib/regex/mod.csd): Advanced functionality
+- [`collections`](file:///home/ghuntley/cursed/stdlib/collections/mod.💀): Data structures (1000+ lines)
+- [`fs`](file:///home/ghuntley/cursed/stdlib/fs/mod.💀): File system (883 lines)
+- [`time`](file:///home/ghuntley/cursed/stdlib/time/mod.💀): Time/date (536+ lines)
+- [`json`](file:///home/ghuntley/cursed/stdlib/json/mod.💀)/[`jsonz`](file:///home/ghuntley/cursed/stdlib/jsonz/mod.💀): JSON processing
+- [`net`](file:///home/ghuntley/cursed/stdlib/net/mod.💀), [`crypto`](file:///home/ghuntley/cursed/stdlib/crypto/mod.💀), [`regex`](file:///home/ghuntley/cursed/stdlib/regex/mod.💀): Advanced functionality
 
 ## 🚀 Testing Strategy & Results
 

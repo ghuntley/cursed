@@ -21,8 +21,8 @@ The CURSED standard library has been **successfully incrementally enabled** with
 ### **Verified Working Test Cases**
 
 #### Interpreter Mode Tests ✅
-- `final_stdlib_test.csd`: All 5 modules working together
-- `test_time_module.csd`: Time module functions working  
+- `final_stdlib_test.💀`: All 5 modules working together
+- `test_time_module.💀`: Time module functions working  
 - All modules test: PASSED
 
 #### Binary Mode Tests ✅

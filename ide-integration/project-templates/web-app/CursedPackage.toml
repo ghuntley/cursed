@@ -65,10 +65,10 @@ optimization = "debug"
 debug_info = true
 
 [scripts]
-dev = "cursed-zig --optimize=debug src/main.csd"
-build = "cursed-zig --compile --optimize=release-fast src/main.csd"
+dev = "cursed-zig --optimize=debug src/main.💀"
+build = "cursed-zig --compile --optimize=release-fast src/main.💀"
 test = "cursed-zig test"
 fmt = "cursed-fmt src/"
 lint = "cursed-lint src/"
 doc = "cursed-doc generate"
-serve = "cursed-zig --optimize=debug src/main.csd --serve"
+serve = "cursed-zig --optimize=debug src/main.💀 --serve"

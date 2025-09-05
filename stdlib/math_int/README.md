@@ -152,7 +152,7 @@ sus decimal normie = from_base("FF", 16);
 Run the comprehensive test suite:
 
 ```bash
-cargo run --bin cursed stdlib/math_int/test_math_int.csd
+cargo run --bin cursed stdlib/math_int/test_math_int.💀
 ```
 
 The test suite includes:

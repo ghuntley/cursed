@@ -16,7 +16,7 @@ By the end of this tutorial, you'll be able to:
 ### Basic If-Else with `lowkey`/`highkey`
 
 ```cursed
-# conditionals.csd - Basic conditional statements
+# conditionals.💀 - Basic conditional statements
 
 vibe main
 
@@ -52,7 +52,7 @@ slay main() {
 ### Conditional Expressions
 
 ```cursed
-# conditional_expressions.csd - Using conditions in expressions
+# conditional_expressions.💀 - Using conditions in expressions
 
 vibe main
 
@@ -88,7 +88,7 @@ slay main() {
 ### Complex Conditions
 
 ```cursed
-# complex_conditions.csd - Complex boolean expressions
+# complex_conditions.💀 - Complex boolean expressions
 
 vibe main
 
@@ -122,7 +122,7 @@ slay main() {
 ### Basic Switch Statements
 
 ```cursed
-# pattern_matching.csd - Pattern matching with vibe_check
+# pattern_matching.💀 - Pattern matching with vibe_check
 
 vibe main
 
@@ -181,7 +181,7 @@ slay main() {
 ### Numeric Pattern Matching
 
 ```cursed
-# numeric_patterns.csd - Pattern matching with numbers
+# numeric_patterns.💀 - Pattern matching with numbers
 
 vibe main
 
@@ -256,7 +256,7 @@ slay main() {
 ### For Loops with `bestie`
 
 ```cursed
-# for_loops.csd - For loop examples
+# for_loops.💀 - For loop examples
 
 vibe main
 
@@ -291,7 +291,7 @@ slay main() {
 ### While Loops with `periodt`
 
 ```cursed
-# while_loops.csd - While loop examples
+# while_loops.💀 - While loop examples
 
 vibe main
 
@@ -327,7 +327,7 @@ slay main() {
 ### Range-based Loops
 
 ```cursed
-# range_loops.csd - Iterating over collections
+# range_loops.💀 - Iterating over collections
 
 vibe main
 
@@ -362,7 +362,7 @@ slay main() {
 ### Break with `ghosted`
 
 ```cursed
-# loop_control.csd - Loop control with ghosted and simp
+# loop_control.💀 - Loop control with ghosted and simp
 
 vibe main
 
@@ -413,7 +413,7 @@ slay main() {
 ### Labeled Breaks and Continues
 
 ```cursed
-# labeled_control.csd - Labeled loop control
+# labeled_control.💀 - Labeled loop control
 
 vibe main
 
@@ -464,12 +464,12 @@ slay main() {
 
 ## Exercise: Text Adventure Game
 
-Create a program called `adventure.csd` that implements a simple text adventure game using various control flow structures:
+Create a program called `adventure.💀` that implements a simple text adventure game using various control flow structures:
 
 ### Solution
 
 ```cursed
-# adventure.csd - Text adventure game with control flow
+# adventure.💀 - Text adventure game with control flow
 
 vibe main
 

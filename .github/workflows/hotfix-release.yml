@@ -51,7 +51,7 @@ jobs:
       
       - name: Run regression tests
         run: |
-          ./zig-out/bin/cursed-zig comprehensive_stdlib_test.csd
+          ./zig-out/bin/cursed-zig comprehensive_stdlib_test.💀
           bash scripts/regression-test-suite.sh
       
       - name: Security scan

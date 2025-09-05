@@ -11,7 +11,7 @@ pub fn main() !void {
     defer std.process.argsFree(allocator, args);
 
     if (args.len < 2) {
-        std.debug.print("Usage: {s} <source_file.csd> [--demo]\n", .{args[0]});
+        std.debug.print("Usage: {s} <source_file.💀.💀> [--demo]\n", .{args[0]});
         return;
     }
 
@@ -72,7 +72,7 @@ fn runDemo(source_file: []const u8, source_content: []const u8) !void {
     std.debug.print("  ➤  10: sus result drip = x * 2\n", .{});
     
     std.debug.print("\n📚 Demo: Stack trace\n", .{});
-    std.debug.print("  ➤ #0: main_character at debug_test.csd:10\n", .{});
+    std.debug.print("  ➤ #0: main_character at debug_test.💀.💀:10\n", .{});
     
     std.debug.print("\n🎯 Debugger Features Demonstrated:\n", .{});
     std.debug.print("  ✅ Step-by-step execution\n", .{});

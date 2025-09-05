@@ -967,7 +967,7 @@ test "comprehensive error handling system" {
     
     // Test YIKES error creation
     const location = YikesError.SourceLocation{
-        .file = "test.csd",
+        .file = "test.💀",
         .line = 42,
         .column = 10,
         .function = "test_function",
@@ -997,7 +997,7 @@ test "comprehensive error handling system" {
     defer fam_block.deinit();
     
     // Test function call tracking
-    try runtime.enterFunction("test_function", "test.csd", 1, 1);
+    try runtime.enterFunction("test_function", "test.💀", 1, 1);
     try runtime.setLocalVariable("x", "42");
     runtime.exitFunction();
     
@@ -1094,7 +1094,7 @@ test "memory safety during error conditions" {
     }
     
     // Test stack trace memory management
-    try runtime.enterFunction("test_func", "test.csd", 1, 1);
+    try runtime.enterFunction("test_func", "test.💀", 1, 1);
     try runtime.setLocalVariable("test_var", "test_value");
     runtime.exitFunction();
     

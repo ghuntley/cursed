@@ -175,10 +175,10 @@ The module includes comprehensive tests using the testz framework:
 
 ```bash
 # Run interpretation mode
-cargo run --bin cursed stdlib/time/test_time.csd
+cargo run --bin cursed stdlib/time/test_time.💀
 
 # Run compilation mode
-cargo run --bin cursed -- compile stdlib/time/test_time.csd
+cargo run --bin cursed -- compile stdlib/time/test_time.💀
 ./test_time
 ```
 

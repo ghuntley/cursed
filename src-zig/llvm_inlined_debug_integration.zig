@@ -222,7 +222,7 @@ pub const LLVMInlinedDebugIntegration = struct {
             1, // Would extract from debug info
             1, // Would extract from debug info
             1, // Would extract from debug info
-            "current.csd" // Would extract from debug info
+            "current.💀" // Would extract from debug info
         );
         
         // Set up active inline tracking

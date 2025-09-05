@@ -1037,7 +1037,7 @@ test "basic macro expansion order" {
         .name = "TEST_MACRO",
         .arguments = &[_]Token{},
         .location = .{
-            .file = "test.csd",
+            .file = "test.💀",
             .line = 1,
             .column = 1,
             .byte_offset = 0,
@@ -1075,7 +1075,7 @@ test "recursion detection" {
         .name = "RECURSIVE",
         .arguments = &[_]Token{},
         .location = .{
-            .file = "test.csd",
+            .file = "test.💀",
             .line = 1,
             .column = 1,
             .byte_offset = 0,

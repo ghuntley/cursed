@@ -169,13 +169,13 @@ jobs:
           if [ "${{ matrix.platform }}" != "linux-arm64" ] && [ "${{ matrix.platform }}" != "wasm32" ]; then
             if [ "${{ runner.os }}" != "Windows" ] || [ "${{ matrix.platform }}" = "windows-x64" ]; then
               echo "Testing execution..."
-              echo 'vibez.spill("Hello from CURSED!")' > test.csd
+              echo 'vibez.spill("Hello from CURSED!")' > test.💀
               
               # Test compiler execution
               timeout 30s "$main_exe" --version || echo "Version check failed"
-              timeout 30s "$main_exe" test.csd || echo "Program execution failed"
+              timeout 30s "$main_exe" test.💀 || echo "Program execution failed"
               
-              rm -f test.csd
+              rm -f test.💀
             fi
           fi
         else
@@ -216,16 +216,16 @@ jobs:
         echo "Running performance benchmarks..."
         
         # Create test programs for benchmarking
-        echo 'slay fibonacci(n drip) drip { ready n <= 1 { damn 1 } damn fibonacci(n-1) + fibonacci(n-2) }' > fib.csd
-        echo 'vibez.spill("Computing fibonacci(30)...") fibonacci(30)' >> fib.csd
+        echo 'slay fibonacci(n drip) drip { ready n <= 1 { damn 1 } damn fibonacci(n-1) + fibonacci(n-2) }' > fib.💀
+        echo 'vibez.spill("Computing fibonacci(30)...") fibonacci(30)' >> fib.💀
         
         # Time the execution
         if [ -f "zig-out/bin/cursed" ]; then
           echo "Timing CURSED execution..."
-          time ./zig-out/bin/cursed fib.csd || echo "Benchmark failed"
+          time ./zig-out/bin/cursed fib.💀 || echo "Benchmark failed"
         fi
         
-        rm -f fib.csd
+        rm -f fib.💀
       shell: bash
 
   # Integration testing across platforms
@@ -272,9 +272,9 @@ jobs:
             ./cursed --version || echo "Version check failed"
             
             # Test basic functionality
-            echo 'vibez.spill("Cross-platform test successful!")' > test.csd
-            ./cursed test.csd || echo "Program execution failed"
-            rm -f test.csd
+            echo 'vibez.spill("Cross-platform test successful!")' > test.💀
+            ./cursed test.💀 || echo "Program execution failed"
+            rm -f test.💀
           fi
         fi
 

@@ -88,16 +88,16 @@ test-zig: build ## Run Zig compiler tests
 
 test-stdlib: build ## Test standard library modules
 	$(AT)echo -e "$(BLUE)📚 Testing standard library...$(RESET)"
-	$(AT)$(CURSED_UNIFIED) stdlib/comprehensive_stdlib_test.csd $(V)
+	$(AT)$(CURSED_UNIFIED) stdlib/comprehensive_stdlib_test.💀 $(V)
 
 test-compiler: build ## Test compiler functionality
 	$(AT)echo -e "$(BLUE)⚙️  Testing compiler functionality...$(RESET)"
-	$(AT)$(CURSED_UNIFIED) basic_test.csd $(V)
-	$(AT)$(CURSED_UNIFIED) comprehensive_test.csd $(V)
+	$(AT)$(CURSED_UNIFIED) basic_test.💀 $(V)
+	$(AT)$(CURSED_UNIFIED) comprehensive_test.💀 $(V)
 
 test-examples: build ## Test example programs
 	$(AT)echo -e "$(BLUE)📝 Testing example programs...$(RESET)"
-	$(AT)$(CURSED_UNIFIED) examples/demo.csd $(V)
+	$(AT)$(CURSED_UNIFIED) examples/demo.💀 $(V)
 
 test-all: test test-stdlib test-compiler test-examples ## Run comprehensive test suite
 	$(AT)echo -e "$(GREEN)✅ All tests completed$(RESET)"
@@ -114,15 +114,15 @@ verify: test-all ## Comprehensive validation
 
 run-demo: build ## Run basic CURSED demo
 	$(AT)echo -e "$(CYAN)🎯 Running CURSED demo...$(RESET)"
-	$(AT)$(CURSED_UNIFIED) demo.csd $(V)
+	$(AT)$(CURSED_UNIFIED) demo.💀 $(V)
 
 run-stdlib-demo: build ## Run standard library demo
 	$(AT)echo -e "$(CYAN)📚 Running stdlib demo...$(RESET)"
-	$(AT)$(CURSED_UNIFIED) stdlib/comprehensive_stdlib_demo.csd $(V)
+	$(AT)$(CURSED_UNIFIED) stdlib/comprehensive_stdlib_demo.💀 $(V)
 
-run-program: build ## Run specific CURSED program (requires PROGRAM=file.csd)
+run-program: build ## Run specific CURSED program (requires PROGRAM=file.💀)
 ifndef PROGRAM
-	$(error PROGRAM is required. Usage: make run-program PROGRAM=file.csd)
+	$(error PROGRAM is required. Usage: make run-program PROGRAM=file.💀)
 endif
 	$(AT)echo -e "$(CYAN)▶️  Running CURSED program: $(PROGRAM)$(RESET)"
 	$(AT)$(CURSED_UNIFIED) $(PROGRAM) $(V)
@@ -130,15 +130,15 @@ endif
 # JIT execution engine
 jit-test: build ## Test JIT execution engine
 	$(AT)echo -e "$(CYAN)🚀 Testing JIT execution engine...$(RESET)"
-	$(AT)$(CURSED_UNIFIED) --jit comprehensive_test.csd $(V)
+	$(AT)$(CURSED_UNIFIED) --jit comprehensive_test.💀 $(V)
 
 jit-demo: build ## Run JIT demonstration
 	$(AT)echo -e "$(CYAN)⚡ Running JIT demonstration...$(RESET)"
-	$(AT)$(CURSED_UNIFIED) --jit --tier-stats demo.csd $(V)
+	$(AT)$(CURSED_UNIFIED) --jit --tier-stats demo.💀 $(V)
 
 performance-test: build ## Run performance benchmarks
 	$(AT)echo -e "$(CYAN)⏱️  Running performance benchmarks...$(RESET)"
-	$(AT)$(CURSED_UNIFIED) comprehensive_performance_test.csd $(V)
+	$(AT)$(CURSED_UNIFIED) comprehensive_performance_test.💀 $(V)
 
 # Cross-Compilation
 # =============================================================================
@@ -204,7 +204,7 @@ help: ## Show this help message
 	$(AT)echo -e "  make build                     # Build CURSED compiler"
 	$(AT)echo -e "  make test                      # Run all tests"
 	$(AT)echo -e "  make run-demo                  # Run demo program"
-	$(AT)echo -e "  make run-program PROGRAM=test.csd  # Run specific program"
+	$(AT)echo -e "  make run-program PROGRAM=test.💀  # Run specific program"
 	$(AT)echo -e "  make cross-compile             # Build for all platforms"
 	$(AT)echo -e "  make release                   # Build optimized version"
 	$(AT)echo ""

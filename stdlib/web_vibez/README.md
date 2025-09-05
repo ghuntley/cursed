@@ -335,10 +335,10 @@ The module includes comprehensive tests covering all functionality:
 
 ```bash
 # Run tests in interpretation mode
-cargo run --bin cursed stdlib/web_vibez/test_web_vibez.csd
+cargo run --bin cursed stdlib/web_vibez/test_web_vibez.💀
 
 # Run tests in compilation mode
-cargo run --bin cursed -- compile stdlib/web_vibez/test_web_vibez.csd
+cargo run --bin cursed -- compile stdlib/web_vibez/test_web_vibez.💀
 ./test_web_vibez
 ```
 

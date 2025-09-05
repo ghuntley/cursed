@@ -53,7 +53,7 @@ test "error context with location" {
     
     // Test error context with location
     const location = ErrorContext.SourceLocation{
-        .file = "test.csd",
+        .file = "test.💀",
         .line = 42,
         .column = 10,
     };

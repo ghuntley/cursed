@@ -158,7 +158,7 @@ sus GC_COLLECTION_INTERVAL normie = 1000    # Objects between GC
 
 Run comprehensive tests with:
 ```bash
-cargo run --bin cursed stdlib/memory_core/test_memory_core.csd
+cargo run --bin cursed stdlib/memory_core/test_memory_core.💀
 ```
 
 The test suite covers:

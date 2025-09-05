@@ -226,14 +226,14 @@ The caching system provides:
 Run the comprehensive test suite:
 
 ```bash
-cargo run --bin cursed stdlib/sorta_fresh/test_sorta_fresh.csd
+cargo run --bin cursed stdlib/sorta_fresh/test_sorta_fresh.💀
 ```
 
 Test both interpretation and compilation modes:
 
 ```bash
-cargo run --bin cursed stdlib/sorta_fresh/test_sorta_fresh.csd
-cargo run --bin cursed -- compile stdlib/sorta_fresh/test_sorta_fresh.csd
+cargo run --bin cursed stdlib/sorta_fresh/test_sorta_fresh.💀
+cargo run --bin cursed -- compile stdlib/sorta_fresh/test_sorta_fresh.💀
 ./test_sorta_fresh
 ```
 

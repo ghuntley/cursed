@@ -7,15 +7,15 @@ Working from: /home/ghuntley/cursed/test_suite/.. (for stdlib loading)
 Scanning for test files...
 Found 83 test files
 
-[1m[1/83] Testing: arithmetic/01_mixed_types.csd[0m
+[1m[1/83] Testing: arithmetic/01_mixed_types.💀[0m
   Result: [33mFAIL (different outputs)[0m
   [36mInterpreter (exit: 0):[0m
-    Error at /home/ghuntley/cursed/test_suite/test_programs/arithmetic/01_mixed_types.csd:12:17 - Error parsing variable declaration
+    Error at /home/ghuntley/cursed/test_suite/test_programs/arithmetic/01_mixed_types.💀:12:17 - Error parsing variable declaration
     INFO: Recovered at semicolon after skipping 3 tokens
-    Error at /home/ghuntley/cursed/test_suite/test_programs/arithmetic/01_mixed_types.csd:12:28 - Error parsing function statement
+    Error at /home/ghuntley/cursed/test_suite/test_programs/arithmetic/01_mixed_types.💀:12:28 - Error parsing function statement
     INFO: Recovered at delimiter 'RightParen' after skipping 6 tokens
     INFO: Attempting additional statement recovery
-    Error at /home/ghuntley/cursed/test_suite/test_programs/arithmetic/01_mixed_types.csd:35:2 - Failed to parse statement
+    Error at /home/ghuntley/cursed/test_suite/test_programs/arithmetic/01_mixed_types.💀:35:2 - Failed to parse statement
     
     === Error Recovery Statistics ===
     Total errors encountered: 2
@@ -45,7 +45,7 @@ Found 83 test files
     00000020: 6573 745f 7375 6974 652f 7465 7374 5f70  est_suite/test_p
     00000030: 726f 6772 616d 732f 6172 6974 686d 6574  rograms/arithmet
     00000040: 6963 2f30 315f 6d69 7865 645f 7479 7065  ic/01_mixed_type
-    00000050: 732e 6373 643a 3132 3a31 3720 2d20 4572  s.csd:12:17 - Er
+    00000050: 732e 6373 643a 3132 3a31 3720 2d20 4572  s.💀:12:17 - Er
     00000060: 726f 7220 7061 7273 696e 6720 7661 7269  ror parsing vari
     00000070: 6162 6c65 2064 6563 6c61 7261 7469 6f6e  able declaration
     00000080: 0a49 4e46 4f3a 2052 6563 6f76 6572 6564  .INFO: Recovered
@@ -56,7 +56,7 @@ Found 83 test files
     000000d0: 7273 6564 2f74 6573 745f 7375 6974 652f  rsed/test_suite/
     000000e0: 7465 7374 5f70 726f 6772 616d 732f 6172  test_programs/ar
     000000f0: 6974 686d 6574 6963 2f30 315f 6d69 7865  ithmetic/01_mixe
-    00000100: 645f 7479 7065 732e 6373 643a 3132 3a32  d_types.csd:12:2
+    00000100: 645f 7479 7065 732e 6373 643a 3132 3a32  d_types.💀:12:2
     00000110: 3820 2d20 4572 726f 7220 7061 7273 696e  8 - Error parsin
     00000120: 6720 6675 6e63 7469 6f6e 2073 7461 7465  g function state
     00000130: 6d65 6e74 0a49 4e46 4f3a 2052 6563 6f76  ment.INFO: Recov
@@ -71,7 +71,7 @@ Found 83 test files
     000001c0: 7273 6564 2f74 6573 745f 7375 6974 652f  rsed/test_suite/
     000001d0: 7465 7374 5f70 726f 6772 616d 732f 6172  test_programs/ar
     000001e0: 6974 686d 6574 6963 2f30 315f 6d69 7865  ithmetic/01_mixe
-    000001f0: 645f 7479 7065 732e 6373 643a 3335 3a32  d_types.csd:35:2
+    000001f0: 645f 7479 7065 732e 6373 643a 3335 3a32  d_types.💀:35:2
     00000200: 202d 2046 6169 6c65 6420 746f 2070 6172   - Failed to par
     00000210: 7365 2073 7461 7465 6d65 6e74 0a0a 3d3d  se statement..==
     00000220: 3d20 4572 726f 7220 5265 636f 7665 7279  = Error Recovery

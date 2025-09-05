@@ -77,7 +77,7 @@ sus internal_err CursedError = error_create_internal("Compiler bug")
 ### Error Context
 ```cursed
 # Create and enhance error context
-sus context ErrorContext = error_context_new("main.csd", 42, 10)
+sus context ErrorContext = error_context_new("main.💀", 42, 10)
 sus enhanced ErrorContext = error_context_add_context(context, "in function main")
 sus location tea = error_context_format_location(enhanced)
 ```
@@ -158,7 +158,7 @@ slay create_undefined_variable_error(name tea, line normie, col normie) CursedEr
     sus error CursedError = error_create_type(message, line, col)
     
     # Add context with suggestion
-    sus context ErrorContext = error_context_new("source.csd", line, col)
+    sus context ErrorContext = error_context_new("source.💀", line, col)
     sus enhanced ErrorContext = error_context_add_context(context, "Did you mean '" + suggest_similar_name(name) + "'?")
     
     damn error_with_context(error, enhanced)
@@ -202,7 +202,7 @@ slay process_compilation_errors(errors [CursedError]) tea {
 Comprehensive test suite validates all error handling:
 
 ```bash
-cargo run --bin cursed stdlib/error_core/test_error_core.csd
+cargo run --bin cursed stdlib/error_core/test_error_core.💀
 ```
 
 Tests cover:

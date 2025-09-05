@@ -799,7 +799,7 @@ test "debug info generator initialization" {
     var debug_gen = try DebugInfoGenerator.init(allocator, context, module);
     defer debug_gen.deinit();
     
-    try debug_gen.createCompileUnit("test.csd", "/tmp");
+    try debug_gen.createCompileUnit("test.💀", "/tmp");
     
     try std.testing.expect(debug_gen.compile_unit != null);
     try std.testing.expect(debug_gen.file_metadata != null);
@@ -817,7 +817,7 @@ test "basic type creation" {
     var debug_gen = try DebugInfoGenerator.init(allocator, context, module);
     defer debug_gen.deinit();
     
-    try debug_gen.createCompileUnit("test.csd", "/tmp");
+    try debug_gen.createCompileUnit("test.💀", "/tmp");
     
     const cursed_types = try debug_gen.createCursedTypes();
     try std.testing.expect(cursed_types.normie_type != null);

@@ -71,17 +71,17 @@ production = ["full"]
 
 [[bin]]
 name = "web-server"
-path = "src/bin/server.csd"
+path = "src/bin/server.💀"
 required-features = []
 
 [[bin]]
 name = "db-migrate"
-path = "src/bin/migrate.csd"
+path = "src/bin/migrate.💀"
 required-features = []
 
 [lib]
 name = "web_server_demo"
-path = "src/lib.csd"
+path = "src/lib.💀"
 
 # Build profiles for different scenarios
 [profiles.dev]

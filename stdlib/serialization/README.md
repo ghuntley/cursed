@@ -325,7 +325,7 @@ The module provides basic error detection through:
 
 Run the test suite:
 ```bash
-cargo run --bin cursed stdlib/serialization/test_serialization.csd
+cargo run --bin cursed stdlib/serialization/test_serialization.💀
 ```
 
 The test suite includes:

@@ -404,8 +404,8 @@ pub const PackageManager = struct {
         
         std.fs.cwd().makePath(src_dir) catch {};
         
-        // Create main.csd
-        const main_path = try std.fs.path.join(self.allocator, &[_][]const u8{ src_dir, "main.csd" });
+        // Create main.💀.💀
+        const main_path = try std.fs.path.join(self.allocator, &[_][]const u8{ src_dir, "main.💀" });
         defer self.allocator.free(main_path);
         
         const main_file = try std.fs.cwd().createFile(main_path, .{});

@@ -1,0 +1,71 @@
+yeet "testz"
+yeet "runtime_core"
+
+fr fr Test suite for runtime core library
+
+test_start("RuntimeVec basic operations")
+sus vec RuntimeVec<normie> = RuntimeVec_new<normie>()
+assert_eq_int(RuntimeVec_len(vec), 0)
+assert_true(RuntimeVec_is_empty(vec))
+
+vec = RuntimeVec_push(vec, 42)
+assert_eq_int(RuntimeVec_len(vec), 1)
+assert_false(RuntimeVec_is_empty(vec))
+assert_eq_int(RuntimeVec_get(vec, 0), 42)
+
+vec = RuntimeVec_push(vec, 100)
+assert_eq_int(RuntimeVec_len(vec), 2)
+assert_eq_int(RuntimeVec_get(vec, 1), 100)
+
+test_start("RuntimeHashMap operations")
+sus map RuntimeHashMap<tea, normie> = RuntimeHashMap_new<tea, normie>()
+assert_eq_int(RuntimeHashMap_size(map), 0)
+
+map = RuntimeHashMap_insert(map, "count", 42)
+assert_eq_int(RuntimeHashMap_size(map), 1)
+assert_true(RuntimeHashMap_contains(map, "count"))
+
+(value, found) := RuntimeHashMap_get(map, "count")
+assert_true(found)
+assert_eq_int(value, 42)
+
+test_start("RuntimeStringBuilder operations")
+sus sb RuntimeStringBuilder = RuntimeStringBuilder_new()
+assert_eq_int(RuntimeStringBuilder_len(sb), 0)
+
+sb = RuntimeStringBuilder_append(sb, "Hello")
+sb = RuntimeStringBuilder_append(sb, " ")
+sb = RuntimeStringBuilder_append(sb, "World")
+
+sus result tea = RuntimeStringBuilder_to_string(sb)
+assert_eq_string(result, "Hello World")
+
+test_start("RuntimeStack operations")
+sus stack RuntimeStack<tea> = RuntimeStack_new<tea>()
+assert_true(RuntimeStack_is_empty(stack))
+assert_eq_int(RuntimeStack_size(stack), 0)
+
+stack = RuntimeStack_push(stack, "first")
+stack = RuntimeStack_push(stack, "second")
+assert_eq_int(RuntimeStack_size(stack), 2)
+assert_false(RuntimeStack_is_empty(stack))
+
+(item, success) := RuntimeStack_peek(stack)
+assert_true(success)
+assert_eq_string(item, "second")
+
+(popped, pop_success) := RuntimeStack_pop(stack)
+assert_true(pop_success)
+assert_eq_string(popped, "second")
+assert_eq_int(RuntimeStack_size(stack), 1)
+
+test_start("RuntimeError handling")
+sus err RuntimeError = RuntimeError_new(404, "Not found")
+assert_eq_int(err.code, 404)
+assert_eq_string(err.message, "Not found")
+
+sus err_with_source RuntimeError = RuntimeError_with_source(500, "Internal error", "main.💀", 42)
+assert_eq_string(err_with_source.source_file, "main.💀")
+assert_eq_int(err_with_source.source_line, 42)
+
+print_test_summary()

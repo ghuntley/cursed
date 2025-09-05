@@ -83,7 +83,7 @@ OPTIONS:
 
 ```bash
 # Instrument a single file
-cursed-coverage instrument input.csd output.instrumented.csd
+cursed-coverage instrument input.💀 output.instrumented.💀
 ```
 
 #### Generate Reports from Existing Data
@@ -128,9 +128,9 @@ coverage_init(config)
 Instrument CURSED source code for coverage tracking.
 
 ```cursed
-sus source tea = read_file("example.csd")
-sus instrumented tea = instrument_code("example.csd", source)
-write_file("example.instrumented.csd", instrumented)
+sus source tea = read_file("example.💀")
+sus instrumented tea = instrument_code("example.💀", source)
+write_file("example.instrumented.💀", instrumented)
 ```
 
 #### `generate_coverage_report() CoverageReport`
@@ -360,7 +360,7 @@ Machine-readable JSON format for integration:
   },
   "files": [
     {
-      "path": "src/main.csd",
+      "path": "src/main.💀",
       "total_lines": 100,
       "covered_lines": 90,
       "line_coverage_percent": 90.0,
@@ -385,7 +385,7 @@ Compatible with common CI/CD tools:
     <project>
         <metrics lines_total="1000" lines_covered="850" line_percent="85.0" />
         <files>
-            <file path="src/main.csd">
+            <file path="src/main.💀">
                 <metrics lines_total="100" lines_covered="90" line_percent="90.0" />
             </file>
         </files>
@@ -407,8 +407,8 @@ Text-based report for terminal output:
   🌿 Branches:  120/150 (80.0%)
 
 📁 File Coverage:
-  src/main.csd (90.0% lines, 95.0% functions)
-  src/utils.csd (80.0% lines, 85.0% functions)
+  src/main.💀 (90.0% lines, 95.0% functions)
+  src/utils.💀 (80.0% lines, 85.0% functions)
 
 ✅ All coverage thresholds met!
 ```
@@ -558,8 +558,8 @@ cursed-coverage . --verbose --format console
 For debugging, manually instrument a single file:
 
 ```bash
-cursed-coverage instrument src/example.csd src/example.instrumented.csd
-cursed src/example.instrumented.csd
+cursed-coverage instrument src/example.💀 src/example.instrumented.💀
+cursed src/example.instrumented.💀
 ```
 
 ## Performance Considerations
@@ -588,7 +588,7 @@ To contribute to the coverage analysis system:
 
 1. **Test Changes**: Run the comprehensive test suite:
    ```bash
-   cursed stdlib/coverage_analysis/test_coverage_analysis.csd
+   cursed stdlib/coverage_analysis/test_coverage_analysis.💀
    ```
 
 2. **Add Examples**: Include examples for new features

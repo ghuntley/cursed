@@ -13,7 +13,7 @@ pub fn main() !void {
     defer std.process.argsFree(allocator, args);
     
     if (args.len < 2) {
-        print("Usage: {s} <file.csd> [--jit]\n", .{args[0]});
+        print("Usage: {s} <file.💀.💀> [--jit]\n", .{args[0]});
         return;
     }
     

@@ -379,7 +379,7 @@ export default function PlaygroundPage() {
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = 'program.csd';
+                a.download = 'program.💀';
                 a.click();
                 URL.revokeObjectURL(url);
               }}

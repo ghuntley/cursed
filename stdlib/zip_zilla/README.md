@@ -241,7 +241,7 @@ Common error scenarios:
 Run the comprehensive test suite:
 
 ```bash
-cargo run --bin cursed stdlib/zip_zilla/test_zip_zilla.csd
+cargo run --bin cursed stdlib/zip_zilla/test_zip_zilla.💀
 ```
 
 The test suite covers:

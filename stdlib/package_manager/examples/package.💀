@@ -1,0 +1,220 @@
+// Example package manifest for CURSED Package Manager
+// This demonstrates the package.💀 format and features
+
+package "example-cursed-app"
+{
+    version = "1.2.3"
+    description = "An example CURSED application demonstrating package management"
+    authors = [
+        "Alice Developer <alice@example.com>",
+        "Bob Programmer <bob@cursed.dev>"
+    ]
+    license = "MIT"
+    keywords = ["example", "demo", "web", "api"]
+    repository = "https://github.com/cursed-lang/example-app"
+    homepage = "https://example-app.cursed.dev"
+    readme = "README.md"
+    
+    // Runtime dependencies - required for the application to run
+    dependencies = {
+        "httpz" = "^2.1.0"          // HTTP client/server library
+        "jsonz" = "~1.4.2"          // JSON parsing and generation
+        "cryptz" = "^3.0.0"         // Cryptographic functions
+        "stringz" = ">=1.0.0"       // String manipulation utilities
+        "filez" = "^0.8.0"          // File system operations
+        "config" = "2.1.0"          // Exact version for configuration
+        "logz" = ">1.0.0, <2.0.0"   // Range constraint
+        "mathz" = "*"               // Any version (not recommended)
+    }
+    
+    // Development dependencies - only needed during development
+    dev_dependencies = {
+        "testz" = "^1.0.0"          // Testing framework
+        "benchz" = "~0.5.0"         // Benchmarking tools
+        "mockz" = "^2.0.0"          // Mocking library for tests
+        "debugz" = "latest"         // Debug utilities
+    }
+    
+    // Build dependencies - needed during build process
+    build_dependencies = {
+        "build-tools" = "^1.0.0"
+        "codegen" = "~0.3.0"
+    }
+    
+    // Optional dependencies - enhance functionality but not required
+    optional_dependencies = {
+        "redis-client" = "^1.5.0"   // Redis support (optional)
+        "postgres" = "^3.0.0"       // PostgreSQL support (optional)
+        "metrics" = "^2.1.0"        // Metrics collection (optional)
+    }
+    
+    // Git dependencies - packages from git repositories
+    git_dependencies = {
+        "custom-lib" = {
+            git = "https://github.com/example/custom-lib.git"
+            branch = "main"
+            version = "^1.0.0"
+        }
+        "fork-lib" = {
+            git = "https://github.com/myorg/fork-lib.git"
+            tag = "v2.1.0"
+        }
+    }
+    
+    // Local path dependencies - for development
+    path_dependencies = {
+        "shared-utils" = { path = "../shared-utils" }
+        "common" = { path = "./libs/common" }
+    }
+    
+    // Build targets - what this package produces
+    targets = {
+        // Binary executables
+        bins = [
+            {
+                name = "example-app"
+                main = "src/main.💀"
+                features = ["web", "api"]
+            },
+            {
+                name = "cli-tool"
+                main = "src/cli.💀"
+                features = ["cli"]
+            }
+        ]
+        
+        // Library targets
+        libs = [
+            {
+                name = "example-lib"
+                main = "src/lib.💀"
+                public = true
+            }
+        ]
+        
+        // Test targets
+        tests = [
+            {
+                name = "integration-tests"
+                main = "tests/integration.💀"
+                features = ["test"]
+            }
+        ]
+    }
+    
+    // Feature flags - optional functionality
+    features = {
+        default = ["web", "json"]
+        web = ["httpz", "templates"]
+        api = ["web", "auth"]
+        cli = ["clap", "colored"]
+        database = ["postgres", "migrations"]
+        redis = ["redis-client"]
+        metrics = ["prometheus"]
+        test = ["testz", "mockz"]
+    }
+    
+    // Build configuration
+    build = {
+        // Minimum CURSED version required
+        cursed_version = ">=1.0.0"
+        
+        // Build scripts
+        scripts = {
+            prebuild = "scripts/prebuild.💀"
+            postbuild = "scripts/postbuild.💀"
+            test = "scripts/test.💀"
+            bench = "scripts/bench.💀"
+        }
+        
+        // Compilation flags
+        flags = {
+            optimize = "release"
+            debug_info = true
+            warnings_as_errors = true
+        }
+        
+        // Platform-specific settings
+        platforms = {
+            linux = {
+                features = ["unix"]
+                flags = { link_args = ["-pthread"] }
+            }
+            windows = {
+                features = ["windows"]
+                flags = { link_args = ["-lws2_32"] }
+            }
+            macos = {
+                features = ["unix", "macos"]
+            }
+        }
+    }
+    
+    // Documentation configuration
+    docs = {
+        include = ["src/", "docs/"]
+        exclude = ["src/internal/"]
+        features = ["web", "api"]
+    }
+    
+    // Package metadata for registry
+    metadata = {
+        categories = ["web", "api", "framework"]
+        keywords = ["http", "server", "web-framework"]
+        maintenance = "actively-maintained"
+        stability = "stable"
+    }
+    
+    // Publishing configuration
+    publish = {
+        registry = "https://packages.cursed.dev"
+        exclude = [
+            "tests/",
+            "benches/",
+            "scripts/",
+            ".*",
+            "*.log"
+        ]
+        include = [
+            "src/",
+            "stdlib/",
+            "README.md",
+            "LICENSE",
+            "package.💀"
+        ]
+    }
+    
+    // Workspace configuration (if this is a workspace root)
+    workspace = {
+        members = [
+            "apps/web-app",
+            "apps/cli-tool",
+            "libs/common",
+            "libs/shared-utils"
+        ]
+        exclude = [
+            "examples/",
+            "experiments/"
+        ]
+        
+        // Shared dependencies across workspace
+        dependencies = {
+            "testz" = "^1.0.0"
+            "logz" = "^2.0.0"
+        }
+    }
+    
+    // Badges for documentation
+    badges = [
+        {
+            name = "build"
+            url = "https://ci.example.com/build-status"
+            image = "https://ci.example.com/badge.svg"
+        },
+        {
+            name = "coverage" 
+            url = "https://coverage.example.com"
+            image = "https://coverage.example.com/badge.svg"
+        }
+    ]
+}

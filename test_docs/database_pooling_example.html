@@ -17,57 +17,57 @@
             <div class="doc-item" id="new_pool">
                 <h4>new_pool</h4>
                 <pre class="signature"><code>slay new_pool(config: DatabaseConfig) -> ConnectionPool</code></pre>
-                <p class="source">Source: <a href="file://./examples/database_pooling_example.csd#L17">database_pooling_example.csd:17</a></p>
+                <p class="source">Source: <a href="file://./examples/database_pooling_example.💀#L17">database_pooling_example.💀:17</a></p>
             </div>
             <div class="doc-item" id="get_user_count">
                 <h4>get_user_count</h4>
                 <pre class="signature"><code>slay get_user_count(pool: ConnectionPool) -> i64</code></pre>
-                <p class="source">Source: <a href="file://./examples/database_pooling_example.csd#L18">database_pooling_example.csd:18</a></p>
+                <p class="source">Source: <a href="file://./examples/database_pooling_example.💀#L18">database_pooling_example.💀:18</a></p>
             </div>
             <div class="doc-item" id="insert_bulk_users">
                 <h4>insert_bulk_users</h4>
                 <pre class="signature"><code>slay insert_bulk_users(pool: ConnectionPool, users: [][]String) -> i64</code></pre>
-                <p class="source">Source: <a href="file://./examples/database_pooling_example.csd#L19">database_pooling_example.csd:19</a></p>
+                <p class="source">Source: <a href="file://./examples/database_pooling_example.💀#L19">database_pooling_example.💀:19</a></p>
             </div>
             <div class="doc-item" id="create_database_config">
                 <h4>create_database_config</h4>
                 <pre class="signature"><code>slay create_database_config() -> DatabaseConfig {</code></pre>
-                <p class="source">Source: <a href="file://./examples/database_pooling_example.csd#L22">database_pooling_example.csd:22</a></p>
+                <p class="source">Source: <a href="file://./examples/database_pooling_example.💀#L22">database_pooling_example.💀:22</a></p>
             </div>
             <div class="doc-item" id="setup_database_schema">
                 <h4>setup_database_schema</h4>
                 <pre class="signature"><code>slay setup_database_schema(pool: sql_vibes.ConnectionPool) -> Bool {</code></pre>
-                <p class="source">Source: <a href="file://./examples/database_pooling_example.csd#L31">database_pooling_example.csd:31</a></p>
+                <p class="source">Source: <a href="file://./examples/database_pooling_example.💀#L31">database_pooling_example.💀:31</a></p>
             </div>
             <div class="doc-item" id="generate_sample_users">
                 <h4>generate_sample_users</h4>
                 <pre class="signature"><code>slay generate_sample_users(count: i32) -> [][]String {</code></pre>
-                <p class="source">Source: <a href="file://./examples/database_pooling_example.csd#L81">database_pooling_example.csd:81</a></p>
+                <p class="source">Source: <a href="file://./examples/database_pooling_example.💀#L81">database_pooling_example.💀:81</a></p>
             </div>
             <div class="doc-item" id="insert_users_concurrently">
                 <h4>insert_users_concurrently</h4>
                 <pre class="signature"><code>slay insert_users_concurrently(pool: sql_vibes.ConnectionPool, users: [][]String, workers: i32) -> i64 {</code></pre>
-                <p class="source">Source: <a href="file://./examples/database_pooling_example.csd#L104">database_pooling_example.csd:104</a></p>
+                <p class="source">Source: <a href="file://./examples/database_pooling_example.💀#L104">database_pooling_example.💀:104</a></p>
             </div>
             <div class="doc-item" id="insert_user_chunk">
                 <h4>insert_user_chunk</h4>
                 <pre class="signature"><code>slay insert_user_chunk(pool: sql_vibes.ConnectionPool, users: [][]String, worker_id: i32) -> i64 {</code></pre>
-                <p class="source">Source: <a href="file://./examples/database_pooling_example.csd#L139">database_pooling_example.csd:139</a></p>
+                <p class="source">Source: <a href="file://./examples/database_pooling_example.💀#L139">database_pooling_example.💀:139</a></p>
             </div>
             <div class="doc-item" id="query_users_by_department">
                 <h4>query_users_by_department</h4>
                 <pre class="signature"><code>slay query_users_by_department(pool: sql_vibes.ConnectionPool) {</code></pre>
-                <p class="source">Source: <a href="file://./examples/database_pooling_example.csd#L190">database_pooling_example.csd:190</a></p>
+                <p class="source">Source: <a href="file://./examples/database_pooling_example.💀#L190">database_pooling_example.💀:190</a></p>
             </div>
             <div class="doc-item" id="benchmark_concurrent_queries">
                 <h4>benchmark_concurrent_queries</h4>
                 <pre class="signature"><code>slay benchmark_concurrent_queries(pool: sql_vibes.ConnectionPool, concurrent_queries: i32) {</code></pre>
-                <p class="source">Source: <a href="file://./examples/database_pooling_example.csd#L230">database_pooling_example.csd:230</a></p>
+                <p class="source">Source: <a href="file://./examples/database_pooling_example.💀#L230">database_pooling_example.💀:230</a></p>
             </div>
             <div class="doc-item" id="main">
                 <h4>main</h4>
                 <pre class="signature"><code>slay main() {</code></pre>
-                <p class="source">Source: <a href="file://./examples/database_pooling_example.csd#L279">database_pooling_example.csd:279</a></p>
+                <p class="source">Source: <a href="file://./examples/database_pooling_example.💀#L279">database_pooling_example.💀:279</a></p>
             </div>
         </section>
         <section id="structs">
@@ -76,7 +76,7 @@
                 <h4>DatabaseConfig</h4>
                 <pre class="signature"><code>squad DatabaseConfig {</code></pre>
                 <p class="description">This example demonstrates connection pooling for high-performance database access</p>
-                <p class="source">Source: <a href="file://./examples/database_pooling_example.csd#L9">database_pooling_example.csd:9</a></p>
+                <p class="source">Source: <a href="file://./examples/database_pooling_example.💀#L9">database_pooling_example.💀:9</a></p>
             </div>
         </section>
         <section id="interfaces">
@@ -84,7 +84,7 @@
             <div class="doc-item" id="DatabaseService">
                 <h4>DatabaseService</h4>
                 <pre class="signature"><code>collab DatabaseService {</code></pre>
-                <p class="source">Source: <a href="file://./examples/database_pooling_example.csd#L16">database_pooling_example.csd:16</a></p>
+                <p class="source">Source: <a href="file://./examples/database_pooling_example.💀#L16">database_pooling_example.💀:16</a></p>
             </div>
         </section>
         <section id="constants">
@@ -92,52 +92,52 @@
             <div class="doc-item" id="conn">
                 <h4>conn</h4>
                 <pre class="signature"><code>facts conn = conn_result.value()</code></pre>
-                <p class="source">Source: <a href="file://./examples/database_pooling_example.csd#L40">database_pooling_example.csd:40</a></p>
+                <p class="source">Source: <a href="file://./examples/database_pooling_example.💀#L40">database_pooling_example.💀:40</a></p>
             </div>
             <div class="doc-item" id="conn">
                 <h4>conn</h4>
                 <pre class="signature"><code>facts conn = conn_result.value()</code></pre>
-                <p class="source">Source: <a href="file://./examples/database_pooling_example.csd#L146">database_pooling_example.csd:146</a></p>
+                <p class="source">Source: <a href="file://./examples/database_pooling_example.💀#L146">database_pooling_example.💀:146</a></p>
             </div>
             <div class="doc-item" id="stmt">
                 <h4>stmt</h4>
                 <pre class="signature"><code>facts stmt = stmt_result.value()</code></pre>
-                <p class="source">Source: <a href="file://./examples/database_pooling_example.csd#L156">database_pooling_example.csd:156</a></p>
+                <p class="source">Source: <a href="file://./examples/database_pooling_example.💀#L156">database_pooling_example.💀:156</a></p>
             </div>
             <div class="doc-item" id="txn">
                 <h4>txn</h4>
                 <pre class="signature"><code>facts txn = txn_result.value()</code></pre>
-                <p class="source">Source: <a href="file://./examples/database_pooling_example.csd#L168">database_pooling_example.csd:168</a></p>
+                <p class="source">Source: <a href="file://./examples/database_pooling_example.💀#L168">database_pooling_example.💀:168</a></p>
             </div>
             <div class="doc-item" id="conn">
                 <h4>conn</h4>
                 <pre class="signature"><code>facts conn = conn_result.value()</code></pre>
-                <p class="source">Source: <a href="file://./examples/database_pooling_example.csd#L199">database_pooling_example.csd:199</a></p>
+                <p class="source">Source: <a href="file://./examples/database_pooling_example.💀#L199">database_pooling_example.💀:199</a></p>
             </div>
             <div class="doc-item" id="result_set">
                 <h4>result_set</h4>
                 <pre class="signature"><code>facts result_set = query_result.value()</code></pre>
-                <p class="source">Source: <a href="file://./examples/database_pooling_example.csd#L215">database_pooling_example.csd:215</a></p>
+                <p class="source">Source: <a href="file://./examples/database_pooling_example.💀#L215">database_pooling_example.💀:215</a></p>
             </div>
             <div class="doc-item" id="conn">
                 <h4>conn</h4>
                 <pre class="signature"><code>facts conn = conn_result.value()</code></pre>
-                <p class="source">Source: <a href="file://./examples/database_pooling_example.csd#L248">database_pooling_example.csd:248</a></p>
+                <p class="source">Source: <a href="file://./examples/database_pooling_example.💀#L248">database_pooling_example.💀:248</a></p>
             </div>
             <div class="doc-item" id="pool">
                 <h4>pool</h4>
                 <pre class="signature"><code>facts pool = pool_result.value()</code></pre>
-                <p class="source">Source: <a href="file://./examples/database_pooling_example.csd#L294">database_pooling_example.csd:294</a></p>
+                <p class="source">Source: <a href="file://./examples/database_pooling_example.💀#L294">database_pooling_example.💀:294</a></p>
             </div>
             <div class="doc-item" id="cleanup_conn">
                 <h4>cleanup_conn</h4>
                 <pre class="signature"><code>facts cleanup_conn = conn_result.value()</code></pre>
-                <p class="source">Source: <a href="file://./examples/database_pooling_example.csd#L316">database_pooling_example.csd:316</a></p>
+                <p class="source">Source: <a href="file://./examples/database_pooling_example.💀#L316">database_pooling_example.💀:316</a></p>
             </div>
             <div class="doc-item" id="total_count">
                 <h4>total_count</h4>
                 <pre class="signature"><code>facts total_count = total_result.value().first_row().get(0).as_integer()</code></pre>
-                <p class="source">Source: <a href="file://./examples/database_pooling_example.csd#L347">database_pooling_example.csd:347</a></p>
+                <p class="source">Source: <a href="file://./examples/database_pooling_example.💀#L347">database_pooling_example.💀:347</a></p>
             </div>
         </section>
     </main>

@@ -275,7 +275,7 @@ pub const DebugInterpreter = struct {
             // Add stack frame
             const frame = debugger.StackFrame{
                 .function_name = func.declaration.name,
-                .file = "main.csd", // TODO: Get actual file name
+                .file = "main.💀", // TODO: Get actual file name
                 .line = self.current_line,
                 .local_variables = std.StringHashMap(interpreter.Value){},
             };
@@ -364,7 +364,7 @@ pub fn createDebugMain() !void {
     defer std.process.argsFree(allocator, args);
     
     if (args.len < 2) {
-        std.debug.print("Usage: {s} <source_file.csd> [--debug]\n", .{args[0]});
+        std.debug.print("Usage: {s} <source_file.💀.💀> [--debug]\n", .{args[0]});
         return;
     }
     

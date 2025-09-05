@@ -236,16 +236,16 @@ Run the comprehensive test suite:
 
 ```bash
 # Test interpretation mode
-cargo run --bin cursed stdlib/stringz/test_stringz_comprehensive.csd
+cargo run --bin cursed stdlib/stringz/test_stringz_comprehensive.💀
 
 # Test compilation mode
-cargo run --bin cursed -- compile stdlib/stringz/test_stringz_comprehensive.csd
+cargo run --bin cursed -- compile stdlib/stringz/test_stringz_comprehensive.💀
 ./test_stringz_comprehensive
 
 # Both-mode verification
 test_both_modes() {
-    cargo run --bin cursed stdlib/stringz/test_stringz_comprehensive.csd > interp.txt
-    cargo run --bin cursed -- compile stdlib/stringz/test_stringz_comprehensive.csd
+    cargo run --bin cursed stdlib/stringz/test_stringz_comprehensive.💀 > interp.txt
+    cargo run --bin cursed -- compile stdlib/stringz/test_stringz_comprehensive.💀
     ./test_stringz_comprehensive > comp.txt
     diff interp.txt comp.txt
 }
@@ -308,7 +308,7 @@ To contribute to the StringZ module:
 
 1. Add new functions following the `string_*` naming convention
 2. Include comprehensive error checking and bounds validation
-3. Add corresponding test cases in `test_stringz_comprehensive.csd`
+3. Add corresponding test cases in `test_stringz_comprehensive.💀`
 4. Update this documentation with function descriptions and examples
 5. Ensure both interpretation and compilation modes work correctly
 

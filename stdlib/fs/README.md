@@ -212,7 +212,7 @@ create_dir_recursive("project/src/main")
 create_dir_recursive("project/docs")
 
 # Create files in directories
-write_file("project/src/main/main.csd", "slay main() { vibez.spill(\"Hello!\") }")
+write_file("project/src/main/main.💀", "slay main() { vibez.spill(\"Hello!\") }")
 write_file("project/docs/README.md", "# Project Documentation")
 
 # List directory contents
@@ -299,10 +299,10 @@ The module includes comprehensive tests covering all functionality:
 
 ```bash
 # Run filesystem tests in interpretation mode
-cargo run --bin cursed stdlib/fs/test_fs.csd
+cargo run --bin cursed stdlib/fs/test_fs.💀
 
 # Run filesystem tests in compilation mode
-cargo run --bin cursed -- compile stdlib/fs/test_fs.csd
+cargo run --bin cursed -- compile stdlib/fs/test_fs.💀
 ./test_fs
 ```
 

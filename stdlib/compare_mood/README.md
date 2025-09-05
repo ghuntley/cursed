@@ -173,7 +173,7 @@ The module is designed for performance and thread safety, making it suitable for
 Run the comprehensive test suite with:
 
 ```bash
-cargo run --bin cursed stdlib/compare_mood/test_compare_mood.csd
+cargo run --bin cursed stdlib/compare_mood/test_compare_mood.💀
 ```
 
 The test suite covers all functions, edge cases, and error conditions to ensure reliable behavior across all comparison operations.

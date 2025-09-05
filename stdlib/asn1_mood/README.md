@@ -204,10 +204,10 @@ The module includes comprehensive tests covering all functionality:
 
 ```bash
 # Run ASN.1 module tests (interpretation mode)
-cargo run --bin cursed stdlib/asn1_mood/test_asn1_mood.csd
+cargo run --bin cursed stdlib/asn1_mood/test_asn1_mood.💀
 
 # Run ASN.1 module tests (compilation mode)
-cargo run --bin cursed -- compile stdlib/asn1_mood/test_asn1_mood.csd
+cargo run --bin cursed -- compile stdlib/asn1_mood/test_asn1_mood.💀
 ./test_asn1_mood
 ```
 

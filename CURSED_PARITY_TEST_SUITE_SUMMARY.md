@@ -88,7 +88,7 @@ make build  # Ensure compiler is built
 
 ### Run Single Test (Debug)
 ```bash
-./test_suite/run_single_test.sh test_suite/test_programs/basic/01_hello_world.csd
+./test_suite/run_single_test.sh test_suite/test_programs/basic/01_hello_world.💀
 ```
 
 ### Generate Additional Tests

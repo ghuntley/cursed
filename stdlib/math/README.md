@@ -219,7 +219,7 @@ vibez.spill("Integral of x² from 0 to 2:", result)  # Should be ≈ 2.67
 
 Run the comprehensive test suite:
 ```bash
-cargo run --bin cursed stdlib/math/test_math.csd
+cargo run --bin cursed stdlib/math/test_math.💀
 ```
 
 The test suite includes:

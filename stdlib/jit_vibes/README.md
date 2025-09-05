@@ -161,13 +161,13 @@ The module generates LLVM IR compatible with the CURSED compiler's backend:
 
 Run comprehensive tests:
 ```bash
-cargo run --bin cursed stdlib/jit_vibes/test_jit_vibes.csd
+cargo run --bin cursed stdlib/jit_vibes/test_jit_vibes.💀
 ```
 
 Both-mode verification:
 ```bash
-cargo run --bin cursed stdlib/jit_vibes/test_jit_vibes.csd
-cargo run --bin cursed -- compile stdlib/jit_vibes/test_jit_vibes.csd
+cargo run --bin cursed stdlib/jit_vibes/test_jit_vibes.💀
+cargo run --bin cursed -- compile stdlib/jit_vibes/test_jit_vibes.💀
 ./test_jit_vibes
 ```
 

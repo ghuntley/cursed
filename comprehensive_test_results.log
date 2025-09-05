@@ -2,325 +2,325 @@ Starting comprehensive test analysis...
 Timestamp: Tue Sep  2 11:50:16 AM EEST 2025
 =========================================
 Found 107 test files
-[1/107] Testing: arithmetic/01_mixed_types.csd
+[1/107] Testing: arithmetic/01_mixed_types.💀
   Result: OUTPUT_MISMATCH
 ---
-[2/107] Testing: arithmetic/02_edge_cases.csd
+[2/107] Testing: arithmetic/02_edge_cases.💀
   Result: OUTPUT_MISMATCH
 ---
-[3/107] Testing: arithmetic/03_operator_precedence.csd
+[3/107] Testing: arithmetic/03_operator_precedence.💀
   Result: OUTPUT_MISMATCH
 ---
-[4/107] Testing: arithmetic/04_complex_expressions.csd
+[4/107] Testing: arithmetic/04_complex_expressions.💀
   Result: OUTPUT_MISMATCH
 ---
-[5/107] Testing: arithmetic/arithmetic_basic_operations.csd
+[5/107] Testing: arithmetic/arithmetic_basic_operations.💀
   Result: OUTPUT_MISMATCH
 ---
-[6/107] Testing: arithmetic/division_semantics_test.csd
+[6/107] Testing: arithmetic/division_semantics_test.💀
   Result: OUTPUT_MISMATCH
 ---
-[7/107] Testing: arithmetic/feature_arithmetic_operations.csd
+[7/107] Testing: arithmetic/feature_arithmetic_operations.💀
   Result: OUTPUT_MISMATCH
 ---
-[8/107] Testing: arithmetic/overflow_edge_cases.csd
+[8/107] Testing: arithmetic/overflow_edge_cases.💀
   Result: OUTPUT_MISMATCH
 ---
-[9/107] Testing: basic/01_hello_world.csd
+[9/107] Testing: basic/01_hello_world.💀
   Result: OUTPUT_MISMATCH
 ---
-[10/107] Testing: basic/02_simple_arithmetic.csd
+[10/107] Testing: basic/02_simple_arithmetic.💀
   Result: OUTPUT_MISMATCH
 ---
-[11/107] Testing: basic/03_variable_assignment.csd
+[11/107] Testing: basic/03_variable_assignment.💀
   Result: OUTPUT_MISMATCH
 ---
-[12/107] Testing: basic/basic_hello_world.csd
+[12/107] Testing: basic/basic_hello_world.💀
   Result: OUTPUT_MISMATCH
 ---
-[13/107] Testing: basic/hello_world_simple.csd
+[13/107] Testing: basic/hello_world_simple.💀
   Result: OUTPUT_MISMATCH
 ---
-[14/107] Testing: complex/01_nested_operations.csd
+[14/107] Testing: complex/01_nested_operations.💀
   Result: RUNTIME_ERROR (compiled exit 22 vs interpreter exit 0)
 ---
-[15/107] Testing: complex/02_fizzbuzz.csd
+[15/107] Testing: complex/02_fizzbuzz.💀
   Result: RUNTIME_ERROR (compiled exit 112 vs interpreter exit 0)
 ---
-[16/107] Testing: comprehensive/control_flow_comprehensive.csd
+[16/107] Testing: comprehensive/control_flow_comprehensive.💀
   Result: OUTPUT_MISMATCH
 ---
-[17/107] Testing: comprehensive/function_definitions_test.csd
+[17/107] Testing: comprehensive/function_definitions_test.💀
   Result: OUTPUT_MISMATCH
 ---
-[18/107] Testing: comprehensive/test_comprehensive_language_features.csd
+[18/107] Testing: comprehensive/test_comprehensive_language_features.💀
   Result: OUTPUT_MISMATCH
 ---
-[19/107] Testing: control_flow/01_if_statements.csd
+[19/107] Testing: control_flow/01_if_statements.💀
   Result: OUTPUT_MISMATCH
 ---
-[20/107] Testing: control_flow/02_loops.csd
+[20/107] Testing: control_flow/02_loops.💀
   Result: OUTPUT_MISMATCH
 ---
-[21/107] Testing: control_flow/control_flow_comprehensive.csd
+[21/107] Testing: control_flow/control_flow_comprehensive.💀
   Result: OUTPUT_MISMATCH
 ---
-[22/107] Testing: control_flow/control_flow_if_else.csd
+[22/107] Testing: control_flow/control_flow_if_else.💀
   Result: OUTPUT_MISMATCH
 ---
-[23/107] Testing: control_flow/feature_control_flow_comprehensive.csd
+[23/107] Testing: control_flow/feature_control_flow_comprehensive.💀
   Result: RUNTIME_ERROR (compiled exit 35 vs interpreter exit 0)
 ---
-[24/107] Testing: edge_cases/01_boundary_conditions.csd
+[24/107] Testing: edge_cases/01_boundary_conditions.💀
   Result: RUNTIME_ERROR (compiled exit 35 vs interpreter exit 0)
 ---
-[25/107] Testing: edge_cases/02_empty_inputs.csd
+[25/107] Testing: edge_cases/02_empty_inputs.💀
   Result: OUTPUT_MISMATCH
 ---
-[26/107] Testing: edge_cases/02_extreme_inputs.csd
+[26/107] Testing: edge_cases/02_extreme_inputs.💀
   Result: RUNTIME_ERROR (compiled exit 176 vs interpreter exit 0)
 ---
-[27/107] Testing: edge_cases/02_simple_boundary_test.csd
+[27/107] Testing: edge_cases/02_simple_boundary_test.💀
   Result: RUNTIME_ERROR (compiled exit 31 vs interpreter exit 0)
 ---
-[28/107] Testing: edge_cases/03_corrected_boundary_test.csd
+[28/107] Testing: edge_cases/03_corrected_boundary_test.💀
   Result: RUNTIME_ERROR (compiled exit 34 vs interpreter exit 0)
 ---
-[29/107] Testing: edge_cases/edge_case_boundary_values.csd
+[29/107] Testing: edge_cases/edge_case_boundary_values.💀
   Result: OUTPUT_MISMATCH
 ---
-[30/107] Testing: edge_cases/edge_case_complex_expressions.csd
+[30/107] Testing: edge_cases/edge_case_complex_expressions.💀
   Result: COMPILE_ERROR
 ---
-[31/107] Testing: edge_cases/edge_case_operator_precedence.csd
+[31/107] Testing: edge_cases/edge_case_operator_precedence.💀
   Result: PASS
 ---
-[32/107] Testing: errors/01_division_by_zero.csd
+[32/107] Testing: errors/01_division_by_zero.💀
   Result: INTERPRETER_ERROR (exit 1)
 ---
-[33/107] Testing: errors/02_undefined_variable.csd
+[33/107] Testing: errors/02_undefined_variable.💀
   Result: INTERPRETER_ERROR (exit 1)
 ---
-[34/107] Testing: errors/03_error_handling_basic.csd
+[34/107] Testing: errors/03_error_handling_basic.💀
   Result: INTERPRETER_ERROR (exit 134)
 ---
-[35/107] Testing: errors/03_error_handling_simple.csd
+[35/107] Testing: errors/03_error_handling_simple.💀
   Result: RUNTIME_ERROR (compiled exit 139 vs interpreter exit 0)
 ---
-[36/107] Testing: errors/03_error_handling_yikes_fam_shook.csd
+[36/107] Testing: errors/03_error_handling_yikes_fam_shook.💀
   Result: INTERPRETER_ERROR (exit 1)
 ---
-[37/107] Testing: errors/04_boundary_error_conditions.csd
+[37/107] Testing: errors/04_boundary_error_conditions.💀
   Result: COMPILE_ERROR
 ---
-[38/107] Testing: errors/04_panic_recovery.csd
+[38/107] Testing: errors/04_panic_recovery.💀
   Result: RUNTIME_ERROR (compiled exit 139 vs interpreter exit 0)
 ---
-[39/107] Testing: errors/05_error_handling_fixed.csd
+[39/107] Testing: errors/05_error_handling_fixed.💀
   Result: RUNTIME_ERROR (compiled exit 30 vs interpreter exit 0)
 ---
-[40/107] Testing: feature/feature_comprehensive_syntax.csd
+[40/107] Testing: feature/feature_comprehensive_syntax.💀
   Result: INTERPRETER_ERROR (exit 1)
 ---
-[41/107] Testing: features/feature_complete_stdlib_demo.csd
+[41/107] Testing: features/feature_complete_stdlib_demo.💀
   Result: INTERPRETER_ERROR (exit 1)
 ---
-[42/107] Testing: features/feature_control_flow_simple.csd
+[42/107] Testing: features/feature_control_flow_simple.💀
   Result: OUTPUT_MISMATCH
 ---
-[43/107] Testing: features/feature_function_definitions.csd
+[43/107] Testing: features/feature_function_definitions.💀
   Result: COMPILE_ERROR
 ---
-[44/107] Testing: features/feature_stdlib_imports.csd
+[44/107] Testing: features/feature_stdlib_imports.💀
   Result: INTERPRETER_ERROR (exit 1)
 ---
-[45/107] Testing: features/feature_stdlib_integration.csd
+[45/107] Testing: features/feature_stdlib_integration.💀
   Result: INTERPRETER_ERROR (exit 1)
 ---
-[46/107] Testing: functions/01_simple_function.csd
+[46/107] Testing: functions/01_simple_function.💀
   Result: OUTPUT_MISMATCH
 ---
-[47/107] Testing: functions/02_recursive_function.csd
+[47/107] Testing: functions/02_recursive_function.💀
   Result: OUTPUT_MISMATCH
 ---
-[48/107] Testing: functions/03_nested_function_calls.csd
+[48/107] Testing: functions/03_nested_function_calls.💀
   Result: OUTPUT_MISMATCH
 ---
-[49/107] Testing: functions/04_function_parameters.csd
+[49/107] Testing: functions/04_function_parameters.💀
   Result: OUTPUT_MISMATCH
 ---
-[50/107] Testing: functions/feature_function_calls.csd
+[50/107] Testing: functions/feature_function_calls.💀
   Result: COMPILE_ERROR
 ---
-[51/107] Testing: functions/functions_parameter_return.csd
+[51/107] Testing: functions/functions_parameter_return.💀
   Result: OUTPUT_MISMATCH
 ---
-[52/107] Testing: memory/01_allocation_patterns.csd
+[52/107] Testing: memory/01_allocation_patterns.💀
   Result: INTERPRETER_ERROR (exit 124)
 ---
-[53/107] Testing: memory/01_memory_allocation_simple.csd
+[53/107] Testing: memory/01_memory_allocation_simple.💀
   Result: INTERPRETER_ERROR (exit 124)
 ---
-[54/107] Testing: memory/02_simple_memory_test.csd
+[54/107] Testing: memory/02_simple_memory_test.💀
   Result: INTERPRETER_ERROR (exit 124)
 ---
-[55/107] Testing: memory/02_stack_overflow_detection.csd
+[55/107] Testing: memory/02_stack_overflow_detection.💀
   Result: INTERPRETER_ERROR (exit 1)
 ---
-[56/107] Testing: memory/03_corrected_memory_test.csd
+[56/107] Testing: memory/03_corrected_memory_test.💀
   Result: RUNTIME_ERROR (compiled exit 32 vs interpreter exit 0)
 ---
-[57/107] Testing: parser_fixes/01_corrected_hello_world.csd
+[57/107] Testing: parser_fixes/01_corrected_hello_world.💀
   Result: OUTPUT_MISMATCH
 ---
-[58/107] Testing: parser_fixes/02_corrected_arithmetic.csd
+[58/107] Testing: parser_fixes/02_corrected_arithmetic.💀
   Result: OUTPUT_MISMATCH
 ---
-[59/107] Testing: parser_fixes/03_corrected_function_parameters.csd
+[59/107] Testing: parser_fixes/03_corrected_function_parameters.💀
   Result: OUTPUT_MISMATCH
 ---
-[60/107] Testing: parser/parser_expression_precedence.csd
+[60/107] Testing: parser/parser_expression_precedence.💀
   Result: OUTPUT_MISMATCH
 ---
-[61/107] Testing: parsing/automatic_semicolon_insertion.csd
+[61/107] Testing: parsing/automatic_semicolon_insertion.💀
   Result: OUTPUT_MISMATCH
 ---
-[62/107] Testing: performance/01_recursive_depth.csd
+[62/107] Testing: performance/01_recursive_depth.💀
   Result: OUTPUT_MISMATCH
 ---
-[63/107] Testing: performance/02_computation_intensive.csd
+[63/107] Testing: performance/02_computation_intensive.💀
   Result: OUTPUT_MISMATCH
 ---
-[64/107] Testing: regression/01_division_by_zero_fix.csd
+[64/107] Testing: regression/01_division_by_zero_fix.💀
   Result: INTERPRETER_ERROR (exit 1)
 ---
-[65/107] Testing: regression/01_division_zero_regression.csd
+[65/107] Testing: regression/01_division_zero_regression.💀
   Result: INTERPRETER_ERROR (exit 1)
 ---
-[66/107] Testing: regression/02_undefined_variable_fix.csd
+[66/107] Testing: regression/02_undefined_variable_fix.💀
   Result: INTERPRETER_ERROR (exit 134)
 ---
-[67/107] Testing: regression/02_variable_scope_regression.csd
+[67/107] Testing: regression/02_variable_scope_regression.💀
   Result: INTERPRETER_ERROR (exit 124)
 ---
-[68/107] Testing: regression/03_arithmetic_precedence_regression.csd
+[68/107] Testing: regression/03_arithmetic_precedence_regression.💀
   Result: RUNTIME_ERROR (compiled exit 48 vs interpreter exit 0)
 ---
-[69/107] Testing: regression/03_parser_precedence_fix.csd
+[69/107] Testing: regression/03_parser_precedence_fix.💀
   Result: INTERPRETER_ERROR (exit 134)
 ---
-[70/107] Testing: regression/04_loop_syntax_regression.csd
+[70/107] Testing: regression/04_loop_syntax_regression.💀
   Result: RUNTIME_ERROR (compiled exit 38 vs interpreter exit 0)
 ---
-[71/107] Testing: regression/regression_memory_management.csd
+[71/107] Testing: regression/regression_memory_management.💀
   Result: OUTPUT_MISMATCH
 ---
-[72/107] Testing: regression/regression_memory_safety.csd
+[72/107] Testing: regression/regression_memory_safety.💀
   Result: INTERPRETER_ERROR (exit 1)
 ---
-[73/107] Testing: regression/regression_parser_precedence.csd
+[73/107] Testing: regression/regression_parser_precedence.💀
   Result: OUTPUT_MISMATCH
 ---
-[74/107] Testing: regression/regression_string_float_precision.csd
+[74/107] Testing: regression/regression_string_float_precision.💀
   Result: INTERPRETER_ERROR (exit 1)
 ---
-[75/107] Testing: regression/regression_syntax_keywords.csd
+[75/107] Testing: regression/regression_syntax_keywords.💀
   Result: OUTPUT_MISMATCH
 ---
-[76/107] Testing: stdlib/01_comprehensive_multi_module.csd
+[76/107] Testing: stdlib/01_comprehensive_multi_module.💀
   Result: INTERPRETER_ERROR (exit 134)
 ---
-[77/107] Testing: stdlib/01_mathz_basic.csd
+[77/107] Testing: stdlib/01_mathz_basic.💀
   Result: INTERPRETER_ERROR (exit 1)
 ---
-[78/107] Testing: stdlib/01_stdlib_integration_basic.csd
+[78/107] Testing: stdlib/01_stdlib_integration_basic.💀
   Result: INTERPRETER_ERROR (exit 1)
 ---
-[79/107] Testing: stdlib/02_cross_module_dependencies.csd
+[79/107] Testing: stdlib/02_cross_module_dependencies.💀
   Result: INTERPRETER_ERROR (exit 134)
 ---
-[80/107] Testing: stdlib/02_stdlib_cross_module_simple.csd
+[80/107] Testing: stdlib/02_stdlib_cross_module_simple.💀
   Result: INTERPRETER_ERROR (exit 1)
 ---
-[81/107] Testing: stdlib/02_stringz_basic.csd
+[81/107] Testing: stdlib/02_stringz_basic.💀
   Result: INTERPRETER_ERROR (exit 1)
 ---
-[82/107] Testing: stdlib/03_mathz_advanced.csd
+[82/107] Testing: stdlib/03_mathz_advanced.💀
   Result: INTERPRETER_ERROR (exit 1)
 ---
-[83/107] Testing: stdlib/04_collections_basic.csd
+[83/107] Testing: stdlib/04_collections_basic.💀
   Result: INTERPRETER_ERROR (exit 1)
 ---
-[84/107] Testing: stdlib/feature_stdlib_integration.csd
+[84/107] Testing: stdlib/feature_stdlib_integration.💀
   Result: INTERPRETER_ERROR (exit 1)
 ---
-[85/107] Testing: stdlib/stdlib_mathz_operations.csd
+[85/107] Testing: stdlib/stdlib_mathz_operations.💀
   Result: COMPILE_ERROR
 ---
-[86/107] Testing: stdlib/stdlib_vibez_output.csd
+[86/107] Testing: stdlib/stdlib_vibez_output.💀
   Result: OUTPUT_MISMATCH
 ---
-[87/107] Testing: stress/stress_deep_nested_operations.csd
+[87/107] Testing: stress/stress_deep_nested_operations.💀
   Result: INTERPRETER_ERROR (exit 134)
 ---
-[88/107] Testing: stress/stress_large_scale_processing.csd
+[88/107] Testing: stress/stress_large_scale_processing.💀
   Result: INTERPRETER_ERROR (exit 1)
 ---
-[89/107] Testing: strings/01_string_operations.csd
+[89/107] Testing: strings/01_string_operations.💀
   Result: OUTPUT_MISMATCH
 ---
-[90/107] Testing: strings/strings_basic_operations.csd
+[90/107] Testing: strings/strings_basic_operations.💀
   Result: INTERPRETER_ERROR (exit 1)
 ---
-[91/107] Testing: validation_cursed_arithmetic.csd
+[91/107] Testing: validation_cursed_arithmetic.💀
   Result: RUNTIME_ERROR (compiled exit 64 vs interpreter exit 0)
 ---
-[92/107] Testing: validation_cursed_basic.csd
+[92/107] Testing: validation_cursed_basic.💀
   Result: RUNTIME_ERROR (compiled exit 48 vs interpreter exit 0)
 ---
-[93/107] Testing: validation_cursed_variables.csd
+[93/107] Testing: validation_cursed_variables.💀
   Result: RUNTIME_ERROR (compiled exit 48 vs interpreter exit 0)
 ---
-[94/107] Testing: validation/floating_point_format_parity.csd
+[94/107] Testing: validation/floating_point_format_parity.💀
   Result: OUTPUT_MISMATCH
 ---
-[95/107] Testing: validation/validation_basic_cursed_syntax.csd
+[95/107] Testing: validation/validation_basic_cursed_syntax.💀
   Result: OUTPUT_MISMATCH
 ---
-[96/107] Testing: validation/validation_basic_syntax.csd
+[96/107] Testing: validation/validation_basic_syntax.💀
   Result: OUTPUT_MISMATCH
 ---
-[97/107] Testing: validation/validation_comprehensive_syntax.csd
+[97/107] Testing: validation/validation_comprehensive_syntax.💀
   Result: INTERPRETER_ERROR (exit 1)
 ---
-[98/107] Testing: validation/validation_cursed_keywords.csd
+[98/107] Testing: validation/validation_cursed_keywords.💀
   Result: OUTPUT_MISMATCH
 ---
-[99/107] Testing: validation/validation_float_precision.csd
+[99/107] Testing: validation/validation_float_precision.💀
   Result: OUTPUT_MISMATCH
 ---
-[100/107] Testing: validation/validation_function_definitions.csd
+[100/107] Testing: validation/validation_function_definitions.💀
   Result: COMPILE_ERROR
 ---
-[101/107] Testing: validation/validation_minimal_syntax.csd
+[101/107] Testing: validation/validation_minimal_syntax.💀
   Result: PASS
 ---
-[102/107] Testing: validation/validation_stdlib_collections_complete.csd
+[102/107] Testing: validation/validation_stdlib_collections_complete.💀
   Result: INTERPRETER_ERROR (exit 1)
 ---
-[103/107] Testing: validation/validation_stdlib_complete.csd
+[103/107] Testing: validation/validation_stdlib_complete.💀
   Result: OUTPUT_MISMATCH
 ---
-[104/107] Testing: validation/validation_stdlib_mathz_complete.csd
+[104/107] Testing: validation/validation_stdlib_mathz_complete.💀
   Result: INTERPRETER_ERROR (exit 1)
 ---
-[105/107] Testing: validation/validation_stdlib_stringz_complete.csd
+[105/107] Testing: validation/validation_stdlib_stringz_complete.💀
   Result: INTERPRETER_ERROR (exit 1)
 ---
-[106/107] Testing: validation/validation_stdlib_vibez_complete.csd
+[106/107] Testing: validation/validation_stdlib_vibez_complete.💀
   Result: OUTPUT_MISMATCH
 ---
-[107/107] Testing: validation/validation_type_system.csd
+[107/107] Testing: validation/validation_type_system.💀
   Result: OUTPUT_MISMATCH
 ---
 

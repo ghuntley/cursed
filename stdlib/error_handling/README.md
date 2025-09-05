@@ -147,14 +147,14 @@ sus result = dangerous_operation()
 ```bash
 echo 'yeet "error_handling"
 sus err = error_handling.new_error("Test error")
-vibez.spillf("Error: {}", error_handling.error_message(err))' > error_test.csd
+vibez.spillf("Error: {}", error_handling.error_message(err))' > error_test.💀
 
-./cursed-unified error_test.csd
+./cursed-unified error_test.💀
 ```
 
 ### Compilation Mode
 ```bash
-./cursed-unified --compile error_test.csd
+./cursed-unified --compile error_test.💀
 ./error_test
 ```
 

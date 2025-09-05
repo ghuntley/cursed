@@ -209,7 +209,7 @@ retry_task(task_id)
 
 Run the comprehensive test suite:
 ```bash
-cargo run --bin cursed stdlib/async/test_async.csd
+cargo run --bin cursed stdlib/async/test_async.💀
 ```
 
 The test suite covers:
@@ -231,10 +231,10 @@ Both interpretation and compilation modes are fully supported:
 
 ```bash
 # Interpretation mode
-cargo run --bin cursed stdlib/async/test_async.csd
+cargo run --bin cursed stdlib/async/test_async.💀
 
 # Compilation mode
-cargo run --bin cursed -- compile stdlib/async/test_async.csd
+cargo run --bin cursed -- compile stdlib/async/test_async.💀
 ./test_async
 ```
 

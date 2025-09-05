@@ -7,82 +7,82 @@ Working from: /home/ghuntley/cursed/test_suite/.. (for stdlib loading)
 Scanning for test files...
 Found 107 test files
 
-[1m[1/107] Testing: arithmetic/01_mixed_types.csd[0m
+[1m[1/107] Testing: arithmetic/01_mixed_types.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[2/107] Testing: arithmetic/02_edge_cases.csd[0m
+[1m[2/107] Testing: arithmetic/02_edge_cases.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[3/107] Testing: arithmetic/03_operator_precedence.csd[0m
+[1m[3/107] Testing: arithmetic/03_operator_precedence.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[4/107] Testing: arithmetic/04_complex_expressions.csd[0m
+[1m[4/107] Testing: arithmetic/04_complex_expressions.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[5/107] Testing: arithmetic/arithmetic_basic_operations.csd[0m
+[1m[5/107] Testing: arithmetic/arithmetic_basic_operations.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[6/107] Testing: arithmetic/division_semantics_test.csd[0m
+[1m[6/107] Testing: arithmetic/division_semantics_test.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[7/107] Testing: arithmetic/feature_arithmetic_operations.csd[0m
+[1m[7/107] Testing: arithmetic/feature_arithmetic_operations.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[8/107] Testing: arithmetic/overflow_edge_cases.csd[0m
+[1m[8/107] Testing: arithmetic/overflow_edge_cases.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[9/107] Testing: basic/01_hello_world.csd[0m
+[1m[9/107] Testing: basic/01_hello_world.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[10/107] Testing: basic/02_simple_arithmetic.csd[0m
+[1m[10/107] Testing: basic/02_simple_arithmetic.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[11/107] Testing: basic/03_variable_assignment.csd[0m
+[1m[11/107] Testing: basic/03_variable_assignment.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[12/107] Testing: basic/basic_hello_world.csd[0m
+[1m[12/107] Testing: basic/basic_hello_world.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[13/107] Testing: basic/hello_world_simple.csd[0m
+[1m[13/107] Testing: basic/hello_world_simple.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[14/107] Testing: complex/01_nested_operations.csd[0m
+[1m[14/107] Testing: complex/01_nested_operations.💀[0m
   Result: [33mPASS (EXIT_CODE_ISSUE: exit 22, output correct)[0m
 ---
-[1m[15/107] Testing: complex/02_fizzbuzz.csd[0m
+[1m[15/107] Testing: complex/02_fizzbuzz.💀[0m
   Result: [33mPASS (EXIT_CODE_ISSUE: exit 112, output correct)[0m
 ---
-[1m[16/107] Testing: comprehensive/control_flow_comprehensive.csd[0m
+[1m[16/107] Testing: comprehensive/control_flow_comprehensive.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[17/107] Testing: comprehensive/function_definitions_test.csd[0m
+[1m[17/107] Testing: comprehensive/function_definitions_test.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[18/107] Testing: comprehensive/test_comprehensive_language_features.csd[0m
+[1m[18/107] Testing: comprehensive/test_comprehensive_language_features.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[19/107] Testing: control_flow/01_if_statements.csd[0m
+[1m[19/107] Testing: control_flow/01_if_statements.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[20/107] Testing: control_flow/02_loops.csd[0m
+[1m[20/107] Testing: control_flow/02_loops.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[21/107] Testing: control_flow/control_flow_comprehensive.csd[0m
+[1m[21/107] Testing: control_flow/control_flow_comprehensive.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[22/107] Testing: control_flow/control_flow_if_else.csd[0m
+[1m[22/107] Testing: control_flow/control_flow_if_else.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[23/107] Testing: control_flow/feature_control_flow_comprehensive.csd[0m
+[1m[23/107] Testing: control_flow/feature_control_flow_comprehensive.💀[0m
   Result: [33mPASS (EXIT_CODE_ISSUE: exit 35, output correct)[0m
 ---
-[1m[24/107] Testing: edge_cases/01_boundary_conditions.csd[0m
+[1m[24/107] Testing: edge_cases/01_boundary_conditions.💀[0m
   Result: [33mPASS (EXIT_CODE_ISSUE: exit 35, output correct)[0m
 ---
-[1m[25/107] Testing: edge_cases/02_empty_inputs.csd[0m
+[1m[25/107] Testing: edge_cases/02_empty_inputs.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[26/107] Testing: edge_cases/02_extreme_inputs.csd[0m
+[1m[26/107] Testing: edge_cases/02_extreme_inputs.💀[0m
   Result: [31mFAIL (OUTPUT_MISMATCH)[0m
   [36mInterpreter (exit: 0):[0m
     === Extreme Input Tests === 
@@ -230,7 +230,7 @@ Found 107 test files
     00000280: 7374 7320 636f 6d70 6c65 7465 64         sts completed
 
 ---
-[1m[27/107] Testing: edge_cases/02_simple_boundary_test.csd[0m
+[1m[27/107] Testing: edge_cases/02_simple_boundary_test.💀[0m
   Result: [31mFAIL (OUTPUT_MISMATCH)[0m
   [36mInterpreter (exit: 0):[0m
     === Simple Boundary Test === 
@@ -285,7 +285,7 @@ Found 107 test files
     Simple boundary test completed
 
 ---
-[1m[28/107] Testing: edge_cases/03_corrected_boundary_test.csd[0m
+[1m[28/107] Testing: edge_cases/03_corrected_boundary_test.💀[0m
   Result: [31mFAIL (OUTPUT_MISMATCH)[0m
   [36mInterpreter (exit: 0):[0m
     === Corrected Boundary Test === 
@@ -348,10 +348,10 @@ Found 107 test files
     Corrected boundary test completed
 
 ---
-[1m[29/107] Testing: edge_cases/edge_case_boundary_values.csd[0m
+[1m[29/107] Testing: edge_cases/edge_case_boundary_values.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[30/107] Testing: edge_cases/edge_case_complex_expressions.csd[0m
+[1m[30/107] Testing: edge_cases/edge_case_complex_expressions.💀[0m
   Result: [31mCOMPILE ERROR (interpreted worked)[0m
   [36mInterpreter (exit: 0):[0m
     25 
@@ -366,7 +366,7 @@ Found 107 test files
     Compilation failed
 
 ---
-[1m[31/107] Testing: edge_cases/edge_case_operator_precedence.csd[0m
+[1m[31/107] Testing: edge_cases/edge_case_operator_precedence.💀[0m
   Result: [31mCOMPILE ERROR (interpreted worked)[0m
   [36mInterpreter (exit: 0):[0m
     (no output)
@@ -382,14 +382,14 @@ Found 107 test files
     (no output)
 
 ---
-[1m[32/107] Testing: errors/01_division_by_zero.csd[0m
+[1m[32/107] Testing: errors/01_division_by_zero.💀[0m
   Result: [33mFAIL (different error messages)[0m
   [36mInterpreter (exit: 1):[0m
     === Division by Zero Test === 
     Normal division: 
     5 
     Attempting division by zero: 
-    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/errors/01_division_by_zero.csd: error.DivisionByZero
+    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/errors/01_division_by_zero.💀: error.DivisionByZero
     error: DivisionByZero
                             return InterpreterError.DivisionByZero;
                             ^
@@ -418,13 +418,13 @@ Found 107 test files
     Division by zero
 
 ---
-[1m[33/107] Testing: errors/02_undefined_variable.csd[0m
+[1m[33/107] Testing: errors/02_undefined_variable.💀[0m
   Result: [33mFAIL (different error messages)[0m
   [36mInterpreter (exit: 1):[0m
     === Undefined Variable Test === 
     ERROR: No CURSED stdlib implementation found for module 'undefined_var': error.ModuleNotFound
-    SELF-HOSTING: Please implement stdlib/undefined_var/mod.csd for true self-hosting
-    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/errors/02_undefined_variable.csd: error.UndefinedVariable
+    SELF-HOSTING: Please implement stdlib/undefined_var/mod.💀 for true self-hosting
+    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/errors/02_undefined_variable.💀: error.UndefinedVariable
     error: UndefinedVariable
             return InterpreterError.UndefinedVariable;
             ^
@@ -449,7 +449,7 @@ Found 107 test files
     Compilation failed
 
 ---
-[1m[34/107] Testing: errors/03_error_handling_basic.csd[0m
+[1m[34/107] Testing: errors/03_error_handling_basic.💀[0m
   Result: [33mFAIL (different error messages)[0m
   [36mInterpreter (exit: 134):[0m
     === Error Handling Test Suite === 
@@ -524,7 +524,7 @@ Found 107 test files
     Compilation failed
 
 ---
-[1m[35/107] Testing: errors/03_error_handling_simple.csd[0m
+[1m[35/107] Testing: errors/03_error_handling_simple.💀[0m
   Result: [31mCOMPILE ERROR (interpreted worked)[0m
   [36mInterpreter (exit: 0):[0m
     (no output)
@@ -540,12 +540,12 @@ Found 107 test files
     (no output)
 
 ---
-[1m[36/107] Testing: errors/03_error_handling_yikes_fam_shook.csd[0m
+[1m[36/107] Testing: errors/03_error_handling_yikes_fam_shook.💀[0m
   Result: [33mFAIL (different error messages)[0m
   [36mInterpreter (exit: 1):[0m
     DEBUG: Checking for global builtin function: divide_with_error
     DEBUG: Global builtin function divide_with_error not found
-    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/errors/03_error_handling_yikes_fam_shook.csd: error.UndefinedFunction
+    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/errors/03_error_handling_yikes_fam_shook.💀: error.UndefinedFunction
     error: UndefinedFunction
                         return InterpreterError.UndefinedFunction;
                         ^
@@ -568,7 +568,7 @@ Found 107 test files
     Compilation failed
 
 ---
-[1m[37/107] Testing: errors/04_boundary_error_conditions.csd[0m
+[1m[37/107] Testing: errors/04_boundary_error_conditions.💀[0m
   Result: [31mCOMPILE ERROR (interpreted worked)[0m
   [36mInterpreter (exit: 0):[0m
     All boundary error condition tests completed 
@@ -577,7 +577,7 @@ Found 107 test files
     Compilation failed
 
 ---
-[1m[38/107] Testing: errors/04_panic_recovery.csd[0m
+[1m[38/107] Testing: errors/04_panic_recovery.💀[0m
   Result: [31mFAIL (OUTPUT_MISMATCH)[0m
   [36mInterpreter (exit: 0):[0m
     Outer panic handled: cap 
@@ -600,17 +600,17 @@ Found 107 test files
     00000020: 7563 6365 7373 6675 6c6c 79              uccessfully
 
 ---
-[1m[39/107] Testing: errors/05_error_handling_fixed.csd[0m
+[1m[39/107] Testing: errors/05_error_handling_fixed.💀[0m
   Result: [33mPASS (EXIT_CODE_ISSUE: exit 30, output correct)[0m
 ---
-[1m[40/107] Testing: feature/feature_comprehensive_syntax.csd[0m
+[1m[40/107] Testing: feature/feature_comprehensive_syntax.💀[0m
   Result: [33mFAIL (different error messages)[0m
   [36mInterpreter (exit: 1):[0m
     Initial values: 
     Testing comprehensive syntax 
     ERROR: No CURSED stdlib implementation found for module 'number': error.ModuleNotFound
-    SELF-HOSTING: Please implement stdlib/number/mod.csd for true self-hosting
-    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/feature/feature_comprehensive_syntax.csd: error.UndefinedVariable
+    SELF-HOSTING: Please implement stdlib/number/mod.💀 for true self-hosting
+    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/feature/feature_comprehensive_syntax.💀: error.UndefinedVariable
     error: UndefinedVariable
             return InterpreterError.UndefinedVariable;
             ^
@@ -633,10 +633,10 @@ Found 107 test files
     Compilation failed
 
 ---
-[1m[41/107] Testing: features/feature_complete_stdlib_demo.csd[0m
+[1m[41/107] Testing: features/feature_complete_stdlib_demo.💀[0m
   Result: [33mFAIL (different error messages)[0m
   [36mInterpreter (exit: 1):[0m
-    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/features/feature_complete_stdlib_demo.csd: error.UndefinedFunction
+    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/features/feature_complete_stdlib_demo.💀: error.UndefinedFunction
     error: UndefinedFunction
                         return InterpreterError.UndefinedFunction;
                         ^
@@ -659,10 +659,10 @@ Found 107 test files
     Compilation failed
 
 ---
-[1m[42/107] Testing: features/feature_control_flow_simple.csd[0m
+[1m[42/107] Testing: features/feature_control_flow_simple.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[43/107] Testing: features/feature_function_definitions.csd[0m
+[1m[43/107] Testing: features/feature_function_definitions.💀[0m
 grep: (standard input): binary file matches
   Result: [31mCOMPILE ERROR (interpreted worked)[0m
   [36mInterpreter (exit: 0):[0m
@@ -674,14 +674,14 @@ grep: (standard input): binary file matches
     Compilation failed
 
 ---
-[1m[44/107] Testing: features/feature_stdlib_imports.csd[0m
+[1m[44/107] Testing: features/feature_stdlib_imports.💀[0m
   Result: [33mFAIL (different error messages)[0m
   [36mInterpreter (exit: 1):[0m
     === Testing Multiple Stdlib Imports === 
     Testing vibez output 
     mathz.abs_normie({}) = {} -15 15 
     mathz.max({}, {}) = {} -15 25 25 
-    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/features/feature_stdlib_imports.csd: error.UndefinedFunction
+    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/features/feature_stdlib_imports.💀: error.UndefinedFunction
     error: UndefinedFunction
                         return InterpreterError.UndefinedFunction;
                         ^
@@ -706,7 +706,7 @@ grep: (standard input): binary file matches
     Compilation failed
 
 ---
-[1m[45/107] Testing: features/feature_stdlib_integration.csd[0m
+[1m[45/107] Testing: features/feature_stdlib_integration.💀[0m
   Result: [31mCOMPILE ERROR (interpreted worked)[0m
   [36mInterpreter (exit: 0):[0m
     === Stdlib Test === 
@@ -720,19 +720,19 @@ grep: (standard input): binary file matches
     Compilation failed
 
 ---
-[1m[46/107] Testing: functions/01_simple_function.csd[0m
+[1m[46/107] Testing: functions/01_simple_function.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[47/107] Testing: functions/02_recursive_function.csd[0m
+[1m[47/107] Testing: functions/02_recursive_function.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[48/107] Testing: functions/03_nested_function_calls.csd[0m
+[1m[48/107] Testing: functions/03_nested_function_calls.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[49/107] Testing: functions/04_function_parameters.csd[0m
+[1m[49/107] Testing: functions/04_function_parameters.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[50/107] Testing: functions/feature_function_calls.csd[0m
+[1m[50/107] Testing: functions/feature_function_calls.💀[0m
   Result: [31mCOMPILE ERROR (interpreted worked)[0m
   [36mInterpreter (exit: 0):[0m
     === Function Call Test === 
@@ -753,7 +753,7 @@ grep: (standard input): binary file matches
     Compilation failed
 
 ---
-[1m[51/107] Testing: functions/functions_parameter_return.csd[0m
+[1m[51/107] Testing: functions/functions_parameter_return.💀[0m
   Result: [31mCOMPILE ERROR (interpreted worked)[0m
   [36mInterpreter (exit: 0):[0m
     42 
@@ -766,4 +766,4 @@ grep: (standard input): binary file matches
     Compilation failed
 
 ---
-[1m[52/107] Testing: memory/01_allocation_patterns.csd[0m
+[1m[52/107] Testing: memory/01_allocation_patterns.💀[0m

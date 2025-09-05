@@ -48,7 +48,7 @@ sus result := option.unwrap_or_int(empty_val, 0)
 ## Testing
 
 ```bash
-cargo run --bin cursed stdlib/option/test_option.csd
+cargo run --bin cursed stdlib/option/test_option.💀
 ```
 
 ## Status

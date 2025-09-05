@@ -192,14 +192,14 @@ vibez.spillf("Clamped {} to [0,10]: {}", input, clamped)
 ```bash
 echo 'yeet "simple_math"
 sus result = simple_math.pow(2, 10)
-vibez.spillf("2^10 = {}", result)' > math_test.csd
+vibez.spillf("2^10 = {}", result)' > math_test.💀
 
-./cursed-unified math_test.csd
+./cursed-unified math_test.💀
 ```
 
 ### Compilation Mode
 ```bash
-./cursed-unified --compile math_test.csd
+./cursed-unified --compile math_test.💀
 ./math_test
 ```
 

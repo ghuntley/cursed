@@ -191,16 +191,16 @@ The module includes comprehensive tests covering:
 
 ```bash
 # Test interpretation mode
-cargo run --bin cursed stdlib/encode_mood/test_encode_mood.csd
+cargo run --bin cursed stdlib/encode_mood/test_encode_mood.💀
 
 # Test compilation mode
-cargo run --bin cursed -- compile stdlib/encode_mood/test_encode_mood.csd
+cargo run --bin cursed -- compile stdlib/encode_mood/test_encode_mood.💀
 ./test_encode_mood
 
 # Both-mode verification
 test_both_modes() {
-    cargo run --bin cursed stdlib/encode_mood/test_encode_mood.csd > interp_output.txt
-    cargo run --bin cursed -- compile stdlib/encode_mood/test_encode_mood.csd
+    cargo run --bin cursed stdlib/encode_mood/test_encode_mood.💀 > interp_output.txt
+    cargo run --bin cursed -- compile stdlib/encode_mood/test_encode_mood.💀
     ./test_encode_mood > comp_output.txt
     diff interp_output.txt comp_output.txt
 }

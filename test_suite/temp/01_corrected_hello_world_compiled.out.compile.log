@@ -10,7 +10,7 @@
 🔧 Step 2: Linking object file with gcc...
 ✅ Successfully compiled to: 01_corrected_hello_world
 🎉 Compilation pipeline completed successfully!
-🎉 Successfully compiled /home/ghuntley/cursed/test_suite/test_programs/parser_fixes/01_corrected_hello_world.csd to 01_corrected_hello_world
+🎉 Successfully compiled /home/ghuntley/cursed/test_suite/test_programs/parser_fixes/01_corrected_hello_world.💀 to 01_corrected_hello_world
 🧹 Cleaning up LLVM IR Pipeline...
 ✅ LLVM IR Pipeline cleanup complete
 error(gpa): memory address 0x790e385e0100 leaked: 

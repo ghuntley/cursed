@@ -130,7 +130,7 @@ fn lintCursedCode(code: []const u8, filename: []const u8) ![]LintIssue {
 fn printUsage() void {
     print("CURSED Code Linter v1.0.0\n\n", .{});
     print("USAGE:\n", .{});
-    print("    cursed-lint <file.csd>\n\n", .{});
+    print("    cursed-lint <file.💀.💀>\n\n", .{});
     print("CHECKS:\n", .{});
     print("    • Line length (max 100 characters)\n", .{});
     print("    • Trailing whitespace\n", .{});
@@ -138,6 +138,6 @@ fn printUsage() void {
     print("    • Deprecated syntax usage\n", .{});
     print("    • Code style consistency\n\n", .{});
     print("EXAMPLES:\n", .{});
-    print("    cursed-lint hello.csd\n", .{});
-    print("    cursed-lint src/main.csd\n", .{});
+    print("    cursed-lint hello.💀.💀\n", .{});
+    print("    cursed-lint src/main.💀.💀\n", .{});
 }

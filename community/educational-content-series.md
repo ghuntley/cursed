@@ -7,7 +7,7 @@
 **Format:** Interactive tutorial + video
 
 ```cursed
-// hello_cursed.csd - Your first CURSED program
+// hello_cursed.💀 - Your first CURSED program
 yeet "vibez"
 
 slay main() {
@@ -33,7 +33,7 @@ slay main() {
 **Format:** Hands-on coding exercises
 
 ```cursed
-// control_flow.csd - CURSED decision making
+// control_flow.💀 - CURSED decision making
 yeet "vibez"
 
 slay calculate_grade(score drip) tea {
@@ -58,7 +58,7 @@ slay main() {
 **Duration:** 25 minutes
 
 ```cursed
-// data_structures.csd - Organizing your data
+// data_structures.💀 - Organizing your data
 yeet "vibez"
 yeet "arrayz"
 
@@ -81,7 +81,7 @@ slay main() {
 **Duration:** 30 minutes
 
 ```cursed
-// structs.csd - Building your own types
+// structs.💀 - Building your own types
 yeet "vibez"
 
 squad Person {
@@ -111,7 +111,7 @@ slay main() {
 **Duration:** 35 minutes
 
 ```cursed
-// concurrency.csd - Parallel processing power
+// concurrency.💀 - Parallel processing power
 yeet "vibez"
 yeet "concurrenz"
 
@@ -145,7 +145,7 @@ slay main() {
 **Duration:** 25 minutes
 
 ```cursed
-// error_handling.csd - Graceful failure management
+// error_handling.💀 - Graceful failure management
 yeet "vibez"
 
 slay divide(a drip, b drip) yikes<tea> {
@@ -177,7 +177,7 @@ slay main() {
 **Duration:** 45 minutes
 
 ```cursed
-// web_api.csd - Creating REST APIs
+// web_api.💀 - Creating REST APIs
 yeet "vibez"
 yeet "networkz"
 yeet "jsonz"
@@ -210,7 +210,7 @@ slay main() {
 **Duration:** 40 minutes
 
 ```cursed
-// performance.csd - Making CURSED blazingly fast
+// performance.💀 - Making CURSED blazingly fast
 yeet "vibez"
 yeet "timez"
 

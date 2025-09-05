@@ -240,7 +240,7 @@ slay expected_baseline() normie {
 Comprehensive test suite validates all memory operations:
 
 ```bash
-cargo run --bin cursed stdlib/memory/test_memory.csd
+cargo run --bin cursed stdlib/memory/test_memory.💀
 ```
 
 Tests cover:

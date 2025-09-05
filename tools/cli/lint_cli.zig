@@ -7,7 +7,7 @@ const ArrayList = std.ArrayList;
 const Allocator = std.mem.Allocator;
 
 const VERSION = "1.0.0";
-const CURSED_LINTER_PATH = "tools/enhanced_linter.csd";
+const CURSED_LINTER_PATH = "tools/enhanced_linter.💀";
 const CURSED_INTERPRETER = "cursed-unified";
 
 fn printHelp() void {
@@ -46,8 +46,8 @@ fn printHelp() void {
         \\
         \\EXAMPLES:
         \\    cursed-lint src/                    Lint all files in src/
-        \\    cursed-lint --security-only *.csd  Security analysis only
-        \\    cursed-lint --fix src/main.csd     Auto-fix issues in main.csd
+        \\    cursed-lint --security-only *.💀  Security analysis only
+        \\    cursed-lint --fix src/main.💀.💀     Auto-fix issues in main.💀.💀
         \\    cursed-lint --format json > report.json  JSON output
         \\    echo "sus x drip=42" | cursed-lint --stdin  Lint stdin
         \\
@@ -140,7 +140,7 @@ fn lintFile(file_path: []const u8, options: LintOptions) !u8 {
     defer std.heap.page_allocator.free(file_content);
     
     // Create temporary file for input
-    const temp_input = "temp_lint_input.csd";
+    const temp_input = "temp_lint_input.💀";
     const temp_file = std.fs.cwd().createFile(temp_input, .{}) catch |err| {
         print("❌ Error creating temporary file: {}\n", .{err});
         return 1;
@@ -253,7 +253,7 @@ fn lintStdin(options: LintOptions) !u8 {
     defer std.heap.page_allocator.free(input);
     
     // Create temporary file for input
-    const temp_input = "temp_lint_stdin.csd";
+    const temp_input = "temp_lint_stdin.💀";
     const temp_file = std.fs.cwd().createFile(temp_input, .{}) catch |err| {
         print("❌ Error creating temporary file: {}\n", .{err});
         return 1;
@@ -286,7 +286,7 @@ fn lintDirectory(dir_path: []const u8, options: LintOptions) !u8 {
     var files_processed: u32 = 0;
     
     while (iterator.next() catch null) |entry| {
-        if (entry.kind == .File and std.mem.endsWith(u8, entry.name, ".csd")) {
+        if (entry.kind == .File and std.mem.endsWith(u8, entry.name, ".💀")) {
             var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
             defer arena.deinit();
             const allocator = arena.allocator();

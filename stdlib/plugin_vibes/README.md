@@ -472,7 +472,7 @@ slay process_order(order_data tea) tea {
 
 ```cursed
 # Template for creating new plugins
-# File: my_plugin.plugin.csd
+# File: my_plugin.plugin.💀
 
 yeet "plugin_vibes"
 
@@ -621,16 +621,16 @@ Run the comprehensive test suite:
 
 ```bash
 # Test interpretation mode
-cargo run --bin cursed stdlib/plugin_vibes/test_plugin_vibes.csd
+cargo run --bin cursed stdlib/plugin_vibes/test_plugin_vibes.💀
 
 # Test compilation mode  
-cargo run --bin cursed -- compile stdlib/plugin_vibes/test_plugin_vibes.csd
+cargo run --bin cursed -- compile stdlib/plugin_vibes/test_plugin_vibes.💀
 ./test_plugin_vibes
 
 # Both-mode verification
 test_both_modes() {
-    cargo run --bin cursed stdlib/plugin_vibes/test_plugin_vibes.csd > interp_output.txt
-    cargo run --bin cursed -- compile stdlib/plugin_vibes/test_plugin_vibes.csd
+    cargo run --bin cursed stdlib/plugin_vibes/test_plugin_vibes.💀 > interp_output.txt
+    cargo run --bin cursed -- compile stdlib/plugin_vibes/test_plugin_vibes.💀
     ./test_plugin_vibes > comp_output.txt
     diff interp_output.txt comp_output.txt
 }

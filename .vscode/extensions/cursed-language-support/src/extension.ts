@@ -50,7 +50,7 @@ function startLanguageServer(context: vscode.ExtensionContext) {
       { scheme: 'untitled', language: 'cursed' }
     ],
     synchronize: {
-      fileEvents: vscode.workspace.createFileSystemWatcher('**/*.csd')
+      fileEvents: vscode.workspace.createFileSystemWatcher('**/*.💀')
     },
     initializationOptions: {
       vibeMode: vscode.workspace.getConfiguration('cursed').get('vibe.mode', 'standard')

@@ -17,7 +17,7 @@ This advanced test suite provides thorough validation of all CURSED implementati
 
 ### 1. Edge Cases (`edge_cases/`)
 
-#### Boundary Conditions (`boundary_conditions.csd`)
+#### Boundary Conditions (`boundary_conditions.💀`)
 - Integer overflow/underflow handling
 - Array boundary access validation
 - String edge cases (empty, very long, Unicode)
@@ -25,7 +25,7 @@ This advanced test suite provides thorough validation of all CURSED implementati
 - Floating point special values (infinity, NaN)
 - Recursion depth limits
 
-#### Malformed Input (`malformed_input.csd`)
+#### Malformed Input (`malformed_input.💀`)
 - JSON parsing with invalid syntax
 - XML processing with malformed structure
 - CSV handling with inconsistent formats
@@ -36,7 +36,7 @@ This advanced test suite provides thorough validation of all CURSED implementati
 
 ### 2. Performance (`performance/`)
 
-#### Benchmark Suite (`benchmark_suite.csd`)
+#### Benchmark Suite (`benchmark_suite.💀`)
 - String operations (concatenation, building, searching)
 - Array operations (append, sort, search)
 - Mathematical computations (arithmetic, trigonometry, factorials)
@@ -47,7 +47,7 @@ This advanced test suite provides thorough validation of all CURSED implementati
 
 ### 3. Integration (`integration/`)
 
-#### Module Integration (`module_integration.csd`)
+#### Module Integration (`module_integration.💀`)
 - Web server with JSON API endpoints
 - Database operations with connection pooling
 - File processing pipelines
@@ -57,7 +57,7 @@ This advanced test suite provides thorough validation of all CURSED implementati
 
 ### 4. Stress Testing (`stress/`)
 
-#### Resource Exhaustion (`resource_exhaustion.csd`)
+#### Resource Exhaustion (`resource_exhaustion.💀`)
 - Memory allocation until exhaustion
 - Goroutine creation limits
 - Channel capacity stress testing
@@ -69,7 +69,7 @@ This advanced test suite provides thorough validation of all CURSED implementati
 
 ### 5. Security (`security/`)
 
-#### Injection Prevention (`injection_prevention.csd`)
+#### Injection Prevention (`injection_prevention.💀`)
 - SQL injection attack prevention
 - Command injection protection
 - Path traversal attack blocking
@@ -80,7 +80,7 @@ This advanced test suite provides thorough validation of all CURSED implementati
 
 ### 6. Cross-Platform (`cross_platform/`)
 
-#### Platform Validation (`platform_validation.csd`)
+#### Platform Validation (`platform_validation.💀`)
 - Platform and architecture detection
 - File system behavior across platforms
 - Network operations compatibility
@@ -172,10 +172,10 @@ python3 advanced_test_suites/run_all_tests.py \
 Run individual test files directly:
 ```bash
 # Run specific test file
-./zig-out/bin/cursed-zig advanced_test_suites/edge_cases/boundary_conditions.csd
+./zig-out/bin/cursed-zig advanced_test_suites/edge_cases/boundary_conditions.💀
 
 # Run with memory safety validation
-valgrind --leak-check=full ./zig-out/bin/cursed-zig advanced_test_suites/performance/benchmark_suite.csd
+valgrind --leak-check=full ./zig-out/bin/cursed-zig advanced_test_suites/performance/benchmark_suite.💀
 ```
 
 ## CI/CD Integration
@@ -211,15 +211,15 @@ Critical memory safety tests using Valgrind:
 ```bash
 # Basic memory leak detection
 valgrind --leak-check=full --error-exitcode=1 \
-  ./zig-out/bin/cursed-zig comprehensive_stdlib_test.csd
+  ./zig-out/bin/cursed-zig comprehensive_stdlib_test.💀
 
 # Comprehensive memory analysis
 valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes \
-  ./zig-out/bin/cursed-zig advanced_test_suites/stress/resource_exhaustion.csd
+  ./zig-out/bin/cursed-zig advanced_test_suites/stress/resource_exhaustion.💀
 
 # Address sanitizer (if available)
 zig build -Doptimize=Debug -fsanitize=address
-ASAN_OPTIONS=detect_leaks=1 ./zig-out/bin/cursed-zig basic_test.csd
+ASAN_OPTIONS=detect_leaks=1 ./zig-out/bin/cursed-zig basic_test.💀
 ```
 
 ## Performance Benchmarking
@@ -349,7 +349,7 @@ python3 advanced_test_suites/run_all_tests.py --categories edge_cases 2>&1 | tee
 ### Adding New Test Cases
 
 1. **Create test file** in appropriate category directory
-2. **Follow naming convention**: `test_name.csd`
+2. **Follow naming convention**: `test_name.💀`
 3. **Use test framework**:
    ```cursed
    yeet "testz"
@@ -367,7 +367,7 @@ python3 advanced_test_suites/run_all_tests.py --categories edge_cases 2>&1 | tee
 
 4. **Add to test runner** in `run_all_tests.py`:
    ```python
-   self.test_suites["category"].append("path/to/new_test.csd")
+   self.test_suites["category"].append("path/to/new_test.💀")
    ```
 
 5. **Update documentation** in this README

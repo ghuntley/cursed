@@ -88,9 +88,9 @@ build() {
     
     # Test basic functionality
     msg2 "Testing basic functionality..."
-    echo 'yeet "vibez"; vibez.spill("Build test");' > test.csd
-    ./zig-out/bin/cursed test.csd
-    rm test.csd
+    echo 'yeet "vibez"; vibez.spill("Build test");' > test.💀
+    ./zig-out/bin/cursed test.💀
+    rm test.💀
     
     msg2 "Build completed successfully"
 }
@@ -113,9 +113,9 @@ check() {
     # Memory safety check with valgrind if available
     if command -v valgrind >/dev/null 2>&1; then
         msg2 "Running memory safety checks..."
-        echo 'yeet "vibez"; vibez.spill("Memory test");' > memtest.csd
-        timeout 30s valgrind --error-exitcode=1 --leak-check=full ./zig-out/bin/cursed memtest.csd || true
-        rm memtest.csd
+        echo 'yeet "vibez"; vibez.spill("Memory test");' > memtest.💀
+        timeout 30s valgrind --error-exitcode=1 --leak-check=full ./zig-out/bin/cursed memtest.💀 || true
+        rm memtest.💀
     fi
     
     msg2 "Tests completed"
@@ -233,9 +233,9 @@ post_install() {
     echo "🎉 CURSED Programming Language v${pkgver} installed successfully!"
     echo ""
     echo "Quick Start:"
-    echo "  1. Create a new file: hello.csd"  
+    echo "  1. Create a new file: hello.💀"  
     echo "  2. Add content: yeet \"vibez\"; vibez.spill(\"Hello, Arch!\");"
-    echo "  3. Run it: cursed hello.csd"
+    echo "  3. Run it: cursed hello.💀"
     echo ""
     echo "Available Commands:"
     echo "  cursed        - CURSED compiler"

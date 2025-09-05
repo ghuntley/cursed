@@ -88,9 +88,9 @@ fn printUsage() !void {
         "  add-alias <alias> <target>           - Add module alias\n" ++
         "\n" ++
         "Examples:\n" ++
-        "  import-resolver resolve \"mathz\" main.csd\n" ++
-        "  import-resolver extract src/main.csd\n" ++
-        "  import-resolver validate tests/test.csd\n" ++
+        "  import-resolver resolve \"mathz\" main.💀.💀\n" ++
+        "  import-resolver extract src/main.💀.💀\n" ++
+        "  import-resolver validate tests/test.💀.💀\n" ++
         "  import-resolver report\n" ++
         "  import-resolver add-alias \"test\" \"stdlib/testz\"\n" ++
         "\n", .{});
@@ -265,7 +265,7 @@ fn cmdReport(allocator: Allocator, args: [][]const u8) !void {
 
     while (try iterator.next()) |entry| {
         if (entry.kind != .file) continue;
-        if (!std.mem.endsWith(u8, entry.name, ".csd")) continue;
+        if (!std.mem.endsWith(u8, entry.name, ".💀")) continue;
 
         print("Processing: {s}\n", .{entry.name});
 
@@ -317,25 +317,25 @@ fn cmdTestCycle(allocator: Allocator, args: [][]const u8) !void {
     print("Creating test dependency graph...\n", .{});
     
     // Create cycle: A -> B -> C -> A
-    try resolver.module_cache.addToGraph("moduleA.csd", "moduleB.csd");
-    try resolver.module_cache.addToGraph("moduleB.csd", "moduleC.csd");
-    try resolver.module_cache.addToGraph("moduleC.csd", "moduleA.csd");
+    try resolver.module_cache.addToGraph("moduleA.💀", "moduleB.💀");
+    try resolver.module_cache.addToGraph("moduleB.💀", "moduleC.💀");
+    try resolver.module_cache.addToGraph("moduleC.💀", "moduleA.💀");
     
     // Add some non-cyclic dependencies
-    try resolver.module_cache.addToGraph("moduleD.csd", "moduleB.csd");
-    try resolver.module_cache.addToGraph("moduleE.csd", "moduleF.csd");
+    try resolver.module_cache.addToGraph("moduleD.💀", "moduleB.💀");
+    try resolver.module_cache.addToGraph("moduleE.💀", "moduleF.💀");
     
     print("Dependencies added:\n", .{});
-    print("  moduleA.csd -> moduleB.csd\n", .{});
-    print("  moduleB.csd -> moduleC.csd\n", .{});
-    print("  moduleC.csd -> moduleA.csd  (creates cycle)\n", .{});
-    print("  moduleD.csd -> moduleB.csd\n", .{});
-    print("  moduleE.csd -> moduleF.csd\n\n", .{});
+    print("  moduleA.💀.💀 -> moduleB.💀.💀\n", .{});
+    print("  moduleB.💀.💀 -> moduleC.💀.💀\n", .{});
+    print("  moduleC.💀.💀 -> moduleA.💀.💀  (creates cycle)\n", .{});
+    print("  moduleD.💀.💀 -> moduleB.💀.💀\n", .{});
+    print("  moduleE.💀.💀 -> moduleF.💀.💀\n\n", .{});
 
     // Test cycle detection
     print("Testing cycle detection...\n\n", .{});
 
-    const test_modules = [_][]const u8{ "moduleA.csd", "moduleD.csd", "moduleE.csd" };
+    const test_modules = [_][]const u8{ "moduleA.💀", "moduleD.💀", "moduleE.💀" };
 
     for (test_modules) |module| {
         print("Checking for cycles starting from: {s}\n", .{module});
@@ -381,7 +381,7 @@ fn cmdAddAlias(allocator: Allocator, args: [][]const u8) !void {
 
     // Test the alias resolution
     print("Testing alias resolution...\n", .{});
-    const import_spec = resolver.resolveImport(alias, "test.csd") catch |err| {
+    const import_spec = resolver.resolveImport(alias, "test.💀") catch |err| {
         print("❌ Failed to resolve alias: {any}\n", .{err});
         return;
     };

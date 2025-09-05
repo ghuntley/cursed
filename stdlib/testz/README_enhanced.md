@@ -411,15 +411,15 @@ Total Execution Time: 5000ms
 
 ```bash
 # Run the enhanced framework tests
-cargo run --bin cursed stdlib/testz/test_enhanced_simple.csd
+cargo run --bin cursed stdlib/testz/test_enhanced_simple.💀
 
 # Run in both interpretation and compilation modes
-cargo run --bin cursed stdlib/testz/test_enhanced_simple.csd
-cargo run --bin cursed -- compile stdlib/testz/test_enhanced_simple.csd
+cargo run --bin cursed stdlib/testz/test_enhanced_simple.💀
+cargo run --bin cursed -- compile stdlib/testz/test_enhanced_simple.💀
 ./test_enhanced_simple
 
 # Test your own stdlib modules
-cargo run --bin cursed your_module/test_your_module.csd
+cargo run --bin cursed your_module/test_your_module.💀
 ```
 
 ## 🌟 Status

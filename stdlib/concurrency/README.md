@@ -401,14 +401,14 @@ concurrency_reset_performance_counters()
 Run the comprehensive test suite:
 
 ```bash
-cargo run --bin cursed stdlib/concurrency/test_concurrency.csd
+cargo run --bin cursed stdlib/concurrency/test_concurrency.💀
 ```
 
 Test both interpretation and compilation modes:
 
 ```bash
-cargo run --bin cursed stdlib/concurrency/test_concurrency.csd
-cargo run --bin cursed -- compile stdlib/concurrency/test_concurrency.csd
+cargo run --bin cursed stdlib/concurrency/test_concurrency.💀
+cargo run --bin cursed -- compile stdlib/concurrency/test_concurrency.💀
 ./test_concurrency
 ```
 

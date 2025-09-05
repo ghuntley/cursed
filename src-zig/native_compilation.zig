@@ -338,7 +338,7 @@ pub const NativeCompiler = struct {
         defer debug_gen.deinit();
         
         // Initialize debug compilation unit
-        debug_gen.createCompileUnit("main.csd", ".") catch |err| switch (err) {
+        debug_gen.createCompileUnit("main.💀", ".") catch |err| switch (err) {
             error.MetadataError => return CompilationError.DebugInfoError,
             error.OutOfMemory => return CompilationError.OutOfMemory,
             else => return CompilationError.DebugInfoError,

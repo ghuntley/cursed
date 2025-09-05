@@ -5,7 +5,7 @@ Created comprehensive test suite for CURSED stdlib functions that avoids parsing
 
 ## Test Files Created
 
-### 1. [`test_cursed_basic_math.csd`](file:///home/ghuntley/cursed/test_cursed_basic_math.csd)
+### 1. [`test_cursed_basic_math.💀`](file:///home/ghuntley/cursed/test_cursed_basic_math.💀)
 **Purpose**: Tests basic mathz stdlib functions
 **Status**: ✅ **INTERPRETER WORKING**
 **Output**:
@@ -17,7 +17,7 @@ mathz.add_two(-2, 8) = 6
 === Test Complete ===
 ```
 
-### 2. [`test_cursed_complex_math.csd`](file:///home/ghuntley/cursed/test_cursed_complex_math.csd)  
+### 2. [`test_cursed_complex_math.💀`](file:///home/ghuntley/cursed/test_cursed_complex_math.💀)  
 **Purpose**: Tests complex expressions combining arithmetic and stdlib functions
 **Status**: ✅ **INTERPRETER WORKING**
 **Output**:
@@ -29,7 +29,7 @@ mathz.add_two(2, 3) * 2 = 10
 === Complex Test Complete ===
 ```
 
-### 3. [`test_cursed_multimodule.csd`](file:///home/ghuntley/cursed/test_cursed_multimodule.csd)
+### 3. [`test_cursed_multimodule.💀`](file:///home/ghuntley/cursed/test_cursed_multimodule.💀)
 **Purpose**: Tests multi-module interaction (mathz + stringz + timez)
 **Status**: ⚠️ **PARTIALLY WORKING**
 
@@ -77,13 +77,13 @@ slay main_character() {               // Function definition
 
 ### Interpreter Mode (✅ Working)
 ```bash
-zig build run -- test_cursed_basic_math.csd
-zig build run -- test_cursed_complex_math.csd  
+zig build run -- test_cursed_basic_math.💀
+zig build run -- test_cursed_complex_math.💀  
 ```
 
 ### Compiled Mode (❌ Issues)
 ```bash
-zig build run -- --compile test_cursed_basic_math.csd
+zig build run -- --compile test_cursed_basic_math.💀
 # Error: Undefined variable: yap
 ```
 
@@ -107,9 +107,9 @@ zig build run -- --compile test_cursed_basic_math.csd
 
 ## Files Generated
 
-- [`test_cursed_basic_math.csd`](file:///home/ghuntley/cursed/test_cursed_basic_math.csd)
-- [`test_cursed_complex_math.csd`](file:///home/ghuntley/cursed/test_cursed_complex_math.csd)
-- [`test_cursed_multimodule.csd`](file:///home/ghuntley/cursed/test_cursed_multimodule.csd)
+- [`test_cursed_basic_math.💀`](file:///home/ghuntley/cursed/test_cursed_basic_math.💀)
+- [`test_cursed_complex_math.💀`](file:///home/ghuntley/cursed/test_cursed_complex_math.💀)
+- [`test_cursed_multimodule.💀`](file:///home/ghuntley/cursed/test_cursed_multimodule.💀)
 
 ## Conclusion
 

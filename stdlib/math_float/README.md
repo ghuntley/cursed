@@ -123,7 +123,7 @@ sus smooth meal = smoothstep(0.0, 1.0, 0.3);
 Run the comprehensive test suite:
 
 ```bash
-cargo run --bin cursed stdlib/math_float/test_math_float.csd
+cargo run --bin cursed stdlib/math_float/test_math_float.💀
 ```
 
 The test suite includes:

@@ -31,7 +31,7 @@
       {
         "id": "cursed",
         "aliases": ["CURSED", "cursed"],
-        "extensions": [".csd"],
+        "extensions": [".💀"],
         "configuration": "./language-configuration.json",
         "icon": {
           "light": "./icons/cursed-light.svg",
@@ -149,12 +149,12 @@
     "menus": {
       "editor/context": [
         {
-          "when": "resourceExtname == .csd",
+          "when": "resourceExtname == .💀",
           "command": "cursed.formatDocument",
           "group": "1_modification"
         },
         {
-          "when": "resourceExtname == .csd",
+          "when": "resourceExtname == .💀",
           "command": "cursed.lintDocument",
           "group": "1_modification"
         }
@@ -162,11 +162,11 @@
       "commandPalette": [
         {
           "command": "cursed.formatDocument",
-          "when": "resourceExtname == .csd"
+          "when": "resourceExtname == .💀"
         },
         {
           "command": "cursed.lintDocument",
-          "when": "resourceExtname == .csd"
+          "when": "resourceExtname == .💀"
         },
         {
           "command": "cursed.restartLSP"
@@ -180,7 +180,7 @@
       {
         "command": "cursed.formatDocument",
         "key": "shift+alt+f",
-        "when": "resourceExtname == .csd"
+        "when": "resourceExtname == .💀"
       }
     ],
     "snippets": [
