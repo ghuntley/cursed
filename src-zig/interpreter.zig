@@ -1810,17 +1810,10 @@ pub const Interpreter = struct {
                         }
                     } else |_| {}
                     
-                    // Before giving up, try to load as a module (lazy loading)
-                    // Removed DEBUG: Variable '{s}' not found, attempting lazy module loading...\n", .{name});
-                    if (self.loadBuiltinModule(name)) {
-                        // Successfully loaded module, try to get it again
-                        if (self.environment.get(name)) |value| {
-                            // Removed DEBUG: Successfully loaded module '{s}' on demand\n", .{name});
-                            return value;
-                        } else |_| {}
-                    } else |_| {
-                        // Removed DEBUG: Failed to load module '{s}'\n", .{name});
-                    }
+                    // DISABLED: Overly aggressive lazy module loading
+                    // Only attempt module loading for known stdlib modules to avoid
+                    // trying to load modules for typos and intentionally undefined variables
+                    // TODO: Implement smarter lazy loading based on context or known module list
                     
                     // If not found anywhere, return undefined variable error
                     return InterpreterError.UndefinedVariable;
