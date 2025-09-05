@@ -11,7 +11,7 @@ let b:did_ftplugin = 1
 setlocal commentstring=//\ %s
 setlocal comments=sO:*\ -,mO:*\ \ ,exO:*/,s1:/*,mb:*,ex:*/,://
 setlocal formatoptions-=t formatoptions+=croql
-setlocal suffixesadd=.csd,.cursed
+setlocal suffixesadd=.💀,.cursed
 setlocal tabstop=4
 setlocal shiftwidth=4
 setlocal expandtab

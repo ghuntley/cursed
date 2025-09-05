@@ -226,7 +226,7 @@ The module includes comprehensive tests covering:
 
 Run tests with:
 ```bash
-cargo run --bin cursed stdlib/collections_core/test_collections_core.csd
+cargo run --bin cursed stdlib/collections_core/test_collections_core.💀
 ```
 
 ## Dependencies
@@ -270,4 +270,4 @@ Potential future additions:
 
 ## Examples
 
-See `test_collections_core.csd` for comprehensive usage examples of all data structures and their integration patterns.
+See `test_collections_core.💀` for comprehensive usage examples of all data structures and their integration patterns.

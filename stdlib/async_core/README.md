@@ -552,15 +552,15 @@ The module includes a comprehensive test suite covering all functionality:
 
 ```bash
 # Run the full test suite
-./cursed-unified stdlib/async_core/test_async_core.csd
+./cursed-unified stdlib/async_core/test_async_core.💀
 
 # Or run individual test functions
 echo 'yeet "async_core"
 test_async_runtime_lifecycle()
 test_task_spawning()
-test_promises()' > test_custom.csd
+test_promises()' > test_custom.💀
 
-./cursed-unified test_custom.csd
+./cursed-unified test_custom.💀
 ```
 
 ## Performance Characteristics

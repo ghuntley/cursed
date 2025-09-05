@@ -36,4 +36,4 @@ executable = true
 
 [bin]
 name = "calc"
-path = "src/mod.csd"
+path = "src/mod.💀"

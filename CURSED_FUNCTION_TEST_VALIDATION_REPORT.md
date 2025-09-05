@@ -6,18 +6,18 @@ Validated 6 CURSED function test files against language specifications from `spe
 
 ### Files Validated:
 
-1. `/home/ghuntley/cursed/test_suite/test_programs/functions/01_simple_function.csd`
-2. `/home/ghuntley/cursed/test_suite/test_programs/functions/02_recursive_function.csd`
-3. `/home/ghuntley/cursed/test_suite/test_programs/functions/03_nested_function_calls.csd`
-4. `/home/ghuntley/cursed/test_suite/test_programs/functions/04_function_parameters.csd`
-5. `/home/ghuntley/cursed/test_suite/test_programs/functions/feature_function_calls.csd`
-6. `/home/ghuntley/cursed/test_suite/test_programs/functions/functions_parameter_return.csd`
+1. `/home/ghuntley/cursed/test_suite/test_programs/functions/01_simple_function.💀`
+2. `/home/ghuntley/cursed/test_suite/test_programs/functions/02_recursive_function.💀`
+3. `/home/ghuntley/cursed/test_suite/test_programs/functions/03_nested_function_calls.💀`
+4. `/home/ghuntley/cursed/test_suite/test_programs/functions/04_function_parameters.💀`
+5. `/home/ghuntley/cursed/test_suite/test_programs/functions/feature_function_calls.💀`
+6. `/home/ghuntley/cursed/test_suite/test_programs/functions/functions_parameter_return.💀`
 
 ## Issues Found & Fixed
 
 ### 1. Missing Return Types ✅ FIXED
 **Issue**: Functions returning values were missing explicit return type declarations
-**Files affected**: `01_simple_function.csd`, `02_recursive_function.csd`, `03_nested_function_calls.csd`, `04_function_parameters.csd`
+**Files affected**: `01_simple_function.💀`, `02_recursive_function.💀`, `03_nested_function_calls.💀`, `04_function_parameters.💀`
 
 **Fixes applied**:
 - `slay add_numbers(a normie, b normie) normie` (added `normie` return type)
@@ -27,11 +27,11 @@ Validated 6 CURSED function test files against language specifications from `spe
 - `slay complex_calc(x normie) normie` (added `normie` return type)
 
 ### 2. Deprecated Keywords ✅ ALREADY FIXED
-**Issue**: `feature_function_calls.csd` was using deprecated `lowkey`/`highkey` keywords and `cap` literal
+**Issue**: `feature_function_calls.💀` was using deprecated `lowkey`/`highkey` keywords and `cap` literal
 **Status**: Already corrected to use canonical `ready`/`otherwise` and `cringe`
 
 ### 3. Missing Import Statement ✅ FIXED
-**Issue**: `functions_parameter_return.csd` was missing required `yeet "vibez"` import
+**Issue**: `functions_parameter_return.💀` was missing required `yeet "vibez"` import
 **Fix applied**: Added `yeet "vibez"` after package clause
 
 ## Language Specification Compliance
@@ -54,12 +54,12 @@ Validated 6 CURSED function test files against language specifications from `spe
 ## Testing Results
 
 ### Interpreter Mode:
-- ✅ `01_simple_function.csd` - Runs successfully, produces correct output
-- ❌ `02_recursive_function.csd` - Segmentation fault (runtime issue, not syntax)
-- ✅ `03_nested_function_calls.csd` - Runs successfully  
-- ✅ `04_function_parameters.csd` - Runs successfully
-- ❌ `feature_function_calls.csd` - Aborted (runtime issue, not syntax)
-- ✅ `functions_parameter_return.csd` - Runs successfully
+- ✅ `01_simple_function.💀` - Runs successfully, produces correct output
+- ❌ `02_recursive_function.💀` - Segmentation fault (runtime issue, not syntax)
+- ✅ `03_nested_function_calls.💀` - Runs successfully  
+- ✅ `04_function_parameters.💀` - Runs successfully
+- ❌ `feature_function_calls.💀` - Aborted (runtime issue, not syntax)
+- ✅ `functions_parameter_return.💀` - Runs successfully
 
 ### Compilation Mode:
 Memory leak warnings present but these are implementation issues, not syntax errors.

@@ -13,14 +13,14 @@ pub fn main() !void {
     
     if (args.len < 2) {
         std.debug.print("CURSED Emergency Interpreter v1.0\n", .{});
-        std.debug.print("Usage: cursed-emergency <file.csd>\n", .{});
+        std.debug.print("Usage: cursed-emergency <file.💀.💀>\n", .{});
         return;
     }
     
     const filename = args[1];
     
-    if (!std.mem.endsWith(u8, filename, ".csd")) {
-        std.debug.print("Error: File must have .csd extension\n", .{});
+    if (!std.mem.endsWith(u8, filename, ".💀")) {
+        std.debug.print("Error: File must have .💀 extension\n", .{});
         return;
     }
     

@@ -78,7 +78,7 @@ setup_test_environment() {
     mkdir -p "${TEST_DIR}"
     
     # Create test program
-    cat > "${TEST_DIR}/hello_test.csd" << 'EOF'
+    cat > "${TEST_DIR}/hello_test.💀" << 'EOF'
 yeet "vibez";
 yeet "mathz";
 yeet "stringz";
@@ -101,7 +101,7 @@ vibez.spill("✅ All tests passed!");
 EOF
     
     # Create advanced test program
-    cat > "${TEST_DIR}/advanced_test.csd" << 'EOF'
+    cat > "${TEST_DIR}/advanced_test.💀" << 'EOF'
 yeet "vibez";
 yeet "mathz";
 yeet "arrayz";
@@ -246,13 +246,13 @@ test_archive_installation() {
     fi
     
     # Test simple program execution
-    if ! timeout ${TEST_TIMEOUT} ${cursed_binary} "${TEST_DIR}/hello_test.csd" >/dev/null 2>&1; then
+    if ! timeout ${TEST_TIMEOUT} ${cursed_binary} "${TEST_DIR}/hello_test.💀" >/dev/null 2>&1; then
         log_error "Simple program execution failed"
         return 1
     fi
     
     # Test advanced program execution
-    if ! timeout ${TEST_TIMEOUT} ${cursed_binary} "${TEST_DIR}/advanced_test.csd" >/dev/null 2>&1; then
+    if ! timeout ${TEST_TIMEOUT} ${cursed_binary} "${TEST_DIR}/advanced_test.💀" >/dev/null 2>&1; then
         log_error "Advanced program execution failed"
         return 1
     fi
@@ -348,7 +348,7 @@ test_native_package_installation() {
     fi
     
     # Test program execution
-    if ! timeout ${TEST_TIMEOUT} cursed "${TEST_DIR}/hello_test.csd" >/dev/null 2>&1; then
+    if ! timeout ${TEST_TIMEOUT} cursed "${TEST_DIR}/hello_test.💀" >/dev/null 2>&1; then
         log_error "Program execution failed after installation"
         ${remove_command} || true
         return 1
@@ -406,7 +406,7 @@ test_homebrew_installation() {
         return 1
     fi
     
-    if ! timeout ${TEST_TIMEOUT} cursed "${TEST_DIR}/hello_test.csd" >/dev/null 2>&1; then
+    if ! timeout ${TEST_TIMEOUT} cursed "${TEST_DIR}/hello_test.💀" >/dev/null 2>&1; then
         log_error "Program execution failed after Homebrew installation"
         brew uninstall cursed || true
         return 1
@@ -456,7 +456,7 @@ test_docker_container() {
     fi
     
     # Test program execution in container
-    if ! timeout ${TEST_TIMEOUT} docker run --rm -v "${TEST_DIR}:/workspace" "${image_name}" cursed /workspace/hello_test.csd >/dev/null 2>&1; then
+    if ! timeout ${TEST_TIMEOUT} docker run --rm -v "${TEST_DIR}:/workspace" "${image_name}" cursed /workspace/hello_test.💀 >/dev/null 2>&1; then
         log_error "Container program execution failed"
         docker rmi "${image_name}" || true
         return 1

@@ -321,13 +321,13 @@ RegexZ includes a comprehensive test suite covering all features:
 
 ```bash
 # Run the test suite
-./zig-out/bin/cursed-zig stdlib/regexz/regex_tests.csd
+./zig-out/bin/cursed-zig stdlib/regexz/regex_tests.💀
 
 # Memory leak testing
-valgrind --leak-check=full ./zig-out/bin/cursed-zig stdlib/regexz/regex_tests.csd
+valgrind --leak-check=full ./zig-out/bin/cursed-zig stdlib/regexz/regex_tests.💀
 
 # Performance benchmarking
-./zig-out/bin/cursed-zig --benchmark stdlib/regexz/regex_performance_test.csd
+./zig-out/bin/cursed-zig --benchmark stdlib/regexz/regex_performance_test.💀
 ```
 
 Test coverage includes:
@@ -411,4 +411,4 @@ Contributions are welcome! Please see the main CURSED contribution guidelines. A
 
 ---
 
-For more examples and advanced usage, see the [examples directory](../examples/regexz/) and the [test suite](regex_tests.csd).
+For more examples and advanced usage, see the [examples directory](../examples/regexz/) and the [test suite](regex_tests.💀).

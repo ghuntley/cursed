@@ -78,8 +78,8 @@ const index = self.parseExpression() catch |index_err| {
 ### 6. **Test File Syntax Corrections**
 - **Issue**: Invalid CURSED syntax in test files causing parser confusion
 - **Files Fixed**:
-  - `validation_function_definitions.csd`: Removed invalid 'drip' modifiers, fixed package declaration syntax
-  - `validation_stdlib_collections_complete.csd`: Fixed array literal syntax from `[]type{...}` to `[...]`
+  - `validation_function_definitions.💀`: Removed invalid 'drip' modifiers, fixed package declaration syntax
+  - `validation_stdlib_collections_complete.💀`: Fixed array literal syntax from `[]type{...}` to `[...]`
 
 ## Memory Management Improvements
 
@@ -98,7 +98,7 @@ const index = self.parseExpression() catch |index_err| {
 
 ### Before Fixes
 - **Status**: 🔴 CRITICAL - Segmentation faults causing system crashes
-- **Affected Tests**: `validation_function_definitions.csd`, `validation_stdlib_collections_complete.csd`
+- **Affected Tests**: `validation_function_definitions.💀`, `validation_stdlib_collections_complete.💀`
 - **Impact**: Parser crashes, memory corruption, test suite failure
 
 ### After Fixes
@@ -112,11 +112,11 @@ const index = self.parseExpression() catch |index_err| {
 ### Successful Test Cases
 ```bash
 # Function definition parsing - previously segfaulted
-./zig-out/bin/cursed-compiler --interpret parser_fix_test.csd
+./zig-out/bin/cursed-compiler --interpret parser_fix_test.💀
 # Output: "Testing parser fixes" 42
 
 # Basic array operations - previously caused crashes  
-./zig-out/bin/cursed-compiler --interpret debug_segfault_test.csd  
+./zig-out/bin/cursed-compiler --interpret debug_segfault_test.💀  
 # Output: Parsing errors but no segfaults
 ```
 

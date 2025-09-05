@@ -11,7 +11,7 @@ test "debug info integration" {
     defer codegen.deinit();
     
     // Enable debug info for test file
-    try codegen.enableDebugInfo("debug_info_comprehensive_test.csd");
+    try codegen.enableDebugInfo("debug_info_comprehensive_test.💀");
     
     // Verify debug generator was initialized
     try testing.expect(codegen.debug_enabled);
@@ -28,7 +28,7 @@ test "cursed type debug info" {
     var codegen = try AdvancedCodeGen.init(allocator);
     defer codegen.deinit();
     
-    try codegen.enableDebugInfo("test.csd");
+    try codegen.enableDebugInfo("test.💀");
     
     // Test creating debug info for CURSED types
     const normie_type = try codegen.getCursedDebugType("normie");
@@ -51,7 +51,7 @@ test "struct debug info" {
     var codegen = try AdvancedCodeGen.init(allocator);
     defer codegen.deinit();
     
-    try codegen.enableDebugInfo("test.csd");
+    try codegen.enableDebugInfo("test.💀");
     
     // Create debug info for Point struct
     const field_names = [_][]const u8{"x", "y", "label"};
@@ -70,7 +70,7 @@ test "interface debug info" {
     var codegen = try AdvancedCodeGen.init(allocator);
     defer codegen.deinit();
     
-    try codegen.enableDebugInfo("test.csd");
+    try codegen.enableDebugInfo("test.💀");
     
     // Create debug info for Drawable interface
     const method_names = [_][]const u8{"draw", "area"};
@@ -88,7 +88,7 @@ test "source location tracking" {
     var codegen = try AdvancedCodeGen.init(allocator);
     defer codegen.deinit();
     
-    try codegen.enableDebugInfo("test.csd");
+    try codegen.enableDebugInfo("test.💀");
     
     // Verify source locations map was initialized
     try testing.expect(codegen.source_locations.count() == 0);
@@ -103,7 +103,7 @@ test "debug scope management" {
     var codegen = try AdvancedCodeGen.init(allocator);
     defer codegen.deinit();
     
-    try codegen.enableDebugInfo("test.csd");
+    try codegen.enableDebugInfo("test.💀");
     
     // Test scope push/pop
     const scope1 = try codegen.pushDebugScope(10, 0);
@@ -126,7 +126,7 @@ test "complete debug compilation" {
     defer codegen.deinit();
     
     // Enable debug info
-    try codegen.enableDebugInfo("debug_info_comprehensive_test.csd");
+    try codegen.enableDebugInfo("debug_info_comprehensive_test.💀");
     
     // Simulate compilation with debug info
     const source = 

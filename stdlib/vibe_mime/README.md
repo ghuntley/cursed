@@ -315,13 +315,13 @@ The module recognizes these file signatures:
 
 Run the test suite:
 ```bash
-cargo run --bin cursed stdlib/vibe_mime/test_vibe_mime.csd
+cargo run --bin cursed stdlib/vibe_mime/test_vibe_mime.💀
 ```
 
 Test both interpretation and compilation modes:
 ```bash
-cargo run --bin cursed stdlib/vibe_mime/test_vibe_mime.csd
-cargo run --bin cursed -- compile stdlib/vibe_mime/test_vibe_mime.csd
+cargo run --bin cursed stdlib/vibe_mime/test_vibe_mime.💀
+cargo run --bin cursed -- compile stdlib/vibe_mime/test_vibe_mime.💀
 ./test_vibe_mime
 ```
 

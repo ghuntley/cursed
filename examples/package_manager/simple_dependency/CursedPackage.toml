@@ -15,4 +15,4 @@ math_utils = "1.0.0"
 
 [[bin]]
 name = "calculator"
-path = "src/main.csd"
+path = "src/main.💀"

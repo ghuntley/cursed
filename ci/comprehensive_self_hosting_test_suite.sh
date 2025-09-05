@@ -54,7 +54,7 @@ test_basic_self_hosting() {
     echo "📝 Testing basic self-hosting capability..."
     
     # Create a simple program that demonstrates self-hosting
-    cat > simple_self_host.csd << 'EOF'
+    cat > simple_self_host.💀 << 'EOF'
 // Simple self-hosting demonstration program
 sus compiler_version tea = "CURSED v1.0 Self-Hosting"
 vibez.spill(compiler_version)
@@ -77,7 +77,7 @@ vibez.spill("Double of 21: " + doubled)
 EOF
     
     # Test interpretation
-    if timeout $TIMEOUT_SECONDS "$OLDPWD/$COMPILER_BINARY" simple_self_host.csd > simple_interp.out 2>&1; then
+    if timeout $TIMEOUT_SECONDS "$OLDPWD/$COMPILER_BINARY" simple_self_host.💀 > simple_interp.out 2>&1; then
         echo "  ✅ Interpretation successful"
     else
         echo "  ❌ Interpretation failed"
@@ -85,7 +85,7 @@ EOF
     fi
     
     # Test compilation
-    if timeout $TIMEOUT_SECONDS "$OLDPWD/$COMPILER_BINARY" -- compile simple_self_host.csd -o simple_compiled 2>&1; then
+    if timeout $TIMEOUT_SECONDS "$OLDPWD/$COMPILER_BINARY" -- compile simple_self_host.💀 -o simple_compiled 2>&1; then
         echo "  ✅ Compilation successful"
     else
         echo "  ❌ Compilation failed"
@@ -115,7 +115,7 @@ test_advanced_language_features() {
     echo "📝 Testing advanced language features..."
     
     # Create comprehensive language test
-    cat > advanced_features.csd << 'EOF'
+    cat > advanced_features.💀 << 'EOF'
 // Advanced language features test
 yeet "core"
 
@@ -185,14 +185,14 @@ vibez.spill("Fibonacci(10): " + fib_result)
 EOF
     
     # Test both modes
-    if timeout $TIMEOUT_SECONDS "$OLDPWD/$COMPILER_BINARY" advanced_features.csd > advanced_interp.out 2>&1; then
+    if timeout $TIMEOUT_SECONDS "$OLDPWD/$COMPILER_BINARY" advanced_features.💀 > advanced_interp.out 2>&1; then
         echo "  ✅ Advanced features interpretation successful"
     else
         echo "  ❌ Advanced features interpretation failed"
         return 1
     fi
     
-    if timeout $TIMEOUT_SECONDS "$OLDPWD/$COMPILER_BINARY" -- compile advanced_features.csd -o advanced_compiled 2>&1; then
+    if timeout $TIMEOUT_SECONDS "$OLDPWD/$COMPILER_BINARY" -- compile advanced_features.💀 -o advanced_compiled 2>&1; then
         echo "  ✅ Advanced features compilation successful"
     else
         echo "  ❌ Advanced features compilation failed"
@@ -221,7 +221,7 @@ test_module_system() {
     echo "📝 Testing module system..."
     
     # Create module test
-    cat > module_test.csd << 'EOF'
+    cat > module_test.💀 << 'EOF'
 // Module system test
 yeet "core"
 yeet "stringz"
@@ -244,14 +244,14 @@ vibez.spill("Concatenated: " + concatenated)
 EOF
     
     # Test module system
-    if timeout $TIMEOUT_SECONDS "$OLDPWD/$COMPILER_BINARY" module_test.csd > module_interp.out 2>&1; then
+    if timeout $TIMEOUT_SECONDS "$OLDPWD/$COMPILER_BINARY" module_test.💀 > module_interp.out 2>&1; then
         echo "  ✅ Module system interpretation successful"
     else
         echo "  ❌ Module system interpretation failed"
         return 1
     fi
     
-    if timeout $TIMEOUT_SECONDS "$OLDPWD/$COMPILER_BINARY" -- compile module_test.csd -o module_compiled 2>&1; then
+    if timeout $TIMEOUT_SECONDS "$OLDPWD/$COMPILER_BINARY" -- compile module_test.💀 -o module_compiled 2>&1; then
         echo "  ✅ Module system compilation successful"
     else
         echo "  ❌ Module system compilation failed"
@@ -280,7 +280,7 @@ test_error_handling() {
     echo "📝 Testing error handling and edge cases..."
     
     # Create error handling test
-    cat > error_handling.csd << 'EOF'
+    cat > error_handling.💀 << 'EOF'
 // Error handling test
 sus safe_divide(a normie, b normie) normie {
     if b == 0 {
@@ -323,14 +323,14 @@ if true_flag {
 EOF
     
     # Test error handling
-    if timeout $TIMEOUT_SECONDS "$OLDPWD/$COMPILER_BINARY" error_handling.csd > error_interp.out 2>&1; then
+    if timeout $TIMEOUT_SECONDS "$OLDPWD/$COMPILER_BINARY" error_handling.💀 > error_interp.out 2>&1; then
         echo "  ✅ Error handling interpretation successful"
     else
         echo "  ❌ Error handling interpretation failed"
         return 1
     fi
     
-    if timeout $TIMEOUT_SECONDS "$OLDPWD/$COMPILER_BINARY" -- compile error_handling.csd -o error_compiled 2>&1; then
+    if timeout $TIMEOUT_SECONDS "$OLDPWD/$COMPILER_BINARY" -- compile error_handling.💀 -o error_compiled 2>&1; then
         echo "  ✅ Error handling compilation successful"
     else
         echo "  ❌ Error handling compilation failed"
@@ -359,7 +359,7 @@ test_performance_scalability() {
     echo "📝 Testing performance and scalability..."
     
     # Create performance test
-    cat > performance_test.csd << 'EOF'
+    cat > performance_test.💀 << 'EOF'
 // Performance and scalability test
 sus large_computation() normie {
     sus result normie = 0
@@ -405,7 +405,7 @@ EOF
     
     # Test performance
     start_time=$(date +%s%N)
-    if timeout $TIMEOUT_SECONDS "$OLDPWD/$COMPILER_BINARY" performance_test.csd > perf_interp.out 2>&1; then
+    if timeout $TIMEOUT_SECONDS "$OLDPWD/$COMPILER_BINARY" performance_test.💀 > perf_interp.out 2>&1; then
         end_time=$(date +%s%N)
         interp_time=$((end_time - start_time))
         interp_seconds=$(echo "scale=3; $interp_time / 1000000000" | bc)
@@ -416,7 +416,7 @@ EOF
     fi
     
     start_time=$(date +%s%N)
-    if timeout $TIMEOUT_SECONDS "$OLDPWD/$COMPILER_BINARY" -- compile performance_test.csd -o perf_compiled 2>&1; then
+    if timeout $TIMEOUT_SECONDS "$OLDPWD/$COMPILER_BINARY" -- compile performance_test.💀 -o perf_compiled 2>&1; then
         end_time=$(date +%s%N)
         compile_time=$((end_time - start_time))
         compile_seconds=$(echo "scale=3; $compile_time / 1000000000" | bc)
@@ -456,7 +456,7 @@ test_self_hosting_bootstrap() {
     echo "📝 Testing self-hosting bootstrap capability..."
     
     # Create bootstrap test program
-    cat > bootstrap_test.csd << 'EOF'
+    cat > bootstrap_test.💀 << 'EOF'
 // Self-hosting bootstrap test
 sus bootstrap_message tea = "Self-hosting bootstrap test"
 vibez.spill(bootstrap_message)
@@ -494,14 +494,14 @@ vibez.spill("Tokens: " + tokens)
 EOF
     
     # Test bootstrap
-    if timeout $TIMEOUT_SECONDS "$OLDPWD/$COMPILER_BINARY" bootstrap_test.csd > bootstrap_interp.out 2>&1; then
+    if timeout $TIMEOUT_SECONDS "$OLDPWD/$COMPILER_BINARY" bootstrap_test.💀 > bootstrap_interp.out 2>&1; then
         echo "  ✅ Bootstrap interpretation successful"
     else
         echo "  ❌ Bootstrap interpretation failed"
         return 1
     fi
     
-    if timeout $TIMEOUT_SECONDS "$OLDPWD/$COMPILER_BINARY" -- compile bootstrap_test.csd -o bootstrap_compiled 2>&1; then
+    if timeout $TIMEOUT_SECONDS "$OLDPWD/$COMPILER_BINARY" -- compile bootstrap_test.💀 -o bootstrap_compiled 2>&1; then
         echo "  ✅ Bootstrap compilation successful"
     else
         echo "  ❌ Bootstrap compilation failed"
@@ -530,7 +530,7 @@ test_cross_platform_compatibility() {
     echo "📝 Testing cross-platform compatibility..."
     
     # Create cross-platform test
-    cat > cross_platform.csd << 'EOF'
+    cat > cross_platform.💀 << 'EOF'
 // Cross-platform compatibility test
 sus platform_test() tea {
     // Test basic arithmetic (should work everywhere)
@@ -566,14 +566,14 @@ vibez.spill("Function test: " + function_result)
 EOF
     
     # Test cross-platform compatibility
-    if timeout $TIMEOUT_SECONDS "$OLDPWD/$COMPILER_BINARY" cross_platform.csd > cross_interp.out 2>&1; then
+    if timeout $TIMEOUT_SECONDS "$OLDPWD/$COMPILER_BINARY" cross_platform.💀 > cross_interp.out 2>&1; then
         echo "  ✅ Cross-platform interpretation successful"
     else
         echo "  ❌ Cross-platform interpretation failed"
         return 1
     fi
     
-    if timeout $TIMEOUT_SECONDS "$OLDPWD/$COMPILER_BINARY" -- compile cross_platform.csd -o cross_compiled 2>&1; then
+    if timeout $TIMEOUT_SECONDS "$OLDPWD/$COMPILER_BINARY" -- compile cross_platform.💀 -o cross_compiled 2>&1; then
         echo "  ✅ Cross-platform compilation successful"
     else
         echo "  ❌ Cross-platform compilation failed"

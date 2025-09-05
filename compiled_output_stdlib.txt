@@ -20,7 +20,7 @@
 🔍 DEBUG: Found len_result as variable reference
 🔍 DEBUG: Found type info for variable len_result
 DEBUG: Loading and compiling CURSED module: collections
-DEBUG: Successfully read CURSED module stdlib/collections/mod.csd (149 bytes)
+DEBUG: Successfully read CURSED module stdlib/collections/mod.💀 (149 bytes)
 DEBUG: Successfully parsed CURSED module collections (1 statements)
 DEBUG: Compiling CURSED stdlib function: collections.length
 🔧 DEBUG: Created new function collections.length with 1 parameters

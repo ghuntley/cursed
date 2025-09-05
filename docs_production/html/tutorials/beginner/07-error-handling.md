@@ -16,7 +16,7 @@ By the end of this tutorial, you'll be able to:
 CURSED uses the `yikes` type to represent errors:
 
 ```cursed
-# basic_errors.csd - Introduction to error handling
+# basic_errors.💀 - Introduction to error handling
 
 vibe main
 
@@ -63,7 +63,7 @@ slay main() {
 ### Basic Error Checking
 
 ```cursed
-# error_patterns.csd - Common error handling patterns
+# error_patterns.💀 - Common error handling patterns
 
 vibe main
 
@@ -150,7 +150,7 @@ slay main() {
 ### Error Wrapping and Context
 
 ```cursed
-# error_context.csd - Adding context to errors
+# error_context.💀 - Adding context to errors
 
 vibe main
 
@@ -225,7 +225,7 @@ slay main() {
 The `shook` operator provides automatic error propagation:
 
 ```cursed
-# error_propagation.csd - Using shook for error propagation
+# error_propagation.💀 - Using shook for error propagation
 
 vibe main
 
@@ -317,7 +317,7 @@ slay main() {
 ### Understanding Panics
 
 ```cursed
-# panics.csd - Understanding panic situations
+# panics.💀 - Understanding panic situations
 
 vibe main
 
@@ -355,7 +355,7 @@ slay main() {
 ### Panic Recovery with `fam`
 
 ```cursed
-# panic_recovery.csd - Recovering from panics
+# panic_recovery.💀 - Recovering from panics
 
 vibe main
 
@@ -442,7 +442,7 @@ slay main() {
 ## Custom Error Types
 
 ```cursed
-# custom_errors.csd - Creating custom error types
+# custom_errors.💀 - Creating custom error types
 
 vibe main
 
@@ -560,7 +560,7 @@ Create a file processing system that demonstrates comprehensive error handling:
 ### Solution
 
 ```cursed
-# file_processor.csd - Comprehensive error handling exercise
+# file_processor.💀 - Comprehensive error handling exercise
 
 vibe main
 

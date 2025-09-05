@@ -378,7 +378,7 @@ slay validate_config_detailed(doc yamlz.Document) lit {
 **Why comprehensive testing?** YAML parsing is complex with many edge cases that can cause security vulnerabilities or data corruption.
 
 ```cursed
-// stdlib/yamlz/test_yamlz.csd
+// stdlib/yamlz/test_yamlz.💀
 yeet "testz"
 yeet "yamlz"
 
@@ -456,13 +456,13 @@ slay main() {
 ### Integration Tests
 ```bash
 # Test with real configuration files
-./zig-out/bin/cursed-zig stdlib/yamlz/integration_test.csd
+./zig-out/bin/cursed-zig stdlib/yamlz/integration_test.💀
 
 # Memory leak testing
-valgrind --leak-check=full ./zig-out/bin/cursed-zig stdlib/yamlz/memory_test.csd
+valgrind --leak-check=full ./zig-out/bin/cursed-zig stdlib/yamlz/memory_test.💀
 
 # Performance benchmarks
-./zig-out/bin/cursed-zig stdlib/yamlz/benchmark_test.csd
+./zig-out/bin/cursed-zig stdlib/yamlz/benchmark_test.💀
 ```
 
 ## Implementation Choices Explained

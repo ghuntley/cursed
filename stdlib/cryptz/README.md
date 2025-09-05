@@ -599,7 +599,7 @@ ready decrypted == "" {
 Run the comprehensive test suite:
 
 ```bash
-cursed-zig stdlib/cryptz/tests.csd
+cursed-zig stdlib/cryptz/tests.💀
 ```
 
 The test suite validates:

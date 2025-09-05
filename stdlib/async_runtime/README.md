@@ -386,7 +386,7 @@ slay fan_out_fan_in(work_items [tea]) Promise {
 Run the comprehensive test suite:
 
 ```bash
-cargo run --bin cursed stdlib/async_runtime/test_async_runtime.csd
+cargo run --bin cursed stdlib/async_runtime/test_async_runtime.💀
 ```
 
 ### Test Coverage

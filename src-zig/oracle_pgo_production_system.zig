@@ -713,7 +713,7 @@ pub const OraclePGOSystem = struct {
         // Add macro benchmarks
         try self.validation_suite.macro_benchmarks.append(.{
             .name = "Comprehensive Standard Library Test",
-            .source_file = "comprehensive_stdlib_test.csd",
+            .source_file = "comprehensive_stdlib_test.💀",
             .expected_runtime_ms = 1000.0,
             .tolerance_percent = 10.0,
             .optimization_target = .RuntimePerformance,
@@ -721,7 +721,7 @@ pub const OraclePGOSystem = struct {
         
         try self.validation_suite.macro_benchmarks.append(.{
             .name = "PGO Benchmark Suite",
-            .source_file = "benchmarks/pgo_benchmark_suite.csd",
+            .source_file = "benchmarks/pgo_benchmark_suite.💀",
             .expected_runtime_ms = 2000.0,
             .tolerance_percent = 5.0,
             .optimization_target = .RuntimePerformance,
@@ -729,7 +729,7 @@ pub const OraclePGOSystem = struct {
         
         try self.validation_suite.macro_benchmarks.append(.{
             .name = "Compilation Speed Test",
-            .source_file = "advanced_features_test.csd",
+            .source_file = "advanced_features_test.💀",
             .expected_runtime_ms = 500.0,
             .tolerance_percent = 15.0,
             .optimization_target = .CompilationSpeed,

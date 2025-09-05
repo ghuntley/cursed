@@ -557,7 +557,7 @@ pub const AdvancedImportResolver = struct {
         // Check if it's a known stdlib module
         for (self.search_paths.items) |search_path| {
             if (search_path.is_stdlib) {
-                const test_path = try std.fs.path.join(self.allocator, &[_][]const u8{ search_path.path, path, "mod.csd" });
+                const test_path = try std.fs.path.join(self.allocator, &[_][]const u8{ search_path.path, path, "mod.💀" });
                 defer self.allocator.free(test_path);
                 
                 std.fs.cwd().access(test_path, .{}) catch continue;
@@ -607,7 +607,7 @@ pub const AdvancedImportResolver = struct {
         for (self.search_paths.items) |search_path| {
             if (!search_path.is_stdlib) continue;
             
-            const test_path = try std.fs.path.join(self.allocator, &[_][]const u8{ search_path.path, import_spec.raw_path, "mod.csd" });
+            const test_path = try std.fs.path.join(self.allocator, &[_][]const u8{ search_path.path, import_spec.raw_path, "mod.💀" });
             defer self.allocator.free(test_path);
             
             std.fs.cwd().access(test_path, .{}) catch continue;
@@ -626,9 +626,9 @@ pub const AdvancedImportResolver = struct {
             
             // Try different file patterns - manually format strings to avoid comptime issue
             const pattern_formats = [_]struct { middle: []const u8, suffix: []const u8 }{
-                .{ .middle = "/src/lib.csd", .suffix = "" },
-                .{ .middle = "/mod.csd", .suffix = "" },
-                .{ .middle = ".csd", .suffix = "" },
+                .{ .middle = "/src/lib.💀", .suffix = "" },
+                .{ .middle = "/mod.💀", .suffix = "" },
+                .{ .middle = ".💀", .suffix = "" },
             };
             
             for (pattern_formats) |format| {
@@ -674,10 +674,10 @@ pub const AdvancedImportResolver = struct {
             
             // Try different file patterns - manually format strings to avoid comptime issue
             const pattern_formats = [_]struct { prefix: []const u8, suffix: []const u8 }{
-                .{ .prefix = ".csd", .suffix = "" },
-                .{ .prefix = "/mod.csd", .suffix = "" },
-                .{ .prefix = "/lib.csd", .suffix = "" },
-                .{ .prefix = "/index.csd", .suffix = "" },
+                .{ .prefix = ".💀", .suffix = "" },
+                .{ .prefix = "/mod.💀", .suffix = "" },
+                .{ .prefix = "/lib.💀", .suffix = "" },
+                .{ .prefix = "/index.💀", .suffix = "" },
             };
             
             for (pattern_formats) |format| {
@@ -934,7 +934,7 @@ test "version requirement parsing and matching" {
     var resolver = AdvancedImportResolver.init(allocator);
     defer resolver.deinit();
     
-    const import_spec = try resolver.parseImportStatement("json@^1.0.0", "test.csd");
+    const import_spec = try resolver.parseImportStatement("json@^1.0.0", "test.💀");
     defer {
         var spec = import_spec;
         spec.deinit();

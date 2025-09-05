@@ -18,7 +18,7 @@ By the end of this tutorial, you'll be able to:
 Every CURSED file belongs to a package:
 
 ```cursed
-# math_utils.csd - A simple utility module
+# math_utils.💀 - A simple utility module
 vibe math_utils
 
 # Exported function (starts with uppercase)
@@ -41,7 +41,7 @@ facts internal_buffer_size = 1024
 ### Basic Import Usage
 
 ```cursed
-# main.csd - Using the math_utils module
+# main.💀 - Using the math_utils module
 vibe main
 
 # Import the module
@@ -68,26 +68,26 @@ slay main() {
 
 ```
 project/
-├── main.csd
+├── main.💀
 ├── utils/
-│   ├── math_utils.csd
-│   ├── string_utils.csd
-│   └── file_utils.csd
+│   ├── math_utils.💀
+│   ├── string_utils.💀
+│   └── file_utils.💀
 ├── models/
-│   ├── user.csd
-│   └── product.csd
+│   ├── user.💀
+│   └── product.💀
 ├── services/
-│   ├── database.csd
-│   └── api_client.csd
+│   ├── database.💀
+│   └── api_client.💀
 └── tests/
-    ├── math_utils_test.csd
-    └── user_test.csd
+    ├── math_utils_test.💀
+    └── user_test.💀
 ```
 
 ### Creating a Utility Module
 
 ```cursed
-# utils/string_utils.csd - String utility functions
+# utils/string_utils.💀 - String utility functions
 vibe string_utils
 
 yeet "vibez"
@@ -143,7 +143,7 @@ slay clean_whitespace(s tea) tea {
 ### Using the Utility Module
 
 ```cursed
-# main.csd - Using string utilities
+# main.💀 - Using string utilities
 vibe main
 
 yeet "utils/string_utils"
@@ -182,7 +182,7 @@ slay main() {
 ### Import Aliases
 
 ```cursed
-# import_aliases.csd - Using import aliases
+# import_aliases.💀 - Using import aliases
 vibe main
 
 # Import with aliases for shorter names
@@ -208,7 +208,7 @@ slay main() {
 ### Grouped Imports
 
 ```cursed
-# grouped_imports.csd - Organizing imports
+# grouped_imports.💀 - Organizing imports
 vibe main
 
 # Group related imports
@@ -249,7 +249,7 @@ slay main() {
 ### Model Definition Module
 
 ```cursed
-# models/user.csd - User model and operations
+# models/user.💀 - User model and operations
 vibe user
 
 yeet "utils/string_utils"
@@ -332,7 +332,7 @@ slay get_timestamp() tea {
 ### Service Layer Module
 
 ```cursed
-# services/user_service.csd - User business logic
+# services/user_service.💀 - User business logic
 vibe user_service
 
 yeet "models/user"
@@ -475,7 +475,7 @@ slay (s @UserService) SaveUser(u user.User) yikes {
 ### Test Module Structure
 
 ```cursed
-# tests/string_utils_test.csd - Testing string utilities
+# tests/string_utils_test.💀 - Testing string utilities
 vibe string_utils_test
 
 yeet "utils/string_utils"
@@ -551,7 +551,7 @@ slay main() {
 ### Integration Testing
 
 ```cursed
-# tests/user_service_test.csd - Integration testing
+# tests/user_service_test.💀 - Integration testing
 vibe user_service_test
 
 yeet "services/user_service"
@@ -657,7 +657,7 @@ slay main() {
 ```cursed
 # Common pattern: Use interfaces to break circular dependencies
 
-# models/interfaces.csd - Shared interfaces
+# models/interfaces.💀 - Shared interfaces
 vibe interfaces
 
 be_like UserRepository collab {
@@ -676,7 +676,7 @@ be_like CacheService collab {
 ### Module Dependencies
 
 ```cursed
-# services/dependencies.csd - Dependency injection
+# services/dependencies.💀 - Dependency injection
 vibe dependencies
 
 yeet "models/interfaces"
@@ -712,28 +712,28 @@ Create a modular blog system with proper module organization:
 
 ```
 blog_system/
-├── main.csd
+├── main.💀
 ├── models/
-│   ├── post.csd
-│   ├── comment.csd
-│   └── user.csd
+│   ├── post.💀
+│   ├── comment.💀
+│   └── user.💀
 ├── services/
-│   ├── blog_service.csd
-│   ├── user_service.csd
-│   └── search_service.csd
+│   ├── blog_service.💀
+│   ├── user_service.💀
+│   └── search_service.💀
 ├── utils/
-│   ├── validation.csd
-│   ├── formatting.csd
-│   └── slugify.csd
+│   ├── validation.💀
+│   ├── formatting.💀
+│   └── slugify.💀
 └── tests/
-    ├── blog_service_test.csd
-    └── integration_test.csd
+    ├── blog_service_test.💀
+    └── integration_test.💀
 ```
 
 ### Post Model
 
 ```cursed
-# models/post.csd - Blog post model
+# models/post.💀 - Blog post model
 vibe post
 
 yeet "utils/validation"
@@ -828,7 +828,7 @@ slay get_current_time() tea {
 ### Blog Service
 
 ```cursed
-# services/blog_service.csd - Blog business logic
+# services/blog_service.💀 - Blog business logic
 vibe blog_service
 
 yeet "models/post"
@@ -936,7 +936,7 @@ slay contains(text tea, substr tea) lit {
 ### Main Application
 
 ```cursed
-# main.csd - Blog system entry point
+# main.💀 - Blog system entry point
 vibe main
 
 yeet "services/blog_service"

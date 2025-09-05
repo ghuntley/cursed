@@ -226,7 +226,7 @@ Comprehensive test suite covers all functionality:
 
 ```bash
 # Run the complete test suite
-./zig-out/bin/cursed-zig stdlib/encodingz/test_encodingz.csd
+./zig-out/bin/cursed-zig stdlib/encodingz/test_encodingz.💀
 
 # Expected output:
 # 🚀 Starting EncodingZ Test Suite...

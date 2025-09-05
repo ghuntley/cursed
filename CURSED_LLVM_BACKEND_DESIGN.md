@@ -30,7 +30,7 @@ CURSED Program → AST → LLVM IR → [CALLS] Zig Runtime Functions → Native 
 ```
 CURSED Program → AST → [INTEGRATE] CURSED Stdlib AST → LLVM IR → Native Binary
                            ↓
-                      stdlib/mathz/mod.csd  
+                      stdlib/mathz/mod.💀  
                       (CURSED implementations)
 ```
 
@@ -77,7 +77,7 @@ CURSED Program → AST → [INTEGRATE] CURSED Stdlib AST → LLVM IR → Native 
        modules: HashMap([]const u8, *CompiledModule),
        
        pub fn loadModule(self: *Self, name: []const u8) !*CompiledModule {
-           // Load stdlib/{name}/mod.csd
+           // Load stdlib/{name}/mod.💀
            // Parse to AST
            // Compile all functions to LLVM IR
            // Register in function table
@@ -153,7 +153,7 @@ CURSED Program → AST → [INTEGRATE] CURSED Stdlib AST → LLVM IR → Native 
    - Handle function overloading and signatures
 
 3. **✅ Full mathz Module Compilation**
-   - Compile entire `stdlib/mathz/mod.csd` (516 lines)
+   - Compile entire `stdlib/mathz/mod.💀` (516 lines)
    - Replace all `mathz_*` runtime calls with CURSED IR
    - Performance benchmarking vs Zig runtime
 
@@ -236,9 +236,9 @@ src-zig/
 └── hybrid_resolver.zig           # New: CURSED vs Zig resolution
 
 stdlib/
-├── mathz/mod.csd                 # CURSED math functions (existing)
-├── stringz/mod.csd               # CURSED string functions (existing)
-└── vibez/mod.csd                 # CURSED I/O functions (existing)
+├── mathz/mod.💀                 # CURSED math functions (existing)
+├── stringz/mod.💀               # CURSED string functions (existing)
+└── vibez/mod.💀                 # CURSED I/O functions (existing)
 
 runtime/
 └── cursed_stdlib.zig             # Zig runtime (existing, keep as fallback)

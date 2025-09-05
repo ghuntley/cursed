@@ -427,7 +427,7 @@ fn runExecutable(allocator: Allocator, executable_path: []const u8) !void {
 }
 
 fn getOutputName(allocator: Allocator, filename: []const u8) ![]u8 {
-    if (std.mem.endsWith(u8, filename, ".csd")) {
+    if (std.mem.endsWith(u8, filename, ".💀")) {
         return try allocator.dupe(u8, filename[0..filename.len - 4]);
     }
     return try std.fmt.allocPrint(allocator, "{s}_out", .{filename});
@@ -436,7 +436,7 @@ fn getOutputName(allocator: Allocator, filename: []const u8) ![]u8 {
 fn printUsage() void {
     print("🚀 CURSED LLVM Compilation Pipeline Demo\n", .{});
     print("========================================\n", .{});
-    print("\nUsage: cursed-zig <file.csd> [--compile]\n", .{});
+    print("\nUsage: cursed-zig <file.💀.💀> [--compile]\n", .{});
     print("       cursed-zig --version\n", .{});
     print("\nOptions:\n", .{});
     print("  --compile          Run complete LLVM compilation pipeline\n", .{});

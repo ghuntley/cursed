@@ -10,7 +10,7 @@ pub fn main() !void {
     defer std.process.argsFree(allocator, args);
 
     if (args.len < 2) {
-        print("Usage: fizzbuzz_compiler <file.csd>\n", .{});
+        print("Usage: fizzbuzz_compiler <file.💀.💀>\n", .{});
         return;
     }
 

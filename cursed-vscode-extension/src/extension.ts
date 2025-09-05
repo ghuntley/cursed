@@ -250,7 +250,7 @@ async function createNewCursedProject() {
         // Create project directory
         fs.mkdirSync(fullProjectPath, { recursive: true });
         
-        // Create main.csd
+        // Create main.💀
         const mainContent = `// CURSED Project: ${projectName}
 yeet "vibez"
 
@@ -259,7 +259,7 @@ slay main() drip {
     damn 0
 }
 `;
-        fs.writeFileSync(path.join(fullProjectPath, 'main.csd'), mainContent);
+        fs.writeFileSync(path.join(fullProjectPath, 'main.💀'), mainContent);
         
         // Create CursedPackage.toml
         const packageContent = `[package]
@@ -291,7 +291,7 @@ cursed build
 ## Running
 
 \`\`\`bash
-cursed run main.csd
+cursed run main.💀
 \`\`\`
 `;
         fs.writeFileSync(path.join(fullProjectPath, 'README.md'), readmeContent);

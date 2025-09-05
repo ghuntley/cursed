@@ -512,7 +512,7 @@ lowkey ws_connection_is_open(conn) {
 Run the comprehensive test suite:
 
 ```bash
-./zig-out/bin/cursed-zig stdlib/websocketz/test_websocketz.csd
+./zig-out/bin/cursed-zig stdlib/websocketz/test_websocketz.💀
 ```
 
 The test suite covers:
@@ -533,7 +533,7 @@ The test suite covers:
 Run performance and stress tests:
 
 ```bash
-./zig-out/bin/cursed-zig stdlib/websocketz/performance_test.csd
+./zig-out/bin/cursed-zig stdlib/websocketz/performance_test.💀
 ```
 
 Performance tests include:
@@ -552,7 +552,7 @@ Performance tests include:
 Run real-world usage examples:
 
 ```bash
-./zig-out/bin/cursed-zig stdlib/websocketz/integration_examples.csd
+./zig-out/bin/cursed-zig stdlib/websocketz/integration_examples.💀
 ```
 
 Integration examples demonstrate:

@@ -232,10 +232,10 @@ The module includes comprehensive tests covering:
 Run tests with:
 ```bash
 # Test interpretation mode
-cargo run --bin cursed stdlib/atomic_drip/test_atomic_drip.csd
+cargo run --bin cursed stdlib/atomic_drip/test_atomic_drip.💀
 
 # Test compilation mode
-cargo run --bin cursed -- compile stdlib/atomic_drip/test_atomic_drip.csd
+cargo run --bin cursed -- compile stdlib/atomic_drip/test_atomic_drip.💀
 ./test_atomic_drip
 ```
 

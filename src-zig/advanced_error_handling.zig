@@ -185,7 +185,7 @@ fn captureStackTrace(allocator: Allocator) ![]CursedError.StackFrame {
     // Mock stack trace capture - in real implementation would use debug info
     frames[frame_count] = CursedError.StackFrame{
         .function_name = "current_function",
-        .file_name = "current_file.csd",
+        .file_name = "current_file.💀",
         .line = 42,
         .column = 10,
     };

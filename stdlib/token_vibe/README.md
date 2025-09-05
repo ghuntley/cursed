@@ -232,7 +232,7 @@ vibez.spill("Found " + string.from_int(token_count) + " tokens")
 yeet "token_vibe"
 
 # Create and classify tokens
-sus pos normie = create_position("test.csd", 1, 5, 10)
+sus pos normie = create_position("test.💀", 1, 5, 10)
 sus ident_token normie = create_token_info(IDENT_TOKEN, "variable", pos, "variable")
 sus keyword_token normie = create_token_info(SUS_TOKEN, "sus", pos, "sus")
 
@@ -251,7 +251,7 @@ lowkey is_keyword(keyword_token) {
 yeet "token_vibe"
 
 # Track token positions for error reporting
-sus pos normie = create_position("main.csd", 15, 23, 342)
+sus pos normie = create_position("main.💀", 15, 23, 342)
 sus pos_str tea = position_string(pos)
 vibez.spill("Token position: " + pos_str)
 ```
@@ -262,7 +262,7 @@ vibez.spill("Token position: " + pos_str)
 yeet "token_vibe"
 
 # Handle tokenization errors
-sus error_pos normie = create_position("bad.csd", 5, 10, 50)
+sus error_pos normie = create_position("bad.💀", 5, 10, 50)
 sus error_token normie = create_error_token("Invalid character '@'", error_pos)
 
 lowkey is_error(error_token) {
@@ -312,7 +312,7 @@ The `token_vibe` module is designed specifically for the CURSED self-hosting com
 
 ## Testing
 
-Comprehensive test suite in `test_token_vibe.csd` covers:
+Comprehensive test suite in `test_token_vibe.💀` covers:
 
 - **102+ token type constants** validation
 - **Character classification** edge cases
@@ -325,7 +325,7 @@ Comprehensive test suite in `test_token_vibe.csd` covers:
 
 Run tests with:
 ```bash
-cargo run --bin cursed stdlib/token_vibe/test_token_vibe.csd
+cargo run --bin cursed stdlib/token_vibe/test_token_vibe.💀
 ```
 
 ## Architecture

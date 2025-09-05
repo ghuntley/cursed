@@ -74,9 +74,9 @@ I systematically analyzed and fixed CURSED syntax issues across all test files i
 ## Testing Results
 
 ### Representative Files Tested:
-- ✅ `basic/hello_world_simple.csd` - Works in both modes
-- ❌ `arithmetic/01_mixed_types.csd` - Parser issues with variable declarations
-- ❌ `validation/validation_type_system.csd` - Similar parser issues
+- ✅ `basic/hello_world_simple.💀` - Works in both modes
+- ❌ `arithmetic/01_mixed_types.💀` - Parser issues with variable declarations
+- ❌ `validation/validation_type_system.💀` - Similar parser issues
 
 ### Current Status:
 **Issue Discovered**: The CURSED parser appears to have fundamental issues with variable declaration parsing, regardless of syntax fixes. Both interpreter and compiled modes fail to parse statements like `sus int_val normie = 10`.

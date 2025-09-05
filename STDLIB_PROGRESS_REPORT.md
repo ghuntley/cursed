@@ -62,13 +62,13 @@ slay main_character() {
 ## 📈 Test Results
 
 ### ✅ Working Tests
-- `test_different_functions.csd` - Multiple functions each calling one module function
-- `test_just_call.csd` - Single module function call
-- `test_module_simple.csd` - Basic module import and function call
+- `test_different_functions.💀` - Multiple functions each calling one module function
+- `test_just_call.💀` - Single module function call
+- `test_module_simple.💀` - Basic module import and function call
 
 ### ❌ Failing Tests  
-- `test_vibez_multi.csd` - Multiple module calls in same function
-- `test_mathz_only.csd` - Math functions within same function context
+- `test_vibez_multi.💀` - Multiple module calls in same function
+- `test_mathz_only.💀` - Math functions within same function context
 - Any compilation to binary (LLVM backend issues)
 
 ## 🎉 Achievement Summary

@@ -1,5 +1,5 @@
-🚀 Interpreting cross_test_program.csd with script backend
-📁 Read cross_test_program.csd (632 bytes)
+🚀 Interpreting cross_test_program.💀 with script backend
+📁 Read cross_test_program.💀 (632 bytes)
 🚀 Using enhanced script interpreter with variable support
 📦 Validating 2 imports...
 ✅ Module 'testz' found

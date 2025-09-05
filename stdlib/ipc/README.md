@@ -477,14 +477,14 @@ When SIGTERM or SIGINT is received, the IPC subsystem automatically:
 
 ## Testing
 
-Comprehensive test suite available in `test_ipc.csd`:
+Comprehensive test suite available in `test_ipc.💀`:
 
 ```bash
 # Run IPC tests
-cargo run --bin cursed stdlib/ipc/test_ipc.csd
+cargo run --bin cursed stdlib/ipc/test_ipc.💀
 
 # Compile and run natively
-cargo run --bin cursed -- compile stdlib/ipc/test_ipc.csd
+cargo run --bin cursed -- compile stdlib/ipc/test_ipc.💀
 ./test_ipc
 ```
 

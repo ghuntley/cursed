@@ -179,10 +179,10 @@ Run the comprehensive test suite:
 
 ```bash
 # Test interpretation mode
-cargo run --bin cursed stdlib/network/test_network.csd
+cargo run --bin cursed stdlib/network/test_network.💀
 
 # Test compilation mode
-cargo run --bin cursed -- compile stdlib/network/test_network.csd
+cargo run --bin cursed -- compile stdlib/network/test_network.💀
 ./test_network
 ```
 

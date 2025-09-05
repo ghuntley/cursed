@@ -20,7 +20,7 @@ Discovers available plugins in the specified directory.
 - `tea`: Comma-separated list of discovered plugin names
 
 **Discovery Rules:**
-- Looks for `.plugin.csd` files
+- Looks for `.plugin.💀` files
 - Validates plugin metadata
 - Checks for required plugin functions
 - Returns empty string if no plugins found

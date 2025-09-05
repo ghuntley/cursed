@@ -15,7 +15,7 @@ pub fn main() !void {
     defer std.process.argsFree(allocator, args);
 
     if (args.len < 2) {
-        print("Usage: generate_ir_for_cursed <file.csd>\n", .{});
+        print("Usage: generate_ir_for_cursed <file.💀.💀>\n", .{});
         return;
     }
 

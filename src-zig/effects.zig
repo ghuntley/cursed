@@ -451,7 +451,7 @@ test "effect system borrow integration" {
         .borrowed_from = 100,
         .is_mutable = false,
         .borrow_site = EffectSystem.SourceLocation{
-            .file = "test.csd",
+            .file = "test.💀",
             .line = 42,
             .column = 10,
         },

@@ -7,95 +7,95 @@ Working from: /home/ghuntley/cursed/test_suite/.. (for stdlib loading)
 Scanning for test files...
 Found 103 test files
 
-[1m[1/103] Testing: arithmetic/01_mixed_types.csd[0m
+[1m[1/103] Testing: arithmetic/01_mixed_types.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[2/103] Testing: arithmetic/02_edge_cases.csd[0m
+[1m[2/103] Testing: arithmetic/02_edge_cases.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[3/103] Testing: arithmetic/03_operator_precedence.csd[0m
+[1m[3/103] Testing: arithmetic/03_operator_precedence.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[4/103] Testing: arithmetic/04_complex_expressions.csd[0m
+[1m[4/103] Testing: arithmetic/04_complex_expressions.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[5/103] Testing: arithmetic/arithmetic_basic_operations.csd[0m
+[1m[5/103] Testing: arithmetic/arithmetic_basic_operations.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[6/103] Testing: arithmetic/division_semantics_test.csd[0m
+[1m[6/103] Testing: arithmetic/division_semantics_test.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[7/103] Testing: arithmetic/feature_arithmetic_operations.csd[0m
+[1m[7/103] Testing: arithmetic/feature_arithmetic_operations.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[8/103] Testing: arithmetic/overflow_edge_cases.csd[0m
+[1m[8/103] Testing: arithmetic/overflow_edge_cases.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[9/103] Testing: basic/01_hello_world.csd[0m
+[1m[9/103] Testing: basic/01_hello_world.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[10/103] Testing: basic/02_simple_arithmetic.csd[0m
+[1m[10/103] Testing: basic/02_simple_arithmetic.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[11/103] Testing: basic/03_variable_assignment.csd[0m
+[1m[11/103] Testing: basic/03_variable_assignment.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[12/103] Testing: basic/basic_hello_world.csd[0m
+[1m[12/103] Testing: basic/basic_hello_world.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[13/103] Testing: basic/hello_world_simple.csd[0m
+[1m[13/103] Testing: basic/hello_world_simple.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[14/103] Testing: complex/01_nested_operations.csd[0m
+[1m[14/103] Testing: complex/01_nested_operations.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[15/103] Testing: complex/02_fizzbuzz.csd[0m
+[1m[15/103] Testing: complex/02_fizzbuzz.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[16/103] Testing: comprehensive/control_flow_comprehensive.csd[0m
+[1m[16/103] Testing: comprehensive/control_flow_comprehensive.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[17/103] Testing: comprehensive/function_definitions_test.csd[0m
+[1m[17/103] Testing: comprehensive/function_definitions_test.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[18/103] Testing: comprehensive/test_comprehensive_language_features.csd[0m
+[1m[18/103] Testing: comprehensive/test_comprehensive_language_features.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[19/103] Testing: control_flow/01_if_statements.csd[0m
+[1m[19/103] Testing: control_flow/01_if_statements.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[20/103] Testing: control_flow/02_loops.csd[0m
+[1m[20/103] Testing: control_flow/02_loops.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[21/103] Testing: control_flow/control_flow_comprehensive.csd[0m
+[1m[21/103] Testing: control_flow/control_flow_comprehensive.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[22/103] Testing: control_flow/control_flow_if_else.csd[0m
+[1m[22/103] Testing: control_flow/control_flow_if_else.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[23/103] Testing: control_flow/feature_control_flow_comprehensive.csd[0m
+[1m[23/103] Testing: control_flow/feature_control_flow_comprehensive.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[24/103] Testing: edge_cases/01_boundary_conditions.csd[0m
+[1m[24/103] Testing: edge_cases/01_boundary_conditions.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[25/103] Testing: edge_cases/02_empty_inputs.csd[0m
+[1m[25/103] Testing: edge_cases/02_empty_inputs.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[26/103] Testing: edge_cases/edge_case_boundary_values.csd[0m
+[1m[26/103] Testing: edge_cases/edge_case_boundary_values.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[27/103] Testing: edge_cases/edge_case_operator_precedence.csd[0m
+[1m[27/103] Testing: edge_cases/edge_case_operator_precedence.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[28/103] Testing: errors/01_division_by_zero.csd[0m
+[1m[28/103] Testing: errors/01_division_by_zero.💀[0m
   Result: [33mFAIL (different error messages)[0m
   [36mInterpreter (exit: 1):[0m
     === Division by Zero Test === 
     Normal division: 
     5 
     Attempting division by zero: 
-    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/errors/01_division_by_zero.csd: error.DivisionByZero
+    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/errors/01_division_by_zero.💀: error.DivisionByZero
     error: DivisionByZero
                             return InterpreterError.DivisionByZero;
                             ^

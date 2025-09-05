@@ -361,7 +361,7 @@ pub const LSPHandler = struct {
         std.log.info("Document opened notification received", .{});
         
         // For this implementation, we'll store a minimal document entry
-        const uri = "file://temp.csd";  // Simplified for now
+        const uri = "file://temp.💀";  // Simplified for now
         const doc = try DocumentInfo.init(self.allocator, uri, 1, "// CURSED document");
         
         const uri_owned = try self.allocator.dupe(u8, uri);

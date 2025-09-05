@@ -297,7 +297,7 @@ slay build_wasm_project(source_dir tea, output_dir tea) lit {
     wasm_init_runtime()
     
     # Find all CURSED source files
-    sus source_files []tea = dropz.list_files(source_dir, "*.csd")
+    sus source_files []tea = dropz.list_files(source_dir, "*.💀")
     
     bestie source_file <- source_files {
         vibez.spill("Compiling: ", source_file)
@@ -384,7 +384,7 @@ yikes debug_module == 0 {
 Run the comprehensive test suite:
 
 ```bash
-cargo run --bin cursed stdlib/wasm_mood/test_wasm_mood.csd
+cargo run --bin cursed stdlib/wasm_mood/test_wasm_mood.💀
 ```
 
 The test suite covers:

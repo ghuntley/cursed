@@ -582,7 +582,7 @@ slay process_large_file(filename tea) IOError {
 Run the comprehensive test suite:
 
 ```bash
-cargo run --bin cursed stdlib/io/test_io.csd
+cargo run --bin cursed stdlib/io/test_io.💀
 ```
 
 The test suite covers:

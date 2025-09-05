@@ -217,7 +217,7 @@ bestie {
 Run the comprehensive test suite:
 
 ```bash
-cargo run --bin cursed stdlib/yeet_io/test_yeet_io.csd
+cargo run --bin cursed stdlib/yeet_io/test_yeet_io.💀
 ```
 
 The test suite includes:

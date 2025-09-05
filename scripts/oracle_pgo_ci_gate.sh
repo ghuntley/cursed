@@ -24,10 +24,10 @@ CI_REPORT="oracle_pgo_ci_report.json"
 
 # Performance test files
 PERFORMANCE_TESTS=(
-    "benchmarks/pgo_benchmark_suite.csd"
-    "comprehensive_stdlib_test.csd" 
-    "advanced_features_test.csd"
-    "comprehensive_test.csd"
+    "benchmarks/pgo_benchmark_suite.💀"
+    "comprehensive_stdlib_test.💀" 
+    "advanced_features_test.💀"
+    "comprehensive_test.💀"
 )
 
 # Exit codes
@@ -62,7 +62,7 @@ measure_performance() {
         echo -n "  Iteration $i/$iterations: "
         
         # Clear cache
-        rm -f "${test_file%.csd}" "${test_file%.csd}.ll" "${test_file%.csd}.o" 2>/dev/null || true
+        rm -f "${test_file%.💀}" "${test_file%.💀}.ll" "${test_file%.💀}.o" 2>/dev/null || true
         
         # Measure compilation time
         local compile_start=$(date +%s%N)
@@ -82,8 +82,8 @@ measure_performance() {
             local exec_start=$(date +%s%N)
             local memory_kb=0
             
-            if [ -f "${test_file%.csd}" ]; then
-                if timeout 60s /usr/bin/time -f "%M" "./${test_file%.csd}" >/dev/null 2>/tmp/memory_output; then
+            if [ -f "${test_file%.💀}" ]; then
+                if timeout 60s /usr/bin/time -f "%M" "./${test_file%.💀}" >/dev/null 2>/tmp/memory_output; then
                     local exec_end=$(date +%s%N)
                     local execution_ms=$(((exec_end - exec_start) / 1000000))
                     

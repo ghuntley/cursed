@@ -198,10 +198,10 @@ The `cursed_bench` CLI tool provides command-line access to benchmarking functio
 ### Basic Usage
 ```bash
 # Run a single benchmark
-cursed_bench run program.csd --name "my_benchmark" --iterations 1000
+cursed_bench run program.💀 --name "my_benchmark" --iterations 1000
 
 # Save results to file
-cursed_bench run program.csd --output results.json
+cursed_bench run program.💀 --output results.json
 
 # Generate HTML report
 cursed_bench report results.json --output report.html
@@ -213,13 +213,13 @@ cursed_bench compare baseline.json current.json
 ### Advanced Options
 ```bash
 # Custom iterations and warmup
-cursed_bench run program.csd --warmup 500 --iterations 2000
+cursed_bench run program.💀 --warmup 500 --iterations 2000
 
 # Enable memory and CPU tracking
-cursed_bench run program.csd --memory --cpu
+cursed_bench run program.💀 --memory --cpu
 
 # Set timeout
-cursed_bench run program.csd --timeout 120
+cursed_bench run program.💀 --timeout 120
 ```
 
 ## Examples
@@ -370,20 +370,20 @@ To contribute to the benchmark framework:
 
 1. Run the comprehensive test suite:
    ```bash
-   cargo run --bin cursed stdlib/benchmark_framework/test_benchmark_framework.csd
+   cargo run --bin cursed stdlib/benchmark_framework/test_benchmark_framework.💀
    ```
 
 2. Test both interpretation and compilation modes:
    ```bash
-   cargo run --bin cursed stdlib/benchmark_framework/test_benchmark_framework.csd
-   cargo run --bin cursed -- compile stdlib/benchmark_framework/test_benchmark_framework.csd
+   cargo run --bin cursed stdlib/benchmark_framework/test_benchmark_framework.💀
+   cargo run --bin cursed -- compile stdlib/benchmark_framework/test_benchmark_framework.💀
    ./test_benchmark_framework
    ```
 
 3. Verify CLI tool functionality:
    ```bash
    cargo build --bin cursed_bench
-   ./target/debug/cursed_bench run examples/benchmark_example.csd
+   ./target/debug/cursed_bench run examples/benchmark_example.💀
    ```
 
 ## Performance Characteristics

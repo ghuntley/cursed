@@ -85,9 +85,9 @@ phase1_build_original() {
     fi
     
     log_test "Verifying original compiler basic functionality"
-    echo 'vibez.spill("Original compiler test")' > test_programs/original_test.csd
+    echo 'vibez.spill("Original compiler test")' > test_programs/original_test.💀
     
-    if ./target/release/cursed test_programs/original_test.csd > validation_tmp/original_test.out 2>&1; then
+    if ./target/release/cursed test_programs/original_test.💀 > validation_tmp/original_test.out 2>&1; then
         log_success "Original compiler basic test passed"
         echo "✅ Original compiler functionality: SUCCESS" >> validation_results/report.md
     else
@@ -102,7 +102,7 @@ phase2_compile_stage2() {
     log_phase "Phase 2: Compile Self-Hosting Stage 2 Compiler"
     
     log_test "Compiling Stage 2 compiler with original compiler"
-    if ./target/release/cursed -- compile src/bootstrap/stage2/main.csd -o cursed_stage2 > validation_tmp/stage2_compilation.log 2>&1; then
+    if ./target/release/cursed -- compile src/bootstrap/stage2/main.💀 -o cursed_stage2 > validation_tmp/stage2_compilation.log 2>&1; then
         log_success "Stage 2 compiler compiled successfully"
         echo "✅ Stage 2 compilation: SUCCESS" >> validation_results/report.md
         
@@ -140,12 +140,12 @@ phase3_create_test_suite() {
     log_info "Creating test programs for differential validation"
     
     # Test 1: Simple program
-    cat > test_programs/simple.csd << 'EOF'
+    cat > test_programs/simple.💀 << 'EOF'
 vibez.spill("Hello from CURSED!")
 EOF
     
     # Test 2: Variables and arithmetic
-    cat > test_programs/variables.csd << 'EOF'
+    cat > test_programs/variables.💀 << 'EOF'
 sus x normie = 10
 sus y normie = 20
 sus result normie = x + y
@@ -153,7 +153,7 @@ vibez.spill("Result: " + result.to_string())
 EOF
     
     # Test 3: Control flow
-    cat > test_programs/control_flow.csd << 'EOF'
+    cat > test_programs/control_flow.💀 << 'EOF'
 sus count normie = 5
 bestie (count > 0) {
     vibez.spill("Count is positive: " + count.to_string())
@@ -167,7 +167,7 @@ vibez.spill("Done counting")
 EOF
     
     # Test 4: Functions
-    cat > test_programs/functions.csd << 'EOF'
+    cat > test_programs/functions.💀 << 'EOF'
 slay add_numbers(a normie, b normie) normie {
     damn a + b
 }
@@ -177,7 +177,7 @@ vibez.spill("Function result: " + result.to_string())
 EOF
     
     # Test 5: Complex data types
-    cat > test_programs/complex_types.csd << 'EOF'
+    cat > test_programs/complex_types.💀 << 'EOF'
 sus tuple := (42, "hello", based)
 sus first normie = tuple.0
 sus second tea = tuple.1
@@ -186,7 +186,7 @@ vibez.spill("Tuple test: " + first.to_string() + " " + second + " " + third.to_s
 EOF
     
     # Test 6: Advanced features
-    cat > test_programs/advanced.csd << 'EOF'
+    cat > test_programs/advanced.💀 << 'EOF'
 # Test error handling
 yikes error_test() {
     sus value normie = 42
@@ -210,11 +210,11 @@ phase4_differential_testing() {
     log_phase "Phase 4: Differential Testing - Original vs Stage 2"
     
     test_programs=(
-        "simple.csd"
-        "variables.csd"
-        "control_flow.csd"
-        "functions.csd"
-        "complex_types.csd"
+        "simple.💀"
+        "variables.💀"
+        "control_flow.💀"
+        "functions.💀"
+        "complex_types.💀"
     )
     
     echo "## Differential Testing Results" >> validation_results/report.md
@@ -275,7 +275,7 @@ phase5_performance_testing() {
     log_phase "Phase 5: Performance Regression Testing"
     
     # Create performance test program
-    cat > test_programs/performance.csd << 'EOF'
+    cat > test_programs/performance.💀 << 'EOF'
 slay fibonacci(n normie) normie {
     lowkey (n <= 1) {
         damn n
@@ -293,7 +293,7 @@ EOF
     # Time original compiler
     log_info "Timing original compiler performance"
     start_time=$(date +%s%N)
-    ./target/release/cursed test_programs/performance.csd > validation_tmp/original_perf.out 2>&1
+    ./target/release/cursed test_programs/performance.💀 > validation_tmp/original_perf.out 2>&1
     original_result=$?
     end_time=$(date +%s%N)
     original_time=$(((end_time - start_time) / 1000000)) # Convert to milliseconds
@@ -301,7 +301,7 @@ EOF
     # Time Stage 2 compiler  
     log_info "Timing Stage 2 compiler performance"
     start_time=$(date +%s%N)
-    ./cursed_stage2 test_programs/performance.csd > validation_tmp/stage2_perf.out 2>&1
+    ./cursed_stage2 test_programs/performance.💀 > validation_tmp/stage2_perf.out 2>&1
     stage2_result=$?
     end_time=$(date +%s%N)
     stage2_time=$(((end_time - start_time) / 1000000)) # Convert to milliseconds
@@ -341,14 +341,14 @@ phase6_recursive_compilation() {
     log_test "Attempting recursive compilation: Stage 2 compiling itself"
     
     # Try to compile Stage 2 with itself
-    if ./cursed_stage2 -- compile src/bootstrap/stage2/main.csd -o cursed_stage2_recursive > validation_tmp/recursive_compilation.log 2>&1; then
+    if ./cursed_stage2 -- compile src/bootstrap/stage2/main.💀 -o cursed_stage2_recursive > validation_tmp/recursive_compilation.log 2>&1; then
         log_success "Recursive compilation succeeded"
         echo "✅ Recursive compilation: SUCCESS" >> validation_results/report.md
         
         # Test the recursively compiled compiler
         if [ -f "./cursed_stage2_recursive" ] && [ -x "./cursed_stage2_recursive" ]; then
             log_test "Testing recursively compiled compiler"
-            if ./cursed_stage2_recursive test_programs/simple.csd > validation_tmp/recursive_test.out 2>&1; then
+            if ./cursed_stage2_recursive test_programs/simple.💀 > validation_tmp/recursive_test.out 2>&1; then
                 log_success "Recursively compiled compiler works"
                 echo "✅ Recursive compiler functionality: SUCCESS" >> validation_results/report.md
             else
@@ -373,20 +373,20 @@ phase7_error_testing() {
     log_info "Creating programs with intentional errors"
     
     # Syntax error test
-    cat > test_programs/syntax_error.csd << 'EOF'
+    cat > test_programs/syntax_error.💀 << 'EOF'
 sus x normie = 42
 vibez.spill("Missing semicolon"
 EOF
     
     # Type error test
-    cat > test_programs/type_error.csd << 'EOF'
+    cat > test_programs/type_error.💀 << 'EOF'
 sus x normie = 42
 sus y tea = "hello"
 sus result normie = x + y  # Type mismatch
 vibez.spill("This should fail")
 EOF
     
-    error_tests=("syntax_error.csd" "type_error.csd")
+    error_tests=("syntax_error.💀" "type_error.💀")
     
     echo "## Error Handling Testing Results" >> validation_results/report.md
     echo "" >> validation_results/report.md
@@ -422,10 +422,10 @@ phase8_stdlib_testing() {
     log_test "Testing stdlib modules with both compilers"
     
     stdlib_modules=(
-        "stdlib/testz/test_testz.csd"
-        "stdlib/timez/test_timez.csd"
-        "stdlib/mathz/test_mathz.csd"
-        "stdlib/stringz/test_stringz.csd"
+        "stdlib/testz/test_testz.💀"
+        "stdlib/timez/test_timez.💀"
+        "stdlib/mathz/test_mathz.💀"
+        "stdlib/stringz/test_stringz.💀"
     )
     
     echo "## Stdlib Integration Results" >> validation_results/report.md

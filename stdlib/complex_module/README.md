@@ -264,7 +264,7 @@ The module includes comprehensive error handling:
 ```bash
 # Run module tests
 zig build test
-./zig-out/bin/cursed-zig stdlib/complex_module/test_complex_module.csd
+./zig-out/bin/cursed-zig stdlib/complex_module/test_complex_module.💀
 
 # Run validation
 ./zig-out/bin/cursed-zig -c "

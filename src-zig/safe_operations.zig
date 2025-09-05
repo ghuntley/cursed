@@ -327,7 +327,7 @@ pub const SafeModuleLoader = struct {
     /// Safe module loading with fallback strategies
     pub fn safeLoadModule(self: *SafeModuleLoader, module_name: []const u8, comptime file: []const u8, comptime line: u32) SafeOperationResult {
         // Try primary module path
-        const primary_path = std.fmt.allocPrint(self.allocator, "stdlib/{s}/mod.csd", .{module_name}) catch {
+        const primary_path = std.fmt.allocPrint(self.allocator, "stdlib/{s}/mod.💀", .{module_name}) catch {
             return SafeOperationResult{ .Failure = "Failed to construct module path" };
         };
         defer self.allocator.free(primary_path);
@@ -339,8 +339,8 @@ pub const SafeModuleLoader = struct {
         } else |_| {
             // Try fallback paths
             const fallback_paths = [_][]const u8{
-                std.fmt.allocPrint(self.allocator, "stdlib/{s}.csd", .{module_name}) catch return SafeOperationResult{ .Failure = "Fallback path construction failed" },
-                std.fmt.allocPrint(self.allocator, "src/{s}.csd", .{module_name}) catch return SafeOperationResult{ .Failure = "Fallback path construction failed" },
+                std.fmt.allocPrint(self.allocator, "stdlib/{s}.💀", .{module_name}) catch return SafeOperationResult{ .Failure = "Fallback path construction failed" },
+std.fmt.allocPrint(self.allocator, "src/{s}.💀", .{module_name}) catch return SafeOperationResult{ .Failure = "Fallback path construction failed" },
             };
             
             for (fallback_paths) |fallback_path| {

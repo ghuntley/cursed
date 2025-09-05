@@ -31,19 +31,19 @@ facts ErrFileNotFound tea = "file not found"
 slay read_file(filename tea) IOResult {
     vibez.spill("📖 Reading file: " + filename)
     
-    bestie filename == "test.csd" {
+    bestie filename == "test.💀" {
         damn IOResult{
             success: based,
             data: "vibez.spill(\"Hello from file\")",
             error: ""
         }
-    } else bestie filename == "main.csd" {
+    } else bestie filename == "main.💀" {
         damn IOResult{
             success: based,
             data: "fam \"core\"\n\nslay main() {\n    vibez.spill(\"Self-hosting compiler\")\n}",
             error: ""
         }
-    } else bestie filename == "empty.csd" {
+    } else bestie filename == "empty.💀" {
         damn IOResult{
             success: based,
             data: "",
@@ -74,13 +74,13 @@ slay list_dir(dirname tea) IOResult {
     bestie dirname == "." {
         damn IOResult{
             success: based,
-            data: "main.csd\ntest.csd\nlib.csd",
+            data: "main.💀\ntest.💀\nlib.💀",
             error: ""
         }
     } else bestie dirname == "src" {
         damn IOResult{
             success: based,
-            data: "compiler.csd\nparser.csd\ncodegen.csd",
+            data: "compiler.💀\nparser.💀\ncodegen.💀",
             error: ""
         }
     } else {
@@ -95,7 +95,7 @@ slay list_dir(dirname tea) IOResult {
 slay exists(path tea) lit {
     vibez.spill("🔍 Checking existence: " + path)
     
-    bestie path == "test.csd" || path == "main.csd" || path == "." || path == "src" {
+    bestie path == "test.💀" || path == "main.💀" || path == "." || path == "src" {
         damn based
     } else {
         damn cap
@@ -170,7 +170,7 @@ slay get_file_size(filename tea) IOResult {
 
 slay get_file_extension(filename tea) tea {
     vibez.spill("🔖 Getting file extension: " + filename)
-    bestie filename == "test.csd" {
+    bestie filename == "test.💀" {
         damn "csd"
     } else bestie filename == "readme.txt" {
         damn "txt"
@@ -181,7 +181,7 @@ slay get_file_extension(filename tea) tea {
 
 slay get_file_basename(filename tea) tea {
     vibez.spill("📁 Getting file basename: " + filename)
-    bestie filename == "test.csd" {
+    bestie filename == "test.💀" {
         damn "test"
     } else bestie filename == "readme.txt" {
         damn "readme"

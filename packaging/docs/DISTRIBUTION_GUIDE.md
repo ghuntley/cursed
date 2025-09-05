@@ -200,7 +200,7 @@ We provide multiple Docker image variants:
 docker pull cursed/compiler:1.0.0-alpine
 
 # Run with volume mount
-docker run --rm -v $(pwd):/workspace cursed/compiler:1.0.0-alpine /workspace/main.csd
+docker run --rm -v $(pwd):/workspace cursed/compiler:1.0.0-alpine /workspace/main.💀
 ```
 
 #### Ubuntu LTS (Compatibility)

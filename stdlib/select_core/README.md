@@ -487,7 +487,7 @@ Tests select timeout behavior.
 ```bash
 # Run select core tests
 zig build test
-./zig-out/bin/cursed-zig stdlib/select_core/test_select_core.csd
+./zig-out/bin/cursed-zig stdlib/select_core/test_select_core.💀
 
 # Run specific test
 ./zig-out/bin/cursed-zig -c "

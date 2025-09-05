@@ -63,13 +63,13 @@ generate_documentation() {
     mkdir -p "$DOCS_OUTPUT_DIR"
     
     # Run enhanced documentation generator
-    if [ -f "docs/tools/doc_generator_enhanced.csd" ]; then
+    if [ -f "docs/tools/doc_generator_enhanced.💀" ]; then
         log_info "Running enhanced documentation generator..."
-        ./cursed-unified docs/tools/doc_generator_enhanced.csd
+        ./cursed-unified docs/tools/doc_generator_enhanced.💀
         log_success "Enhanced documentation generation completed"
     else
         log_warning "Enhanced doc generator not found, using basic build system"
-        ./cursed-unified docs/build_docs.csd
+        ./cursed-unified docs/build_docs.💀
     fi
     
     # Generate additional formats
@@ -164,8 +164,8 @@ generate_html_docs() {
         
         <section class="quick-start">
             <h2>Quick Start</h2>
-            <pre><code>echo 'vibez.spill("Hello, CURSED!")' > hello.csd
-cursed hello.csd</code></pre>
+            <pre><code>echo 'vibez.spill("Hello, CURSED!")' > hello.💀
+cursed hello.💀</code></pre>
         </section>
     </main>
     

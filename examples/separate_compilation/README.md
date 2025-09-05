@@ -4,9 +4,9 @@ This example demonstrates the separate compilation functionality of the CURSED p
 
 ## Files
 
-- `math_utils.csd` - Math utilities package with basic arithmetic operations
-- `string_utils.csd` - String utilities package with string manipulation functions  
-- `main.csd` - Main program that imports and uses both utility packages
+- `math_utils.💀` - Math utilities package with basic arithmetic operations
+- `string_utils.💀` - String utilities package with string manipulation functions  
+- `main.💀` - Main program that imports and uses both utility packages
 
 ## Package Structure
 
@@ -14,10 +14,10 @@ This example demonstrates the separate compilation functionality of the CURSED p
 main
 ├── imports: mathutils, stringutils
 │
-mathutils (math_utils.csd)
+mathutils (math_utils.💀)
 ├── exports: add, multiply, factorial, power
 │
-stringutils (string_utils.csd)  
+stringutils (string_utils.💀)  
 ├── exports: concat, length, toUpper, reverse, startsWith
 ```
 
@@ -28,24 +28,24 @@ stringutils (string_utils.csd)
 #### Single File Compilation (Traditional)
 ```bash
 # This will detect separate compilation is needed and handle it automatically
-cursed main.csd
+cursed main.💀
 ```
 
 #### Explicit Separate Compilation
 ```bash
 # Compile and link all packages
-cursed-compile link main.csd math_utils.csd string_utils.csd -o demo_program
+cursed-compile link main.💀 math_utils.💀 string_utils.💀 -o demo_program
 
 # Or compile packages individually
-cursed-compile package math_utils.csd -o ./build --emit-ir --emit-object
-cursed-compile package string_utils.csd -o ./build --emit-ir --emit-object
-cursed-compile package main.csd -o ./build --emit-ir --emit-object
+cursed-compile package math_utils.💀 -o ./build --emit-ir --emit-object
+cursed-compile package string_utils.💀 -o ./build --emit-ir --emit-object
+cursed-compile package main.💀 -o ./build --emit-ir --emit-object
 ```
 
 ### Analyzing Package Structure
 ```bash
 # Analyze dependencies and structure
-cursed-compile analyze main.csd math_utils.csd string_utils.csd
+cursed-compile analyze main.💀 math_utils.💀 string_utils.💀
 ```
 
 This will show:

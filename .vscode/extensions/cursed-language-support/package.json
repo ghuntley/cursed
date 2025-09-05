@@ -32,7 +32,7 @@
           "cursed"
         ],
         "extensions": [
-          ".csd"
+          ".💀"
         ],
         "configuration": "./language-configuration.json",
         "icon": {
@@ -126,38 +126,38 @@
       {
         "command": "cursed.compile",
         "key": "ctrl+shift+c",
-        "when": "editorTextFocus && resourceExtname == .csd"
+        "when": "editorTextFocus && resourceExtname == .💀"
       },
       {
         "command": "cursed.run",
         "key": "ctrl+shift+r",
-        "when": "editorTextFocus && resourceExtname == .csd"
+        "when": "editorTextFocus && resourceExtname == .💀"
       },
       {
         "command": "cursed.format",
         "key": "shift+alt+f",
-        "when": "editorTextFocus && resourceExtname == .csd"
+        "when": "editorTextFocus && resourceExtname == .💀"
       }
     ],
     "menus": {
       "editor/context": [
         {
-          "when": "resourceExtname == .csd",
+          "when": "resourceExtname == .💀",
           "command": "cursed.compile",
           "group": "cursed@1"
         },
         {
-          "when": "resourceExtname == .csd",
+          "when": "resourceExtname == .💀",
           "command": "cursed.run",
           "group": "cursed@2"
         },
         {
-          "when": "resourceExtname == .csd",
+          "when": "resourceExtname == .💀",
           "command": "cursed.format",
           "group": "cursed@3"
         },
         {
-          "when": "resourceExtname == .csd",
+          "when": "resourceExtname == .💀",
           "command": "cursed.showAST",
           "group": "cursed@4"
         }

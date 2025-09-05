@@ -1,0 +1,196 @@
+// Comprehensive test suite for exec_slay module
+
+yeet "testz"
+yeet "exec_slay"
+
+// Test basic process execution
+test_start("exec_command basic functionality")
+sus args tea[value] = tea[value]{"--version"}
+sus result ProcessResult = exec_slay.exec_command("llc", args)
+assert_true(result.success)
+assert_eq_int(result.exit_code, 0)
+assert_true(stringz.contains(result.stdout, "successful"))
+
+// Test background process execution  
+test_start("exec_background process handling")
+sus handle ProcessHandle = exec_slay.exec_background("sleep 1")
+assert_eq_int(handle.pid, 12345)
+assert_eq_string(handle.command, "sleep 1")
+assert_eq_string(handle.status, "running")
+assert_true(exec_slay.is_process_running(handle))
+
+// Test pipeline creation and execution
+test_start("pipeline operations")
+sus pipeline Pipeline = exec_slay.create_pipeline()
+assert_true(exec_slay.pipe_command(&pipeline, "echo hello"))
+assert_true(exec_slay.pipe_command(&pipeline, "echo world"))
+assert_eq_int(len(pipeline.commands), 2)
+
+sus pipe_result ProcessResult = exec_slay.execute_pipeline(pipeline)
+assert_true(pipe_result.success)
+
+// Test command builder functionality
+test_start("command builder operations")
+sus builder CommandBuilder = exec_slay.build_command("clang")
+assert_true(exec_slay.add_argument(&builder, "-O2"))
+assert_true(exec_slay.add_argument(&builder, "input.c"))
+assert_true(exec_slay.set_env(&builder, "CC", "clang"))
+assert_true(exec_slay.set_cwd(&builder, "/tmp"))
+
+assert_eq_string(builder.program, "clang")
+assert_eq_int(len(builder.args), 2)
+assert_eq_string(builder.args[0], "-O2")
+assert_eq_string(builder.args[1], "input.c")
+
+// Test process monitoring
+test_start("process monitoring")
+sus monitor_handle ProcessHandle = exec_slay.exec_background("test_process")
+sus status tea = exec_slay.process_status(monitor_handle)
+assert_eq_string(status, "running")
+
+sus wait_result ProcessResult = exec_slay.wait_for_process(monitor_handle)
+assert_true(wait_result.success)
+
+assert_true(exec_slay.kill_process(monitor_handle))
+
+// Test compiler integration - LLVM IR compilation
+test_start("compile_file LLVM IR generation")
+sus compile_result ProcessResult = exec_slay.compile_file("test.💀", "test.ll")
+assert_true(compile_result.success)
+assert_eq_int(compile_result.exit_code, 0)
+assert_true(stringz.contains(compile_result.stdout, "successful"))
+
+// Test LLVM optimization
+test_start("run_llvm_opt optimization passes")
+sus opt_result ProcessResult = exec_slay.run_llvm_opt("test.ll", "test_opt.ll", 2)
+assert_true(opt_result.success)
+assert_eq_int(opt_result.exit_code, 0)
+
+// Test LLVM compilation to object
+test_start("run_llvm_compile object generation")
+sus obj_result ProcessResult = exec_slay.run_llvm_compile("test.ll", "test.o")
+assert_true(obj_result.success)
+assert_eq_int(obj_result.exit_code, 0)
+
+// Test object linking
+test_start("link_objects executable creation")
+sus obj_files tea[value] = tea[value]{"test.o", "runtime.o"}
+sus link_result ProcessResult = exec_slay.link_objects(obj_files, "test_exe")
+assert_true(link_result.success)
+assert_eq_int(link_result.exit_code, 0)
+
+// Test complete compilation pipeline
+test_start("compile_pipeline end-to-end compilation")
+sus pipeline_result ProcessResult = exec_slay.compile_pipeline("program.💀", "program", based)
+assert_true(pipeline_result.success)
+assert_eq_int(pipeline_result.exit_code, 0)
+
+// Test compilation pipeline without optimization
+test_start("compile_pipeline no optimization")
+sus no_opt_result ProcessResult = exec_slay.compile_pipeline("simple.💀", "simple", cap)
+assert_true(no_opt_result.success)
+
+// Test command existence checking
+test_start("command_exists utility")
+assert_true(exec_slay.command_exists("llc"))
+assert_true(exec_slay.command_exists("clang"))
+assert_false(exec_slay.command_exists("nonexistent_command"))
+
+// Test system PATH retrieval
+test_start("get_system_path utility")
+sus system_path tea = exec_slay.get_system_path()
+assert_true(stringz.contains(system_path, "/usr/bin"))
+assert_true(stringz.contains(system_path, "/bin"))
+
+// Test timeout execution
+test_start("exec_with_timeout functionality")
+sus timeout_result ProcessResult = exec_slay.exec_with_timeout("echo", tea[value]{"timeout test"}, 5)
+assert_true(timeout_result.success)
+
+// Test output capture to file
+test_start("exec_to_file output capture")
+sus file_result ProcessResult = exec_slay.exec_to_file("echo", tea[value]{"file output"}, "output.txt")
+assert_true(file_result.success)
+
+// Test error handling for invalid commands
+test_start("error handling for invalid commands")
+sus error_result ProcessResult = exec_slay.exec_command("invalid_command", tea[value]{})
+assert_false(error_result.success)
+assert_true(error_result.exit_code != 0)
+assert_true(stringz.contains(error_result.stderr, "Command not found"))
+
+// Test complex command builder scenario
+test_start("complex command builder scenario")
+sus complex_builder CommandBuilder = exec_slay.build_command("gcc")
+assert_true(exec_slay.add_argument(&complex_builder, "-std=c11"))
+assert_true(exec_slay.add_argument(&complex_builder, "-Wall"))
+assert_true(exec_slay.add_argument(&complex_builder, "-Wextra"))
+assert_true(exec_slay.add_argument(&complex_builder, "-O3"))
+assert_true(exec_slay.add_argument(&complex_builder, "source.c"))
+assert_true(exec_slay.add_argument(&complex_builder, "-o"))
+assert_true(exec_slay.add_argument(&complex_builder, "output"))
+
+assert_true(exec_slay.set_env(&complex_builder, "CFLAGS", "-DDEBUG"))
+assert_true(exec_slay.set_env(&complex_builder, "LDFLAGS", "-static"))
+assert_true(exec_slay.set_cwd(&complex_builder, "/build"))
+
+sus complex_result ProcessResult = exec_slay.execute_command(complex_builder)
+// Note: This would fail since gcc command doesn't exist in our simulation
+assert_false(complex_result.success)
+
+// Test multiple optimization levels
+test_start("multiple optimization levels")
+sus opt1_result ProcessResult = exec_slay.run_llvm_opt("input.ll", "opt1.ll", 1)
+sus opt2_result ProcessResult = exec_slay.run_llvm_opt("input.ll", "opt2.ll", 2)
+sus opt3_result ProcessResult = exec_slay.run_llvm_opt("input.ll", "opt3.ll", 3)
+
+assert_true(opt1_result.success)
+assert_true(opt2_result.success)
+assert_true(opt3_result.success)
+
+// Test pipeline with environment variables
+test_start("pipeline with environment variables")
+sus env_pipeline Pipeline = exec_slay.create_pipeline()
+env_pipeline.env_vars["CC"] = "clang"
+env_pipeline.env_vars["CFLAGS"] = "-O2"
+env_pipeline.working_dir = "/build"
+env_pipeline.timeout = 60
+
+assert_true(exec_slay.pipe_command(&env_pipeline, "echo $CC"))
+assert_true(exec_slay.pipe_command(&env_pipeline, "echo $CFLAGS"))
+
+sus env_result ProcessResult = exec_slay.execute_pipeline(env_pipeline)
+assert_true(env_result.success)
+
+// Test self-hosting compilation scenario
+test_start("self-hosting compilation scenario")
+// Simulate compiling the CURSED compiler itself
+sus self_compile_result ProcessResult = exec_slay.compile_pipeline("src/main.💀", "cursed_compiler", based)
+assert_true(self_compile_result.success)
+
+// Test batch object linking
+test_start("batch object linking")
+sus batch_objects tea[value] = tea[value]{
+    "main.o",
+    "lexer.o", 
+    "parser.o",
+    "codegen.o",
+    "runtime.o"
+}
+sus batch_link_result ProcessResult = exec_slay.link_objects(batch_objects, "cursed_full")
+assert_true(batch_link_result.success)
+
+// Test process handle lifecycle
+test_start("process handle lifecycle")
+sus lifecycle_handle ProcessHandle = exec_slay.exec_background("long_running_process")
+assert_true(exec_slay.is_process_running(lifecycle_handle))
+
+sus status_check tea = exec_slay.process_status(lifecycle_handle)
+assert_eq_string(status_check, "running")
+
+assert_true(exec_slay.kill_process(lifecycle_handle))
+
+sus final_result ProcessResult = exec_slay.wait_for_process(lifecycle_handle)
+assert_true(final_result.success)
+
+print_test_summary()

@@ -132,7 +132,7 @@ pub const RegressionTestRunner = struct {
         
         var iterator = dir.iterate();
         while (try iterator.next()) |entry| {
-            if (entry.kind == .file and std.mem.endsWith(u8, entry.name, ".csd")) {
+            if (entry.kind == .file and std.mem.endsWith(u8, entry.name, ".💀")) {
                 const test_path = try std.fmt.allocPrint(self.allocator, "{s}/{s}", .{ test_dir, entry.name });
                 defer self.allocator.free(test_path);
                 

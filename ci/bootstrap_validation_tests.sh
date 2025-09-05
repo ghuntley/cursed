@@ -38,11 +38,11 @@ run_bootstrap_test() {
     echo "🧪 Running bootstrap test: $test_name"
     
     # Create test file
-    echo "$test_code" > "${test_name}.csd"
+    echo "$test_code" > "${test_name}.💀"
     
     # Test interpretation mode
     echo "  📝 Testing interpretation mode..."
-    if timeout $TIMEOUT_SECONDS "$OLDPWD/$COMPILER_BINARY" "${test_name}.csd" > "${test_name}_interp.out" 2>&1; then
+    if timeout $TIMEOUT_SECONDS "$OLDPWD/$COMPILER_BINARY" "${test_name}.💀" > "${test_name}_interp.out" 2>&1; then
         echo "    ✅ Interpretation successful"
     else
         echo "    ❌ Interpretation failed"
@@ -53,7 +53,7 @@ run_bootstrap_test() {
     
     # Test compilation mode
     echo "  🔨 Testing compilation mode..."
-    if timeout $TIMEOUT_SECONDS "$OLDPWD/$COMPILER_BINARY" -- compile "${test_name}.csd" -o "${test_name}_compiled" 2>&1; then
+    if timeout $TIMEOUT_SECONDS "$OLDPWD/$COMPILER_BINARY" -- compile "${test_name}.💀" -o "${test_name}_compiled" 2>&1; then
         echo "    ✅ Compilation successful"
         
         # Run compiled executable
@@ -258,7 +258,7 @@ echo "🔄 Running performance benchmark..."
 start_time=$(date +%s%N)
 
 # Create performance test
-cat > performance_test.csd << 'EOF'
+cat > performance_test.💀 << 'EOF'
 // Performance test program
 sus iterations normie = 1000
 
@@ -275,7 +275,7 @@ vibez.spill(result)
 EOF
 
 # Run performance test
-timeout $TIMEOUT_SECONDS "$OLDPWD/$COMPILER_BINARY" -- compile performance_test.csd -o performance_test
+timeout $TIMEOUT_SECONDS "$OLDPWD/$COMPILER_BINARY" -- compile performance_test.💀 -o performance_test
 ./performance_test > performance_output.txt
 
 end_time=$(date +%s%N)

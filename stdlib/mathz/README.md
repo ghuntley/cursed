@@ -511,7 +511,7 @@ slay precise_sum(values []drip) drip {
 
 ### Unit Tests
 ```cursed
-// stdlib/mathz/test_mathz.csd
+// stdlib/mathz/test_mathz.💀
 yeet "testz"
 yeet "mathz"
 

@@ -537,7 +537,7 @@ pub fn main() !void {
     
     if (args.len < 2) {
         print("CURSED Formatter v1.0.0\n");
-        print("Usage: cursed-fmt [options] <file.csd>\n");
+        print("Usage: cursed-fmt [options] <file.💀.💀>\n");
         print("\nOptions:\n");
         print("  --config <file>       Use configuration file\n");
         print("  --output <file>       Output to specific file (default: overwrite input)\n");
@@ -548,9 +548,9 @@ pub fn main() !void {
         print("  --max-line-length <n> Maximum line length (default: 100)\n");
         print("  --help                Show this help\n");
         print("\nExamples:\n");
-        print("  cursed-fmt main.csd                    # Format in place\n");
-        print("  cursed-fmt --output formatted.csd main.csd  # Format to new file\n");
-        print("  cursed-fmt --check main.csd           # Check if formatted\n");
+        print("  cursed-fmt main.💀.💀                    # Format in place\n");
+        print("  cursed-fmt --output formatted.💀.💀 main.💀.💀  # Format to new file\n");
+        print("  cursed-fmt --check main.💀.💀           # Check if formatted\n");
         return;
     }
     

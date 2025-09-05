@@ -1,8 +1,8 @@
 --- /tmp/tmp.080ckvFqzx	2025-08-31 11:45:11.854760036 +0300
 +++ /tmp/tmp.x0wgrfrAWy	2025-08-31 11:45:11.855760032 +0300
 @@ -1,13 +0,0 @@
--Error at /home/ghuntley/cursed/test_suite/test_programs/functions/01_simple_function.csd:5:19 - Error parsing function statement
--Error at /home/ghuntley/cursed/test_suite/test_programs/functions/01_simple_function.csd:25:1 - Failed to parse statement
+-Error at /home/ghuntley/cursed/test_suite/test_programs/functions/01_simple_function.💀:5:19 - Error parsing function statement
+-Error at /home/ghuntley/cursed/test_suite/test_programs/functions/01_simple_function.💀:25:1 - Failed to parse statement
 -
 -=== Error Recovery Statistics ===
 -Total errors encountered: 2

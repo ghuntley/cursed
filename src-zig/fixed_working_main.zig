@@ -192,7 +192,7 @@ fn compileToScript(allocator: Allocator, filename: []const u8, source: []const u
 fn printUsage() void {
     print("CURSED Zig Compiler - Fixed Working Implementation v1.0.0\n", .{});
     print("Full CURSED language interpreter with script compilation\n", .{});
-    print("\nUsage: cursed-zig <file.csd> [OPTIONS]\n", .{});
+    print("\nUsage: cursed-zig <file.💀> [OPTIONS]\n", .{});
     print("       cursed-zig --version\n", .{});
     print("       cursed-zig --help\n", .{});
     print("\nOptions:\n", .{});
@@ -214,7 +214,7 @@ fn printUsage() void {
 }
 
 fn getOutputName(allocator: Allocator, filename: []const u8) ![]u8 {
-    if (std.mem.endsWith(u8, filename, ".csd")) {
+    if (std.mem.endsWith(u8, filename, ".💀")) {
         return try allocator.dupe(u8, filename[0..filename.len - 4]);
     }
     return try std.fmt.allocPrint(allocator, "{s}_out", .{filename});

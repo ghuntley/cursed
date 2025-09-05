@@ -71,7 +71,7 @@ if (!std.mem.eql(u8, object_name, "vibez") and !std.mem.eql(u8, object_name, "")
 ## Testing
 
 ### Test Case
-**File**: `final_test_case.csd`
+**File**: `final_test_case.💀`
 ```cursed
 yeet "mathz"
 sus result drip = mathz.add_two(5, 3)
@@ -107,13 +107,13 @@ To verify the fix works:
 
 1. **Compile a test program**:
    ```bash
-   zig build run -- --compile final_test_case.csd -o test_mathz --verbose
+   zig build run -- --compile final_test_case.💀 -o test_mathz --verbose
    ```
 
 2. **Run and compare with interpreter**:
    ```bash
    ./test_mathz  # Should output: Result: 8
-   zig build run -- --interpret final_test_case.csd  # Should match
+   zig build run -- --interpret final_test_case.💀  # Should match
    ```
 
 3. **Check debug output**: Should show "Calling compiled CURSED stdlib function: mathz.add_two"

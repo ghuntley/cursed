@@ -144,9 +144,9 @@ cursed-pkg build --features advanced
 
 See the `examples/` directory for more usage examples:
 
-- `basic_usage.csd` - Basic mathematical operations
-- `advanced_usage.csd` - Using statistics and trigonometry features
-- `performance_test.csd` - Performance benchmarking
+- `basic_usage.💀` - Basic mathematical operations
+- `advanced_usage.💀` - Using statistics and trigonometry features
+- `performance_test.💀` - Performance benchmarking
 
 ## Contributing
 

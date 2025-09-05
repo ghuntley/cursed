@@ -10,7 +10,7 @@ pub fn main() !void {
     std.debug.print("================================================\n", .{});
     
     // Create debug-enabled code generator
-    var codegen = DebugEnabledCodeGen.init(allocator, "debug_info_comprehensive_test.csd") catch |err| {
+    var codegen = DebugEnabledCodeGen.init(allocator, "debug_info_comprehensive_test.💀") catch |err| {
         std.debug.print("❌ Failed to initialize debug codegen: {any}\n", .{err});
         return;
     };

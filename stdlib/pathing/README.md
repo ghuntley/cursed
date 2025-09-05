@@ -91,7 +91,7 @@ Match a path against a glob pattern (supports * wildcard).
 
 ```cursed
 assert_true(path_match("*.txt", "file.txt"))
-assert_true(path_match("test_*.csd", "test_file.csd"))
+assert_true(path_match("test_*.💀", "test_file.💀"))
 ```
 
 ### Path Conversion
@@ -159,10 +159,10 @@ sus relative_path tea = path_rel(base, target)  // "../documents/file.txt"
 yeet "pathing"
 
 // Check if files match patterns
-sus files [tea] = ["test_math.csd", "test_string.csd", "main.csd", "README.md"]
+sus files [tea] = ["test_math.💀", "test_string.💀", "main.💀", "README.md"]
 
 bestie i := 0; i < files.length; i++ {
-    skit path_match("test_*.csd", files[i]) {
+    skit path_match("test_*.💀", files[i]) {
         vibez.spill("Test file: " + files[i])
     }
     
@@ -196,10 +196,10 @@ The module includes comprehensive tests covering all functions:
 
 ```bash
 # Run pathing module tests
-cargo run --bin cursed stdlib/pathing/test_pathing.csd
+cargo run --bin cursed stdlib/pathing/test_pathing.💀
 
 # Test native compilation
-cargo run --bin cursed -- compile stdlib/pathing/test_pathing.csd
+cargo run --bin cursed -- compile stdlib/pathing/test_pathing.💀
 ./test_pathing
 ```
 

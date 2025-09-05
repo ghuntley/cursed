@@ -6,7 +6,7 @@ pub fn build(b: *std.Build) void {
 
     // Create a simple CURSED compilation step
     const cursed_compile = b.addSystemCommand(&[_][]const u8{
-        "../zig-out/bin/cursed-zig", "main.csd"
+        "../zig-out/bin/cursed-zig", "main.💀"
     });
     
     const run_step = b.step("run", "Run the CURSED program");

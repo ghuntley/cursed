@@ -166,14 +166,14 @@ echo 'yeet "panic_system"
 panic_system.catch_panic(
     slay() { panic_system.panic("Test panic") },
     slay(info) { vibez.spillf("Caught: {}", info.message) }
-)' > panic_test.csd
+)' > panic_test.💀
 
-./cursed-unified panic_test.csd
+./cursed-unified panic_test.💀
 ```
 
 ### Compilation Mode
 ```bash
-./cursed-unified --compile panic_test.csd
+./cursed-unified --compile panic_test.💀
 ./panic_test
 ```
 

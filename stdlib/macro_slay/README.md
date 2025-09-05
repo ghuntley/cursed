@@ -327,7 +327,7 @@ The module provides comprehensive error handling:
 Run the comprehensive test suite:
 
 ```bash
-cargo run --bin cursed stdlib/macro_slay/test_macro_slay.csd
+cargo run --bin cursed stdlib/macro_slay/test_macro_slay.💀
 ```
 
 The test suite covers:

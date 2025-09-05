@@ -235,10 +235,10 @@ Potential future additions:
 Run the comprehensive test suite:
 ```bash
 # Test in interpretation mode
-cargo run --bin cursed stdlib/grammar_drip/test_grammar_drip.csd
+cargo run --bin cursed stdlib/grammar_drip/test_grammar_drip.💀
 
 # Test in compilation mode
-cargo run --bin cursed -- compile stdlib/grammar_drip/test_grammar_drip.csd
+cargo run --bin cursed -- compile stdlib/grammar_drip/test_grammar_drip.💀
 ./test_grammar_drip
 ```
 

@@ -12,7 +12,7 @@ pub fn main() !void {
     defer std.process.argsFree(allocator, args);
     
     if (args.len < 2) {
-        print("Usage: {s} <test_file.csd>\n", .{args[0]});
+        print("Usage: {s} <test_file.💀.💀>\n", .{args[0]});
         return;
     }
     

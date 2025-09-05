@@ -1,24 +1,24 @@
-Error at /home/ghuntley/cursed/test_suite/test_programs/parser_fixes/03_corrected_function_parameters.csd:7:17 - Expected ')'. Expected .RightParen, got .Normie (context: consume)
-Error at /home/ghuntley/cursed/test_suite/test_programs/parser_fixes/03_corrected_function_parameters.csd:7:17 - Error parsing variable declaration
+Error at /home/ghuntley/cursed/test_suite/test_programs/parser_fixes/03_corrected_function_parameters.💀:7:17 - Expected ')'. Expected .RightParen, got .Normie (context: consume)
+Error at /home/ghuntley/cursed/test_suite/test_programs/parser_fixes/03_corrected_function_parameters.💀:7:17 - Error parsing variable declaration
 INFO: Recovered at delimiter 'RightParen' after skipping 1 tokens
-Error at /home/ghuntley/cursed/test_suite/test_programs/parser_fixes/03_corrected_function_parameters.csd:7:23 - Failed to parse statement
+Error at /home/ghuntley/cursed/test_suite/test_programs/parser_fixes/03_corrected_function_parameters.💀:7:23 - Failed to parse statement
 INFO: Recovered at semicolon after skipping 6 tokens
 INFO: Attempting additional statement recovery
-Error at /home/ghuntley/cursed/test_suite/test_programs/parser_fixes/03_corrected_function_parameters.csd:11:23 - Expected ')'. Expected .RightParen, got .Normie (context: consume)
-Error at /home/ghuntley/cursed/test_suite/test_programs/parser_fixes/03_corrected_function_parameters.csd:11:23 - Error parsing variable declaration
+Error at /home/ghuntley/cursed/test_suite/test_programs/parser_fixes/03_corrected_function_parameters.💀:11:23 - Expected ')'. Expected .RightParen, got .Normie (context: consume)
+Error at /home/ghuntley/cursed/test_suite/test_programs/parser_fixes/03_corrected_function_parameters.💀:11:23 - Error parsing variable declaration
 INFO: Recovered at delimiter 'RightParen' after skipping 7 tokens
-Error at /home/ghuntley/cursed/test_suite/test_programs/parser_fixes/03_corrected_function_parameters.csd:11:49 - Failed to parse statement
+Error at /home/ghuntley/cursed/test_suite/test_programs/parser_fixes/03_corrected_function_parameters.💀:11:49 - Failed to parse statement
 INFO: Recovered at statement keyword 'Sus' after skipping 4 tokens
 INFO: Attempting additional statement recovery
-Error at /home/ghuntley/cursed/test_suite/test_programs/parser_fixes/03_corrected_function_parameters.csd:14:1 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
-Error at /home/ghuntley/cursed/test_suite/test_programs/parser_fixes/03_corrected_function_parameters.csd:14:1 - Synchronizing parser after error (context: synchronize)
+Error at /home/ghuntley/cursed/test_suite/test_programs/parser_fixes/03_corrected_function_parameters.💀:14:1 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+Error at /home/ghuntley/cursed/test_suite/test_programs/parser_fixes/03_corrected_function_parameters.💀:14:1 - Synchronizing parser after error (context: synchronize)
 INFO: Recovered at statement keyword 'Sus' after skipping 1 tokens
-Error at /home/ghuntley/cursed/test_suite/test_programs/parser_fixes/03_corrected_function_parameters.csd:16:1 - Failed to parse statement
+Error at /home/ghuntley/cursed/test_suite/test_programs/parser_fixes/03_corrected_function_parameters.💀:16:1 - Failed to parse statement
 INFO: Recovered at delimiter 'RightParen' after skipping 3 tokens
 INFO: Attempting additional statement recovery
-Error at /home/ghuntley/cursed/test_suite/test_programs/parser_fixes/03_corrected_function_parameters.csd:23:1 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
-Error at /home/ghuntley/cursed/test_suite/test_programs/parser_fixes/03_corrected_function_parameters.csd:23:1 - Synchronizing parser after error (context: synchronize)
-Error at /home/ghuntley/cursed/test_suite/test_programs/parser_fixes/03_corrected_function_parameters.csd:23:1 - Failed to parse statement
+Error at /home/ghuntley/cursed/test_suite/test_programs/parser_fixes/03_corrected_function_parameters.💀:23:1 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+Error at /home/ghuntley/cursed/test_suite/test_programs/parser_fixes/03_corrected_function_parameters.💀:23:1 - Synchronizing parser after error (context: synchronize)
+Error at /home/ghuntley/cursed/test_suite/test_programs/parser_fixes/03_corrected_function_parameters.💀:23:1 - Failed to parse statement
 
 === Error Recovery Statistics ===
 Total errors encountered: 4
@@ -30,8 +30,8 @@ Total tokens skipped: 23
 ================================
 Unsupported expression type in interpreter: Literal
 ERROR: No CURSED stdlib implementation found for module 'a': error.ModuleNotFound
-SELF-HOSTING: Please implement stdlib/a/mod.csd for true self-hosting
-❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/parser_fixes/03_corrected_function_parameters.csd: error.UndefinedVariable
+SELF-HOSTING: Please implement stdlib/a/mod.💀 for true self-hosting
+❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/parser_fixes/03_corrected_function_parameters.💀: error.UndefinedVariable
 Executing 0 deferred statements
 error(gpa): memory address 0x737755240000 leaked: 
 /snap/zig/14937/lib/std/array_list.zig:1231:56: 0x128193e in ensureTotalCapacityPrecise (std.zig)

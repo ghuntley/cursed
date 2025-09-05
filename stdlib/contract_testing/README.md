@@ -113,13 +113,13 @@ print_test_summary()
 
 Run the comprehensive test suite:
 ```bash
-cargo run --bin cursed stdlib/contract_testing/test_contract_testing.csd
+cargo run --bin cursed stdlib/contract_testing/test_contract_testing.💀
 ```
 
 Test both interpretation and compilation modes:
 ```bash
-cargo run --bin cursed stdlib/contract_testing/test_contract_testing.csd
-cargo run --bin cursed -- compile stdlib/contract_testing/test_contract_testing.csd
+cargo run --bin cursed stdlib/contract_testing/test_contract_testing.💀
+cargo run --bin cursed -- compile stdlib/contract_testing/test_contract_testing.💀
 ./test_contract_testing
 ```
 

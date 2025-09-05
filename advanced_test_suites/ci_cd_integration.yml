@@ -121,14 +121,14 @@ jobs:
     
     - name: Run comprehensive stdlib test
       run: |
-        ${{ env.CURSED_EXECUTABLE }} comprehensive_stdlib_test.csd
+        ${{ env.CURSED_EXECUTABLE }} comprehensive_stdlib_test.💀
     
     - name: Quick smoke tests
       run: |
         echo "Running quick validation tests..."
-        ${{ env.CURSED_EXECUTABLE }} basic_test.csd
-        ${{ env.CURSED_EXECUTABLE }} arithmetic_test.csd
-        ${{ env.CURSED_EXECUTABLE }} array_test.csd
+        ${{ env.CURSED_EXECUTABLE }} basic_test.💀
+        ${{ env.CURSED_EXECUTABLE }} arithmetic_test.💀
+        ${{ env.CURSED_EXECUTABLE }} array_test.💀
 
   # Edge case testing
   edge-case-tests:
@@ -488,12 +488,12 @@ print('Performance chart saved')
         
         # Test basic functionality for memory leaks
         valgrind --leak-check=full --error-exitcode=1 \
-          ${{ env.CURSED_EXECUTABLE }} basic_test.csd
+          ${{ env.CURSED_EXECUTABLE }} basic_test.💀
         
         # Test comprehensive stdlib for memory leaks
         valgrind --leak-check=full --error-exitcode=1 \
           --show-leak-kinds=all --track-origins=yes \
-          ${{ env.CURSED_EXECUTABLE }} comprehensive_stdlib_test.csd
+          ${{ env.CURSED_EXECUTABLE }} comprehensive_stdlib_test.💀
         
         echo "Memory safety validation completed successfully!"
     

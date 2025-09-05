@@ -321,7 +321,7 @@ pub fn testSimpleLSP() !void {
     
     // Test completion
     const completion_message = 
-        \\{"jsonrpc":"2.0","id":2,"method":"textDocument/completion","params":{"textDocument":{"uri":"file:///test.csd"},"position":{"line":1,"character":4}}}
+        \\{"jsonrpc":"2.0","id":2,"method":"textDocument/completion","params":{"textDocument":{"uri":"file:///test.💀"},"position":{"line":1,"character":4}}}
     ;
     
     if (try handler.handleMessage(completion_message)) |response| {

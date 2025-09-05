@@ -323,7 +323,7 @@ pub const SafeModuleLoader = struct {
         try path_buf.appendSlice(project_root);
         try path_buf.appendSlice("/stdlib/");
         try path_buf.appendSlice(module_name);
-        try path_buf.appendSlice("/mod.csd");
+        try path_buf.appendSlice("/mod.💀");
         
         // Check if file exists
         std.fs.cwd().access(path_buf.items, .{}) catch {

@@ -623,7 +623,7 @@ w.Status(glowup_http.HTTP_NOT_FOUND).JSON(map[tea]tea{
 Run the comprehensive test suite:
 
 ```bash
-cargo run --bin cursed stdlib/glowup_http/test_glowup_http.csd
+cargo run --bin cursed stdlib/glowup_http/test_glowup_http.💀
 ```
 
 The test suite covers:

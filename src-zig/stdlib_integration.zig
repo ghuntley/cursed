@@ -350,7 +350,7 @@ pub const StdlibIntegration = struct {
 
     /// Analyze dependencies for a specific module
     fn analyzeModuleDependencies(self: *StdlibIntegration, module_name: []const u8) !void {
-        const module_path = try std.fmt.allocPrint(self.allocator, "{s}/{s}/mod.csd", .{ self.runtime.stdlib_path, module_name });
+        const module_path = try std.fmt.allocPrint(self.allocator, "{s}/{s}/mod.💀", .{ self.runtime.stdlib_path, module_name });
         defer self.allocator.free(module_path);
         
         const source_code = std.fs.cwd().readFileAlloc(self.allocator, module_path, 1024 * 1024) catch {

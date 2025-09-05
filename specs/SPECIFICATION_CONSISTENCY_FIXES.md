@@ -297,10 +297,10 @@ yeet "math z"                  // ❌ Space in module name (unless quoted)
 
 ### Compliance Test Suite
 Located in `specs/tests/compliance/`:
-- `channel_operations_compliance.csd` - Tests canonical channel syntax
-- `error_handling_compliance.csd` - Tests yikes/fam/shook patterns  
-- `control_flow_compliance.csd` - Tests canonical keywords
-- `import_syntax_compliance.csd` - Tests all import forms
+- `channel_operations_compliance.💀` - Tests canonical channel syntax
+- `error_handling_compliance.💀` - Tests yikes/fam/shook patterns  
+- `control_flow_compliance.💀` - Tests canonical keywords
+- `import_syntax_compliance.💀` - Tests all import forms
 
 ### Validation Commands
 ```bash
@@ -308,10 +308,10 @@ Located in `specs/tests/compliance/`:
 ./zig-out/bin/cursed-zig check specs/tests/compliance/
 
 # Validate migration
-./zig-out/bin/cursed-zig migrate --check legacy_code.csd
+./zig-out/bin/cursed-zig migrate --check legacy_code.💀
 
 # Check deprecation warnings  
-./zig-out/bin/cursed-zig --warn-deprecated legacy_code.csd
+./zig-out/bin/cursed-zig --warn-deprecated legacy_code.💀
 ```
 
 ## 9. Migration Support
@@ -319,13 +319,13 @@ Located in `specs/tests/compliance/`:
 ### Automated Migration Tool
 ```bash
 # Migrate from legacy syntax
-./zig-out/bin/cursed-zig migrate legacy_file.csd
+./zig-out/bin/cursed-zig migrate legacy_file.💀
 
 # Migration with backup
-./zig-out/bin/cursed-zig migrate --backup legacy_file.csd
+./zig-out/bin/cursed-zig migrate --backup legacy_file.💀
 
 # Dry run migration
-./zig-out/bin/cursed-zig migrate --dry-run legacy_file.csd
+./zig-out/bin/cursed-zig migrate --dry-run legacy_file.💀
 ```
 
 ### Migration Patterns

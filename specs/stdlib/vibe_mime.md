@@ -8,7 +8,7 @@ The `vibe_mime` module provides functionality for working with MIME types and en
 ### MIMEType
 Represents a MIME media be_like with type, subtype, and parameters.
 
-```csd
+``.💀
 be_like MIMEType squad {
   Type tea       fr fr Top-level be_like (e.g., "text")
   Subbe_like tea    fr fr Subbe_like (e.g., "plain")
@@ -26,7 +26,7 @@ slay (m MIMEType) WithParameter(name, value tea) MIMEType
 ### Part
 Represents a part of a multipart MIME message.
 
-```csd
+``.💀
 be_like Part squad {
   Header map[tea][]tea
   Body []byte
@@ -41,7 +41,7 @@ slay (p *Part) SetHeader(key, value tea)
 ### MultipartReader
 Reads MIME multipart data.
 
-```csd
+``.💀
 be_like MultipartReader squad {
   fr fr fields not directly accessible
 }
@@ -53,7 +53,7 @@ slay (r *MultipartReader) ReadForm(maxMemory int64) (*Form, tea)
 ### MultipartWriter
 Writes MIME multipart data.
 
-```csd
+``.💀
 be_like MultipartWriter squad {
   fr fr fields not directly accessible
 }
@@ -67,7 +67,7 @@ slay (w *MultipartWriter) Close() tea
 ### Form
 Represents a parsed multipart form.
 
-```csd
+``.💀
 be_like Form squad {
   Value map[tea][]tea
   File map[tea][]*FileHeader
@@ -79,7 +79,7 @@ slay (f *Form) RemoveAll() tea
 ### FileHeader
 Contains the metadata for an uploaded file.
 
-```csd
+``.💀
 be_like FileHeader squad {
   Filename tea
   Header map[tea][]tea
@@ -91,7 +91,7 @@ slay (fh *FileHeader) Open() (File, tea)
 
 ## Core Functions
 
-```csd
+``.💀
 fr fr Parse a MIME be_like tea into a MIMEType squad
 slay ParseMediaType(mediaType tea) (MIMEType, tea)
 
@@ -120,20 +120,20 @@ slay AddExtensionType(ext, mimeType tea) tea
 ## Enhanced Features
 
 - **Content Detection**: Advanced content be_like detection
-  ```csd
+  ``.💀
   detector := vibe_mime.NewDetector()
   detector.AddSignature("PNG", []byte{0x89, 0x50, 0x4E, 0x47})
   mimeType := detector.Detect(fileData)
   ```
 
 - **MIME Database**: Comprehensive MIME be_like database
-  ```csd
+  ``.💀
   db := vibe_mime.GetDatabase()
   allImageTypes := db.TypesWithCategory("image")
   ```
 
 - **Mime Stream Processing**: Process MIME streams incrementally
-  ```csd
+  ``.💀
   processor := vibe_mime.NewStreamProcessor(reader)
   for processor.Next() {
     part := processor.Current()
@@ -142,20 +142,20 @@ slay AddExtensionType(ext, mimeType tea) tea
   ```
 
 - **Header Encoding/Decoding**: Support for encoded words in headers
-  ```csd
+  ``.💀
   encoded := vibe_mime.EncodeHeader("Subject", "Привет мир")
   decoded := vibe_mime.DecodeHeader("=?UTF-8?B?0J/RgNC40LLQtdGCINC80LjRgA==?=")
   ```
 
 - **MIME Tree**: Hierarchical representation of MIME squadures
-  ```csd
+  ``.💀
   tree := vibe_mime.ParseTree(emailData)
   plainTextBody := tree.GetFirstPartByType("text/plain")
   ```
 
 ## Usage Examples
 
-```csd
+``.💀
 fr fr Parsing and working with MIME types
 mimeType, err := vibe_mime.ParseMediaType("text/html; charset=utf-8")
 if err != nah {

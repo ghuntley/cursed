@@ -115,7 +115,7 @@ pub fn main() !void {
 fn printUsage() void {
     print("🔥 CURSED Unified Compiler v1.0.0\n", .{});
     print("\n", .{});
-    print("Usage: cursed-zig [options] <source.csd>\n", .{});
+    print("Usage: cursed-zig [options] <source.💀.💀>\n", .{});
     print("\n", .{});
     print("Options:\n", .{});
     print("  --compile        Generate native executable (LLVM backend)\n", .{});
@@ -129,11 +129,11 @@ fn printUsage() void {
     print("  --help           Show this help message\n", .{});
     print("\n", .{});
     print("Examples:\n", .{});
-    print("  cursed-zig hello.csd                   # Interpret and run\n", .{});
-    print("  cursed-zig --compile hello.csd         # Compile to native binary\n", .{});
-    print("  cursed-zig --emit-ir hello.csd         # Generate LLVM IR (.ll file)\n", .{});
-    print("  cursed-zig --compile -o app hello.csd  # Compile with custom name\n", .{});
-    print("  cursed-zig --debug --verbose hello.csd # Debug interpretation\n", .{});
+    print("  cursed-zig hello.💀.💀                   # Interpret and run\n", .{});
+    print("  cursed-zig --compile hello.💀.💀         # Compile to native binary\n", .{});
+    print("  cursed-zig --emit-ir hello.💀.💀         # Generate LLVM IR (.ll file)\n", .{});
+    print("  cursed-zig --compile -o app hello.💀.💀  # Compile with custom name\n", .{});
+    print("  cursed-zig --debug --verbose hello.💀.💀 # Debug interpretation\n", .{});
     print("\n", .{});
 }
 

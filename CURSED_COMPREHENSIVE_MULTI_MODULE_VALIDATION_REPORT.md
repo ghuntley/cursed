@@ -11,9 +11,9 @@ This report documents the successful validation of CURSED's pure self-hosting ca
 
 ### Test Programs Created
 
-1. **test_comprehensive_multi_module_validation.csd** - Advanced test using import syntax (encountered parsing issues)
-2. **test_advanced_multi_module_stress.csd** - Complex stress test scenarios (not fully tested due to syntax issues)
-3. **test_core_stdlib_validation.csd** - ✅ **SUCCESSFUL** comprehensive validation using correct CURSED syntax
+1. **test_comprehensive_multi_module_validation.💀** - Advanced test using import syntax (encountered parsing issues)
+2. **test_advanced_multi_module_stress.💀** - Complex stress test scenarios (not fully tested due to syntax issues)
+3. **test_core_stdlib_validation.💀** - ✅ **SUCCESSFUL** comprehensive validation using correct CURSED syntax
 
 ### Core Stdlib Modules Validated
 

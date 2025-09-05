@@ -534,10 +534,10 @@ Run the comprehensive test suite:
 
 ```bash
 # Using CURSED interpreter
-./zig-out/bin/cursed-zig stdlib/archivez/test_archivez.csd
+./zig-out/bin/cursed-zig stdlib/archivez/test_archivez.💀
 
 # Using CURSED compiler
-./zig-out/bin/cursed-zig --compile stdlib/archivez/test_archivez.csd
+./zig-out/bin/cursed-zig --compile stdlib/archivez/test_archivez.💀
 ./test_archivez
 ```
 
@@ -579,8 +579,8 @@ To add new archive formats or compression algorithms:
 1. Create format-specific module in `archivez/`
 2. Implement required functions following existing patterns
 3. Add format constants and detection logic
-4. Update main `mod.csd` to integrate new format
-5. Add comprehensive tests in `test_archivez.csd`
+4. Update main `mod.💀` to integrate new format
+5. Add comprehensive tests in `test_archivez.💀`
 6. Update documentation and examples
 
 ## License

@@ -166,10 +166,10 @@ The module includes comprehensive tests covering all functions and edge cases:
 
 ```bash
 # Run chaos_mode tests
-cargo run --bin cursed stdlib/chaos_mode/test_chaos_mode.csd
+cargo run --bin cursed stdlib/chaos_mode/test_chaos_mode.💀
 
 # Test both interpretation and compilation modes
-cargo run --bin cursed -- compile stdlib/chaos_mode/test_chaos_mode.csd
+cargo run --bin cursed -- compile stdlib/chaos_mode/test_chaos_mode.💀
 ./test_chaos_mode
 ```
 

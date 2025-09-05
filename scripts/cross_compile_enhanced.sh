@@ -333,7 +333,7 @@ test_binary() {
     fi
     
     # Create test CURSED program
-    local test_program="$platform_build_dir/test.csd"
+    local test_program="$platform_build_dir/test.💀"
     echo 'vibez.spill("Cross-compilation test successful for '$platform'!")' > "$test_program"
     
     # Test version command

@@ -132,7 +132,7 @@ print_test_summary()
 Run the comprehensive test suite:
 
 ```bash
-cargo run --bin cursed stdlib/security_testing/test_security_testing.csd
+cargo run --bin cursed stdlib/security_testing/test_security_testing.💀
 ```
 
 ## Implementation Notes

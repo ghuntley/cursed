@@ -1,5 +1,5 @@
 # GDB debugging script for CURSED program
-# Generated for: test_simple.csd
+# Generated for: test_simple.💀
 
 file debug/test_simple
 set print pretty on

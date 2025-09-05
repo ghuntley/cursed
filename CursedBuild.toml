@@ -54,7 +54,7 @@ code_generator = "1.0.0"
 
 [testing]
 # Test file patterns to discover
-test_patterns = ["test_*.csd", "*_test.csd", "tests/*.csd"]
+test_patterns = ["test_*.💀", "*_test.💀", "tests/*.💀"]
 
 # Parallel test execution
 parallel_tests = true
@@ -68,24 +68,24 @@ output_format = "standard"
 [targets]
 # Main compiler target
 [targets.cursed]
-main = "src/main.csd"
+main = "src/main.💀"
 build_mode = "native"
 optimization_level = "3"
 
 # Build system target
 [targets.cursed_build]
-main = "src/bin/cursed_build.csd"
+main = "src/bin/cursed_build.💀"
 build_mode = "native"
 optimization_level = "2"
 
 # Test runner target
 [targets.cursed_test]
-main = "src/bin/cursed_test.csd"
+main = "src/bin/cursed_test.💀"
 build_mode = "native"
 
 # Formatter target
 [targets.cursed_fmt]
-main = "src/bin/cursed_fmt.csd"
+main = "src/bin/cursed_fmt.💀"
 build_mode = "native"
 
 [scripts]
@@ -102,8 +102,8 @@ pre_test = "echo 'Running CURSED tests...'"
 post_test = "echo 'CURSED tests complete!'"
 
 # Custom scripts
-bootstrap = "cargo run --bin cursed -- compile src/bootstrap/main.csd"
-self_host = "cargo run --bin cursed -- compile --self-host src/main.csd"
+bootstrap = "cargo run --bin cursed -- compile src/bootstrap/main.💀"
+self_host = "cargo run --bin cursed -- compile --self-host src/main.💀"
 
 [env]
 # Environment variables for builds

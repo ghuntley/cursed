@@ -41,8 +41,8 @@ jobs:
     
     - name: Check CURSED code formatting
       run: |
-        # Check if any .csd files need formatting
-        if find . -name "*.csd" -type f | head -1 | grep -q .; then
+        # Check if any .💀 files need formatting
+        if find . -name "*.💀" -type f | head -1 | grep -q .; then
           echo "Checking CURSED code formatting..."
           cursed-fmt --check --quiet src/ examples/
         else
@@ -85,7 +85,7 @@ jobs:
     - name: Auto-fix formatting
       run: |
         # Format all CURSED files
-        if find . -name "*.csd" -type f | head -1 | grep -q .; then
+        if find . -name "*.💀" -type f | head -1 | grep -q .; then
           cursed-fmt -w src/ examples/
         fi
     

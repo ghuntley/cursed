@@ -54,7 +54,7 @@ sus safe_result := result.unwrap_or_int(div_result, 0)
 ## Testing
 
 ```bash
-cargo run --bin cursed stdlib/result/test_result.csd
+cargo run --bin cursed stdlib/result/test_result.💀
 ```
 
 ## Status

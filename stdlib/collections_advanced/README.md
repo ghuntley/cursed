@@ -116,10 +116,10 @@ sus max_item, success := pq_extract_max(pq)  # Returns 30
 ### Run Comprehensive Tests
 ```bash
 # Test interpretation mode
-cargo run --bin cursed stdlib/collections_advanced/test_collections_advanced.csd
+cargo run --bin cursed stdlib/collections_advanced/test_collections_advanced.💀
 
 # Test compilation mode  
-cargo run --bin cursed -- compile stdlib/collections_advanced/test_collections_advanced.csd
+cargo run --bin cursed -- compile stdlib/collections_advanced/test_collections_advanced.💀
 ./test_collections_advanced
 ```
 

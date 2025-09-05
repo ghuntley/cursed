@@ -68,10 +68,10 @@ Options:
   --help                  Show this help message
 
 Examples:
-  $0 optimize --level=aggressive my_program.csd
-  $0 profile --format=json --output=profile.json my_program.csd
+  $0 optimize --level=aggressive my_program.💀
+  $0 profile --format=json --output=profile.json my_program.💀
   $0 benchmark compiler
-  $0 pgo collect my_program.csd
+  $0 pgo collect my_program.💀
   $0 lto --level=aggressive *.o
   $0 report --format=html performance_report.html
 
@@ -468,12 +468,12 @@ run_memory_analysis() {
     fi
     
     log_info "Compiling $target_file with debug info..."
-    "$BUILD_DIR/cursed-zig" "$target_file" --debug -o "${target_file%.csd}_debug" || {
+    "$BUILD_DIR/cursed-zig" "$target_file" --debug -o "${target_file%.💀}_debug" || {
         log_error "Failed to compile with debug info"
         return
     }
     
-    local debug_binary="${target_file%.csd}_debug"
+    local debug_binary="${target_file%.💀}_debug"
     local memory_report="$RESULTS_DIR/memory_analysis_$(date +%Y%m%d_%H%M%S).txt"
     
     log_info "Running Valgrind memory analysis..."
@@ -502,12 +502,12 @@ run_cpu_analysis() {
     fi
     
     log_info "Compiling $target_file for performance analysis..."
-    "$BUILD_DIR/cursed-zig" "$target_file" -O ReleaseFast -o "${target_file%.csd}_perf" || {
+    "$BUILD_DIR/cursed-zig" "$target_file" -O ReleaseFast -o "${target_file%.💀}_perf" || {
         log_error "Failed to compile for performance analysis"
         return
     }
     
-    local perf_binary="${target_file%.csd}_perf"
+    local perf_binary="${target_file%.💀}_perf"
     local cpu_report="$RESULTS_DIR/cpu_analysis_$(date +%Y%m%d_%H%M%S).txt"
     
     log_info "Running perf analysis..."

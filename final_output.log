@@ -1,10 +1,10 @@
-Error at test_memory_final.csd:20:16 - Error parsing package declaration (context: parseProgram)
-Error at test_memory_final.csd:20:16 - Synchronizing parser after error (context: synchronize)
+Error at test_memory_final.💀:20:16 - Error parsing package declaration (context: parseProgram)
+Error at test_memory_final.💀:20:16 - Synchronizing parser after error (context: synchronize)
 INFO: Recovered at delimiter 'RightParen' after skipping 5 tokens
-Error at test_memory_final.csd:20:42 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
-Error at test_memory_final.csd:20:42 - Synchronizing parser after error (context: synchronize)
+Error at test_memory_final.💀:20:42 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+Error at test_memory_final.💀:20:42 - Synchronizing parser after error (context: synchronize)
 INFO: Recovered at delimiter 'RightParen' after skipping 6 tokens
-Error at test_memory_final.csd:21:18 - Failed to parse statement
+Error at test_memory_final.💀:21:18 - Failed to parse statement
 INFO: Recovered at delimiter 'RightParen' after skipping 6 tokens
 INFO: Attempting additional statement recovery
 
@@ -87,7 +87,7 @@ DEBUG: Evaluating expression type: Identifier
 DEBUG: Environment.get() hop 0: checking env@interpreter.Environment@7ffe45198198 with 2 variables for 'ptr'
 DEBUG: Found 'ptr' in environment@interpreter.Environment@7ffe45198198
 DEBUG: Evaluating expression type: Integer
-❌ Runtime error in test_memory_final.csd: error.TypeMismatch
+❌ Runtime error in test_memory_final.💀: error.TypeMismatch
 Executing 0 deferred statements
 error(gpa): memory address 0x7537964c0000 leaked: 
 /home/ghuntley/cursed/src-zig/parser.zig:3895:42: 0x13f95b3 in allocateMethodCall (cursed_compiler_main.zig)

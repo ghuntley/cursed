@@ -479,7 +479,7 @@ export CURSED_TEST_SEED=54321
      Expected: true
      Actual: false
      Message: Should find substring in string
-     File: test_strings.csd:42
+     File: test_strings.💀:42
 
 📊 Suite Results:
   Passed: 2/3 (66.67%)
@@ -648,16 +648,16 @@ test_with_retry(slay() lit {
 echo "Running CURSED test suite..."
 
 # Run unit tests
-./zig-out/bin/cursed-zig stdlib/testz/run_all_tests.csd
+./zig-out/bin/cursed-zig stdlib/testz/run_all_tests.💀
 
 # Run integration tests
-./zig-out/bin/cursed-zig test_suite/integration_tests.csd
+./zig-out/bin/cursed-zig test_suite/integration_tests.💀
 
 # Run performance tests
-./zig-out/bin/cursed-zig test_suite/performance_tests.csd
+./zig-out/bin/cursed-zig test_suite/performance_tests.💀
 
 # Generate coverage report
-./zig-out/bin/cursed-zig --coverage test_suite/coverage_report.csd
+./zig-out/bin/cursed-zig --coverage test_suite/coverage_report.💀
 
 echo "All tests completed."
 ```

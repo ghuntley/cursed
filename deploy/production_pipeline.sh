@@ -187,7 +187,7 @@ run_tests() {
     # Run CURSED integration tests
     log_progress "Running CURSED integration tests..."
     if [ -f "zig-out/bin/cursed" ]; then
-        local test_file="$PROJECT_ROOT/tmp_test.csd"
+        local test_file="$PROJECT_ROOT/tmp_test.💀"
         echo 'vibez.spill("Integration test passed!")' > "$test_file"
         
         if timeout 30s ./zig-out/bin/cursed "$test_file" >/dev/null 2>&1; then
@@ -201,8 +201,8 @@ run_tests() {
     
     # Run stdlib tests
     log_progress "Running stdlib tests..."
-    if [ -f "comprehensive_stdlib_test.csd" ]; then
-        if timeout 60s ./zig-out/bin/cursed comprehensive_stdlib_test.csd >/dev/null 2>&1; then
+    if [ -f "comprehensive_stdlib_test.💀" ]; then
+        if timeout 60s ./zig-out/bin/cursed comprehensive_stdlib_test.💀 >/dev/null 2>&1; then
             log_success "Stdlib tests passed"
         else
             log_warning "Stdlib tests failed or timed out"
@@ -229,7 +229,7 @@ run_benchmarks() {
     fi
     
     # Create benchmark test file
-    local bench_file="$PROJECT_ROOT/benchmark_test.csd"
+    local bench_file="$PROJECT_ROOT/benchmark_test.💀"
     cat > "$bench_file" << 'EOF'
 slay fibonacci(n drip) drip {
     ready n <= 1 {
@@ -279,7 +279,7 @@ run_memory_analysis() {
     fi
     
     # Create simple test for memory analysis
-    local mem_test="$PROJECT_ROOT/memory_test.csd"
+    local mem_test="$PROJECT_ROOT/memory_test.💀"
     echo 'vibez.spill("Memory test")' > "$mem_test"
     
     log_progress "Running valgrind memory check..."
@@ -321,7 +321,7 @@ run_security_scan() {
     
     # Check for hardcoded secrets or keys
     echo "Checking for potential secrets:" >> "$security_report"
-    if find . -name "*.zig" -o -name "*.rs" -o -name "*.csd" | \
+    if find . -name "*.zig" -o -name "*.rs" -o -name "*.💀" | \
        xargs grep -Hn -i "password\|secret\|key\|token" | \
        grep -v "test\|example\|demo" >> "$security_report" 2>/dev/null; then
         log_warning "Found potential hardcoded secrets"
@@ -382,13 +382,13 @@ run_quality_checks() {
     # Count lines of code
     echo "Lines of Code:" >> "$metrics_file"
     find src-zig -name "*.zig" | xargs wc -l | tail -1 >> "$metrics_file"
-    find stdlib -name "*.csd" | xargs wc -l | tail -1 >> "$metrics_file" 2>/dev/null || true
+    find stdlib -name "*.💀" | xargs wc -l | tail -1 >> "$metrics_file" 2>/dev/null || true
     
     # Count files
     echo "" >> "$metrics_file"
     echo "File Counts:" >> "$metrics_file"
     echo "Zig files: $(find src-zig -name "*.zig" | wc -l)" >> "$metrics_file"
-    echo "CURSED files: $(find stdlib -name "*.csd" 2>/dev/null | wc -l)" >> "$metrics_file"
+    echo "CURSED files: $(find stdlib -name "*.💀" 2>/dev/null | wc -l)" >> "$metrics_file"
     
     log_success "Code quality checks completed"
 }

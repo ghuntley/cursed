@@ -115,14 +115,14 @@ vibez.spillf("Password correct: {}", is_correct)
 ```bash
 echo 'yeet "crypto"
 sus hash = crypto.sha256("test".to_bytes())
-vibez.spillf("Hash: {}", hash.to_hex())' > crypto_test.csd
+vibez.spillf("Hash: {}", hash.to_hex())' > crypto_test.💀
 
-./cursed-unified crypto_test.csd
+./cursed-unified crypto_test.💀
 ```
 
 ### Compilation Mode
 ```bash
-./cursed-unified --compile crypto_test.csd
+./cursed-unified --compile crypto_test.💀
 ./crypto_test
 ```
 

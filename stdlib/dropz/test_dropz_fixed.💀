@@ -1,0 +1,179 @@
+yeet "testz"
+yeet "dropz"
+
+fr fr Test dropz core I/O module functionality (Fixed version)
+
+slay test_initialization() {
+    test_start("dropz initialization")
+    
+    sus result tea = dropz.init_dropz()
+    assert_eq_string(result, "")
+}
+
+slay test_constants() {
+    test_start("Constants and flags") fr fr Test file flags
+    assert_eq_int(dropz.O_RDONLY, 0)
+    assert_eq_int(dropz.O_WRONLY, 1)
+    assert_eq_int(dropz.O_RDWR, 2) fr fr Test permissions
+    assert_eq_int(dropz.MODE_REGULAR, 644)
+    assert_eq_int(dropz.MODE_EXECUTABLE, 755)
+    assert_eq_int(dropz.MODE_DIR, 755) fr fr Test seek constants
+    assert_eq_int(dropz.SEEK_START, 0)
+    assert_eq_int(dropz.SEEK_CURRENT, 1)
+    assert_eq_int(dropz.SEEK_END, 2) fr fr Test error constants
+    assert_eq_string(dropz.EOF, "EOF")
+    assert_eq_string(dropz.ErrInvalid, "invalid argument")
+    assert_eq_string(dropz.ErrPermission, "permission denied")
+    assert_eq_string(dropz.ErrExist, "file already exists")
+    assert_eq_string(dropz.ErrNotExist, "file does not exist")
+    assert_eq_string(dropz.ErrClosed, "file already closed")
+}
+
+slay test_file_operations() {
+    test_start("File operations") fr fr Test read_text_file
+    sus (content, err) = dropz.read_text_file("main.💀")
+    assert_eq_string(err, "")
+    assert_true(len(content) > 0) fr fr Test write_text_file
+    sus write_err tea = dropz.write_text_file("test_output.💀", "Test content", dropz.MODE_REGULAR)
+    assert_eq_string(write_err, "") fr fr Test copy_file
+    sus (copied, copy_err) = dropz.copy_file("main.💀", "main_copy.💀")
+    assert_true(copied > 0)
+    assert_eq_string(copy_err, "")
+}
+
+slay test_file_handles() {
+    test_start("File handle operations") fr fr Test create file
+    sus (file, create_err) = dropz.create("handle_test.💀")
+    assert_eq_string(create_err, "")
+    assert_true(file != cringe) fr fr Test write to file
+    sus (written, write_err) = file.write("File handle test")
+    assert_true(written > 0)
+    assert_eq_string(write_err, "") fr fr Test close
+    sus close_err tea = file.close()
+    assert_eq_string(close_err, "") fr fr Test open file
+    sus (read_file, open_err) = dropz.open("handle_test.💀")
+    assert_eq_string(open_err, "")
+    assert_true(read_file != cringe) fr fr Test read from file
+    sus (n, read_err) = read_file.read(20)
+    assert_true(n > 0)
+    assert_eq_string(read_err, "") fr fr Test seek
+    sus (pos, seek_err) = read_file.seek(5, dropz.SEEK_START)
+    assert_eq_int(pos, 5)
+    assert_eq_string(seek_err, "")
+    
+    sus close_err2 tea = read_file.close()
+    assert_eq_string(close_err2, "")
+}
+
+slay test_byte_reader() {
+    test_start("ByteReader functionality")
+    
+    sus reader *dropz.ByteReader = dropz.new_byte_reader("Hello, World!")
+    assert_true(reader != cringe)
+    
+    sus (n, err) = reader.read(5)
+    assert_eq_int(n, 5)
+    assert_eq_string(err, "") fr fr Test EOF
+    sus (n2, err2) = reader.read(20)
+    assert_true(n2 > 0)
+    assert_eq_string(err2, "") fr fr Read past EOF
+    sus (n3, err3) = reader.read(5)
+    assert_eq_int(n3, 0)
+    assert_eq_string(err3, dropz.EOF)
+}
+
+slay test_byte_writer() {
+    test_start("ByteWriter functionality")
+    
+    sus writer *dropz.ByteWriter = dropz.new_byte_writer()
+    assert_true(writer != cringe)
+    
+    sus (n1, err1) = writer.write("Hello")
+    assert_true(n1 > 0)
+    assert_eq_string(err1, "")
+    
+    sus (n2, err2) = writer.write(", World!")
+    assert_true(n2 > 0)
+    assert_eq_string(err2, "")
+    
+    sus result tea = writer.get_string()
+    assert_eq_string(result, "Hello, World!") fr fr Test close
+    sus close_err tea = writer.close()
+    assert_eq_string(close_err, "") fr fr Test write after close
+    sus (n3, err3) = writer.write("test")
+    assert_eq_int(n3, 0)
+    assert_eq_string(err3, dropz.ErrClosed)
+}
+
+slay test_buffer() {
+    test_start("Buffer functionality")
+    
+    sus buffer *dropz.Buffer = dropz.new_buffer()
+    assert_true(buffer != cringe) fr fr Test write
+    sus (written, write_err) = buffer.write("Buffer test data")
+    assert_true(written > 0)
+    assert_eq_string(write_err, "") fr fr Test read
+    sus (n, read_err) = buffer.read(6)
+    assert_eq_int(n, 6)
+    assert_eq_string(read_err, "") fr fr Test reset
+    buffer.reset()
+    sus content tea = buffer.get_string()
+    assert_eq_string(content, "")
+}
+
+slay test_directory_operations() {
+    test_start("Directory operations") fr fr Test create directory
+    sus mkdir_err tea = dropz.mkdir("test_dir", dropz.MODE_DIR)
+    assert_eq_string(mkdir_err, "") fr fr Test file exists
+    sus file_exists lit = dropz.exists("main.💀")
+    assert_true(file_exists)
+    
+    sus is_directory lit = dropz.is_dir(".")
+    assert_true(is_directory)
+    
+    sus is_regular_file lit = dropz.is_file("main.💀")
+    assert_true(is_regular_file)
+}
+
+slay test_self_hosting_support() {
+    test_start("Self-hosting compiler support") fr fr Test read_source_file
+    sus (source_content, source_err) = dropz.read_source_file("main.💀")
+    assert_eq_string(source_err, "")
+    assert_true(len(source_content) > 0) fr fr Test write_compiled_output
+    sus output_err tea = dropz.write_compiled_output("test_output", "Compiled content")
+    assert_eq_string(output_err, "") fr fr Test temp_file
+    sus (temp_file, temp_err) = dropz.temp_file("compiler_temp.ll")
+    assert_eq_string(temp_err, "")
+    assert_true(temp_file != cringe)
+    
+    sus temp_close_err tea = temp_file.close()
+    assert_eq_string(temp_close_err, "")
+}
+
+slay test_error_handling() {
+    test_start("Error handling") fr fr Test file not found
+    sus (content, err) = dropz.read_text_file("nonexistent.💀")
+    assert_eq_string(content, "")
+    assert_eq_string(err, dropz.ErrNotExist) fr fr Test open nonexistent file
+    sus (file, open_err) = dropz.open("nonexistent.💀")
+    assert_true(file == cringe)
+    assert_eq_string(open_err, dropz.ErrNotExist)
+}
+
+fr fr Run all tests
+test_start("dropz Core I/O Module Tests (Fixed)")
+
+dropz.init_dropz()
+
+test_initialization()
+test_constants()
+test_file_operations()
+test_file_handles()
+test_byte_reader()
+test_byte_writer()
+test_buffer()
+test_directory_operations()
+test_self_hosting_support()
+test_error_handling()
+
+print_test_summary()

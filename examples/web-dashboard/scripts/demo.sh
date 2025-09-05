@@ -38,7 +38,7 @@ echo -e "${BLUE}Step 1: Testing shared library modules...${NC}"
 echo -e "${YELLOW}Testing data models and configuration...${NC}"
 
 # Test shared modules
-if ./zig-out/bin/cursed-zig examples/web-dashboard/shared/models.csd; then
+if ./zig-out/bin/cursed-zig examples/web-dashboard/shared/models.💀; then
     echo -e "${GREEN}✅ Shared data models loaded successfully${NC}"
 else
     echo -e "${RED}❌ Shared data models failed${NC}"
@@ -49,21 +49,21 @@ echo -e "${YELLOW}Running CLI admin commands...${NC}"
 
 # Demonstrate CLI tool
 echo -e "\n${PURPLE}🔧 CLI Administration Tool Demo:${NC}"
-./zig-out/bin/cursed-zig examples/web-dashboard/cli/admin.csd
+./zig-out/bin/cursed-zig examples/web-dashboard/cli/admin.💀
 
 echo -e "\n${BLUE}Step 3: Testing backend API server...${NC}"
 echo -e "${YELLOW}Starting backend server in test mode...${NC}"
 
 # Test backend server
 echo -e "\n${PURPLE}🖥️  Backend API Server Demo:${NC}"
-timeout 10s ./zig-out/bin/cursed-zig examples/web-dashboard/backend/server.csd || true
+timeout 10s ./zig-out/bin/cursed-zig examples/web-dashboard/backend/server.💀 || true
 
 echo -e "\n${BLUE}Step 4: Testing frontend application...${NC}"
 echo -e "${YELLOW}Loading frontend WebAssembly application...${NC}"
 
 # Test frontend
 echo -e "\n${PURPLE}🌐 Frontend WebAssembly Demo:${NC}"
-timeout 5s ./zig-out/bin/cursed-zig examples/web-dashboard/frontend/app.csd || true
+timeout 5s ./zig-out/bin/cursed-zig examples/web-dashboard/frontend/app.💀 || true
 
 echo -e "\n${GREEN}🎉 Demo Complete!${NC}"
 echo -e "${BLUE}=============================${NC}"

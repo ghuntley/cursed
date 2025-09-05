@@ -21,11 +21,11 @@ The CURSED File Watching System provides comprehensive, cross-platform file syst
 
 ```
 stdlib/filez/
-├── file_watching_system.csd      # Main CURSED API and logic
+├── file_watching_system.💀      # Main CURSED API and logic
 ├── file_watch_native_impl.zig    # Native Zig implementation
-├── file_watch_demo.csd          # Comprehensive usage examples
-├── test_file_watching.csd       # Complete test suite
-├── file_watch_integration_test.csd  # Integration tests
+├── file_watch_demo.💀          # Comprehensive usage examples
+├── test_file_watching.💀       # Complete test suite
+├── file_watch_integration_test.💀  # Integration tests
 └── FILE_WATCHING_IMPLEMENTATION_COMPLETE.md  # This documentation
 ```
 
@@ -182,13 +182,13 @@ slay glob_match(pattern tea, path tea) lit
 ### Running Tests
 ```bash
 # Run complete test suite
-./zig-out/bin/cursed-zig stdlib/filez/test_file_watching.csd
+./zig-out/bin/cursed-zig stdlib/filez/test_file_watching.💀
 
 # Run integration tests  
-./zig-out/bin/cursed-zig stdlib/filez/file_watch_integration_test.csd
+./zig-out/bin/cursed-zig stdlib/filez/file_watch_integration_test.💀
 
 # Run demo with examples
-./zig-out/bin/cursed-zig stdlib/filez/file_watch_demo.csd
+./zig-out/bin/cursed-zig stdlib/filez/file_watch_demo.💀
 ```
 
 ## 🔧 Usage Examples

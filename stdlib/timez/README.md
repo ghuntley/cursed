@@ -174,7 +174,7 @@ The timez module uses a runtime bridge pattern where critical functions are impl
 ## Testing
 Run the comprehensive test suite:
 ```bash
-./zig-out/bin/cursed stdlib/timez/test_timez.csd
+./zig-out/bin/cursed stdlib/timez/test_timez.💀
 ```
 
 The test suite covers:

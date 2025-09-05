@@ -25,7 +25,7 @@ cd my-web-app
 
 This creates:
 - `CursedPackage.toml` - Package manifest
-- `src/main.csd` - Main source file
+- `src/main.💀` - Main source file
 - Basic project structure
 
 ### 2. Add Dependencies
@@ -115,13 +115,13 @@ Create a workspace with multiple CURSED packages:
 my-workspace/
 ├── CursedPackage.toml
 ├── web-server/
-│   ├── src/main.csd
+│   ├── src/main.💀
 │   └── CursedPackage.toml
 ├── shared-utils/
-│   ├── src/lib.csd
+│   ├── src/lib.💀
 │   └── CursedPackage.toml
 └── cli-tool/
-    ├── src/main.csd
+    ├── src/main.💀
     └── CursedPackage.toml
 ```
 

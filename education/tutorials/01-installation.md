@@ -83,14 +83,14 @@ choco install zig llvm
 Create a test file to verify everything works:
 
 ```bash
-# Create hello.csd
-echo 'yeet "vibez"; vibez.spill("Hello, CURSED!")' > hello.csd
+# Create hello.💀
+echo 'yeet "vibez"; vibez.spill("Hello, CURSED!")' > hello.💀
 
 # Run with interpreter
-cursed-zig hello.csd
+cursed-zig hello.💀
 
 # Compile to binary
-cursed-zig --compile hello.csd
+cursed-zig --compile hello.💀
 ./hello
 ```
 

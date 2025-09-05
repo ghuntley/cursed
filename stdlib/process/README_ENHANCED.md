@@ -261,7 +261,7 @@ sus limited_options ProcessOptions = ProcessOptions{
 Run the comprehensive test suite:
 
 ```bash
-./zig-out/bin/cursed-zig stdlib/process/comprehensive_procesz_test.csd
+./zig-out/bin/cursed-zig stdlib/process/comprehensive_procesz_test.💀
 ```
 
 ### Test Coverage

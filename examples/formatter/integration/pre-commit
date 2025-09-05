@@ -12,8 +12,8 @@ if ! command -v cursed-fmt &> /dev/null; then
     exit 1
 fi
 
-# Get list of staged .csd files
-STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACMR | grep '\.csd$' || true)
+# Get list of staged .💀 files
+STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACMR | grep '\.💀$' || true)
 
 if [ -z "$STAGED_FILES" ]; then
     # No CURSED files staged, nothing to do

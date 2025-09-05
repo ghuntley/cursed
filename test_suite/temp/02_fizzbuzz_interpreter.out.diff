@@ -1,13 +1,13 @@
 --- /tmp/tmp.WjE6PLi9a6	2025-08-31 12:01:50.878085495 +0300
 +++ /tmp/tmp.0KV5YyoYV3	2025-08-31 12:01:50.878085495 +0300
 @@ -1,180 +0,0 @@
--Error at /home/ghuntley/cursed/test_suite/test_programs/complex/02_fizzbuzz.csd:10:11 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
--Error at /home/ghuntley/cursed/test_suite/test_programs/complex/02_fizzbuzz.csd:10:11 - Synchronizing parser after error (context: synchronize)
+-Error at /home/ghuntley/cursed/test_suite/test_programs/complex/02_fizzbuzz.💀:10:11 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+-Error at /home/ghuntley/cursed/test_suite/test_programs/complex/02_fizzbuzz.💀:10:11 - Synchronizing parser after error (context: synchronize)
 -INFO: Recovered at statement keyword 'Lowkey' after skipping 1 tokens
--Error at /home/ghuntley/cursed/test_suite/test_programs/complex/02_fizzbuzz.csd:10:16 - Error parsing function statement
+-Error at /home/ghuntley/cursed/test_suite/test_programs/complex/02_fizzbuzz.💀:10:16 - Error parsing function statement
 -INFO: Recovered at statement keyword 'Slay' after skipping 1 tokens
 -INFO: Attempting additional statement recovery
--Error at /home/ghuntley/cursed/test_suite/test_programs/complex/02_fizzbuzz.csd:21:1 - Failed to parse statement
+-Error at /home/ghuntley/cursed/test_suite/test_programs/complex/02_fizzbuzz.💀:21:1 - Failed to parse statement
 -INFO: Recovered at delimiter 'RightParen' after skipping 3 tokens
 -INFO: Attempting additional statement recovery
 -

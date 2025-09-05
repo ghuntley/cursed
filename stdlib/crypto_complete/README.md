@@ -172,10 +172,10 @@ Run comprehensive tests to verify all cryptographic functions:
 
 ```bash
 # Test interpretation mode
-cargo run --bin cursed stdlib/crypto_complete/test_crypto_complete.csd
+cargo run --bin cursed stdlib/crypto_complete/test_crypto_complete.💀
 
 # Test compilation mode
-cargo run --bin cursed -- compile stdlib/crypto_complete/test_crypto_complete.csd
+cargo run --bin cursed -- compile stdlib/crypto_complete/test_crypto_complete.💀
 ./test_crypto_complete
 ```
 

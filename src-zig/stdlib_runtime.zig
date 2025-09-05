@@ -16,7 +16,7 @@ const interpreter = @import("interpreter.zig");
 /// for pure CURSED stdlib modules (vibez, stringz, mathz, timez, concurrenz).
 ///
 /// Architecture:
-/// - Module Discovery: Find and cache stdlib .csd files
+/// - Module Discovery: Find and cache stdlib .💀 files
 /// - JIT Compilation: Compile CURSED modules to native code
 /// - Symbol Resolution: Link stdlib functions with main program
 /// - Runtime Caching: Cache compiled modules for performance
@@ -194,8 +194,8 @@ pub const StdlibRuntime = struct {
         var iterator = dir.iterate();
         while (try iterator.next()) |entry| {
             if (entry.kind == .directory) {
-                // Check if directory contains mod.csd
-                const mod_file_path = try std.fmt.allocPrint(self.allocator, "{s}/{s}/mod.csd", .{ self.stdlib_path, entry.name });
+                // Check if directory contains mod.💀.💀
+                const mod_file_path = try std.fmt.allocPrint(self.allocator, "{s}/{s}/mod.💀", .{ self.stdlib_path, entry.name });
                 defer self.allocator.free(mod_file_path);
                 
                 std.fs.cwd().access(mod_file_path, .{}) catch continue;
@@ -215,7 +215,7 @@ pub const StdlibRuntime = struct {
         const start_time = std.time.nanoTimestamp();
         
         // Check if module is already loaded and up-to-date
-        const module_path = try std.fmt.allocPrint(self.allocator, "{s}/{s}/mod.csd", .{ self.stdlib_path, module_name });
+        const module_path = try std.fmt.allocPrint(self.allocator, "{s}/{s}/mod.💀", .{ self.stdlib_path, module_name });
         defer self.allocator.free(module_path);
 
         if (self.hot_reload_enabled) {

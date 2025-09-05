@@ -28,7 +28,7 @@ source_dirs = [
 
 # File patterns to include (glob patterns)
 include_patterns = [
-    "**/*.csd",     # CURSED source files
+    "**/*.💀",     # CURSED source files
     "**/*.rs",      # Rust implementation files
     "**/*.md",      # Markdown documentation
     "**/*.toml",    # Configuration files

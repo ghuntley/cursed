@@ -547,10 +547,10 @@ sha256sum -c SHA256SUMS
 
 \`\`\`bash
 # Create hello world program
-echo 'yeet "vibez"; vibez.spill("Hello, World!");' > hello.csd
+echo 'yeet "vibez"; vibez.spill("Hello, World!");' > hello.💀
 
 # Run it
-cursed hello.csd
+cursed hello.💀
 \`\`\`
 
 ## Resources

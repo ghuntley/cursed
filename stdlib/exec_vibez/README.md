@@ -381,7 +381,7 @@ while monitor_active {
 Run the comprehensive test suite:
 
 ```bash
-cargo run --bin cursed stdlib/exec_vibez/test_exec_vibez.csd
+cargo run --bin cursed stdlib/exec_vibez/test_exec_vibez.💀
 ```
 
 ## Module Integration

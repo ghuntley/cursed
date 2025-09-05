@@ -66,11 +66,11 @@ The system was already working correctly. The confusion arose from:
 
 ```bash
 # Test that compilation and execution works
-./zig-out/bin/cursed-compiler --compile minimal_debug_test.csd --output minimal_debug_test_binary
+./zig-out/bin/cursed-compiler --compile minimal_debug_test.💀 --output minimal_debug_test_binary
 ./minimal_debug_test_binary  # Outputs: "Hello from compiled Cursed!"
 
 # Test void returns work
-./zig-out/bin/cursed-compiler --compile test_hello_void_return.csd --output test_hello_void_return_binary  
+./zig-out/bin/cursed-compiler --compile test_hello_void_return.💀 --output test_hello_void_return_binary  
 ./test_hello_void_return_binary  # Outputs: "Hello, CURSED World!"
 ```
 

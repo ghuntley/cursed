@@ -81,9 +81,9 @@ fi
 
 # Test 5: Compiler Functionality
 echo -e "\n${BLUE}✅ Test 5: Compiler Functionality${NC}"
-echo 'vibez.spill("Optimization validation test!")' > validation_test.csd
+echo 'vibez.spill("Optimization validation test!")' > validation_test.💀
 
-if ./cursed-simple validation_test.csd >/dev/null 2>&1; then
+if ./cursed-simple validation_test.💀 >/dev/null 2>&1; then
     echo -e "${GREEN}✅ PASS: Compiler execution${NC}"
 else
     echo -e "${RED}❌ FAIL: Compiler execution${NC}"
@@ -135,7 +135,7 @@ if (( $(echo "$build_time < 5.0" | awk '{print ($1 == 1)}') )); then ((passed_te
 if [[ $success_rate -ge 80 ]]; then ((passed_tests++)); fi
 if [[ -f "scripts/build_cache_system.sh" ]]; then ((passed_tests++)); fi
 if [[ -f "scripts/build_performance_monitor.sh" ]]; then ((passed_tests++)); fi
-if ./cursed-simple validation_test.csd >/dev/null 2>&1; then ((passed_tests++)); fi
+if ./cursed-simple validation_test.💀 >/dev/null 2>&1; then ((passed_tests++)); fi
 if [[ $binary_count -gt 5 ]]; then ((passed_tests++)); fi
 if [[ $scripts_found -eq ${#required_scripts[@]} ]]; then ((passed_tests++)); fi
 
@@ -152,7 +152,7 @@ else
 fi
 
 # Cleanup
-rm -f validation_test.csd
+rm -f validation_test.💀
 
 echo -e "\n${BLUE}📋 Optimization Features Validated${NC}"
 echo "===================================="

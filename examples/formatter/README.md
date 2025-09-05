@@ -6,9 +6,9 @@ This directory contains examples demonstrating the CURSED code formatter (`curse
 
 ### 📄 Code Examples
 
-- **[`unformatted.csd`](unformatted.csd)** - Example of poorly formatted CURSED code
-- **[`formatted.csd`](formatted.csd)** - The same code after formatting with default settings
-- **[`complex-example.csd`](complex-example.csd)** - Complex CURSED code showing various formatting scenarios
+- **[`unformatted.💀`](unformatted.💀)** - Example of poorly formatted CURSED code
+- **[`formatted.💀`](formatted.💀)** - The same code after formatting with default settings
+- **[`complex-example.💀`](complex-example.💀)** - Complex CURSED code showing various formatting scenarios
 
 ### ⚙️ Configuration Examples
 
@@ -30,43 +30,43 @@ This directory contains examples demonstrating the CURSED code formatter (`curse
 
 ```bash
 # Preview formatting changes
-cursed-fmt unformatted.csd
+cursed-fmt unformatted.💀
 
 # Apply formatting
-cursed-fmt -w unformatted.csd
+cursed-fmt -w unformatted.💀
 ```
 
 ### 2. Compare Before and After
 
 ```bash
 # Show the difference
-cursed-fmt --diff unformatted.csd
+cursed-fmt --diff unformatted.💀
 
 # Compare with the formatted version
-diff unformatted.csd formatted.csd
+diff unformatted.💀 formatted.💀
 ```
 
 ### 3. Use Different Configurations
 
 ```bash
 # Use minimal configuration
-cursed-fmt --config=config-examples/minimal.toml unformatted.csd
+cursed-fmt --config=config-examples/minimal.toml unformatted.💀
 
 # Use strict team configuration
-cursed-fmt --config=config-examples/strict-team.toml unformatted.csd
+cursed-fmt --config=config-examples/strict-team.toml unformatted.💀
 
 # Use compact configuration
-cursed-fmt --config=config-examples/compact.toml unformatted.csd
+cursed-fmt --config=config-examples/compact.toml unformatted.💀
 ```
 
 ### 4. Format All Examples
 
 ```bash
 # Check formatting of all examples
-cursed-fmt --check *.csd
+cursed-fmt --check *.💀
 
 # Format all CURSED files in this directory
-cursed-fmt -w *.csd
+cursed-fmt -w *.💀
 ```
 
 ## Integration Examples
@@ -162,7 +162,7 @@ function_args_layout = "never"
 ### 1. Preview Changes
 ```bash
 # See what would change with your config
-cursed-fmt --config=your-config.toml --diff complex-example.csd
+cursed-fmt --config=your-config.toml --diff complex-example.💀
 ```
 
 ### 2. Validate Configuration
@@ -174,11 +174,11 @@ cursed-fmt --validate-config --config=your-config.toml
 ### 3. Test on Real Code
 ```bash
 # Format a test file with your config
-cp unformatted.csd test-formatting.csd
-cursed-fmt --config=your-config.toml -w test-formatting.csd
+cp unformatted.💀 test-formatting.💀
+cursed-fmt --config=your-config.toml -w test-formatting.💀
 
 # Compare results
-diff unformatted.csd test-formatting.csd
+diff unformatted.💀 test-formatting.💀
 ```
 
 ## Creating Your Own Examples
@@ -189,14 +189,14 @@ Create pairs of files showing formatting improvements:
 
 ```bash
 # Create unformatted version
-cat > my-example-unformatted.csd << 'EOF'
+cat > my-example-unformatted.💀 << 'EOF'
 sus messy=map[string]int{"a":1,"b":2}
 slay messyFunction(x int,y string,z bool)int{vibe x+len(y)}
 EOF
 
 # Format it
-cursed-fmt -w my-example-unformatted.csd
-mv my-example-unformatted.csd my-example-formatted.csd
+cursed-fmt -w my-example-unformatted.💀
+mv my-example-unformatted.💀 my-example-formatted.💀
 ```
 
 ### 2. Configuration Testing
@@ -205,12 +205,12 @@ Test different configurations on the same code:
 
 ```bash
 # Test with different configs
-cursed-fmt --config=config-examples/minimal.toml my-code.csd > minimal-result.csd
-cursed-fmt --config=config-examples/strict-team.toml my-code.csd > strict-result.csd
-cursed-fmt --config=config-examples/compact.toml my-code.csd > compact-result.csd
+cursed-fmt --config=config-examples/minimal.toml my-code.💀 > minimal-result.💀
+cursed-fmt --config=config-examples/strict-team.toml my-code.💀 > strict-result.💀
+cursed-fmt --config=config-examples/compact.toml my-code.💀 > compact-result.💀
 
 # Compare results
-diff minimal-result.csd strict-result.csd
+diff minimal-result.💀 strict-result.💀
 ```
 
 ## Common Use Cases
@@ -219,7 +219,7 @@ diff minimal-result.csd strict-result.csd
 
 ```bash
 # Format entire codebase with specific config
-find src/ -name "*.csd" -exec cursed-fmt --config=config-examples/strict-team.toml -w {} \;
+find src/ -name "*.💀" -exec cursed-fmt --config=config-examples/strict-team.toml -w {} \;
 
 # Or use the format script
 ./integration/format.sh --config=config-examples/strict-team.toml src/
@@ -257,7 +257,7 @@ git commit -m "Auto-fix formatting [skip ci]"
 
 ```bash
 # Format only files changed in current branch
-git diff --name-only main..HEAD | grep '\.csd$' | xargs cursed-fmt -w
+git diff --name-only main..HEAD | grep '\.💀$' | xargs cursed-fmt -w
 ```
 
 ### 2. Exclude Specific Files
@@ -271,7 +271,7 @@ cursed-fmt -w --exclude='**/generated/*' src/
 
 ```bash
 # Parallel formatting
-find src/ -name "*.csd" | xargs -P 4 -I {} cursed-fmt -w {}
+find src/ -name "*.💀" | xargs -P 4 -I {} cursed-fmt -w {}
 ```
 
 ### 4. Integration with Other Tools

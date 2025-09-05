@@ -193,7 +193,7 @@ sus selected normie = channel_select(cases, based)  # with default
 
 Run comprehensive tests with:
 ```bash
-cargo run --bin cursed stdlib/channel_core/test_channel_core.csd
+cargo run --bin cursed stdlib/channel_core/test_channel_core.💀
 ```
 
 The test suite covers:

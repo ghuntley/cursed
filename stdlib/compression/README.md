@@ -199,16 +199,16 @@ Run the comprehensive test suite:
 
 ```bash
 # Test interpretation mode
-cargo run --bin cursed stdlib/compression/test_compression.csd
+cargo run --bin cursed stdlib/compression/test_compression.💀
 
 # Test compilation mode  
-cargo run --bin cursed -- compile stdlib/compression/test_compression.csd
+cargo run --bin cursed -- compile stdlib/compression/test_compression.💀
 ./test_compression
 
 # Both-mode verification
 test_both_modes() {
-    cargo run --bin cursed stdlib/compression/test_compression.csd > interp_output.txt
-    cargo run --bin cursed -- compile stdlib/compression/test_compression.csd
+    cargo run --bin cursed stdlib/compression/test_compression.💀 > interp_output.txt
+    cargo run --bin cursed -- compile stdlib/compression/test_compression.💀
     ./test_compression > comp_output.txt
     diff interp_output.txt comp_output.txt
 }
@@ -218,8 +218,8 @@ test_both_modes() {
 
 ```
 stdlib/compression/
-├── mod.csd                    # Main module implementation
-├── test_compression.csd       # Comprehensive test suite  
+├── mod.💀                    # Main module implementation
+├── test_compression.💀       # Comprehensive test suite  
 └── README.md                  # This documentation
 ```
 

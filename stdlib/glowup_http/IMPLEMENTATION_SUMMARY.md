@@ -8,13 +8,13 @@ Successfully implemented a comprehensive HTTP client/server framework with WebSo
 
 ```
 stdlib/glowup_http/
-├── mod.csd                     # Main framework implementation (850+ lines)
-├── test_glowup_http.csd        # Comprehensive test suite (200+ tests)
+├── mod.💀                     # Main framework implementation (850+ lines)
+├── test_glowup_http.💀        # Comprehensive test suite (200+ tests)
 ├── README.md                   # Complete documentation
-├── example_server.csd          # HTTP server examples
-├── example_client.csd          # HTTP client examples  
-├── example_websocket.csd       # WebSocket examples
-├── demo_comprehensive.csd      # Full feature demonstration
+├── example_server.💀          # HTTP server examples
+├── example_client.💀          # HTTP client examples  
+├── example_websocket.💀       # WebSocket examples
+├── demo_comprehensive.💀      # Full feature demonstration
 └── IMPLEMENTATION_SUMMARY.md   # This summary
 ```
 
@@ -129,17 +129,17 @@ websocket_ping()
 ### Commands Verified
 ```bash
 # Run tests in interpretation mode
-cargo run --bin cursed stdlib/glowup_http/test_glowup_http.csd
+cargo run --bin cursed stdlib/glowup_http/test_glowup_http.💀
 
 # Compile and run tests
-cargo run --bin cursed -- compile stdlib/glowup_http/test_glowup_http.csd
+cargo run --bin cursed -- compile stdlib/glowup_http/test_glowup_http.💀
 ./test_glowup_http
 
 # Run examples
-cargo run --bin cursed stdlib/glowup_http/example_server.csd
-cargo run --bin cursed stdlib/glowup_http/example_client.csd
-cargo run --bin cursed stdlib/glowup_http/example_websocket.csd
-cargo run --bin cursed stdlib/glowup_http/demo_comprehensive.csd
+cargo run --bin cursed stdlib/glowup_http/example_server.💀
+cargo run --bin cursed stdlib/glowup_http/example_client.💀
+cargo run --bin cursed stdlib/glowup_http/example_websocket.💀
+cargo run --bin cursed stdlib/glowup_http/demo_comprehensive.💀
 ```
 
 ## 🏆 Production Readiness

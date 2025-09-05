@@ -219,7 +219,7 @@ export class CursedRefactoringProvider implements vscode.Disposable {
             }
             
             // Show file picker for destination
-            const workspaceFiles = await vscode.workspace.findFiles('**/*.csd');
+            const workspaceFiles = await vscode.workspace.findFiles('**/*.💀');
             const fileItems = workspaceFiles.map(file => ({
                 label: vscode.workspace.asRelativePath(file),
                 description: file.fsPath,

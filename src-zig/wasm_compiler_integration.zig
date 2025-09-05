@@ -590,8 +590,8 @@ pub fn printWasmHelp() void {
         \\CURSED WebAssembly Compilation:
         \\
         \\Usage:
-        \\  cursed-zig --backend wasm [options] <input.csd>
-        \\  cursed-zig --target wasm32-<target> [options] <input.csd>
+        \\  cursed-zig --backend wasm [options] <input.💀.💀>
+        \\  cursed-zig --target wasm32-<target> [options] <input.💀.💀>
         \\
         \\WASM Targets:
         \\  wasm32-browser      Browser-compatible WASM with JS interop (default)
@@ -611,13 +611,13 @@ pub fn printWasmHelp() void {
         \\
         \\Examples:
         \\  # Compile for browser
-        \\  cursed-zig --backend wasm --generate-html hello.csd
+        \\  cursed-zig --backend wasm --generate-html hello.💀.💀
         \\
         \\  # Compile for WASI
-        \\  cursed-zig --target wasm32-wasi server.csd
+        \\  cursed-zig --target wasm32-wasi server.💀.💀
         \\
         \\  # Optimized browser build
-        \\  cursed-zig --target wasm32-browser -O --enable-simd app.csd
+        \\  cursed-zig --target wasm32-browser -O --enable-simd app.💀.💀
         \\
     );
 }

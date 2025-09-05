@@ -409,7 +409,7 @@ export fn cursed_plugin_get_api_version() u32 {
 }
 
 export fn cursed_plugin_get_supported_extensions() ?[*:0]u8 {
-    const extensions = ".so,.dylib,.dll,.csd_plugin";
+    const extensions = ".so,.dylib,.dll,.💀_plugin";
     return cursedToCString(extensions) catch null;
 }
 

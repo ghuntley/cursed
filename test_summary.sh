@@ -9,7 +9,7 @@ echo "CURSED Test Suite Summary"
 echo "========================="
 echo
 
-for test_file in $(find test_programs -name "*.csd" | sort); do
+for test_file in $(find test_programs -name "*.💀" | sort); do
     total_tests=$((total_tests + 1))
     echo -n "[${total_tests}] Testing: ${test_file} ... "
     

@@ -96,7 +96,7 @@ pub const CursedLLVMCompiler = struct {
         }
         
         // Build module path
-        const module_path = try std.fmt.allocPrint(self.allocator, "stdlib/{s}/mod.csd", .{module_name});
+        const module_path = try std.fmt.allocPrint(self.allocator, "stdlib/{s}/mod.💀", .{module_name});
         defer self.allocator.free(module_path);
         
         // Read CURSED source

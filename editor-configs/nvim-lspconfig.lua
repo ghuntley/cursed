@@ -82,11 +82,11 @@ lspconfig.cursed.setup({
   end,
 })
 
--- Set up file type detection for .csd files
+-- Set up file type detection for .💀 files
 vim.cmd([[
   augroup CursedFiletype
     autocmd!
-    autocmd BufRead,BufNewFile *.csd set filetype=cursed
+    autocmd BufRead,BufNewFile *.💀 set filetype=cursed
   augroup END
 ]])
 

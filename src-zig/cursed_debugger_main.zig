@@ -92,7 +92,7 @@ fn parseArguments(allocator: std.mem.Allocator, args: [][:0]u8) !DebuggerOptions
 fn printUsage(program_name: []const u8) void {
     print("🐛 CURSED Interactive Debugger v1.0\n", .{});
     print("\n", .{});
-    print("Usage: {s} <source_file.csd> [options]\n", .{program_name});
+    print("Usage: {s} <source_file.💀.💀> [options]\n", .{program_name});
     print("\n", .{});
     print("Options:\n", .{});
     print("  -h, --help              Show this help message\n", .{});
@@ -103,10 +103,10 @@ fn printUsage(program_name: []const u8) void {
     print("  -s, --script <file>     Run debug script from file\n", .{});
     print("\n", .{});
     print("Examples:\n", .{});
-    print("  {s} program.csd                    # Interactive debugging\n", .{program_name});
-    print("  {s} program.csd -b 10 -b 25        # Start with breakpoints\n", .{program_name});
-    print("  {s} program.csd -r                 # Auto-run program\n", .{program_name});
-    print("  {s} program.csd -s debug.script    # Run debug script\n", .{program_name});
+    print("  {s} program.💀.💀                    # Interactive debugging\n", .{program_name});
+    print("  {s} program.💀.💀 -b 10 -b 25        # Start with breakpoints\n", .{program_name});
+    print("  {s} program.💀.💀 -r                 # Auto-run program\n", .{program_name});
+    print("  {s} program.💀.💀 -s debug.script    # Run debug script\n", .{program_name});
     print("\n", .{});
     print("Interactive Commands:\n", .{});
     print("  help, h                 - Show debugger help\n", .{});
@@ -299,7 +299,7 @@ pub fn main() !void {
             print("🔴 Breakpoint set at line {d}\n", .{line_num});
             
             const key = @import("debugger.zig").BreakpointKey{
-                .file = try allocator.dupe(u8, "main.csd"),
+                .file = try allocator.dupe(u8, "main.💀"),
                 .line = line_num,
             };
             
@@ -356,16 +356,16 @@ test "argument parsing" {
     const allocator = gpa.allocator();
     
     // Test basic usage
-    const args1 = [_][]const u8{ "cursed-debug", "test.csd" };
+    const args1 = [_][]const u8{ "cursed-debug", "test.💀" };
     var options1 = try parseArguments(allocator, &args1);
     defer options1.deinit();
     
-    try testing.expect(std.mem.eql(u8, options1.source_file, "test.csd"));
+    try testing.expect(std.mem.eql(u8, options1.source_file, "test.💀"));
     try testing.expect(options1.interactive);
     try testing.expect(!options1.auto_run);
     
     // Test with breakpoints
-    const args2 = [_][]const u8{ "cursed-debug", "test.csd", "--breakpoint", "10", "-b", "20" };
+    const args2 = [_][]const u8{ "cursed-debug", "test.💀", "--breakpoint", "10", "-b", "20" };
     var options2 = try parseArguments(allocator, &args2);
     defer options2.deinit();
     

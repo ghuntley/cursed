@@ -19,7 +19,7 @@ build_mode = "native"
 testz = "1.0.0"
 
 [testing]
-test_patterns = ["test_*.csd", "*_test.csd"]
+test_patterns = ["test_*.💀", "*_test.💀"]
 parallel_tests = true
 
 [package]

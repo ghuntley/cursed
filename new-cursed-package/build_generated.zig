@@ -6,9 +6,9 @@ const std = @import("std");
 pub fn addDependencies(b: *std.build.Builder) void {
     // Package dependencies
     // testz
-    b.addPackagePath("testz", ".cursed/packages/testz/mod.csd");
+    b.addPackagePath("testz", ".cursed/packages/testz/mod.💀");
 }
 
 pub const dependencies = struct {
-    pub const testz = ".cursed/packages/testz/mod.csd";
+    pub const testz = ".cursed/packages/testz/mod.💀";
 };

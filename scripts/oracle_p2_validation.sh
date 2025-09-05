@@ -115,25 +115,25 @@ echo "----------------------------"
 mkdir -p temp_test_files
 
 # Test 1: Basic interpreter functionality
-cat > temp_test_files/basic_test.csd << 'EOF'
+cat > temp_test_files/basic_test.💀 << 'EOF'
 sus x drip = 42;
 vibez.spill("Hello from Oracle P2 validation! x =", x);
 EOF
 
-run_test "Basic interpreter execution" "./zig-out/bin/cursed-zig temp_test_files/basic_test.csd" "true"
+run_test "Basic interpreter execution" "./zig-out/bin/cursed-zig temp_test_files/basic_test.💀" "true"
 
 # Test 2: Math operations
-cat > temp_test_files/math_test.csd << 'EOF'
+cat > temp_test_files/math_test.💀 << 'EOF'
 sus a drip = 10;
 sus b drip = 5;
 sus result drip = a + b;
 vibez.spill("Math test: 10 + 5 =", result);
 EOF
 
-run_test "Math operations" "./zig-out/bin/cursed-zig temp_test_files/math_test.csd" "true"
+run_test "Math operations" "./zig-out/bin/cursed-zig temp_test_files/math_test.💀" "true"
 
 # Test 3: Control flow
-cat > temp_test_files/control_test.csd << 'EOF'
+cat > temp_test_files/control_test.💀 << 'EOF'
 sus x drip = 7;
 ready (x > 5) {
     vibez.spill("Control flow test: x > 5 is true");
@@ -142,7 +142,7 @@ ready (x > 5) {
 }
 EOF
 
-run_test "Control flow structures" "./zig-out/bin/cursed-zig temp_test_files/control_test.csd" "true"
+run_test "Control flow structures" "./zig-out/bin/cursed-zig temp_test_files/control_test.💀" "true"
 
 echo
 
@@ -151,7 +151,7 @@ echo "----------------------------------"
 
 if command -v valgrind >/dev/null 2>&1; then
     # Test memory safety with valgrind
-    cat > temp_test_files/memory_test.csd << 'EOF'
+    cat > temp_test_files/memory_test.💀 << 'EOF'
 sus arr [] = [1, 2, 3, 4, 5];
 sus i drip = 0;
 bestie (i < 3) {
@@ -160,7 +160,7 @@ bestie (i < 3) {
 }
 EOF
 
-    run_test "Memory safety (Valgrind)" "timeout 30s valgrind --error-exitcode=1 --leak-check=full ./zig-out/bin/cursed-zig temp_test_files/memory_test.csd" "true"
+    run_test "Memory safety (Valgrind)" "timeout 30s valgrind --error-exitcode=1 --leak-check=full ./zig-out/bin/cursed-zig temp_test_files/memory_test.💀" "true"
 else
     echo "⚠ Valgrind not available, skipping memory safety tests"
 fi

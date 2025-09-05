@@ -460,12 +460,12 @@ pub fn testInlinedFunctionDebug() !void {
         10, // inline site column
         5,  // original line
         1,  // original column
-        "math.csd"
+        "math.💀"
     );
     
     // Test the integration interface
     var integration = InlinedDebugIntegration.init(&inlined_debug);
-    _ = try integration.onFunctionInline("helper", "main", 15, 10, "test.csd");
+    _ = try integration.onFunctionInline("helper", "main", 15, 10, "test.💀");
     integration.onInlineComplete(&inline_context);
     
     // Generate test report

@@ -281,10 +281,10 @@ Run the comprehensive test suite:
 
 ```bash
 # Interpretation mode
-cargo run --bin cursed stdlib/archive_handling/test_archive_handling.csd
+cargo run --bin cursed stdlib/archive_handling/test_archive_handling.💀
 
 # Compilation mode  
-cargo run --bin cursed -- compile stdlib/archive_handling/test_archive_handling.csd
+cargo run --bin cursed -- compile stdlib/archive_handling/test_archive_handling.💀
 ./test_archive_handling
 ```
 

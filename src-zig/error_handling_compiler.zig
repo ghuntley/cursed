@@ -18,7 +18,7 @@ pub fn main() !void {
     defer std.process.argsFree(allocator, args);
 
     if (args.len < 2) {
-        print("Usage: {s} <program.csd>\n", .{args[0]});
+        print("Usage: {s} <program.💀.💀>\n", .{args[0]});
         print("CURSED Error Handling Compiler - Testing yikes, shook, fam operators\n", .{});
         print("\nError handling syntax:\n", .{});
         print("  yikes \"message\", code     - Create error\n");

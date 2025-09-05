@@ -249,14 +249,14 @@ Run the comprehensive test suite:
 
 ```bash
 # Test basic functionality
-cargo run --bin cursed stdlib/regex/test_regex.csd
+cargo run --bin cursed stdlib/regex/test_regex.💀
 
 # Test in compilation mode
-cargo run --bin cursed -- compile stdlib/regex/test_regex.csd
+cargo run --bin cursed -- compile stdlib/regex/test_regex.💀
 ./test_regex
 
 # Both-mode verification
-test_both_modes stdlib/regex/test_regex.csd
+test_both_modes stdlib/regex/test_regex.💀
 ```
 
 The test suite includes:

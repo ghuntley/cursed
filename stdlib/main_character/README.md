@@ -182,7 +182,7 @@ This module manages global state and is designed for single-threaded main progra
 
 Run the comprehensive test suite:
 ```bash
-cargo run --bin cursed stdlib/main_character/test_main_character.csd
+cargo run --bin cursed stdlib/main_character/test_main_character.💀
 ```
 
 The test suite includes 35+ test cases covering:

@@ -91,7 +91,7 @@ logging.log_memory_usage("cache_allocation", 512000)  // 512KB
 logging.log_error_with_context("Database connection failed", "timeout after 30s")
 
 // Log exception details
-logging.log_exception("NullPointerException", "Variable was null", "processor.csd:25")
+logging.log_exception("NullPointerException", "Variable was null", "processor.💀:25")
 ```
 
 ### Debug Utilities (Debug Drip)
@@ -314,16 +314,16 @@ Run the comprehensive test suite:
 
 ```bash
 # Test interpretation mode
-cargo run --bin cursed stdlib/logging/test_logging.csd
+cargo run --bin cursed stdlib/logging/test_logging.💀
 
 # Test compilation mode
-cargo run --bin cursed -- compile stdlib/logging/test_logging.csd
+cargo run --bin cursed -- compile stdlib/logging/test_logging.💀
 ./test_logging
 
 # Both-mode verification
 test_both_modes() {
-    cargo run --bin cursed stdlib/logging/test_logging.csd > interp_output.txt
-    cargo run --bin cursed -- compile stdlib/logging/test_logging.csd
+    cargo run --bin cursed stdlib/logging/test_logging.💀 > interp_output.txt
+    cargo run --bin cursed -- compile stdlib/logging/test_logging.💀
     ./test_logging > comp_output.txt
     diff interp_output.txt comp_output.txt
 }
@@ -352,7 +352,7 @@ logging.log_info_with_fields("User logout", "user_id", "12345", "session_id", "a
 ```cursed
 // Always log errors with context
 logging.log_error_with_context("Database query failed", "timeout after 30s")
-logging.log_exception("SQLException", "Connection timeout", "db_manager.csd:150")
+logging.log_exception("SQLException", "Connection timeout", "db_manager.💀:150")
 ```
 
 ### Security Logging Best Practices

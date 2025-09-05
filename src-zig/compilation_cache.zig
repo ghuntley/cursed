@@ -902,7 +902,7 @@ test "CompilationCache basic operations" {
     defer cache.deinit();
     
     // Test cache miss
-    try std.testing.expect(try cache.needsRecompilation("test.csd"));
+    try std.testing.expect(try cache.needsRecompilation("test.💀"));
     
     const stats = cache.getStatistics();
     try std.testing.expect(stats.source_cache_size == 0);

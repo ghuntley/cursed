@@ -48,15 +48,15 @@ run_fast_validation() {
     
     # Test basic compilation
     echo "Step 3: Test basic compilation"
-    echo 'vibez.spill("CI test")' > ci_test.csd
-    if ! ./target/release/cursed ci_test.csd; then
+    echo 'vibez.spill("CI test")' > ci_test.💀
+    if ! ./target/release/cursed ci_test.💀; then
         echo "❌ Basic compilation test failed"
         return 1
     fi
     
     # Test Stage 2 compilation
     echo "Step 4: Test Stage 2 compilation"
-    if ! ./target/release/cursed -- compile src/bootstrap/stage2/main.csd -o ci_stage2; then
+    if ! ./target/release/cursed -- compile src/bootstrap/stage2/main.💀 -o ci_stage2; then
         echo "⚠️ Stage 2 compilation failed (may be expected)"
         return 0
     fi
@@ -72,7 +72,7 @@ run_fast_validation() {
     fi
     
     # Cleanup
-    rm -f ci_test.csd ci_stage2
+    rm -f ci_test.💀 ci_stage2
     
     echo "✅ Fast validation completed successfully"
     return 0
@@ -97,7 +97,7 @@ run_performance_benchmark() {
     echo "Running performance benchmarks..."
     
     # Create benchmark test
-    cat > benchmark_test.csd << 'EOF'
+    cat > benchmark_test.💀 << 'EOF'
 slay factorial(n normie) normie {
     lowkey (n <= 1) {
         damn 1
@@ -112,7 +112,7 @@ EOF
     # Benchmark original compiler
     echo "Benchmarking original compiler..."
     start_time=$(date +%s%N)
-    ./target/release/cursed benchmark_test.csd > /dev/null 2>&1
+    ./target/release/cursed benchmark_test.💀 > /dev/null 2>&1
     end_time=$(date +%s%N)
     original_time=$(((end_time - start_time) / 1000000))
     
@@ -122,7 +122,7 @@ EOF
     if [ -f "./cursed_stage2" ]; then
         echo "Benchmarking Stage 2 compiler..."
         start_time=$(date +%s%N)
-        ./cursed_stage2 benchmark_test.csd > /dev/null 2>&1
+        ./cursed_stage2 benchmark_test.💀 > /dev/null 2>&1
         stage2_result=$?
         end_time=$(date +%s%N)
         stage2_time=$(((end_time - start_time) / 1000000))
@@ -156,7 +156,7 @@ EOF
         echo "⚠️ Stage 2 compiler not available for benchmarking"
     fi
     
-    rm -f benchmark_test.csd
+    rm -f benchmark_test.💀
 }
 
 # Generate CI artifacts

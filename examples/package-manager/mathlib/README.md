@@ -134,7 +134,7 @@ MathLib is optimized for performance:
 Run the test suite:
 
 ```bash
-cursed test/mathlib_test.csd
+cursed test/mathlib_test.💀
 ```
 
 ## Contributing

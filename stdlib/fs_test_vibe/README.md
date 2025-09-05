@@ -294,7 +294,7 @@ be_like FuzzResult squad {
 Run the comprehensive test suite:
 
 ```bash
-cargo run --bin cursed stdlib/fs_test_vibe/test_fs_test_vibe.csd
+cargo run --bin cursed stdlib/fs_test_vibe/test_fs_test_vibe.💀
 ```
 
 ## Implementation Details

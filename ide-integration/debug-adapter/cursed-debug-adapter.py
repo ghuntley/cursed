@@ -461,8 +461,8 @@ class CursedDebugAdapter:
                 'id': 1000,
                 'name': 'main',
                 'source': {
-                    'name': 'main.csd',
-                    'path': '/path/to/main.csd'
+                    'name': 'main.💀',
+                    'path': '/path/to/main.💀'
                 },
                 'line': 45,
                 'column': 12,
@@ -473,8 +473,8 @@ class CursedDebugAdapter:
                 'id': 1001,
                 'name': 'handle_request',
                 'source': {
-                    'name': 'server.csd',
-                    'path': '/path/to/server.csd'
+                    'name': 'server.💀',
+                    'path': '/path/to/server.💀'
                 },
                 'line': 123,
                 'column': 8,

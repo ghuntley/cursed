@@ -176,10 +176,10 @@ Run the comprehensive test suite:
 
 ```bash
 # Test in interpretation mode
-cargo run --bin cursed stdlib/debug_tea/test_debug_tea.csd
+cargo run --bin cursed stdlib/debug_tea/test_debug_tea.💀
 
 # Test in compilation mode
-cargo run --bin cursed -- compile stdlib/debug_tea/test_debug_tea.csd
+cargo run --bin cursed -- compile stdlib/debug_tea/test_debug_tea.💀
 ./test_debug_tea
 ```
 

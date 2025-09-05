@@ -2,7 +2,7 @@
 
 ## 🏆 **MISSION ACCOMPLISHED**
 
-**CURSED now has complete pure self-hosting capability!** Both the interpreter and LLVM compiler work with CURSED standard library implementations (.csd files) with zero Zig runtime dependencies.
+**CURSED now has complete pure self-hosting capability!** Both the interpreter and LLVM compiler work with CURSED standard library implementations (.💀 files) with zero Zig runtime dependencies.
 
 ## ✅ **Core Achievements**
 
@@ -17,8 +17,8 @@
 - ✅ **Result**: Native binaries generated from pure CURSED code
 
 ### **3. Unified Module Loading Architecture**
-- ✅ **Interpreter**: Loads `stdlib/{module}/mod.csd` files and executes CURSED functions
-- ✅ **LLVM Compiler**: Loads same `.csd` files and compiles to native code
+- ✅ **Interpreter**: Loads `stdlib/{module}/mod.💀` files and executes CURSED functions
+- ✅ **LLVM Compiler**: Loads same `.💀` files and compiles to native code
 - ✅ **Result**: Identical behavior between interpreted and compiled modes
 
 ### **4. Dramatically Reduced Memory Leaks**
@@ -68,7 +68,7 @@ sus format_demo = fmt.simple_format(1)
 ```
 1. Method call encountered: mathz.add_two()
 2. loadAndCompileModule("mathz") in LLVM / loadCursedStdlibModule("mathz") in interpreter
-3. Read stdlib/mathz/mod.csd 
+3. Read stdlib/mathz/mod.💀 
 4. Parse CURSED source to AST
 5. LLVM: Compile to IR with qualified names | Interpreter: Execute in module environment
 6. Cache compiled module / loaded module
@@ -106,7 +106,7 @@ This achievement represents a **major milestone** in CURSED development:
 
 1. **True Self-Hosting**: CURSED stdlib implemented entirely in CURSED
 2. **Production Readiness**: Both interpreted and compiled execution paths work
-3. **Extensibility**: Easy to add new stdlib modules as .csd files
+3. **Extensibility**: Easy to add new stdlib modules as .💀 files
 4. **Performance**: Compiled code uses direct function calls, not runtime lookup
 5. **Developer Experience**: Identical behavior between development (interpreter) and production (compiled)
 

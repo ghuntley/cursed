@@ -7,46 +7,46 @@ Working from: /home/ghuntley/cursed/test_suite/.. (for stdlib loading)
 Scanning for test files...
 Found 107 test files
 
-[1m[1/107] Testing: arithmetic/01_mixed_types.csd[0m
+[1m[1/107] Testing: arithmetic/01_mixed_types.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[2/107] Testing: arithmetic/02_edge_cases.csd[0m
+[1m[2/107] Testing: arithmetic/02_edge_cases.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[3/107] Testing: arithmetic/03_operator_precedence.csd[0m
+[1m[3/107] Testing: arithmetic/03_operator_precedence.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[4/107] Testing: arithmetic/04_complex_expressions.csd[0m
+[1m[4/107] Testing: arithmetic/04_complex_expressions.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[5/107] Testing: arithmetic/arithmetic_basic_operations.csd[0m
+[1m[5/107] Testing: arithmetic/arithmetic_basic_operations.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[6/107] Testing: arithmetic/division_semantics_test.csd[0m
+[1m[6/107] Testing: arithmetic/division_semantics_test.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[7/107] Testing: arithmetic/feature_arithmetic_operations.csd[0m
+[1m[7/107] Testing: arithmetic/feature_arithmetic_operations.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[8/107] Testing: arithmetic/overflow_edge_cases.csd[0m
+[1m[8/107] Testing: arithmetic/overflow_edge_cases.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[9/107] Testing: basic/01_hello_world.csd[0m
+[1m[9/107] Testing: basic/01_hello_world.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[10/107] Testing: basic/02_simple_arithmetic.csd[0m
+[1m[10/107] Testing: basic/02_simple_arithmetic.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[11/107] Testing: basic/03_variable_assignment.csd[0m
+[1m[11/107] Testing: basic/03_variable_assignment.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[12/107] Testing: basic/basic_hello_world.csd[0m
+[1m[12/107] Testing: basic/basic_hello_world.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[13/107] Testing: basic/hello_world_simple.csd[0m
+[1m[13/107] Testing: basic/hello_world_simple.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[14/107] Testing: complex/01_nested_operations.csd[0m
+[1m[14/107] Testing: complex/01_nested_operations.💀[0m
   Result: [31mFAIL (OUTPUT_MISMATCH)[0m
   [36mInterpreter (exit: 0):[0m
     (no output)
@@ -64,7 +64,7 @@ Found 107 test files
     === Test Complete ===
 
 ---
-[1m[15/107] Testing: complex/02_fizzbuzz.csd[0m
+[1m[15/107] Testing: complex/02_fizzbuzz.💀[0m
   Result: [31mFAIL (OUTPUT_MISMATCH)[0m
   [36mInterpreter (exit: 0):[0m
     (no output)
@@ -90,13 +90,13 @@ Found 107 test files
     === Test Complete ===
 
 ---
-[1m[16/107] Testing: comprehensive/control_flow_comprehensive.csd[0m
+[1m[16/107] Testing: comprehensive/control_flow_comprehensive.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[17/107] Testing: comprehensive/function_definitions_test.csd[0m
+[1m[17/107] Testing: comprehensive/function_definitions_test.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[18/107] Testing: comprehensive/test_comprehensive_language_features.csd[0m
+[1m[18/107] Testing: comprehensive/test_comprehensive_language_features.💀[0m
   Result: [31mFAIL (OUTPUT_MISMATCH)[0m
   [36mInterpreter (exit: 0):[0m
     DEBUG: parseForStatement started at position 333
@@ -461,19 +461,19 @@ Found 107 test files
     000001b0: 6365 7373 6675 6c6c 7921                 cessfully!
 
 ---
-[1m[19/107] Testing: control_flow/01_if_statements.csd[0m
+[1m[19/107] Testing: control_flow/01_if_statements.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[20/107] Testing: control_flow/02_loops.csd[0m
+[1m[20/107] Testing: control_flow/02_loops.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[21/107] Testing: control_flow/control_flow_comprehensive.csd[0m
+[1m[21/107] Testing: control_flow/control_flow_comprehensive.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[22/107] Testing: control_flow/control_flow_if_else.csd[0m
+[1m[22/107] Testing: control_flow/control_flow_if_else.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[23/107] Testing: control_flow/feature_control_flow_comprehensive.csd[0m
+[1m[23/107] Testing: control_flow/feature_control_flow_comprehensive.💀[0m
   Result: [31mFAIL (OUTPUT_MISMATCH)[0m
   [36mInterpreter (exit: 0):[0m
     (no output)
@@ -491,7 +491,7 @@ Found 107 test files
     === Control Flow Test Complete ===
 
 ---
-[1m[24/107] Testing: edge_cases/01_boundary_conditions.csd[0m
+[1m[24/107] Testing: edge_cases/01_boundary_conditions.💀[0m
   Result: [31mFAIL (OUTPUT_MISMATCH)[0m
   [36mInterpreter (exit: 0):[0m
     (no output)
@@ -519,10 +519,10 @@ Found 107 test files
     Boundary conditions test completed
 
 ---
-[1m[25/107] Testing: edge_cases/02_empty_inputs.csd[0m
+[1m[25/107] Testing: edge_cases/02_empty_inputs.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[26/107] Testing: edge_cases/02_extreme_inputs.csd[0m
+[1m[26/107] Testing: edge_cases/02_extreme_inputs.💀[0m
   Result: [31mFAIL (OUTPUT_MISMATCH)[0m
   [36mInterpreter (exit: 0):[0m
     DEBUG: parseForStatement started at position 333
@@ -631,7 +631,7 @@ Found 107 test files
     All extreme input tests completed
 
 ---
-[1m[27/107] Testing: edge_cases/02_simple_boundary_test.csd[0m
+[1m[27/107] Testing: edge_cases/02_simple_boundary_test.💀[0m
   Result: [31mFAIL (OUTPUT_MISMATCH)[0m
   [36mInterpreter (exit: 0):[0m
     DEBUG: parseForStatement started at position 333
@@ -738,7 +738,7 @@ Found 107 test files
     Simple boundary test completed
 
 ---
-[1m[28/107] Testing: edge_cases/03_corrected_boundary_test.csd[0m
+[1m[28/107] Testing: edge_cases/03_corrected_boundary_test.💀[0m
   Result: [31mFAIL (OUTPUT_MISMATCH)[0m
   [36mInterpreter (exit: 0):[0m
     DEBUG: parseForStatement started at position 333
@@ -849,7 +849,7 @@ Found 107 test files
     Corrected boundary test completed
 
 ---
-[1m[29/107] Testing: edge_cases/edge_case_boundary_values.csd[0m
+[1m[29/107] Testing: edge_cases/edge_case_boundary_values.💀[0m
   Result: [31mFAIL (OUTPUT_MISMATCH)[0m
   [36mInterpreter (exit: 0):[0m
     DEBUG: parseForStatement started at position 333
@@ -1188,7 +1188,7 @@ Found 107 test files
     00000110: 6967 6974 3a20 31                        igit: 1
 
 ---
-[1m[30/107] Testing: edge_cases/edge_case_complex_expressions.csd[0m
+[1m[30/107] Testing: edge_cases/edge_case_complex_expressions.💀[0m
   Result: [31mCOMPILE ERROR (interpreted worked)[0m
   [36mInterpreter (exit: 0):[0m
     DEBUG: parseForStatement started at position 333
@@ -1241,7 +1241,7 @@ Found 107 test files
     Compilation failed
 
 ---
-[1m[31/107] Testing: edge_cases/edge_case_operator_precedence.csd[0m
+[1m[31/107] Testing: edge_cases/edge_case_operator_precedence.💀[0m
   Result: [31mCOMPILE ERROR (interpreted worked)[0m
   [36mInterpreter (exit: 0):[0m
     (no output)
@@ -1257,14 +1257,14 @@ Found 107 test files
     (no output)
 
 ---
-[1m[32/107] Testing: errors/01_division_by_zero.csd[0m
+[1m[32/107] Testing: errors/01_division_by_zero.💀[0m
   Result: [33mFAIL (different error messages)[0m
   [36mInterpreter (exit: 1):[0m
     === Division by Zero Test === 
     Normal division: 
     5 
     Attempting division by zero: 
-    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/errors/01_division_by_zero.csd: error.DivisionByZero
+    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/errors/01_division_by_zero.💀: error.DivisionByZero
     error: DivisionByZero
                             return InterpreterError.DivisionByZero;
                             ^
@@ -1293,13 +1293,13 @@ Found 107 test files
     Division by zero
 
 ---
-[1m[33/107] Testing: errors/02_undefined_variable.csd[0m
+[1m[33/107] Testing: errors/02_undefined_variable.💀[0m
   Result: [33mFAIL (different error messages)[0m
   [36mInterpreter (exit: 1):[0m
     === Undefined Variable Test === 
     ERROR: No CURSED stdlib implementation found for module 'undefined_var': error.ModuleNotFound
-    SELF-HOSTING: Please implement stdlib/undefined_var/mod.csd for true self-hosting
-    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/errors/02_undefined_variable.csd: error.UndefinedVariable
+    SELF-HOSTING: Please implement stdlib/undefined_var/mod.💀 for true self-hosting
+    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/errors/02_undefined_variable.💀: error.UndefinedVariable
     error: UndefinedVariable
             return InterpreterError.UndefinedVariable;
             ^
@@ -1324,7 +1324,7 @@ Found 107 test files
     Compilation failed
 
 ---
-[1m[34/107] Testing: errors/03_error_handling_basic.csd[0m
+[1m[34/107] Testing: errors/03_error_handling_basic.💀[0m
   Result: [31mCOMPILE ERROR (interpreted worked)[0m
   [36mInterpreter (exit: 0):[0m
     DEBUG: parseForStatement started at position 289
@@ -1436,16 +1436,16 @@ Found 107 test files
     Compilation failed
 
 ---
-[1m[35/107] Testing: errors/03_error_handling_simple.csd[0m
+[1m[35/107] Testing: errors/03_error_handling_simple.💀[0m
   Result: [31mCOMPILE ERROR (interpreted worked)[0m
   [36mInterpreter (exit: 0):[0m
-    Error at /home/ghuntley/cursed/test_suite/test_programs/errors/03_error_handling_simple.csd:26:7 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
-    Error at /home/ghuntley/cursed/test_suite/test_programs/errors/03_error_handling_simple.csd:26:7 - Synchronizing parser after error (context: synchronize)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/errors/03_error_handling_simple.💀:26:7 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/errors/03_error_handling_simple.💀:26:7 - Synchronizing parser after error (context: synchronize)
     INFO: Recovered at newline after skipping 2 tokens
-    Error at /home/ghuntley/cursed/test_suite/test_programs/errors/03_error_handling_simple.csd:27:9 - Error parsing function statement
+    Error at /home/ghuntley/cursed/test_suite/test_programs/errors/03_error_handling_simple.💀:27:9 - Error parsing function statement
     INFO: Recovered at newline after skipping 1 tokens
     INFO: Attempting additional statement recovery
-    Error at /home/ghuntley/cursed/test_suite/test_programs/errors/03_error_handling_simple.csd:31:2 - Failed to parse statement
+    Error at /home/ghuntley/cursed/test_suite/test_programs/errors/03_error_handling_simple.💀:31:2 - Failed to parse statement
     
     === Error Recovery Statistics ===
     Total errors encountered: 2
@@ -1475,7 +1475,7 @@ Found 107 test files
     00000020: 6573 745f 7375 6974 652f 7465 7374 5f70  est_suite/test_p
     00000030: 726f 6772 616d 732f 6572 726f 7273 2f30  rograms/errors/0
     00000040: 335f 6572 726f 725f 6861 6e64 6c69 6e67  3_error_handling
-    00000050: 5f73 696d 706c 652e 6373 643a 3236 3a37  _simple.csd:26:7
+    00000050: 5f73 696d 706c 652e 6373 643a 3236 3a37  _simple.💀:26:7
     00000060: 202d 2045 7272 6f72 2070 6172 7369 6e67   - Error parsing
     00000070: 2063 6f6d 706c 6578 2065 7870 7265 7373   complex express
     00000080: 696f 6e20 7374 6174 656d 656e 7420 2d20  ion statement - 
@@ -1489,7 +1489,7 @@ Found 107 test files
     00000100: 642f 7465 7374 5f73 7569 7465 2f74 6573  d/test_suite/tes
     00000110: 745f 7072 6f67 7261 6d73 2f65 7272 6f72  t_programs/error
     00000120: 732f 3033 5f65 7272 6f72 5f68 616e 646c  s/03_error_handl
-    00000130: 696e 675f 7369 6d70 6c65 2e63 7364 3a32  ing_simple.csd:2
+    00000130: 696e 675f 7369 6d70 6c65 2e63 7364 3a32  ing_simple.💀:2
     00000140: 363a 3720 2d20 5379 6e63 6872 6f6e 697a  6:7 - Synchroniz
     00000150: 696e 6720 7061 7273 6572 2061 6674 6572  ing parser after
     00000160: 2065 7272 6f72 2028 636f 6e74 6578 743a   error (context:
@@ -1502,7 +1502,7 @@ Found 107 test files
     000001d0: 7465 7374 5f73 7569 7465 2f74 6573 745f  test_suite/test_
     000001e0: 7072 6f67 7261 6d73 2f65 7272 6f72 732f  programs/errors/
     000001f0: 3033 5f65 7272 6f72 5f68 616e 646c 696e  03_error_handlin
-    00000200: 675f 7369 6d70 6c65 2e63 7364 3a32 373a  g_simple.csd:27:
+    00000200: 675f 7369 6d70 6c65 2e63 7364 3a32 373a  g_simple.💀:27:
     00000210: 3920 2d20 4572 726f 7220 7061 7273 696e  9 - Error parsin
     00000220: 6720 6675 6e63 7469 6f6e 2073 7461 7465  g function state
     00000230: 6d65 6e74 0a49 4e46 4f3a 2052 6563 6f76  ment.INFO: Recov
@@ -1552,38 +1552,38 @@ Found 107 test files
     (no output)
 
 ---
-[1m[36/107] Testing: errors/03_error_handling_yikes_fam_shook.csd[0m
+[1m[36/107] Testing: errors/03_error_handling_yikes_fam_shook.💀[0m
   Result: [33mFAIL (different error messages)[0m
   [36mInterpreter (exit: 1):[0m
-    Error at /home/ghuntley/cursed/test_suite/test_programs/errors/03_error_handling_yikes_fam_shook.csd:6:51 - Expected '{'. Expected .LeftBrace, got .Yikes (context: consume)
-    Error at /home/ghuntley/cursed/test_suite/test_programs/errors/03_error_handling_yikes_fam_shook.csd:6:51 - Error parsing function statement
+    Error at /home/ghuntley/cursed/test_suite/test_programs/errors/03_error_handling_yikes_fam_shook.💀:6:51 - Expected '{'. Expected .LeftBrace, got .Yikes (context: consume)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/errors/03_error_handling_yikes_fam_shook.💀:6:51 - Error parsing function statement
     INFO: Recovered at delimiter 'RightParen' after skipping 7 tokens
     INFO: Attempting additional statement recovery
-    Error at /home/ghuntley/cursed/test_suite/test_programs/errors/03_error_handling_yikes_fam_shook.csd:27:7 - Failed to parse statement
+    Error at /home/ghuntley/cursed/test_suite/test_programs/errors/03_error_handling_yikes_fam_shook.💀:27:7 - Failed to parse statement
     INFO: Recovered at newline after skipping 3 tokens
     INFO: Attempting additional statement recovery
-    Error at /home/ghuntley/cursed/test_suite/test_programs/errors/03_error_handling_yikes_fam_shook.csd:33:51 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
-    Error at /home/ghuntley/cursed/test_suite/test_programs/errors/03_error_handling_yikes_fam_shook.csd:33:51 - Synchronizing parser after error (context: synchronize)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/errors/03_error_handling_yikes_fam_shook.💀:33:51 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/errors/03_error_handling_yikes_fam_shook.💀:33:51 - Synchronizing parser after error (context: synchronize)
     INFO: Recovered at newline after skipping 1 tokens
-    Error at /home/ghuntley/cursed/test_suite/test_programs/errors/03_error_handling_yikes_fam_shook.csd:34:9 - Failed to parse statement
+    Error at /home/ghuntley/cursed/test_suite/test_programs/errors/03_error_handling_yikes_fam_shook.💀:34:9 - Failed to parse statement
     INFO: Recovered at delimiter 'RightParen' after skipping 5 tokens
     INFO: Attempting additional statement recovery
-    Error at /home/ghuntley/cursed/test_suite/test_programs/errors/03_error_handling_yikes_fam_shook.csd:41:45 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
-    Error at /home/ghuntley/cursed/test_suite/test_programs/errors/03_error_handling_yikes_fam_shook.csd:41:45 - Synchronizing parser after error (context: synchronize)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/errors/03_error_handling_yikes_fam_shook.💀:41:45 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/errors/03_error_handling_yikes_fam_shook.💀:41:45 - Synchronizing parser after error (context: synchronize)
     INFO: Recovered at newline after skipping 1 tokens
-    Error at /home/ghuntley/cursed/test_suite/test_programs/errors/03_error_handling_yikes_fam_shook.csd:42:9 - Failed to parse statement
+    Error at /home/ghuntley/cursed/test_suite/test_programs/errors/03_error_handling_yikes_fam_shook.💀:42:9 - Failed to parse statement
     INFO: Recovered at delimiter 'RightParen' after skipping 8 tokens
     INFO: Attempting additional statement recovery
-    Error at /home/ghuntley/cursed/test_suite/test_programs/errors/03_error_handling_yikes_fam_shook.csd:50:43 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
-    Error at /home/ghuntley/cursed/test_suite/test_programs/errors/03_error_handling_yikes_fam_shook.csd:50:43 - Synchronizing parser after error (context: synchronize)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/errors/03_error_handling_yikes_fam_shook.💀:50:43 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/errors/03_error_handling_yikes_fam_shook.💀:50:43 - Synchronizing parser after error (context: synchronize)
     INFO: Recovered at newline after skipping 1 tokens
-    Error at /home/ghuntley/cursed/test_suite/test_programs/errors/03_error_handling_yikes_fam_shook.csd:51:9 - Failed to parse statement
+    Error at /home/ghuntley/cursed/test_suite/test_programs/errors/03_error_handling_yikes_fam_shook.💀:51:9 - Failed to parse statement
     INFO: Recovered at delimiter 'RightParen' after skipping 8 tokens
     INFO: Attempting additional statement recovery
-    Error at /home/ghuntley/cursed/test_suite/test_programs/errors/03_error_handling_yikes_fam_shook.csd:59:1 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
-    Error at /home/ghuntley/cursed/test_suite/test_programs/errors/03_error_handling_yikes_fam_shook.csd:59:1 - Synchronizing parser after error (context: synchronize)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/errors/03_error_handling_yikes_fam_shook.💀:59:1 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/errors/03_error_handling_yikes_fam_shook.💀:59:1 - Synchronizing parser after error (context: synchronize)
     INFO: Recovered at newline after skipping 1 tokens
-    Error at /home/ghuntley/cursed/test_suite/test_programs/errors/03_error_handling_yikes_fam_shook.csd:59:2 - Failed to parse statement
+    Error at /home/ghuntley/cursed/test_suite/test_programs/errors/03_error_handling_yikes_fam_shook.💀:59:2 - Failed to parse statement
     
     === Error Recovery Statistics ===
     Total errors encountered: 6
@@ -1671,7 +1671,7 @@ Found 107 test files
     ================================
     DEBUG: Checking for global builtin function: divide_with_error
     DEBUG: Global builtin function divide_with_error not found
-    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/errors/03_error_handling_yikes_fam_shook.csd: error.UndefinedFunction
+    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/errors/03_error_handling_yikes_fam_shook.💀: error.UndefinedFunction
     
     === Error Recovery Statistics ===
     Total errors encountered: 6
@@ -1703,7 +1703,7 @@ Found 107 test files
     Compilation failed
 
 ---
-[1m[37/107] Testing: errors/04_boundary_error_conditions.csd[0m
+[1m[37/107] Testing: errors/04_boundary_error_conditions.💀[0m
   Result: [31mCOMPILE ERROR (interpreted worked)[0m
   [36mInterpreter (exit: 0):[0m
     DEBUG: parseForStatement started at position 975
@@ -1720,19 +1720,19 @@ Found 107 test files
     DEBUG: checking token 984: .RightParen
     DEBUG: hasSemicolonsBeforeBrace hit unexpected delimiter, stopping scan
     DEBUG: hasSemicolonsBeforeBrace found 1 semicolons after scanning 9 tokens
-    Error at /home/ghuntley/cursed/test_suite/test_programs/errors/04_boundary_error_conditions.csd:166:11 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
-    Error at /home/ghuntley/cursed/test_suite/test_programs/errors/04_boundary_error_conditions.csd:166:11 - Synchronizing parser after error (context: synchronize)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/errors/04_boundary_error_conditions.💀:166:11 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/errors/04_boundary_error_conditions.💀:166:11 - Synchronizing parser after error (context: synchronize)
     INFO: Recovered at newline after skipping 2 tokens
-    Error at /home/ghuntley/cursed/test_suite/test_programs/errors/04_boundary_error_conditions.csd:167:13 - Error parsing function statement
+    Error at /home/ghuntley/cursed/test_suite/test_programs/errors/04_boundary_error_conditions.💀:167:13 - Error parsing function statement
     INFO: Recovered at newline after skipping 1 tokens
     INFO: Attempting additional statement recovery
-    Error at /home/ghuntley/cursed/test_suite/test_programs/errors/04_boundary_error_conditions.csd:172:1 - Failed to parse statement
+    Error at /home/ghuntley/cursed/test_suite/test_programs/errors/04_boundary_error_conditions.💀:172:1 - Failed to parse statement
     INFO: Recovered at delimiter 'RightParen' after skipping 3 tokens
     INFO: Attempting additional statement recovery
-    Error at /home/ghuntley/cursed/test_suite/test_programs/errors/04_boundary_error_conditions.csd:181:1 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
-    Error at /home/ghuntley/cursed/test_suite/test_programs/errors/04_boundary_error_conditions.csd:181:1 - Synchronizing parser after error (context: synchronize)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/errors/04_boundary_error_conditions.💀:181:1 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/errors/04_boundary_error_conditions.💀:181:1 - Synchronizing parser after error (context: synchronize)
     INFO: Recovered at newline after skipping 1 tokens
-    Error at /home/ghuntley/cursed/test_suite/test_programs/errors/04_boundary_error_conditions.csd:181:2 - Failed to parse statement
+    Error at /home/ghuntley/cursed/test_suite/test_programs/errors/04_boundary_error_conditions.💀:181:2 - Failed to parse statement
     
     === Error Recovery Statistics ===
     Total errors encountered: 3
@@ -1757,43 +1757,43 @@ Found 107 test files
     Compilation failed
 
 ---
-[1m[38/107] Testing: errors/04_panic_recovery.csd[0m
+[1m[38/107] Testing: errors/04_panic_recovery.💀[0m
   Result: [31mFAIL (OUTPUT_MISMATCH)[0m
   [36mInterpreter (exit: 0):[0m
-    Error at /home/ghuntley/cursed/test_suite/test_programs/errors/04_panic_recovery.csd:6:5 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
-    Error at /home/ghuntley/cursed/test_suite/test_programs/errors/04_panic_recovery.csd:6:5 - Synchronizing parser after error (context: synchronize)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/errors/04_panic_recovery.💀:6:5 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/errors/04_panic_recovery.💀:6:5 - Synchronizing parser after error (context: synchronize)
     INFO: Recovered at delimiter 'RightParen' after skipping 3 tokens
-    Error at /home/ghuntley/cursed/test_suite/test_programs/errors/04_panic_recovery.csd:6:54 - Error parsing function statement
+    Error at /home/ghuntley/cursed/test_suite/test_programs/errors/04_panic_recovery.💀:6:54 - Error parsing function statement
     INFO: Recovered at newline after skipping 1 tokens
     INFO: Attempting additional statement recovery
-    Error at /home/ghuntley/cursed/test_suite/test_programs/errors/04_panic_recovery.csd:9:1 - Failed to parse statement
+    Error at /home/ghuntley/cursed/test_suite/test_programs/errors/04_panic_recovery.💀:9:1 - Failed to parse statement
     INFO: Recovered at delimiter 'RightParen' after skipping 3 tokens
     INFO: Attempting additional statement recovery
-    Error at /home/ghuntley/cursed/test_suite/test_programs/errors/04_panic_recovery.csd:15:5 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
-    Error at /home/ghuntley/cursed/test_suite/test_programs/errors/04_panic_recovery.csd:15:5 - Synchronizing parser after error (context: synchronize)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/errors/04_panic_recovery.💀:15:5 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/errors/04_panic_recovery.💀:15:5 - Synchronizing parser after error (context: synchronize)
     INFO: Recovered at statement keyword 'Sus' after skipping 1 tokens
-    Error at /home/ghuntley/cursed/test_suite/test_programs/errors/04_panic_recovery.csd:15:7 - Failed to parse statement
+    Error at /home/ghuntley/cursed/test_suite/test_programs/errors/04_panic_recovery.💀:15:7 - Failed to parse statement
     INFO: Recovered at newline after skipping 3 tokens
     INFO: Attempting additional statement recovery
-    Error at /home/ghuntley/cursed/test_suite/test_programs/errors/04_panic_recovery.csd:34:9 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
-    Error at /home/ghuntley/cursed/test_suite/test_programs/errors/04_panic_recovery.csd:34:9 - Synchronizing parser after error (context: synchronize)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/errors/04_panic_recovery.💀:34:9 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/errors/04_panic_recovery.💀:34:9 - Synchronizing parser after error (context: synchronize)
     INFO: Recovered at delimiter 'RightParen' after skipping 3 tokens
-    Error at /home/ghuntley/cursed/test_suite/test_programs/errors/04_panic_recovery.csd:34:34 - Error parsing function statement
+    Error at /home/ghuntley/cursed/test_suite/test_programs/errors/04_panic_recovery.💀:34:34 - Error parsing function statement
     INFO: Recovered at newline after skipping 3 tokens
     INFO: Attempting additional statement recovery
-    Error at /home/ghuntley/cursed/test_suite/test_programs/errors/04_panic_recovery.csd:43:18 - Failed to parse statement
+    Error at /home/ghuntley/cursed/test_suite/test_programs/errors/04_panic_recovery.💀:43:18 - Failed to parse statement
     INFO: Recovered at delimiter 'RightParen' after skipping 2 tokens
     INFO: Attempting additional statement recovery
-    Error at /home/ghuntley/cursed/test_suite/test_programs/errors/04_panic_recovery.csd:46:13 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
-    Error at /home/ghuntley/cursed/test_suite/test_programs/errors/04_panic_recovery.csd:46:13 - Synchronizing parser after error (context: synchronize)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/errors/04_panic_recovery.💀:46:13 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/errors/04_panic_recovery.💀:46:13 - Synchronizing parser after error (context: synchronize)
     INFO: Recovered at delimiter 'RightParen' after skipping 3 tokens
-    Error at /home/ghuntley/cursed/test_suite/test_programs/errors/04_panic_recovery.csd:46:42 - Failed to parse statement
+    Error at /home/ghuntley/cursed/test_suite/test_programs/errors/04_panic_recovery.💀:46:42 - Failed to parse statement
     INFO: Recovered at semicolon after skipping 1 tokens
     INFO: Attempting additional statement recovery
-    Error at /home/ghuntley/cursed/test_suite/test_programs/errors/04_panic_recovery.csd:53:1 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
-    Error at /home/ghuntley/cursed/test_suite/test_programs/errors/04_panic_recovery.csd:53:1 - Synchronizing parser after error (context: synchronize)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/errors/04_panic_recovery.💀:53:1 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/errors/04_panic_recovery.💀:53:1 - Synchronizing parser after error (context: synchronize)
     INFO: Recovered at newline after skipping 1 tokens
-    Error at /home/ghuntley/cursed/test_suite/test_programs/errors/04_panic_recovery.csd:53:2 - Failed to parse statement
+    Error at /home/ghuntley/cursed/test_suite/test_programs/errors/04_panic_recovery.💀:53:2 - Failed to parse statement
     
     === Error Recovery Statistics ===
     Total errors encountered: 7
@@ -1825,7 +1825,7 @@ Found 107 test files
     00000020: 6573 745f 7375 6974 652f 7465 7374 5f70  est_suite/test_p
     00000030: 726f 6772 616d 732f 6572 726f 7273 2f30  rograms/errors/0
     00000040: 345f 7061 6e69 635f 7265 636f 7665 7279  4_panic_recovery
-    00000050: 2e63 7364 3a36 3a35 202d 2045 7272 6f72  .csd:6:5 - Error
+    00000050: 2e63 7364 3a36 3a35 202d 2045 7272 6f72  .💀:6:5 - Error
     00000060: 2070 6172 7369 6e67 2063 6f6d 706c 6578   parsing complex
     00000070: 2065 7870 7265 7373 696f 6e20 7374 6174   expression stat
     00000080: 656d 656e 7420 2d20 6368 6563 6b20 666f  ement - check fo
@@ -1838,7 +1838,7 @@ Found 107 test files
     000000f0: 6579 2f63 7572 7365 642f 7465 7374 5f73  ey/cursed/test_s
     00000100: 7569 7465 2f74 6573 745f 7072 6f67 7261  uite/test_progra
     00000110: 6d73 2f65 7272 6f72 732f 3034 5f70 616e  ms/errors/04_pan
-    00000120: 6963 5f72 6563 6f76 6572 792e 6373 643a  ic_recovery.csd:
+    00000120: 6963 5f72 6563 6f76 6572 792e 6373 643a  ic_recovery.💀:
     00000130: 363a 3520 2d20 5379 6e63 6872 6f6e 697a  6:5 - Synchroniz
     00000140: 696e 6720 7061 7273 6572 2061 6674 6572  ing parser after
     00000150: 2065 7272 6f72 2028 636f 6e74 6578 743a   error (context:
@@ -1852,7 +1852,7 @@ Found 107 test files
     000001d0: 6573 745f 7375 6974 652f 7465 7374 5f70  est_suite/test_p
     000001e0: 726f 6772 616d 732f 6572 726f 7273 2f30  rograms/errors/0
     000001f0: 345f 7061 6e69 635f 7265 636f 7665 7279  4_panic_recovery
-    00000200: 2e63 7364 3a36 3a35 3420 2d20 4572 726f  .csd:6:54 - Erro
+    00000200: 2e63 7364 3a36 3a35 3420 2d20 4572 726f  .💀:6:54 - Erro
     00000210: 7220 7061 7273 696e 6720 6675 6e63 7469  r parsing functi
     00000220: 6f6e 2073 7461 7465 6d65 6e74 0a49 4e46  on statement.INF
     00000230: 4f3a 2052 6563 6f76 6572 6564 2061 7420  O: Recovered at 
@@ -1866,7 +1866,7 @@ Found 107 test files
     000002b0: 7374 5f73 7569 7465 2f74 6573 745f 7072  st_suite/test_pr
     000002c0: 6f67 7261 6d73 2f65 7272 6f72 732f 3034  ograms/errors/04
     000002d0: 5f70 616e 6963 5f72 6563 6f76 6572 792e  _panic_recovery.
-    000002e0: 6373 643a 393a 3120 2d20 4661 696c 6564  csd:9:1 - Failed
+    000002e0: 6373 643a 393a 3120 2d20 4661 696c 6564 .💀:9:1 - Failed
     000002f0: 2074 6f20 7061 7273 6520 7374 6174 656d   to parse statem
     00000300: 656e 740a 494e 464f 3a20 5265 636f 7665  ent.INFO: Recove
     00000310: 7265 6420 6174 2064 656c 696d 6974 6572  red at delimiter
@@ -1880,7 +1880,7 @@ Found 107 test files
     00000390: 7365 642f 7465 7374 5f73 7569 7465 2f74  sed/test_suite/t
     000003a0: 6573 745f 7072 6f67 7261 6d73 2f65 7272  est_programs/err
     000003b0: 6f72 732f 3034 5f70 616e 6963 5f72 6563  ors/04_panic_rec
-    000003c0: 6f76 6572 792e 6373 643a 3135 3a35 202d  overy.csd:15:5 -
+    000003c0: 6f76 6572 792e 6373 643a 3135 3a35 202d  overy.💀:15:5 -
     000003d0: 2045 7272 6f72 2070 6172 7369 6e67 2063   Error parsing c
     000003e0: 6f6d 706c 6578 2065 7870 7265 7373 696f  omplex expressio
     000003f0: 6e20 7374 6174 656d 656e 7420 2d20 6368  n statement - ch
@@ -1894,7 +1894,7 @@ Found 107 test files
     00000470: 7465 7374 5f73 7569 7465 2f74 6573 745f  test_suite/test_
     00000480: 7072 6f67 7261 6d73 2f65 7272 6f72 732f  programs/errors/
     00000490: 3034 5f70 616e 6963 5f72 6563 6f76 6572  04_panic_recover
-    000004a0: 792e 6373 643a 3135 3a35 202d 2053 796e  y.csd:15:5 - Syn
+    000004a0: 792e 6373 643a 3135 3a35 202d 2053 796e  y.💀:15:5 - Syn
     000004b0: 6368 726f 6e69 7a69 6e67 2070 6172 7365  chronizing parse
     000004c0: 7220 6166 7465 7220 6572 726f 7220 2863  r after error (c
     000004d0: 6f6e 7465 7874 3a20 7379 6e63 6872 6f6e  ontext: synchron
@@ -1907,7 +1907,7 @@ Found 107 test files
     00000540: 6375 7273 6564 2f74 6573 745f 7375 6974  cursed/test_suit
     00000550: 652f 7465 7374 5f70 726f 6772 616d 732f  e/test_programs/
     00000560: 6572 726f 7273 2f30 345f 7061 6e69 635f  errors/04_panic_
-    00000570: 7265 636f 7665 7279 2e63 7364 3a31 353a  recovery.csd:15:
+    00000570: 7265 636f 7665 7279 2e63 7364 3a31 353a  recovery.💀:15:
     00000580: 3720 2d20 4661 696c 6564 2074 6f20 7061  7 - Failed to pa
     00000590: 7273 6520 7374 6174 656d 656e 740a 494e  rse statement.IN
     000005a0: 464f 3a20 5265 636f 7665 7265 6420 6174  FO: Recovered at
@@ -1921,7 +1921,7 @@ Found 107 test files
     00000620: 6573 745f 7375 6974 652f 7465 7374 5f70  est_suite/test_p
     00000630: 726f 6772 616d 732f 6572 726f 7273 2f30  rograms/errors/0
     00000640: 345f 7061 6e69 635f 7265 636f 7665 7279  4_panic_recovery
-    00000650: 2e63 7364 3a33 343a 3920 2d20 4572 726f  .csd:34:9 - Erro
+    00000650: 2e63 7364 3a33 343a 3920 2d20 4572 726f  .💀:34:9 - Erro
     00000660: 7220 7061 7273 696e 6720 636f 6d70 6c65  r parsing comple
     00000670: 7820 6578 7072 6573 7369 6f6e 2073 7461  x expression sta
     00000680: 7465 6d65 6e74 202d 2063 6865 636b 2066  tement - check f
@@ -1934,7 +1934,7 @@ Found 107 test files
     000006f0: 6c65 792f 6375 7273 6564 2f74 6573 745f  ley/cursed/test_
     00000700: 7375 6974 652f 7465 7374 5f70 726f 6772  suite/test_progr
     00000710: 616d 732f 6572 726f 7273 2f30 345f 7061  ams/errors/04_pa
-    00000720: 6e69 635f 7265 636f 7665 7279 2e63 7364  nic_recovery.csd
+    00000720: 6e69 635f 7265 636f 7665 7279 2e63 7364  nic_recovery.💀
     00000730: 3a33 343a 3920 2d20 5379 6e63 6872 6f6e  :34:9 - Synchron
     00000740: 697a 696e 6720 7061 7273 6572 2061 6674  izing parser aft
     00000750: 6572 2065 7272 6f72 2028 636f 6e74 6578  er error (contex
@@ -1948,7 +1948,7 @@ Found 107 test files
     000007d0: 2f74 6573 745f 7375 6974 652f 7465 7374  /test_suite/test
     000007e0: 5f70 726f 6772 616d 732f 6572 726f 7273  _programs/errors
     000007f0: 2f30 345f 7061 6e69 635f 7265 636f 7665  /04_panic_recove
-    00000800: 7279 2e63 7364 3a33 343a 3334 202d 2045  ry.csd:34:34 - E
+    00000800: 7279 2e63 7364 3a33 343a 3334 202d 2045  ry.💀:34:34 - E
     00000810: 7272 6f72 2070 6172 7369 6e67 2066 756e  rror parsing fun
     00000820: 6374 696f 6e20 7374 6174 656d 656e 740a  ction statement.
     00000830: 494e 464f 3a20 5265 636f 7665 7265 6420  INFO: Recovered 
@@ -1962,7 +1962,7 @@ Found 107 test files
     000008b0: 2f74 6573 745f 7375 6974 652f 7465 7374  /test_suite/test
     000008c0: 5f70 726f 6772 616d 732f 6572 726f 7273  _programs/errors
     000008d0: 2f30 345f 7061 6e69 635f 7265 636f 7665  /04_panic_recove
-    000008e0: 7279 2e63 7364 3a34 333a 3138 202d 2046  ry.csd:43:18 - F
+    000008e0: 7279 2e63 7364 3a34 333a 3138 202d 2046  ry.💀:43:18 - F
     000008f0: 6169 6c65 6420 746f 2070 6172 7365 2073  ailed to parse s
     00000900: 7461 7465 6d65 6e74 0a49 4e46 4f3a 2052  tatement.INFO: R
     00000910: 6563 6f76 6572 6564 2061 7420 6465 6c69  ecovered at deli
@@ -1976,7 +1976,7 @@ Found 107 test files
     00000990: 792f 6375 7273 6564 2f74 6573 745f 7375  y/cursed/test_su
     000009a0: 6974 652f 7465 7374 5f70 726f 6772 616d  ite/test_program
     000009b0: 732f 6572 726f 7273 2f30 345f 7061 6e69  s/errors/04_pani
-    000009c0: 635f 7265 636f 7665 7279 2e63 7364 3a34  c_recovery.csd:4
+    000009c0: 635f 7265 636f 7665 7279 2e63 7364 3a34  c_recovery.💀:4
     000009d0: 363a 3133 202d 2045 7272 6f72 2070 6172  6:13 - Error par
     000009e0: 7369 6e67 2063 6f6d 706c 6578 2065 7870  sing complex exp
     000009f0: 7265 7373 696f 6e20 7374 6174 656d 656e  ression statemen
@@ -1990,7 +1990,7 @@ Found 107 test files
     00000a70: 7572 7365 642f 7465 7374 5f73 7569 7465  ursed/test_suite
     00000a80: 2f74 6573 745f 7072 6f67 7261 6d73 2f65  /test_programs/e
     00000a90: 7272 6f72 732f 3034 5f70 616e 6963 5f72  rrors/04_panic_r
-    00000aa0: 6563 6f76 6572 792e 6373 643a 3436 3a31  ecovery.csd:46:1
+    00000aa0: 6563 6f76 6572 792e 6373 643a 3436 3a31  ecovery.💀:46:1
     00000ab0: 3320 2d20 5379 6e63 6872 6f6e 697a 696e  3 - Synchronizin
     00000ac0: 6720 7061 7273 6572 2061 6674 6572 2065  g parser after e
     00000ad0: 7272 6f72 2028 636f 6e74 6578 743a 2073  rror (context: s
@@ -2017,7 +2017,7 @@ Found 107 test files
     00000c20: 2f63 7572 7365 642f 7465 7374 5f73 7569  /cursed/test_sui
     00000c30: 7465 2f74 6573 745f 7072 6f67 7261 6d73  te/test_programs
     00000c40: 2f65 7272 6f72 732f 3034 5f70 616e 6963  /errors/04_panic
-    00000c50: 5f72 6563 6f76 6572 792e 6373 643a 3533  _recovery.csd:53
+    00000c50: 5f72 6563 6f76 6572 792e 6373 643a 3533  _recovery.💀:53
     00000c60: 3a31 202d 2045 7272 6f72 2070 6172 7369  :1 - Error parsi
     00000c70: 6e67 2063 6f6d 706c 6578 2065 7870 7265  ng complex expre
     00000c80: 7373 696f 6e20 7374 6174 656d 656e 7420  ssion statement 
@@ -2031,7 +2031,7 @@ Found 107 test files
     00000d00: 7365 642f 7465 7374 5f73 7569 7465 2f74  sed/test_suite/t
     00000d10: 6573 745f 7072 6f67 7261 6d73 2f65 7272  est_programs/err
     00000d20: 6f72 732f 3034 5f70 616e 6963 5f72 6563  ors/04_panic_rec
-    00000d30: 6f76 6572 792e 6373 643a 3533 3a31 202d  overy.csd:53:1 -
+    00000d30: 6f76 6572 792e 6373 643a 3533 3a31 202d  overy.💀:53:1 -
     00000d40: 2053 796e 6368 726f 6e69 7a69 6e67 2070   Synchronizing p
     00000d50: 6172 7365 7220 6166 7465 7220 6572 726f  arser after erro
     00000d60: 7220 2863 6f6e 7465 7874 3a20 7379 6e63  r (context: sync
@@ -2043,7 +2043,7 @@ Found 107 test files
     00000dc0: 6c65 792f 6375 7273 6564 2f74 6573 745f  ley/cursed/test_
     00000dd0: 7375 6974 652f 7465 7374 5f70 726f 6772  suite/test_progr
     00000de0: 616d 732f 6572 726f 7273 2f30 345f 7061  ams/errors/04_pa
-    00000df0: 6e69 635f 7265 636f 7665 7279 2e63 7364  nic_recovery.csd
+    00000df0: 6e69 635f 7265 636f 7665 7279 2e63 7364  nic_recovery.💀
     00000e00: 3a35 333a 3220 2d20 4661 696c 6564 2074  :53:2 - Failed t
     00000e10: 6f20 7061 7273 6520 7374 6174 656d 656e  o parse statemen
     00000e20: 740a 0a3d 3d3d 2045 7272 6f72 2052 6563  t..=== Error Rec
@@ -2085,7 +2085,7 @@ Found 107 test files
     00000020: 7563 6365 7373 6675 6c6c 79              uccessfully
 
 ---
-[1m[39/107] Testing: errors/05_error_handling_fixed.csd[0m
+[1m[39/107] Testing: errors/05_error_handling_fixed.💀[0m
   Result: [31mFAIL (OUTPUT_MISMATCH)[0m
   [36mInterpreter (exit: 0):[0m
     (no output)
@@ -2103,20 +2103,20 @@ Found 107 test files
     Error handling test completed
 
 ---
-[1m[40/107] Testing: feature/feature_comprehensive_syntax.csd[0m
+[1m[40/107] Testing: feature/feature_comprehensive_syntax.💀[0m
   Result: [33mFAIL (different error messages)[0m
   [36mInterpreter (exit: 1):[0m
-    Error at /home/ghuntley/cursed/test_suite/test_programs/feature/feature_comprehensive_syntax.csd:31:24 - Expected ')' after parameters. Expected .RightParen, got .Flex (context: consume)
-    Error at /home/ghuntley/cursed/test_suite/test_programs/feature/feature_comprehensive_syntax.csd:31:24 - Error parsing function statement
+    Error at /home/ghuntley/cursed/test_suite/test_programs/feature/feature_comprehensive_syntax.💀:31:24 - Expected ')' after parameters. Expected .RightParen, got .Flex (context: consume)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/feature/feature_comprehensive_syntax.💀:31:24 - Error parsing function statement
     INFO: Recovered at newline after skipping 1 tokens
     INFO: Attempting additional statement recovery
-    Error at /home/ghuntley/cursed/test_suite/test_programs/feature/feature_comprehensive_syntax.csd:49:5 - Failed to parse statement
+    Error at /home/ghuntley/cursed/test_suite/test_programs/feature/feature_comprehensive_syntax.💀:49:5 - Failed to parse statement
     INFO: Recovered at semicolon after skipping 5 tokens
     INFO: Attempting additional statement recovery
-    Error at /home/ghuntley/cursed/test_suite/test_programs/feature/feature_comprehensive_syntax.csd:107:1 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
-    Error at /home/ghuntley/cursed/test_suite/test_programs/feature/feature_comprehensive_syntax.csd:107:1 - Synchronizing parser after error (context: synchronize)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/feature/feature_comprehensive_syntax.💀:107:1 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/feature/feature_comprehensive_syntax.💀:107:1 - Synchronizing parser after error (context: synchronize)
     INFO: Recovered at newline after skipping 1 tokens
-    Error at /home/ghuntley/cursed/test_suite/test_programs/feature/feature_comprehensive_syntax.csd:107:2 - Failed to parse statement
+    Error at /home/ghuntley/cursed/test_suite/test_programs/feature/feature_comprehensive_syntax.💀:107:2 - Failed to parse statement
     
     === Error Recovery Statistics ===
     Total errors encountered: 3
@@ -2205,8 +2205,8 @@ Found 107 test files
     Initial values: 
     Testing comprehensive syntax 
     ERROR: No CURSED stdlib implementation found for module 'number': error.ModuleNotFound
-    SELF-HOSTING: Please implement stdlib/number/mod.csd for true self-hosting
-    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/feature/feature_comprehensive_syntax.csd: error.UndefinedVariable
+    SELF-HOSTING: Please implement stdlib/number/mod.💀 for true self-hosting
+    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/feature/feature_comprehensive_syntax.💀: error.UndefinedVariable
     
     === Error Recovery Statistics ===
     Total errors encountered: 3
@@ -2238,7 +2238,7 @@ Found 107 test files
     Compilation failed
 
 ---
-[1m[41/107] Testing: features/feature_complete_stdlib_demo.csd[0m
+[1m[41/107] Testing: features/feature_complete_stdlib_demo.💀[0m
   Result: [31mCOMPILE ERROR (interpreted worked)[0m
   [36mInterpreter (exit: 0):[0m
     DEBUG: parseForStatement started at position 333
@@ -2322,10 +2322,10 @@ Found 107 test files
     Compilation failed
 
 ---
-[1m[42/107] Testing: features/feature_control_flow_simple.csd[0m
+[1m[42/107] Testing: features/feature_control_flow_simple.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[43/107] Testing: features/feature_function_definitions.csd[0m
+[1m[43/107] Testing: features/feature_function_definitions.💀[0m
 grep: (standard input): binary file matches
   Result: [31mCOMPILE ERROR (interpreted worked)[0m
   [36mInterpreter (exit: 0):[0m
@@ -2337,7 +2337,7 @@ grep: (standard input): binary file matches
     Compilation failed
 
 ---
-[1m[44/107] Testing: features/feature_stdlib_imports.csd[0m
+[1m[44/107] Testing: features/feature_stdlib_imports.💀[0m
   Result: [33mFAIL (different error messages)[0m
   [36mInterpreter (exit: 1):[0m
     DEBUG: parseForStatement started at position 333
@@ -2382,7 +2382,7 @@ grep: (standard input): binary file matches
     Testing vibez output 
     mathz.abs_normie({}) = {} -15 15 
     mathz.max({}, {}) = {} -15 25 25 
-    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/features/feature_stdlib_imports.csd: error.UndefinedFunction
+    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/features/feature_stdlib_imports.💀: error.UndefinedFunction
     error: UndefinedFunction
                         return InterpreterError.UndefinedFunction;
                         ^
@@ -2407,7 +2407,7 @@ grep: (standard input): binary file matches
     Compilation failed
 
 ---
-[1m[45/107] Testing: features/feature_stdlib_integration.csd[0m
+[1m[45/107] Testing: features/feature_stdlib_integration.💀[0m
   Result: [31mCOMPILE ERROR (interpreted worked)[0m
   [36mInterpreter (exit: 0):[0m
     DEBUG: parseForStatement started at position 333
@@ -2459,19 +2459,19 @@ grep: (standard input): binary file matches
     Compilation failed
 
 ---
-[1m[46/107] Testing: functions/01_simple_function.csd[0m
+[1m[46/107] Testing: functions/01_simple_function.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[47/107] Testing: functions/02_recursive_function.csd[0m
+[1m[47/107] Testing: functions/02_recursive_function.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[48/107] Testing: functions/03_nested_function_calls.csd[0m
+[1m[48/107] Testing: functions/03_nested_function_calls.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[49/107] Testing: functions/04_function_parameters.csd[0m
+[1m[49/107] Testing: functions/04_function_parameters.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[50/107] Testing: functions/feature_function_calls.csd[0m
+[1m[50/107] Testing: functions/feature_function_calls.💀[0m
   Result: [31mCOMPILE ERROR (interpreted worked)[0m
   [36mInterpreter (exit: 0):[0m
     DEBUG: parseForStatement started at position 333
@@ -2530,22 +2530,22 @@ grep: (standard input): binary file matches
     Compilation failed
 
 ---
-[1m[51/107] Testing: functions/functions_parameter_return.csd[0m
+[1m[51/107] Testing: functions/functions_parameter_return.💀[0m
   Result: [31mCOMPILE ERROR (interpreted worked)[0m
   [36mInterpreter (exit: 0):[0m
-    Error at /home/ghuntley/cursed/test_suite/test_programs/functions/functions_parameter_return.csd:14:24 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
-    Error at /home/ghuntley/cursed/test_suite/test_programs/functions/functions_parameter_return.csd:14:24 - Synchronizing parser after error (context: synchronize)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/functions/functions_parameter_return.💀:14:24 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/functions/functions_parameter_return.💀:14:24 - Synchronizing parser after error (context: synchronize)
     INFO: Recovered at delimiter 'RightParen' after skipping 5 tokens
-    Error at /home/ghuntley/cursed/test_suite/test_programs/functions/functions_parameter_return.csd:14:46 - Error parsing function statement
+    Error at /home/ghuntley/cursed/test_suite/test_programs/functions/functions_parameter_return.💀:14:46 - Error parsing function statement
     INFO: Recovered at newline after skipping 1 tokens
     INFO: Attempting additional statement recovery
-    Error at /home/ghuntley/cursed/test_suite/test_programs/functions/functions_parameter_return.csd:32:1 - Failed to parse statement
+    Error at /home/ghuntley/cursed/test_suite/test_programs/functions/functions_parameter_return.💀:32:1 - Failed to parse statement
     INFO: Recovered at delimiter 'RightParen' after skipping 3 tokens
     INFO: Attempting additional statement recovery
-    Error at /home/ghuntley/cursed/test_suite/test_programs/functions/functions_parameter_return.csd:33:18 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
-    Error at /home/ghuntley/cursed/test_suite/test_programs/functions/functions_parameter_return.csd:33:18 - Synchronizing parser after error (context: synchronize)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/functions/functions_parameter_return.💀:33:18 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/functions/functions_parameter_return.💀:33:18 - Synchronizing parser after error (context: synchronize)
     INFO: Recovered at semicolon after skipping 3 tokens
-    Error at /home/ghuntley/cursed/test_suite/test_programs/functions/functions_parameter_return.csd:33:27 - Failed to parse statement
+    Error at /home/ghuntley/cursed/test_suite/test_programs/functions/functions_parameter_return.💀:33:27 - Failed to parse statement
     INFO: Recovered at delimiter 'RightParen' after skipping 6 tokens
     INFO: Attempting additional statement recovery
     
@@ -2577,7 +2577,7 @@ grep: (standard input): binary file matches
     00000020: 6573 745f 7375 6974 652f 7465 7374 5f70  est_suite/test_p
     00000030: 726f 6772 616d 732f 6675 6e63 7469 6f6e  rograms/function
     00000040: 732f 6675 6e63 7469 6f6e 735f 7061 7261  s/functions_para
-    00000050: 6d65 7465 725f 7265 7475 726e 2e63 7364  meter_return.csd
+    00000050: 6d65 7465 725f 7265 7475 726e 2e63 7364  meter_return.💀
     00000060: 3a31 343a 3234 202d 2045 7272 6f72 2070  :14:24 - Error p
     00000070: 6172 7369 6e67 2063 6f6d 706c 6578 2065  arsing complex e
     00000080: 7870 7265 7373 696f 6e20 7374 6174 656d  xpression statem
@@ -2592,7 +2592,7 @@ grep: (standard input): binary file matches
     00000110: 7465 2f74 6573 745f 7072 6f67 7261 6d73  te/test_programs
     00000120: 2f66 756e 6374 696f 6e73 2f66 756e 6374  /functions/funct
     00000130: 696f 6e73 5f70 6172 616d 6574 6572 5f72  ions_parameter_r
-    00000140: 6574 7572 6e2e 6373 643a 3134 3a32 3420  eturn.csd:14:24 
+    00000140: 6574 7572 6e2e 6373 643a 3134 3a32 3420  eturn.💀:14:24 
     00000150: 2d20 5379 6e63 6872 6f6e 697a 696e 6720  - Synchronizing 
     00000160: 7061 7273 6572 2061 6674 6572 2065 7272  parser after err
     00000170: 6f72 2028 636f 6e74 6578 743a 2073 796e  or (context: syn
@@ -2606,7 +2606,7 @@ grep: (standard input): binary file matches
     000001f0: 7375 6974 652f 7465 7374 5f70 726f 6772  suite/test_progr
     00000200: 616d 732f 6675 6e63 7469 6f6e 732f 6675  ams/functions/fu
     00000210: 6e63 7469 6f6e 735f 7061 7261 6d65 7465  nctions_paramete
-    00000220: 725f 7265 7475 726e 2e63 7364 3a31 343a  r_return.csd:14:
+    00000220: 725f 7265 7475 726e 2e63 7364 3a31 343a  r_return.💀:14:
     00000230: 3436 202d 2045 7272 6f72 2070 6172 7369  46 - Error parsi
     00000240: 6e67 2066 756e 6374 696f 6e20 7374 6174  ng function stat
     00000250: 656d 656e 740a 494e 464f 3a20 5265 636f  ement.INFO: Reco
@@ -2621,7 +2621,7 @@ grep: (standard input): binary file matches
     000002e0: 652f 7465 7374 5f70 726f 6772 616d 732f  e/test_programs/
     000002f0: 6675 6e63 7469 6f6e 732f 6675 6e63 7469  functions/functi
     00000300: 6f6e 735f 7061 7261 6d65 7465 725f 7265  ons_parameter_re
-    00000310: 7475 726e 2e63 7364 3a33 323a 3120 2d20  turn.csd:32:1 - 
+    00000310: 7475 726e 2e63 7364 3a33 323a 3120 2d20  turn.💀:32:1 - 
     00000320: 4661 696c 6564 2074 6f20 7061 7273 6520  Failed to parse 
     00000330: 7374 6174 656d 656e 740a 494e 464f 3a20  statement.INFO: 
     00000340: 5265 636f 7665 7265 6420 6174 2064 656c  Recovered at del
@@ -2636,7 +2636,7 @@ grep: (standard input): binary file matches
     000003d0: 7569 7465 2f74 6573 745f 7072 6f67 7261  uite/test_progra
     000003e0: 6d73 2f66 756e 6374 696f 6e73 2f66 756e  ms/functions/fun
     000003f0: 6374 696f 6e73 5f70 6172 616d 6574 6572  ctions_parameter
-    00000400: 5f72 6574 7572 6e2e 6373 643a 3333 3a31  _return.csd:33:1
+    00000400: 5f72 6574 7572 6e2e 6373 643a 3333 3a31  _return.💀:33:1
     00000410: 3820 2d20 4572 726f 7220 7061 7273 696e  8 - Error parsin
     00000420: 6720 636f 6d70 6c65 7820 6578 7072 6573  g complex expres
     00000430: 7369 6f6e 2073 7461 7465 6d65 6e74 202d  sion statement -
@@ -2651,7 +2651,7 @@ grep: (standard input): binary file matches
     000004c0: 7374 5f70 726f 6772 616d 732f 6675 6e63  st_programs/func
     000004d0: 7469 6f6e 732f 6675 6e63 7469 6f6e 735f  tions/functions_
     000004e0: 7061 7261 6d65 7465 725f 7265 7475 726e  parameter_return
-    000004f0: 2e63 7364 3a33 333a 3138 202d 2053 796e  .csd:33:18 - Syn
+    000004f0: 2e63 7364 3a33 333a 3138 202d 2053 796e  .💀:33:18 - Syn
     00000500: 6368 726f 6e69 7a69 6e67 2070 6172 7365  chronizing parse
     00000510: 7220 6166 7465 7220 6572 726f 7220 2863  r after error (c
     00000520: 6f6e 7465 7874 3a20 7379 6e63 6872 6f6e  ontext: synchron
@@ -2664,7 +2664,7 @@ grep: (standard input): binary file matches
     00000590: 6974 652f 7465 7374 5f70 726f 6772 616d  ite/test_program
     000005a0: 732f 6675 6e63 7469 6f6e 732f 6675 6e63  s/functions/func
     000005b0: 7469 6f6e 735f 7061 7261 6d65 7465 725f  tions_parameter_
-    000005c0: 7265 7475 726e 2e63 7364 3a33 333a 3237  return.csd:33:27
+    000005c0: 7265 7475 726e 2e63 7364 3a33 333a 3237  return.💀:33:27
     000005d0: 202d 2046 6169 6c65 6420 746f 2070 6172   - Failed to par
     000005e0: 7365 2073 7461 7465 6d65 6e74 0a49 4e46  se statement.INF
     000005f0: 4f3a 2052 6563 6f76 6572 6564 2061 7420  O: Recovered at 
@@ -2707,7 +2707,7 @@ grep: (standard input): binary file matches
     (no output)
 
 ---
-[1m[52/107] Testing: memory/01_allocation_patterns.csd[0m
+[1m[52/107] Testing: memory/01_allocation_patterns.💀[0m
   Result: [31mCOMPILE ERROR (interpreted worked)[0m
   [36mInterpreter (exit: 0):[0m
     DEBUG: parseForStatement started at position 42
@@ -2785,7 +2785,7 @@ grep: (standard input): binary file matches
     Compilation failed
 
 ---
-[1m[53/107] Testing: memory/01_memory_allocation_simple.csd[0m
+[1m[53/107] Testing: memory/01_memory_allocation_simple.💀[0m
   Result: [31mCOMPILE ERROR (interpreted worked)[0m
   [36mInterpreter (exit: 0):[0m
     DEBUG: parseForStatement started at position 99
@@ -2835,7 +2835,7 @@ grep: (standard input): binary file matches
     Compilation failed
 
 ---
-[1m[54/107] Testing: memory/02_simple_memory_test.csd[0m
+[1m[54/107] Testing: memory/02_simple_memory_test.💀[0m
   Result: [31mCOMPILE ERROR (interpreted worked)[0m
   [36mInterpreter (exit: 0):[0m
     DEBUG: parseForStatement started at position 121
@@ -2857,20 +2857,20 @@ grep: (standard input): binary file matches
     Compilation failed
 
 ---
-[1m[55/107] Testing: memory/02_stack_overflow_detection.csd[0m
+[1m[55/107] Testing: memory/02_stack_overflow_detection.💀[0m
   Result: [33mFAIL (different error messages)[0m
   [36mInterpreter (exit: 1):[0m
-    Error at /home/ghuntley/cursed/test_suite/test_programs/memory/02_stack_overflow_detection.csd:17:67 - Expected '{'. Expected .LeftBrace, got .Yikes (context: consume)
-    Error at /home/ghuntley/cursed/test_suite/test_programs/memory/02_stack_overflow_detection.csd:17:67 - Error parsing function statement
+    Error at /home/ghuntley/cursed/test_suite/test_programs/memory/02_stack_overflow_detection.💀:17:67 - Expected '{'. Expected .LeftBrace, got .Yikes (context: consume)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/memory/02_stack_overflow_detection.💀:17:67 - Error parsing function statement
     INFO: Recovered at newline after skipping 3 tokens
     INFO: Attempting additional statement recovery
-    Error at /home/ghuntley/cursed/test_suite/test_programs/memory/02_stack_overflow_detection.csd:41:9 - Failed to parse statement
+    Error at /home/ghuntley/cursed/test_suite/test_programs/memory/02_stack_overflow_detection.💀:41:9 - Failed to parse statement
     INFO: Recovered at delimiter 'RightParen' after skipping 8 tokens
     INFO: Attempting additional statement recovery
-    Error at /home/ghuntley/cursed/test_suite/test_programs/memory/02_stack_overflow_detection.csd:50:68 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
-    Error at /home/ghuntley/cursed/test_suite/test_programs/memory/02_stack_overflow_detection.csd:50:68 - Synchronizing parser after error (context: synchronize)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/memory/02_stack_overflow_detection.💀:50:68 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/memory/02_stack_overflow_detection.💀:50:68 - Synchronizing parser after error (context: synchronize)
     INFO: Recovered at newline after skipping 1 tokens
-    Error at /home/ghuntley/cursed/test_suite/test_programs/memory/02_stack_overflow_detection.csd:51:9 - Failed to parse statement
+    Error at /home/ghuntley/cursed/test_suite/test_programs/memory/02_stack_overflow_detection.💀:51:9 - Failed to parse statement
     INFO: Recovered at delimiter 'RightParen' after skipping 5 tokens
     INFO: Attempting additional statement recovery
     DEBUG: parseForStatement started at position 311
@@ -2887,10 +2887,10 @@ grep: (standard input): binary file matches
     DEBUG: checking token 320: .PlusPlus
     DEBUG: checking token 321: .LeftBrace
     DEBUG: hasSemicolonsBeforeBrace found 2 semicolons after scanning 10 tokens
-    Error at /home/ghuntley/cursed/test_suite/test_programs/memory/02_stack_overflow_detection.csd:64:1 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
-    Error at /home/ghuntley/cursed/test_suite/test_programs/memory/02_stack_overflow_detection.csd:64:1 - Synchronizing parser after error (context: synchronize)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/memory/02_stack_overflow_detection.💀:64:1 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/memory/02_stack_overflow_detection.💀:64:1 - Synchronizing parser after error (context: synchronize)
     INFO: Recovered at newline after skipping 1 tokens
-    Error at /home/ghuntley/cursed/test_suite/test_programs/memory/02_stack_overflow_detection.csd:64:2 - Failed to parse statement
+    Error at /home/ghuntley/cursed/test_suite/test_programs/memory/02_stack_overflow_detection.💀:64:2 - Failed to parse statement
     
     === Error Recovery Statistics ===
     Total errors encountered: 4
@@ -2900,7 +2900,7 @@ grep: (standard input): binary file matches
     Delimiter recoveries: 0
     Total tokens skipped: 18
     ================================
-    Protected recursion error: ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/memory/02_stack_overflow_detection.csd: error.TypeMismatch
+    Protected recursion error: ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/memory/02_stack_overflow_detection.💀: error.TypeMismatch
     
     === Error Recovery Statistics ===
     Total errors encountered: 4
@@ -2936,7 +2936,7 @@ grep: (standard input): binary file matches
     Compilation failed
 
 ---
-[1m[56/107] Testing: memory/03_corrected_memory_test.csd[0m
+[1m[56/107] Testing: memory/03_corrected_memory_test.💀[0m
   Result: [31mFAIL (OUTPUT_MISMATCH)[0m
   [36mInterpreter (exit: 0):[0m
     (no output)
@@ -2959,13 +2959,13 @@ grep: (standard input): binary file matches
     Corrected memory test completed
 
 ---
-[1m[57/107] Testing: parser_fixes/01_corrected_hello_world.csd[0m
+[1m[57/107] Testing: parser_fixes/01_corrected_hello_world.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[58/107] Testing: parser_fixes/02_corrected_arithmetic.csd[0m
+[1m[58/107] Testing: parser_fixes/02_corrected_arithmetic.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[59/107] Testing: parser_fixes/03_corrected_function_parameters.csd[0m
+[1m[59/107] Testing: parser_fixes/03_corrected_function_parameters.💀[0m
   Result: [31mFAIL (OUTPUT_MISMATCH)[0m
   [36mInterpreter (exit: 0):[0m
     (no output)
@@ -2985,16 +2985,16 @@ grep: (standard input): binary file matches
     00000030: 6c65 7465 64                             leted
 
 ---
-[1m[60/107] Testing: parser/parser_expression_precedence.csd[0m
+[1m[60/107] Testing: parser/parser_expression_precedence.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[61/107] Testing: parsing/automatic_semicolon_insertion.csd[0m
+[1m[61/107] Testing: parsing/automatic_semicolon_insertion.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[62/107] Testing: performance/01_recursive_depth.csd[0m
+[1m[62/107] Testing: performance/01_recursive_depth.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[63/107] Testing: performance/02_computation_intensive.csd[0m
+[1m[63/107] Testing: performance/02_computation_intensive.💀[0m
   Result: [31mFAIL (OUTPUT_MISMATCH)[0m
   [36mInterpreter (exit: 0):[0m
     === Computation Intensive Test === 
@@ -3034,23 +3034,23 @@ grep: (standard input): binary file matches
     00000060: 3d3d                                     ==
 
 ---
-[1m[64/107] Testing: regression/01_division_by_zero_fix.csd[0m
+[1m[64/107] Testing: regression/01_division_by_zero_fix.💀[0m
   Result: [33mFAIL (different error messages)[0m
   [36mInterpreter (exit: 1):[0m
-    Error at /home/ghuntley/cursed/test_suite/test_programs/regression/01_division_by_zero_fix.csd:74:49 - Expected '{'. Expected .LeftBrace, got .Yikes (context: consume)
-    Error at /home/ghuntley/cursed/test_suite/test_programs/regression/01_division_by_zero_fix.csd:74:49 - Error parsing function statement
+    Error at /home/ghuntley/cursed/test_suite/test_programs/regression/01_division_by_zero_fix.💀:74:49 - Expected '{'. Expected .LeftBrace, got .Yikes (context: consume)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/regression/01_division_by_zero_fix.💀:74:49 - Error parsing function statement
     INFO: Recovered at delimiter 'RightParen' after skipping 10 tokens
     INFO: Attempting additional statement recovery
-    Error at /home/ghuntley/cursed/test_suite/test_programs/regression/01_division_by_zero_fix.csd:98:1 - Error parsing function statement
+    Error at /home/ghuntley/cursed/test_suite/test_programs/regression/01_division_by_zero_fix.💀:98:1 - Error parsing function statement
     INFO: Recovered at delimiter 'RightParen' after skipping 3 tokens
     INFO: Attempting additional statement recovery
-    Error at /home/ghuntley/cursed/test_suite/test_programs/regression/01_division_by_zero_fix.csd:119:10 - Failed to parse statement
+    Error at /home/ghuntley/cursed/test_suite/test_programs/regression/01_division_by_zero_fix.💀:119:10 - Failed to parse statement
     INFO: Recovered at delimiter 'RightParen' after skipping 10 tokens
     INFO: Attempting additional statement recovery
-    Error at /home/ghuntley/cursed/test_suite/test_programs/regression/01_division_by_zero_fix.csd:126:1 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
-    Error at /home/ghuntley/cursed/test_suite/test_programs/regression/01_division_by_zero_fix.csd:126:1 - Synchronizing parser after error (context: synchronize)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/regression/01_division_by_zero_fix.💀:126:1 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/regression/01_division_by_zero_fix.💀:126:1 - Synchronizing parser after error (context: synchronize)
     INFO: Recovered at semicolon after skipping 1 tokens
-    Error at /home/ghuntley/cursed/test_suite/test_programs/regression/01_division_by_zero_fix.csd:126:2 - Failed to parse statement
+    Error at /home/ghuntley/cursed/test_suite/test_programs/regression/01_division_by_zero_fix.💀:126:2 - Failed to parse statement
     INFO: Recovered at newline after skipping 1 tokens
     INFO: Attempting additional statement recovery
     DEBUG: parseForStatement started at position 717
@@ -3082,25 +3082,25 @@ grep: (standard input): binary file matches
     DEBUG: checking token 775: .MinusMinus
     DEBUG: checking token 776: .LeftBrace
     DEBUG: hasSemicolonsBeforeBrace found 2 semicolons after scanning 11 tokens
-    Error at /home/ghuntley/cursed/test_suite/test_programs/regression/01_division_by_zero_fix.csd:143:11 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
-    Error at /home/ghuntley/cursed/test_suite/test_programs/regression/01_division_by_zero_fix.csd:143:11 - Synchronizing parser after error (context: synchronize)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/regression/01_division_by_zero_fix.💀:143:11 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/regression/01_division_by_zero_fix.💀:143:11 - Synchronizing parser after error (context: synchronize)
     INFO: Recovered at newline after skipping 2 tokens
-    Error at /home/ghuntley/cursed/test_suite/test_programs/regression/01_division_by_zero_fix.csd:144:13 - Error parsing function statement
+    Error at /home/ghuntley/cursed/test_suite/test_programs/regression/01_division_by_zero_fix.💀:144:13 - Error parsing function statement
     INFO: Recovered at newline after skipping 1 tokens
     INFO: Attempting additional statement recovery
-    Error at /home/ghuntley/cursed/test_suite/test_programs/regression/01_division_by_zero_fix.csd:149:1 - Failed to parse statement
+    Error at /home/ghuntley/cursed/test_suite/test_programs/regression/01_division_by_zero_fix.💀:149:1 - Failed to parse statement
     INFO: Recovered at delimiter 'RightParen' after skipping 3 tokens
     INFO: Attempting additional statement recovery
-    Error at /home/ghuntley/cursed/test_suite/test_programs/regression/01_division_by_zero_fix.csd:157:5 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
-    Error at /home/ghuntley/cursed/test_suite/test_programs/regression/01_division_by_zero_fix.csd:157:5 - Synchronizing parser after error (context: synchronize)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/regression/01_division_by_zero_fix.💀:157:5 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/regression/01_division_by_zero_fix.💀:157:5 - Synchronizing parser after error (context: synchronize)
     INFO: Recovered at statement keyword 'Sus' after skipping 1 tokens
-    Error at /home/ghuntley/cursed/test_suite/test_programs/regression/01_division_by_zero_fix.csd:157:7 - Failed to parse statement
+    Error at /home/ghuntley/cursed/test_suite/test_programs/regression/01_division_by_zero_fix.💀:157:7 - Failed to parse statement
     INFO: Recovered at newline after skipping 3 tokens
     INFO: Attempting additional statement recovery
-    Error at /home/ghuntley/cursed/test_suite/test_programs/regression/01_division_by_zero_fix.csd:164:10 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
-    Error at /home/ghuntley/cursed/test_suite/test_programs/regression/01_division_by_zero_fix.csd:164:10 - Synchronizing parser after error (context: synchronize)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/regression/01_division_by_zero_fix.💀:164:10 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/regression/01_division_by_zero_fix.💀:164:10 - Synchronizing parser after error (context: synchronize)
     INFO: Recovered at delimiter 'RightParen' after skipping 4 tokens
-    Error at /home/ghuntley/cursed/test_suite/test_programs/regression/01_division_by_zero_fix.csd:164:62 - Failed to parse statement
+    Error at /home/ghuntley/cursed/test_suite/test_programs/regression/01_division_by_zero_fix.💀:164:62 - Failed to parse statement
     INFO: Recovered at semicolon after skipping 1 tokens
     INFO: Attempting additional statement recovery
     
@@ -3188,7 +3188,7 @@ grep: (standard input): binary file matches
     Delimiter recoveries: 0
     Total tokens skipped: 10
     ================================
-    Computed division: 12 / 0 = ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/regression/01_division_by_zero_fix.csd: error.DivisionByZero
+    Computed division: 12 / 0 = ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/regression/01_division_by_zero_fix.💀: error.DivisionByZero
     
     === Error Recovery Statistics ===
     Total errors encountered: 8
@@ -3220,22 +3220,22 @@ grep: (standard input): binary file matches
     Compilation failed
 
 ---
-[1m[65/107] Testing: regression/01_division_zero_regression.csd[0m
+[1m[65/107] Testing: regression/01_division_zero_regression.💀[0m
   Result: [33mFAIL (different error messages)[0m
   [36mInterpreter (exit: 1):[0m
-    Error at /home/ghuntley/cursed/test_suite/test_programs/regression/01_division_zero_regression.csd:24:7 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
-    Error at /home/ghuntley/cursed/test_suite/test_programs/regression/01_division_zero_regression.csd:24:7 - Synchronizing parser after error (context: synchronize)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/regression/01_division_zero_regression.💀:24:7 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/regression/01_division_zero_regression.💀:24:7 - Synchronizing parser after error (context: synchronize)
     INFO: Recovered at newline after skipping 2 tokens
-    Error at /home/ghuntley/cursed/test_suite/test_programs/regression/01_division_zero_regression.csd:25:9 - Error parsing function statement
+    Error at /home/ghuntley/cursed/test_suite/test_programs/regression/01_division_zero_regression.💀:25:9 - Error parsing function statement
     INFO: Recovered at newline after skipping 1 tokens
     INFO: Attempting additional statement recovery
-    Error at /home/ghuntley/cursed/test_suite/test_programs/regression/01_division_zero_regression.csd:29:5 - Failed to parse statement
+    Error at /home/ghuntley/cursed/test_suite/test_programs/regression/01_division_zero_regression.💀:29:5 - Failed to parse statement
     INFO: Recovered at semicolon after skipping 6 tokens
     INFO: Attempting additional statement recovery
-    Error at /home/ghuntley/cursed/test_suite/test_programs/regression/01_division_zero_regression.csd:35:1 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
-    Error at /home/ghuntley/cursed/test_suite/test_programs/regression/01_division_zero_regression.csd:35:1 - Synchronizing parser after error (context: synchronize)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/regression/01_division_zero_regression.💀:35:1 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/regression/01_division_zero_regression.💀:35:1 - Synchronizing parser after error (context: synchronize)
     INFO: Recovered at newline after skipping 1 tokens
-    Error at /home/ghuntley/cursed/test_suite/test_programs/regression/01_division_zero_regression.csd:35:2 - Failed to parse statement
+    Error at /home/ghuntley/cursed/test_suite/test_programs/regression/01_division_zero_regression.💀:35:2 - Failed to parse statement
     
     === Error Recovery Statistics ===
     Total errors encountered: 3
@@ -3246,8 +3246,8 @@ grep: (standard input): binary file matches
     Total tokens skipped: 10
     ================================
     ERROR: No CURSED stdlib implementation found for module 'computed_zero': error.ModuleNotFound
-    SELF-HOSTING: Please implement stdlib/computed_zero/mod.csd for true self-hosting
-    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/regression/01_division_zero_regression.csd: error.UndefinedVariable
+    SELF-HOSTING: Please implement stdlib/computed_zero/mod.💀 for true self-hosting
+    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/regression/01_division_zero_regression.💀: error.UndefinedVariable
     
     === Error Recovery Statistics ===
     Total errors encountered: 3
@@ -3283,7 +3283,7 @@ grep: (standard input): binary file matches
     Compilation failed
 
 ---
-[1m[66/107] Testing: regression/02_undefined_variable_fix.csd[0m
+[1m[66/107] Testing: regression/02_undefined_variable_fix.💀[0m
   Result: [33mFAIL (different error messages)[0m
   [36mInterpreter (exit: 1):[0m
     DEBUG: parseForStatement started at position 427
@@ -3342,19 +3342,19 @@ grep: (standard input): binary file matches
     DEBUG: checking token 943: .PlusPlus
     DEBUG: checking token 944: .LeftBrace
     DEBUG: hasSemicolonsBeforeBrace found 2 semicolons after scanning 10 tokens
-    Error at /home/ghuntley/cursed/test_suite/test_programs/regression/02_undefined_variable_fix.csd:161:11 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
-    Error at /home/ghuntley/cursed/test_suite/test_programs/regression/02_undefined_variable_fix.csd:161:11 - Synchronizing parser after error (context: synchronize)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/regression/02_undefined_variable_fix.💀:161:11 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/regression/02_undefined_variable_fix.💀:161:11 - Synchronizing parser after error (context: synchronize)
     INFO: Recovered at statement keyword 'Ready' after skipping 1 tokens
-    Error at /home/ghuntley/cursed/test_suite/test_programs/regression/02_undefined_variable_fix.csd:161:16 - Error parsing function statement
+    Error at /home/ghuntley/cursed/test_suite/test_programs/regression/02_undefined_variable_fix.💀:161:16 - Error parsing function statement
     INFO: Recovered at newline after skipping 1 tokens
     INFO: Attempting additional statement recovery
-    Error at /home/ghuntley/cursed/test_suite/test_programs/regression/02_undefined_variable_fix.csd:175:5 - Failed to parse statement
+    Error at /home/ghuntley/cursed/test_suite/test_programs/regression/02_undefined_variable_fix.💀:175:5 - Failed to parse statement
     INFO: Recovered at semicolon after skipping 5 tokens
     INFO: Attempting additional statement recovery
-    Error at /home/ghuntley/cursed/test_suite/test_programs/regression/02_undefined_variable_fix.csd:188:1 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
-    Error at /home/ghuntley/cursed/test_suite/test_programs/regression/02_undefined_variable_fix.csd:188:1 - Synchronizing parser after error (context: synchronize)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/regression/02_undefined_variable_fix.💀:188:1 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/regression/02_undefined_variable_fix.💀:188:1 - Synchronizing parser after error (context: synchronize)
     INFO: Recovered at semicolon after skipping 1 tokens
-    Error at /home/ghuntley/cursed/test_suite/test_programs/regression/02_undefined_variable_fix.csd:188:2 - Failed to parse statement
+    Error at /home/ghuntley/cursed/test_suite/test_programs/regression/02_undefined_variable_fix.💀:188:2 - Failed to parse statement
     INFO: Recovered at newline after skipping 1 tokens
     INFO: Attempting additional statement recovery
     
@@ -3367,8 +3367,8 @@ grep: (standard input): binary file matches
     Total tokens skipped: 9
     ================================
     Initial values - A: ERROR: No CURSED stdlib implementation found for module 'var_a': error.ModuleNotFound
-    SELF-HOSTING: Please implement stdlib/var_a/mod.csd for true self-hosting
-    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/regression/02_undefined_variable_fix.csd: error.UndefinedVariable
+    SELF-HOSTING: Please implement stdlib/var_a/mod.💀 for true self-hosting
+    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/regression/02_undefined_variable_fix.💀: error.UndefinedVariable
     
     === Error Recovery Statistics ===
     Total errors encountered: 3
@@ -3400,7 +3400,7 @@ grep: (standard input): binary file matches
     Compilation failed
 
 ---
-[1m[67/107] Testing: regression/02_variable_scope_regression.csd[0m
+[1m[67/107] Testing: regression/02_variable_scope_regression.💀[0m
   Result: [31mCOMPILE ERROR (interpreted worked)[0m
   [36mInterpreter (exit: 0):[0m
     DEBUG: parseForStatement started at position 127
@@ -3422,7 +3422,7 @@ grep: (standard input): binary file matches
     Compilation failed
 
 ---
-[1m[68/107] Testing: regression/03_arithmetic_precedence_regression.csd[0m
+[1m[68/107] Testing: regression/03_arithmetic_precedence_regression.💀[0m
   Result: [31mFAIL (OUTPUT_MISMATCH)[0m
   [36mInterpreter (exit: 0):[0m
     DEBUG: parseForStatement started at position 333
@@ -3521,7 +3521,7 @@ grep: (standard input): binary file matches
     Arithmetic precedence regression test completed
 
 ---
-[1m[69/107] Testing: regression/03_parser_precedence_fix.csd[0m
+[1m[69/107] Testing: regression/03_parser_precedence_fix.💀[0m
   Result: [31mFAIL (OUTPUT_MISMATCH)[0m
   [36mInterpreter (exit: 0):[0m
     DEBUG: parseForStatement started at position 333
@@ -3652,7 +3652,7 @@ grep: (standard input): binary file matches
     Expression evaluation order verified - regression test passed
 
 ---
-[1m[70/107] Testing: regression/04_loop_syntax_regression.csd[0m
+[1m[70/107] Testing: regression/04_loop_syntax_regression.💀[0m
   Result: [31mFAIL (OUTPUT_MISMATCH)[0m
   [36mInterpreter (exit: 0):[0m
     (no output)
@@ -3692,10 +3692,10 @@ grep: (standard input): binary file matches
     Loop syntax regression test completed
 
 ---
-[1m[71/107] Testing: regression/regression_memory_management.csd[0m
+[1m[71/107] Testing: regression/regression_memory_management.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[72/107] Testing: regression/regression_memory_safety.csd[0m
+[1m[72/107] Testing: regression/regression_memory_safety.💀[0m
   Result: [31mCOMPILE ERROR (interpreted worked)[0m
   [36mInterpreter (exit: 0):[0m
     DEBUG: parseForStatement started at position 221
@@ -3771,10 +3771,10 @@ grep: (standard input): binary file matches
     Compilation failed
 
 ---
-[1m[73/107] Testing: regression/regression_parser_precedence.csd[0m
+[1m[73/107] Testing: regression/regression_parser_precedence.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[74/107] Testing: regression/regression_string_float_precision.csd[0m
+[1m[74/107] Testing: regression/regression_string_float_precision.💀[0m
   Result: [33mFAIL (different error messages)[0m
   [36mInterpreter (exit: 1):[0m
     DEBUG: parseForStatement started at position 333
@@ -3822,7 +3822,7 @@ grep: (standard input): binary file matches
     5.85987 
     Division precision test (22.0 / 7.0): 
     3.14286 
-    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/regression/regression_string_float_precision.csd: error.UndefinedFunction
+    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/regression/regression_string_float_precision.💀: error.UndefinedFunction
     error: UndefinedFunction
                         return InterpreterError.UndefinedFunction;
                         ^
@@ -3847,7 +3847,7 @@ grep: (standard input): binary file matches
     Compilation failed
 
 ---
-[1m[75/107] Testing: regression/regression_syntax_keywords.csd[0m
+[1m[75/107] Testing: regression/regression_syntax_keywords.💀[0m
   Result: [31mFAIL (OUTPUT_MISMATCH)[0m
   [36mInterpreter (exit: 0):[0m
     DEBUG: parseForStatement started at position 126
@@ -3938,7 +3938,7 @@ grep: (standard input): binary file matches
     000000b0: 2056 616c 6964 6174 6564 203d 3d3d        Validated ===
 
 ---
-[1m[76/107] Testing: stdlib/01_comprehensive_multi_module.csd[0m
+[1m[76/107] Testing: stdlib/01_comprehensive_multi_module.💀[0m
   Result: [31mCOMPILE ERROR (interpreted worked)[0m
   [36mInterpreter (exit: 0):[0m
     DEBUG: parseForStatement started at position 83
@@ -4136,7 +4136,7 @@ grep: (standard input): binary file matches
     Compilation failed
 
 ---
-[1m[77/107] Testing: stdlib/01_mathz_basic.csd[0m
+[1m[77/107] Testing: stdlib/01_mathz_basic.💀[0m
   Result: [31mCOMPILE ERROR (interpreted worked)[0m
   [36mInterpreter (exit: 0):[0m
     DEBUG: parseForStatement started at position 333
@@ -4192,7 +4192,7 @@ grep: (standard input): binary file matches
     Compilation failed
 
 ---
-[1m[78/107] Testing: stdlib/01_stdlib_integration_basic.csd[0m
+[1m[78/107] Testing: stdlib/01_stdlib_integration_basic.💀[0m
   Result: [31mCOMPILE ERROR (interpreted worked)[0m
   [36mInterpreter (exit: 0):[0m
     DEBUG: parseForStatement started at position 333
@@ -4276,7 +4276,7 @@ grep: (standard input): binary file matches
     Compilation failed
 
 ---
-[1m[79/107] Testing: stdlib/02_cross_module_dependencies.csd[0m
+[1m[79/107] Testing: stdlib/02_cross_module_dependencies.💀[0m
   Result: [31mCOMPILE ERROR (interpreted worked)[0m
   [36mInterpreter (exit: 0):[0m
     DEBUG: parseForStatement started at position 84
@@ -4444,7 +4444,7 @@ grep: (standard input): binary file matches
     Compilation failed
 
 ---
-[1m[80/107] Testing: stdlib/02_stdlib_cross_module_simple.csd[0m
+[1m[80/107] Testing: stdlib/02_stdlib_cross_module_simple.💀[0m
   Result: [31mCOMPILE ERROR (interpreted worked)[0m
   [36mInterpreter (exit: 0):[0m
     DEBUG: parseForStatement started at position 333
@@ -4528,7 +4528,7 @@ grep: (standard input): binary file matches
     Compilation failed
 
 ---
-[1m[81/107] Testing: stdlib/02_stringz_basic.csd[0m
+[1m[81/107] Testing: stdlib/02_stringz_basic.💀[0m
   Result: [31mINTERPRETER ERROR (compiled worked)[0m
   [36mInterpreter (exit: 1):[0m
     === Stringz Stdlib Test === 
@@ -4537,7 +4537,7 @@ grep: (standard input): binary file matches
     Testing stringz.length: 
     0 
     Testing stringz.upper: 
-    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/stdlib/02_stringz_basic.csd: error.UndefinedFunction
+    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/stdlib/02_stringz_basic.💀: error.UndefinedFunction
     error: UndefinedFunction
                         return InterpreterError.UndefinedFunction;
                         ^
@@ -4571,7 +4571,7 @@ grep: (standard input): binary file matches
     === Test Complete ===
 
 ---
-[1m[82/107] Testing: stdlib/03_mathz_advanced.csd[0m
+[1m[82/107] Testing: stdlib/03_mathz_advanced.💀[0m
   Result: [31mINTERPRETER ERROR (compiled worked)[0m
   [36mInterpreter (exit: 1):[0m
     DEBUG: parseForStatement started at position 333
@@ -4614,7 +4614,7 @@ grep: (standard input): binary file matches
     ================================
     === Advanced Mathz Test === 
     Power function: 
-    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/stdlib/03_mathz_advanced.csd: error.UndefinedFunction
+    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/stdlib/03_mathz_advanced.💀: error.UndefinedFunction
     error: UndefinedFunction
                         return InterpreterError.UndefinedFunction;
                         ^
@@ -4651,12 +4651,12 @@ grep: (standard input): binary file matches
     === Test Complete ===
 
 ---
-[1m[83/107] Testing: stdlib/04_collections_basic.csd[0m
+[1m[83/107] Testing: stdlib/04_collections_basic.💀[0m
   Result: [33mFAIL (different error messages)[0m
   [36mInterpreter (exit: 1):[0m
     === Basic Collections Test === 
     Creating array: 
-    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/stdlib/04_collections_basic.csd: error.UndefinedFunction
+    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/stdlib/04_collections_basic.💀: error.UndefinedFunction
     error: UndefinedFunction
                         return InterpreterError.UndefinedFunction;
                         ^
@@ -4681,7 +4681,7 @@ grep: (standard input): binary file matches
     Compilation failed
 
 ---
-[1m[84/107] Testing: stdlib/feature_stdlib_integration.csd[0m
+[1m[84/107] Testing: stdlib/feature_stdlib_integration.💀[0m
   Result: [31mCOMPILE ERROR (interpreted worked)[0m
   [36mInterpreter (exit: 0):[0m
     DEBUG: parseForStatement started at position 333
@@ -4741,58 +4741,58 @@ grep: (standard input): binary file matches
     Compilation failed
 
 ---
-[1m[85/107] Testing: stdlib/stdlib_mathz_operations.csd[0m
+[1m[85/107] Testing: stdlib/stdlib_mathz_operations.💀[0m
   Result: [31mCOMPILE ERROR (interpreted worked)[0m
   [36mInterpreter (exit: 0):[0m
-    Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/stdlib_mathz_operations.csd:12:10 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
-    Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/stdlib_mathz_operations.csd:12:10 - Synchronizing parser after error (context: synchronize)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/stdlib_mathz_operations.💀:12:10 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/stdlib_mathz_operations.💀:12:10 - Synchronizing parser after error (context: synchronize)
     INFO: Recovered at semicolon after skipping 5 tokens
-    Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/stdlib_mathz_operations.csd:12:25 - Error parsing function statement
+    Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/stdlib_mathz_operations.💀:12:25 - Error parsing function statement
     INFO: Recovered at delimiter 'RightParen' after skipping 4 tokens
     INFO: Attempting additional statement recovery
-    Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/stdlib_mathz_operations.csd:29:5 - Failed to parse statement
+    Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/stdlib_mathz_operations.💀:29:5 - Failed to parse statement
     INFO: Recovered at semicolon after skipping 6 tokens
     INFO: Attempting additional statement recovery
-    Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/stdlib_mathz_operations.csd:30:17 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
-    Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/stdlib_mathz_operations.csd:30:17 - Synchronizing parser after error (context: synchronize)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/stdlib_mathz_operations.💀:30:17 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/stdlib_mathz_operations.💀:30:17 - Synchronizing parser after error (context: synchronize)
     INFO: Recovered at semicolon after skipping 4 tokens
-    Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/stdlib_mathz_operations.csd:30:30 - Failed to parse statement
+    Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/stdlib_mathz_operations.💀:30:30 - Failed to parse statement
     INFO: Recovered at statement keyword 'Sus' after skipping 1 tokens
     INFO: Attempting additional statement recovery
-    Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/stdlib_mathz_operations.csd:31:21 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
-    Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/stdlib_mathz_operations.csd:31:21 - Synchronizing parser after error (context: synchronize)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/stdlib_mathz_operations.💀:31:21 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/stdlib_mathz_operations.💀:31:21 - Synchronizing parser after error (context: synchronize)
     INFO: Recovered at delimiter 'RightParen' after skipping 10 tokens
-    Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/stdlib_mathz_operations.csd:31:56 - Failed to parse statement
+    Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/stdlib_mathz_operations.💀:31:56 - Failed to parse statement
     INFO: Recovered at semicolon after skipping 1 tokens
     INFO: Attempting additional statement recovery
-    Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/stdlib_mathz_operations.csd:35:17 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
-    Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/stdlib_mathz_operations.csd:35:17 - Synchronizing parser after error (context: synchronize)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/stdlib_mathz_operations.💀:35:17 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/stdlib_mathz_operations.💀:35:17 - Synchronizing parser after error (context: synchronize)
     INFO: Recovered at delimiter 'RightParen' after skipping 8 tokens
-    Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/stdlib_mathz_operations.csd:35:41 - Failed to parse statement
+    Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/stdlib_mathz_operations.💀:35:41 - Failed to parse statement
     INFO: Recovered at semicolon after skipping 1 tokens
     INFO: Attempting additional statement recovery
-    Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/stdlib_mathz_operations.csd:39:10 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
-    Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/stdlib_mathz_operations.csd:39:10 - Synchronizing parser after error (context: synchronize)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/stdlib_mathz_operations.💀:39:10 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/stdlib_mathz_operations.💀:39:10 - Synchronizing parser after error (context: synchronize)
     INFO: Recovered at semicolon after skipping 4 tokens
-    Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/stdlib_mathz_operations.csd:39:23 - Failed to parse statement
+    Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/stdlib_mathz_operations.💀:39:23 - Failed to parse statement
     INFO: Recovered at statement keyword 'Sus' after skipping 1 tokens
     INFO: Attempting additional statement recovery
-    Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/stdlib_mathz_operations.csd:40:10 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
-    Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/stdlib_mathz_operations.csd:40:10 - Synchronizing parser after error (context: synchronize)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/stdlib_mathz_operations.💀:40:10 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/stdlib_mathz_operations.💀:40:10 - Synchronizing parser after error (context: synchronize)
     INFO: Recovered at semicolon after skipping 5 tokens
-    Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/stdlib_mathz_operations.csd:40:24 - Failed to parse statement
+    Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/stdlib_mathz_operations.💀:40:24 - Failed to parse statement
     INFO: Recovered at statement keyword 'Sus' after skipping 1 tokens
     INFO: Attempting additional statement recovery
-    Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/stdlib_mathz_operations.csd:41:10 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
-    Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/stdlib_mathz_operations.csd:41:10 - Synchronizing parser after error (context: synchronize)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/stdlib_mathz_operations.💀:41:10 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/stdlib_mathz_operations.💀:41:10 - Synchronizing parser after error (context: synchronize)
     INFO: Recovered at delimiter 'RightParen' after skipping 12 tokens
-    Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/stdlib_mathz_operations.csd:41:49 - Failed to parse statement
+    Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/stdlib_mathz_operations.💀:41:49 - Failed to parse statement
     INFO: Recovered at delimiter 'RightParen' after skipping 7 tokens
     INFO: Attempting additional statement recovery
-    Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/stdlib_mathz_operations.csd:45:20 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
-    Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/stdlib_mathz_operations.csd:45:20 - Synchronizing parser after error (context: synchronize)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/stdlib_mathz_operations.💀:45:20 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/stdlib_mathz_operations.💀:45:20 - Synchronizing parser after error (context: synchronize)
     INFO: Recovered at delimiter 'RightParen' after skipping 12 tokens
-    Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/stdlib_mathz_operations.csd:45:57 - Failed to parse statement
+    Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/stdlib_mathz_operations.💀:45:57 - Failed to parse statement
     INFO: Recovered at semicolon after skipping 1 tokens
     INFO: Attempting additional statement recovery
     
@@ -4900,7 +4900,7 @@ grep: (standard input): binary file matches
     00000020: 6573 745f 7375 6974 652f 7465 7374 5f70  est_suite/test_p
     00000030: 726f 6772 616d 732f 7374 646c 6962 2f73  rograms/stdlib/s
     00000040: 7464 6c69 625f 6d61 7468 7a5f 6f70 6572  tdlib_mathz_oper
-    00000050: 6174 696f 6e73 2e63 7364 3a31 323a 3130  ations.csd:12:10
+    00000050: 6174 696f 6e73 2e63 7364 3a31 323a 3130  ations.💀:12:10
     00000060: 202d 2045 7272 6f72 2070 6172 7369 6e67   - Error parsing
     00000070: 2063 6f6d 706c 6578 2065 7870 7265 7373   complex express
     00000080: 696f 6e20 7374 6174 656d 656e 7420 2d20  ion statement - 
@@ -4914,7 +4914,7 @@ grep: (standard input): binary file matches
     00000100: 642f 7465 7374 5f73 7569 7465 2f74 6573  d/test_suite/tes
     00000110: 745f 7072 6f67 7261 6d73 2f73 7464 6c69  t_programs/stdli
     00000120: 622f 7374 646c 6962 5f6d 6174 687a 5f6f  b/stdlib_mathz_o
-    00000130: 7065 7261 7469 6f6e 732e 6373 643a 3132  perations.csd:12
+    00000130: 7065 7261 7469 6f6e 732e 6373 643a 3132  perations.💀:12
     00000140: 3a31 3020 2d20 5379 6e63 6872 6f6e 697a  :10 - Synchroniz
     00000150: 696e 6720 7061 7273 6572 2061 6674 6572  ing parser after
     00000160: 2065 7272 6f72 2028 636f 6e74 6578 743a   error (context:
@@ -4927,7 +4927,7 @@ grep: (standard input): binary file matches
     000001d0: 642f 7465 7374 5f73 7569 7465 2f74 6573  d/test_suite/tes
     000001e0: 745f 7072 6f67 7261 6d73 2f73 7464 6c69  t_programs/stdli
     000001f0: 622f 7374 646c 6962 5f6d 6174 687a 5f6f  b/stdlib_mathz_o
-    00000200: 7065 7261 7469 6f6e 732e 6373 643a 3132  perations.csd:12
+    00000200: 7065 7261 7469 6f6e 732e 6373 643a 3132  perations.💀:12
     00000210: 3a32 3520 2d20 4572 726f 7220 7061 7273  :25 - Error pars
     00000220: 696e 6720 6675 6e63 7469 6f6e 2073 7461  ing function sta
     00000230: 7465 6d65 6e74 0a49 4e46 4f3a 2052 6563  tement.INFO: Rec
@@ -4971,7 +4971,7 @@ grep: (standard input): binary file matches
     00000490: 7569 7465 2f74 6573 745f 7072 6f67 7261  uite/test_progra
     000004a0: 6d73 2f73 7464 6c69 622f 7374 646c 6962  ms/stdlib/stdlib
     000004b0: 5f6d 6174 687a 5f6f 7065 7261 7469 6f6e  _mathz_operation
-    000004c0: 732e 6373 643a 3330 3a31 3720 2d20 5379  s.csd:30:17 - Sy
+    000004c0: 732e 6373 643a 3330 3a31 3720 2d20 5379  s.💀:30:17 - Sy
     000004d0: 6e63 6872 6f6e 697a 696e 6720 7061 7273  nchronizing pars
     000004e0: 6572 2061 6674 6572 2065 7272 6f72 2028  er after error (
     000004f0: 636f 6e74 6578 743a 2073 796e 6368 726f  context: synchro
@@ -4984,7 +4984,7 @@ grep: (standard input): binary file matches
     00000560: 7569 7465 2f74 6573 745f 7072 6f67 7261  uite/test_progra
     00000570: 6d73 2f73 7464 6c69 622f 7374 646c 6962  ms/stdlib/stdlib
     00000580: 5f6d 6174 687a 5f6f 7065 7261 7469 6f6e  _mathz_operation
-    00000590: 732e 6373 643a 3330 3a33 3020 2d20 4661  s.csd:30:30 - Fa
+    00000590: 732e 6373 643a 3330 3a33 3020 2d20 4661  s.💀:30:30 - Fa
     000005a0: 696c 6564 2074 6f20 7061 7273 6520 7374  iled to parse st
     000005b0: 6174 656d 656e 740a 494e 464f 3a20 5265  atement.INFO: Re
     000005c0: 636f 7665 7265 6420 6174 2073 7461 7465  covered at state
@@ -4999,7 +4999,7 @@ grep: (standard input): binary file matches
     00000650: 6974 652f 7465 7374 5f70 726f 6772 616d  ite/test_program
     00000660: 732f 7374 646c 6962 2f73 7464 6c69 625f  s/stdlib/stdlib_
     00000670: 6d61 7468 7a5f 6f70 6572 6174 696f 6e73  mathz_operations
-    00000680: 2e63 7364 3a33 313a 3231 202d 2045 7272  .csd:31:21 - Err
+    00000680: 2e63 7364 3a33 313a 3231 202d 2045 7272  .💀:31:21 - Err
     00000690: 6f72 2070 6172 7369 6e67 2063 6f6d 706c  or parsing compl
     000006a0: 6578 2065 7870 7265 7373 696f 6e20 7374  ex expression st
     000006b0: 6174 656d 656e 7420 2d20 6368 6563 6b20  atement - check 
@@ -5013,7 +5013,7 @@ grep: (standard input): binary file matches
     00000730: 5f73 7569 7465 2f74 6573 745f 7072 6f67  _suite/test_prog
     00000740: 7261 6d73 2f73 7464 6c69 622f 7374 646c  rams/stdlib/stdl
     00000750: 6962 5f6d 6174 687a 5f6f 7065 7261 7469  ib_mathz_operati
-    00000760: 6f6e 732e 6373 643a 3331 3a32 3120 2d20  ons.csd:31:21 - 
+    00000760: 6f6e 732e 6373 643a 3331 3a32 3120 2d20  ons.💀:31:21 - 
     00000770: 5379 6e63 6872 6f6e 697a 696e 6720 7061  Synchronizing pa
     00000780: 7273 6572 2061 6674 6572 2065 7272 6f72  rser after error
     00000790: 2028 636f 6e74 6578 743a 2073 796e 6368   (context: synch
@@ -5027,7 +5027,7 @@ grep: (standard input): binary file matches
     00000810: 7569 7465 2f74 6573 745f 7072 6f67 7261  uite/test_progra
     00000820: 6d73 2f73 7464 6c69 622f 7374 646c 6962  ms/stdlib/stdlib
     00000830: 5f6d 6174 687a 5f6f 7065 7261 7469 6f6e  _mathz_operation
-    00000840: 732e 6373 643a 3331 3a35 3620 2d20 4661  s.csd:31:56 - Fa
+    00000840: 732e 6373 643a 3331 3a35 3620 2d20 4661  s.💀:31:56 - Fa
     00000850: 696c 6564 2074 6f20 7061 7273 6520 7374  iled to parse st
     00000860: 6174 656d 656e 740a 494e 464f 3a20 5265  atement.INFO: Re
     00000870: 636f 7665 7265 6420 6174 2073 656d 6963  covered at semic
@@ -5041,7 +5041,7 @@ grep: (standard input): binary file matches
     000008f0: 7375 6974 652f 7465 7374 5f70 726f 6772  suite/test_progr
     00000900: 616d 732f 7374 646c 6962 2f73 7464 6c69  ams/stdlib/stdli
     00000910: 625f 6d61 7468 7a5f 6f70 6572 6174 696f  b_mathz_operatio
-    00000920: 6e73 2e63 7364 3a33 353a 3137 202d 2045  ns.csd:35:17 - E
+    00000920: 6e73 2e63 7364 3a33 353a 3137 202d 2045  ns.💀:35:17 - E
     00000930: 7272 6f72 2070 6172 7369 6e67 2063 6f6d  rror parsing com
     00000940: 706c 6578 2065 7870 7265 7373 696f 6e20  plex expression 
     00000950: 7374 6174 656d 656e 7420 2d20 6368 6563  statement - chec
@@ -5055,7 +5055,7 @@ grep: (standard input): binary file matches
     000009d0: 7374 5f73 7569 7465 2f74 6573 745f 7072  st_suite/test_pr
     000009e0: 6f67 7261 6d73 2f73 7464 6c69 622f 7374  ograms/stdlib/st
     000009f0: 646c 6962 5f6d 6174 687a 5f6f 7065 7261  dlib_mathz_opera
-    00000a00: 7469 6f6e 732e 6373 643a 3335 3a31 3720  tions.csd:35:17 
+    00000a00: 7469 6f6e 732e 6373 643a 3335 3a31 3720  tions.💀:35:17 
     00000a10: 2d20 5379 6e63 6872 6f6e 697a 696e 6720  - Synchronizing 
     00000a20: 7061 7273 6572 2061 6674 6572 2065 7272  parser after err
     00000a30: 6f72 2028 636f 6e74 6578 743a 2073 796e  or (context: syn
@@ -5069,7 +5069,7 @@ grep: (standard input): binary file matches
     00000ab0: 7375 6974 652f 7465 7374 5f70 726f 6772  suite/test_progr
     00000ac0: 616d 732f 7374 646c 6962 2f73 7464 6c69  ams/stdlib/stdli
     00000ad0: 625f 6d61 7468 7a5f 6f70 6572 6174 696f  b_mathz_operatio
-    00000ae0: 6e73 2e63 7364 3a33 353a 3431 202d 2046  ns.csd:35:41 - F
+    00000ae0: 6e73 2e63 7364 3a33 353a 3431 202d 2046  ns.💀:35:41 - F
     00000af0: 6169 6c65 6420 746f 2070 6172 7365 2073  ailed to parse s
     00000b00: 7461 7465 6d65 6e74 0a49 4e46 4f3a 2052  tatement.INFO: R
     00000b10: 6563 6f76 6572 6564 2061 7420 7365 6d69  ecovered at semi
@@ -5083,7 +5083,7 @@ grep: (standard input): binary file matches
     00000b90: 5f73 7569 7465 2f74 6573 745f 7072 6f67  _suite/test_prog
     00000ba0: 7261 6d73 2f73 7464 6c69 622f 7374 646c  rams/stdlib/stdl
     00000bb0: 6962 5f6d 6174 687a 5f6f 7065 7261 7469  ib_mathz_operati
-    00000bc0: 6f6e 732e 6373 643a 3339 3a31 3020 2d20  ons.csd:39:10 - 
+    00000bc0: 6f6e 732e 6373 643a 3339 3a31 3020 2d20  ons.💀:39:10 - 
     00000bd0: 4572 726f 7220 7061 7273 696e 6720 636f  Error parsing co
     00000be0: 6d70 6c65 7820 6578 7072 6573 7369 6f6e  mplex expression
     00000bf0: 2073 7461 7465 6d65 6e74 202d 2063 6865   statement - che
@@ -5097,7 +5097,7 @@ grep: (standard input): binary file matches
     00000c70: 6573 745f 7375 6974 652f 7465 7374 5f70  est_suite/test_p
     00000c80: 726f 6772 616d 732f 7374 646c 6962 2f73  rograms/stdlib/s
     00000c90: 7464 6c69 625f 6d61 7468 7a5f 6f70 6572  tdlib_mathz_oper
-    00000ca0: 6174 696f 6e73 2e63 7364 3a33 393a 3130  ations.csd:39:10
+    00000ca0: 6174 696f 6e73 2e63 7364 3a33 393a 3130  ations.💀:39:10
     00000cb0: 202d 2053 796e 6368 726f 6e69 7a69 6e67   - Synchronizing
     00000cc0: 2070 6172 7365 7220 6166 7465 7220 6572   parser after er
     00000cd0: 726f 7220 2863 6f6e 7465 7874 3a20 7379  ror (context: sy
@@ -5110,7 +5110,7 @@ grep: (standard input): binary file matches
     00000d40: 6573 745f 7375 6974 652f 7465 7374 5f70  est_suite/test_p
     00000d50: 726f 6772 616d 732f 7374 646c 6962 2f73  rograms/stdlib/s
     00000d60: 7464 6c69 625f 6d61 7468 7a5f 6f70 6572  tdlib_mathz_oper
-    00000d70: 6174 696f 6e73 2e63 7364 3a33 393a 3233  ations.csd:39:23
+    00000d70: 6174 696f 6e73 2e63 7364 3a33 393a 3233  ations.💀:39:23
     00000d80: 202d 2046 6169 6c65 6420 746f 2070 6172   - Failed to par
     00000d90: 7365 2073 7461 7465 6d65 6e74 0a49 4e46  se statement.INF
     00000da0: 4f3a 2052 6563 6f76 6572 6564 2061 7420  O: Recovered at 
@@ -5125,7 +5125,7 @@ grep: (standard input): binary file matches
     00000e30: 7374 5f73 7569 7465 2f74 6573 745f 7072  st_suite/test_pr
     00000e40: 6f67 7261 6d73 2f73 7464 6c69 622f 7374  ograms/stdlib/st
     00000e50: 646c 6962 5f6d 6174 687a 5f6f 7065 7261  dlib_mathz_opera
-    00000e60: 7469 6f6e 732e 6373 643a 3430 3a31 3020  tions.csd:40:10 
+    00000e60: 7469 6f6e 732e 6373 643a 3430 3a31 3020  tions.💀:40:10 
     00000e70: 2d20 4572 726f 7220 7061 7273 696e 6720  - Error parsing 
     00000e80: 636f 6d70 6c65 7820 6578 7072 6573 7369  complex expressi
     00000e90: 6f6e 2073 7461 7465 6d65 6e74 202d 2063  on statement - c
@@ -5139,7 +5139,7 @@ grep: (standard input): binary file matches
     00000f10: 2f74 6573 745f 7375 6974 652f 7465 7374  /test_suite/test
     00000f20: 5f70 726f 6772 616d 732f 7374 646c 6962  _programs/stdlib
     00000f30: 2f73 7464 6c69 625f 6d61 7468 7a5f 6f70  /stdlib_mathz_op
-    00000f40: 6572 6174 696f 6e73 2e63 7364 3a34 303a  erations.csd:40:
+    00000f40: 6572 6174 696f 6e73 2e63 7364 3a34 303a  erations.💀:40:
     00000f50: 3130 202d 2053 796e 6368 726f 6e69 7a69  10 - Synchronizi
     00000f60: 6e67 2070 6172 7365 7220 6166 7465 7220  ng parser after 
     00000f70: 6572 726f 7220 2863 6f6e 7465 7874 3a20  error (context: 
@@ -5152,7 +5152,7 @@ grep: (standard input): binary file matches
     00000fe0: 2f74 6573 745f 7375 6974 652f 7465 7374  /test_suite/test
     00000ff0: 5f70 726f 6772 616d 732f 7374 646c 6962  _programs/stdlib
     00001000: 2f73 7464 6c69 625f 6d61 7468 7a5f 6f70  /stdlib_mathz_op
-    00001010: 6572 6174 696f 6e73 2e63 7364 3a34 303a  erations.csd:40:
+    00001010: 6572 6174 696f 6e73 2e63 7364 3a34 303a  erations.💀:40:
     00001020: 3234 202d 2046 6169 6c65 6420 746f 2070  24 - Failed to p
     00001030: 6172 7365 2073 7461 7465 6d65 6e74 0a49  arse statement.I
     00001040: 4e46 4f3a 2052 6563 6f76 6572 6564 2061  NFO: Recovered a
@@ -5167,7 +5167,7 @@ grep: (standard input): binary file matches
     000010d0: 7465 7374 5f73 7569 7465 2f74 6573 745f  test_suite/test_
     000010e0: 7072 6f67 7261 6d73 2f73 7464 6c69 622f  programs/stdlib/
     000010f0: 7374 646c 6962 5f6d 6174 687a 5f6f 7065  stdlib_mathz_ope
-    00001100: 7261 7469 6f6e 732e 6373 643a 3431 3a31  rations.csd:41:1
+    00001100: 7261 7469 6f6e 732e 6373 643a 3431 3a31  rations.💀:41:1
     00001110: 3020 2d20 4572 726f 7220 7061 7273 696e  0 - Error parsin
     00001120: 6720 636f 6d70 6c65 7820 6578 7072 6573  g complex expres
     00001130: 7369 6f6e 2073 7461 7465 6d65 6e74 202d  sion statement -
@@ -5181,7 +5181,7 @@ grep: (standard input): binary file matches
     000011b0: 6564 2f74 6573 745f 7375 6974 652f 7465  ed/test_suite/te
     000011c0: 7374 5f70 726f 6772 616d 732f 7374 646c  st_programs/stdl
     000011d0: 6962 2f73 7464 6c69 625f 6d61 7468 7a5f  ib/stdlib_mathz_
-    000011e0: 6f70 6572 6174 696f 6e73 2e63 7364 3a34  operations.csd:4
+    000011e0: 6f70 6572 6174 696f 6e73 2e63 7364 3a34  operations.💀:4
     000011f0: 313a 3130 202d 2053 796e 6368 726f 6e69  1:10 - Synchroni
     00001200: 7a69 6e67 2070 6172 7365 7220 6166 7465  zing parser afte
     00001210: 7220 6572 726f 7220 2863 6f6e 7465 7874  r error (context
@@ -5195,7 +5195,7 @@ grep: (standard input): binary file matches
     00001290: 2f74 6573 745f 7375 6974 652f 7465 7374  /test_suite/test
     000012a0: 5f70 726f 6772 616d 732f 7374 646c 6962  _programs/stdlib
     000012b0: 2f73 7464 6c69 625f 6d61 7468 7a5f 6f70  /stdlib_mathz_op
-    000012c0: 6572 6174 696f 6e73 2e63 7364 3a34 313a  erations.csd:41:
+    000012c0: 6572 6174 696f 6e73 2e63 7364 3a34 313a  erations.💀:41:
     000012d0: 3439 202d 2046 6169 6c65 6420 746f 2070  49 - Failed to p
     000012e0: 6172 7365 2073 7461 7465 6d65 6e74 0a49  arse statement.I
     000012f0: 4e46 4f3a 2052 6563 6f76 6572 6564 2061  NFO: Recovered a
@@ -5210,7 +5210,7 @@ grep: (standard input): binary file matches
     00001380: 6573 745f 7375 6974 652f 7465 7374 5f70  est_suite/test_p
     00001390: 726f 6772 616d 732f 7374 646c 6962 2f73  rograms/stdlib/s
     000013a0: 7464 6c69 625f 6d61 7468 7a5f 6f70 6572  tdlib_mathz_oper
-    000013b0: 6174 696f 6e73 2e63 7364 3a34 353a 3230  ations.csd:45:20
+    000013b0: 6174 696f 6e73 2e63 7364 3a34 353a 3230  ations.💀:45:20
     000013c0: 202d 2045 7272 6f72 2070 6172 7369 6e67   - Error parsing
     000013d0: 2063 6f6d 706c 6578 2065 7870 7265 7373   complex express
     000013e0: 696f 6e20 7374 6174 656d 656e 7420 2d20  ion statement - 
@@ -5224,7 +5224,7 @@ grep: (standard input): binary file matches
     00001460: 642f 7465 7374 5f73 7569 7465 2f74 6573  d/test_suite/tes
     00001470: 745f 7072 6f67 7261 6d73 2f73 7464 6c69  t_programs/stdli
     00001480: 622f 7374 646c 6962 5f6d 6174 687a 5f6f  b/stdlib_mathz_o
-    00001490: 7065 7261 7469 6f6e 732e 6373 643a 3435  perations.csd:45
+    00001490: 7065 7261 7469 6f6e 732e 6373 643a 3435  perations.💀:45
     000014a0: 3a32 3020 2d20 5379 6e63 6872 6f6e 697a  :20 - Synchroniz
     000014b0: 696e 6720 7061 7273 6572 2061 6674 6572  ing parser after
     000014c0: 2065 7272 6f72 2028 636f 6e74 6578 743a   error (context:
@@ -5238,7 +5238,7 @@ grep: (standard input): binary file matches
     00001540: 7465 7374 5f73 7569 7465 2f74 6573 745f  test_suite/test_
     00001550: 7072 6f67 7261 6d73 2f73 7464 6c69 622f  programs/stdlib/
     00001560: 7374 646c 6962 5f6d 6174 687a 5f6f 7065  stdlib_mathz_ope
-    00001570: 7261 7469 6f6e 732e 6373 643a 3435 3a35  rations.csd:45:5
+    00001570: 7261 7469 6f6e 732e 6373 643a 3435 3a35  rations.💀:45:5
     00001580: 3720 2d20 4661 696c 6564 2074 6f20 7061  7 - Failed to pa
     00001590: 7273 6520 7374 6174 656d 656e 740a 494e  rse statement.IN
     000015a0: 464f 3a20 5265 636f 7665 7265 6420 6174  FO: Recovered at
@@ -5501,38 +5501,38 @@ grep: (standard input): binary file matches
     (no output)
 
 ---
-[1m[86/107] Testing: stdlib/stdlib_vibez_output.csd[0m
+[1m[86/107] Testing: stdlib/stdlib_vibez_output.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[87/107] Testing: stress/stress_deep_nested_operations.csd[0m
+[1m[87/107] Testing: stress/stress_deep_nested_operations.💀[0m
   Result: [33mFAIL (different error messages)[0m
   [36mInterpreter (exit: 134):[0m
-    Error at /home/ghuntley/cursed/test_suite/test_programs/stress/stress_deep_nested_operations.csd:30:35 - Expected ')' after parameters. Expected .RightParen, got .Flex (context: consume)
-    Error at /home/ghuntley/cursed/test_suite/test_programs/stress/stress_deep_nested_operations.csd:30:35 - Error parsing function statement
+    Error at /home/ghuntley/cursed/test_suite/test_programs/stress/stress_deep_nested_operations.💀:30:35 - Expected ')' after parameters. Expected .RightParen, got .Flex (context: consume)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/stress/stress_deep_nested_operations.💀:30:35 - Error parsing function statement
     INFO: Recovered at semicolon after skipping 1 tokens
     INFO: Attempting additional statement recovery
-    Error at /home/ghuntley/cursed/test_suite/test_programs/stress/stress_deep_nested_operations.csd:53:5 - Failed to parse statement
+    Error at /home/ghuntley/cursed/test_suite/test_programs/stress/stress_deep_nested_operations.💀:53:5 - Failed to parse statement
     INFO: Recovered at semicolon after skipping 2 tokens
     INFO: Attempting additional statement recovery
     DEBUG: Failed to parse method argument: error.UnexpectedToken
-    Error at /home/ghuntley/cursed/test_suite/test_programs/stress/stress_deep_nested_operations.csd:60:41 - Error parsing variable declaration
+    Error at /home/ghuntley/cursed/test_suite/test_programs/stress/stress_deep_nested_operations.💀:60:41 - Error parsing variable declaration
     INFO: Recovered at newline after skipping 5 tokens
-    Error at /home/ghuntley/cursed/test_suite/test_programs/stress/stress_deep_nested_operations.csd:62:13 - Error parsing function statement
+    Error at /home/ghuntley/cursed/test_suite/test_programs/stress/stress_deep_nested_operations.💀:62:13 - Error parsing function statement
     INFO: Recovered at delimiter 'RightParen' after skipping 5 tokens
     INFO: Attempting additional statement recovery
-    Error at /home/ghuntley/cursed/test_suite/test_programs/stress/stress_deep_nested_operations.csd:83:5 - Failed to parse statement
+    Error at /home/ghuntley/cursed/test_suite/test_programs/stress/stress_deep_nested_operations.💀:83:5 - Failed to parse statement
     INFO: Recovered at delimiter 'RightParen' after skipping 7 tokens
     INFO: Attempting additional statement recovery
     DEBUG: Failed to parse method argument: error.UnexpectedToken
-    Error at /home/ghuntley/cursed/test_suite/test_programs/stress/stress_deep_nested_operations.csd:106:43 - Error parsing variable declaration
+    Error at /home/ghuntley/cursed/test_suite/test_programs/stress/stress_deep_nested_operations.💀:106:43 - Error parsing variable declaration
     INFO: Recovered at newline after skipping 5 tokens
-    Error at /home/ghuntley/cursed/test_suite/test_programs/stress/stress_deep_nested_operations.csd:108:13 - Failed to parse statement
+    Error at /home/ghuntley/cursed/test_suite/test_programs/stress/stress_deep_nested_operations.💀:108:13 - Failed to parse statement
     INFO: Recovered at delimiter 'RightParen' after skipping 3 tokens
     INFO: Attempting additional statement recovery
-    Error at /home/ghuntley/cursed/test_suite/test_programs/stress/stress_deep_nested_operations.csd:115:10 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
-    Error at /home/ghuntley/cursed/test_suite/test_programs/stress/stress_deep_nested_operations.csd:115:10 - Synchronizing parser after error (context: synchronize)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/stress/stress_deep_nested_operations.💀:115:10 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/stress/stress_deep_nested_operations.💀:115:10 - Synchronizing parser after error (context: synchronize)
     INFO: Recovered at delimiter 'RightParen' after skipping 4 tokens
-    Error at /home/ghuntley/cursed/test_suite/test_programs/stress/stress_deep_nested_operations.csd:115:29 - Failed to parse statement
+    Error at /home/ghuntley/cursed/test_suite/test_programs/stress/stress_deep_nested_operations.💀:115:29 - Failed to parse statement
     INFO: Recovered at semicolon after skipping 1 tokens
     INFO: Attempting additional statement recovery
     
@@ -5664,41 +5664,41 @@ grep: (standard input): binary file matches
     Compilation failed
 
 ---
-[1m[88/107] Testing: stress/stress_large_scale_processing.csd[0m
+[1m[88/107] Testing: stress/stress_large_scale_processing.💀[0m
   Result: [33mFAIL (different error messages)[0m
   [36mInterpreter (exit: 1):[0m
-    Error at /home/ghuntley/cursed/test_suite/test_programs/stress/stress_large_scale_processing.csd:24:33 - Expected ')' after parameters. Expected .RightParen, got .Flex (context: consume)
-    Error at /home/ghuntley/cursed/test_suite/test_programs/stress/stress_large_scale_processing.csd:24:33 - Error parsing function statement
+    Error at /home/ghuntley/cursed/test_suite/test_programs/stress/stress_large_scale_processing.💀:24:33 - Expected ')' after parameters. Expected .RightParen, got .Flex (context: consume)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/stress/stress_large_scale_processing.💀:24:33 - Error parsing function statement
     INFO: Recovered at newline after skipping 1 tokens
     INFO: Attempting additional statement recovery
-    Error at /home/ghuntley/cursed/test_suite/test_programs/stress/stress_large_scale_processing.csd:43:9 - Failed to parse statement
+    Error at /home/ghuntley/cursed/test_suite/test_programs/stress/stress_large_scale_processing.💀:43:9 - Failed to parse statement
     INFO: Recovered at newline after skipping 5 tokens
     INFO: Attempting additional statement recovery
-    Error at /home/ghuntley/cursed/test_suite/test_programs/stress/stress_large_scale_processing.csd:51:11 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
-    Error at /home/ghuntley/cursed/test_suite/test_programs/stress/stress_large_scale_processing.csd:51:11 - Synchronizing parser after error (context: synchronize)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/stress/stress_large_scale_processing.💀:51:11 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/stress/stress_large_scale_processing.💀:51:11 - Synchronizing parser after error (context: synchronize)
     INFO: Recovered at newline after skipping 2 tokens
-    Error at /home/ghuntley/cursed/test_suite/test_programs/stress/stress_large_scale_processing.csd:52:13 - Failed to parse statement
+    Error at /home/ghuntley/cursed/test_suite/test_programs/stress/stress_large_scale_processing.💀:52:13 - Failed to parse statement
     INFO: Recovered at delimiter 'RightParen' after skipping 9 tokens
     INFO: Attempting additional statement recovery
-    Error at /home/ghuntley/cursed/test_suite/test_programs/stress/stress_large_scale_processing.csd:71:1 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
-    Error at /home/ghuntley/cursed/test_suite/test_programs/stress/stress_large_scale_processing.csd:71:1 - Synchronizing parser after error (context: synchronize)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/stress/stress_large_scale_processing.💀:71:1 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/stress/stress_large_scale_processing.💀:71:1 - Synchronizing parser after error (context: synchronize)
     INFO: Recovered at semicolon after skipping 1 tokens
-    Error at /home/ghuntley/cursed/test_suite/test_programs/stress/stress_large_scale_processing.csd:71:2 - Failed to parse statement
+    Error at /home/ghuntley/cursed/test_suite/test_programs/stress/stress_large_scale_processing.💀:71:2 - Failed to parse statement
     INFO: Recovered at newline after skipping 1 tokens
     INFO: Attempting additional statement recovery
     DEBUG: Failed to parse method argument: error.UnexpectedToken
-    Error at /home/ghuntley/cursed/test_suite/test_programs/stress/stress_large_scale_processing.csd:137:48 - Error parsing variable declaration
+    Error at /home/ghuntley/cursed/test_suite/test_programs/stress/stress_large_scale_processing.💀:137:48 - Error parsing variable declaration
     INFO: Recovered at delimiter 'RightParen' after skipping 8 tokens
-    Error at /home/ghuntley/cursed/test_suite/test_programs/stress/stress_large_scale_processing.csd:138:54 - Error parsing function statement
+    Error at /home/ghuntley/cursed/test_suite/test_programs/stress/stress_large_scale_processing.💀:138:54 - Error parsing function statement
     INFO: Recovered at newline after skipping 1 tokens
     INFO: Attempting additional statement recovery
-    Error at /home/ghuntley/cursed/test_suite/test_programs/stress/stress_large_scale_processing.csd:148:33 - Failed to parse statement
+    Error at /home/ghuntley/cursed/test_suite/test_programs/stress/stress_large_scale_processing.💀:148:33 - Failed to parse statement
     INFO: Recovered at newline after skipping 1 tokens
     INFO: Attempting additional statement recovery
-    Error at /home/ghuntley/cursed/test_suite/test_programs/stress/stress_large_scale_processing.csd:156:1 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
-    Error at /home/ghuntley/cursed/test_suite/test_programs/stress/stress_large_scale_processing.csd:156:1 - Synchronizing parser after error (context: synchronize)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/stress/stress_large_scale_processing.💀:156:1 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/stress/stress_large_scale_processing.💀:156:1 - Synchronizing parser after error (context: synchronize)
     INFO: Recovered at newline after skipping 1 tokens
-    Error at /home/ghuntley/cursed/test_suite/test_programs/stress/stress_large_scale_processing.csd:156:2 - Failed to parse statement
+    Error at /home/ghuntley/cursed/test_suite/test_programs/stress/stress_large_scale_processing.💀:156:2 - Failed to parse statement
     
     === Error Recovery Statistics ===
     Total errors encountered: 7
@@ -5785,8 +5785,8 @@ grep: (standard input): binary file matches
     Total tokens skipped: 10
     ================================
     ERROR: No CURSED stdlib implementation found for module 'element': error.ModuleNotFound
-    SELF-HOSTING: Please implement stdlib/element/mod.csd for true self-hosting
-    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/stress/stress_large_scale_processing.csd: error.UndefinedVariable
+    SELF-HOSTING: Please implement stdlib/element/mod.💀 for true self-hosting
+    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/stress/stress_large_scale_processing.💀: error.UndefinedVariable
     
     === Error Recovery Statistics ===
     Total errors encountered: 7
@@ -5822,30 +5822,30 @@ grep: (standard input): binary file matches
     Compilation failed
 
 ---
-[1m[89/107] Testing: strings/01_string_operations.csd[0m
+[1m[89/107] Testing: strings/01_string_operations.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[90/107] Testing: strings/strings_basic_operations.csd[0m
+[1m[90/107] Testing: strings/strings_basic_operations.💀[0m
   Result: [33mFAIL (different error messages)[0m
   [36mInterpreter (exit: 1):[0m
-    Error at /home/ghuntley/cursed/test_suite/test_programs/strings/strings_basic_operations.csd:16:13 - Error parsing variable declaration
+    Error at /home/ghuntley/cursed/test_suite/test_programs/strings/strings_basic_operations.💀:16:13 - Error parsing variable declaration
     INFO: Recovered at semicolon after skipping 4 tokens
-    Error at /home/ghuntley/cursed/test_suite/test_programs/strings/strings_basic_operations.csd:16:30 - Error parsing function statement
+    Error at /home/ghuntley/cursed/test_suite/test_programs/strings/strings_basic_operations.💀:16:30 - Error parsing function statement
     INFO: Recovered at newline after skipping 1 tokens
     INFO: Attempting additional statement recovery
-    Error at /home/ghuntley/cursed/test_suite/test_programs/strings/strings_basic_operations.csd:19:5 - Failed to parse statement
+    Error at /home/ghuntley/cursed/test_suite/test_programs/strings/strings_basic_operations.💀:19:5 - Failed to parse statement
     INFO: Recovered at newline after skipping 5 tokens
     INFO: Attempting additional statement recovery
-    Error at /home/ghuntley/cursed/test_suite/test_programs/strings/strings_basic_operations.csd:21:5 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
-    Error at /home/ghuntley/cursed/test_suite/test_programs/strings/strings_basic_operations.csd:21:5 - Synchronizing parser after error (context: synchronize)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/strings/strings_basic_operations.💀:21:5 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/strings/strings_basic_operations.💀:21:5 - Synchronizing parser after error (context: synchronize)
     INFO: Recovered at semicolon after skipping 1 tokens
-    Error at /home/ghuntley/cursed/test_suite/test_programs/strings/strings_basic_operations.csd:21:6 - Failed to parse statement
+    Error at /home/ghuntley/cursed/test_suite/test_programs/strings/strings_basic_operations.💀:21:6 - Failed to parse statement
     INFO: Recovered at newline after skipping 1 tokens
     INFO: Attempting additional statement recovery
-    Error at /home/ghuntley/cursed/test_suite/test_programs/strings/strings_basic_operations.csd:37:1 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
-    Error at /home/ghuntley/cursed/test_suite/test_programs/strings/strings_basic_operations.csd:37:1 - Synchronizing parser after error (context: synchronize)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/strings/strings_basic_operations.💀:37:1 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/strings/strings_basic_operations.💀:37:1 - Synchronizing parser after error (context: synchronize)
     INFO: Recovered at newline after skipping 1 tokens
-    Error at /home/ghuntley/cursed/test_suite/test_programs/strings/strings_basic_operations.csd:37:2 - Failed to parse statement
+    Error at /home/ghuntley/cursed/test_suite/test_programs/strings/strings_basic_operations.💀:37:2 - Failed to parse statement
     
     === Error Recovery Statistics ===
     Total errors encountered: 4
@@ -5856,8 +5856,8 @@ grep: (standard input): binary file matches
     Total tokens skipped: 13
     ================================
     ERROR: No CURSED stdlib implementation found for module 'empty': error.ModuleNotFound
-    SELF-HOSTING: Please implement stdlib/empty/mod.csd for true self-hosting
-    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/strings/strings_basic_operations.csd: error.UndefinedVariable
+    SELF-HOSTING: Please implement stdlib/empty/mod.💀 for true self-hosting
+    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/strings/strings_basic_operations.💀: error.UndefinedVariable
     
     === Error Recovery Statistics ===
     Total errors encountered: 4
@@ -5893,7 +5893,7 @@ grep: (standard input): binary file matches
     Compilation failed
 
 ---
-[1m[91/107] Testing: validation_cursed_arithmetic.csd[0m
+[1m[91/107] Testing: validation_cursed_arithmetic.💀[0m
   Result: [31mFAIL (OUTPUT_MISMATCH)[0m
   [36mInterpreter (exit: 0):[0m
     DEBUG: parseForStatement started at position 333
@@ -5983,7 +5983,7 @@ grep: (standard input): binary file matches
     42
 
 ---
-[1m[92/107] Testing: validation_cursed_basic.csd[0m
+[1m[92/107] Testing: validation_cursed_basic.💀[0m
   Result: [31mFAIL (OUTPUT_MISMATCH)[0m
   [36mInterpreter (exit: 0):[0m
     (no output)
@@ -5993,7 +5993,7 @@ grep: (standard input): binary file matches
     Basic test complete
 
 ---
-[1m[93/107] Testing: validation_cursed_variables.csd[0m
+[1m[93/107] Testing: validation_cursed_variables.💀[0m
   Result: [31mFAIL (OUTPUT_MISMATCH)[0m
   [36mInterpreter (exit: 0):[0m
     (no output)
@@ -6005,16 +6005,16 @@ grep: (standard input): binary file matches
     Types: normie meal tea lit
 
 ---
-[1m[94/107] Testing: validation/floating_point_format_parity.csd[0m
+[1m[94/107] Testing: validation/floating_point_format_parity.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[95/107] Testing: validation/validation_basic_cursed_syntax.csd[0m
+[1m[95/107] Testing: validation/validation_basic_cursed_syntax.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[96/107] Testing: validation/validation_basic_syntax.csd[0m
+[1m[96/107] Testing: validation/validation_basic_syntax.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[97/107] Testing: validation/validation_comprehensive_syntax.csd[0m
+[1m[97/107] Testing: validation/validation_comprehensive_syntax.💀[0m
   Result: [31mFAIL (OUTPUT_MISMATCH)[0m
   [36mInterpreter (exit: 0):[0m
     DEBUG: parseForStatement started at position 333
@@ -6250,10 +6250,10 @@ grep: (standard input): binary file matches
     00000100: 6c65 7465 203d 3d3d                      lete ===
 
 ---
-[1m[98/107] Testing: validation/validation_cursed_keywords.csd[0m
+[1m[98/107] Testing: validation/validation_cursed_keywords.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[99/107] Testing: validation/validation_float_precision.csd[0m
+[1m[99/107] Testing: validation/validation_float_precision.💀[0m
   Result: [31mFAIL (OUTPUT_MISMATCH)[0m
   [36mInterpreter (exit: 0):[0m
     === Float Precision Validation === 
@@ -6302,7 +6302,7 @@ grep: (standard input): binary file matches
     00000070: 3d3d 3d                                  ===
 
 ---
-[1m[100/107] Testing: validation/validation_function_definitions.csd[0m
+[1m[100/107] Testing: validation/validation_function_definitions.💀[0m
   Result: [31mCOMPILE ERROR (interpreted worked)[0m
   [36mInterpreter (exit: 0):[0m
     DEBUG: parseForStatement started at position 333
@@ -6360,7 +6360,7 @@ grep: (standard input): binary file matches
     Compilation failed
 
 ---
-[1m[101/107] Testing: validation/validation_minimal_syntax.csd[0m
+[1m[101/107] Testing: validation/validation_minimal_syntax.💀[0m
   Result: [31mCOMPILE ERROR (interpreted worked)[0m
   [36mInterpreter (exit: 0):[0m
     (no output)
@@ -6376,7 +6376,7 @@ grep: (standard input): binary file matches
     (no output)
 
 ---
-[1m[102/107] Testing: validation/validation_stdlib_collections_complete.csd[0m
+[1m[102/107] Testing: validation/validation_stdlib_collections_complete.💀[0m
   Result: [31mINTERPRETER ERROR (compiled worked)[0m
   [36mInterpreter (exit: 1):[0m
     === COLLECTIONS MODULE VALIDATION === 
@@ -6384,7 +6384,7 @@ grep: (standard input): binary file matches
     Array length test: 
     5 
     DEBUG Value.deinit Array: freed array slice
-    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/validation/validation_stdlib_collections_complete.csd: error.UndefinedFunction
+    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/validation/validation_stdlib_collections_complete.💀: error.UndefinedFunction
     error: UndefinedFunction
                         return InterpreterError.UndefinedFunction;
                         ^
@@ -6426,7 +6426,7 @@ grep: (standard input): binary file matches
     === COLLECTIONS VALIDATION COMPLETE ===
 
 ---
-[1m[103/107] Testing: validation/validation_stdlib_complete.csd[0m
+[1m[103/107] Testing: validation/validation_stdlib_complete.💀[0m
   Result: [31mFAIL (OUTPUT_MISMATCH)[0m
   [36mInterpreter (exit: 0):[0m
     === Comprehensive Stdlib Validation === 
@@ -6542,7 +6542,7 @@ grep: (standard input): binary file matches
     00000160: 706c 6574 6520 3d3d 3d                   plete ===
 
 ---
-[1m[104/107] Testing: validation/validation_stdlib_mathz_complete.csd[0m
+[1m[104/107] Testing: validation/validation_stdlib_mathz_complete.💀[0m
   Result: [33mFAIL (different error messages)[0m
   [36mInterpreter (exit: 1):[0m
     DEBUG: parseForStatement started at position 333
@@ -6596,7 +6596,7 @@ grep: (standard input): binary file matches
     42 
     abs(-42) = 
     42 
-    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/validation/validation_stdlib_mathz_complete.csd: error.UndefinedFunction
+    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/validation/validation_stdlib_mathz_complete.💀: error.UndefinedFunction
     error: UndefinedFunction
                         return InterpreterError.UndefinedFunction;
                         ^
@@ -6621,7 +6621,7 @@ grep: (standard input): binary file matches
     Compilation failed
 
 ---
-[1m[105/107] Testing: validation/validation_stdlib_stringz_complete.csd[0m
+[1m[105/107] Testing: validation/validation_stdlib_stringz_complete.💀[0m
   Result: [31mINTERPRETER ERROR (compiled worked)[0m
   [36mInterpreter (exit: 1):[0m
     === STRINGZ MODULE VALIDATION === 
@@ -6631,7 +6631,7 @@ grep: (standard input): binary file matches
     0 
     length('') = 
     0 
-    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/validation/validation_stdlib_stringz_complete.csd: error.UndefinedFunction
+    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/validation/validation_stdlib_stringz_complete.💀: error.UndefinedFunction
     error: UndefinedFunction
                         return InterpreterError.UndefinedFunction;
                         ^
@@ -6671,10 +6671,10 @@ grep: (standard input): binary file matches
     === STRINGZ VALIDATION COMPLETE ===
 
 ---
-[1m[106/107] Testing: validation/validation_stdlib_vibez_complete.csd[0m
+[1m[106/107] Testing: validation/validation_stdlib_vibez_complete.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[107/107] Testing: validation/validation_type_system.csd[0m
+[1m[107/107] Testing: validation/validation_type_system.💀[0m
   Result: [32mPASS[0m
 ---
 

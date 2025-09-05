@@ -53,8 +53,8 @@ pub fn main() !void {
     
     if (args.len < 2) {
         print("🐛 CURSED Debugger MVP v1.0\n", .{});
-        print("Usage: cursed-debug <file.csd>\n", .{});
-        print("   or: cursed debug <file.csd>\n", .{});
+        print("Usage: cursed-debug <file.💀.💀>\n", .{});
+        print("   or: cursed debug <file.💀.💀>\n", .{});
         return;
     }
     

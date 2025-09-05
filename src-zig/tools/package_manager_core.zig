@@ -588,7 +588,7 @@ pub const commands = struct {
         , .{dependency.name, dependency.name, dependency.name, dependency.name});
         defer allocator.free(mock_content);
         
-        const package_file = try std.fmt.allocPrint(allocator, "{s}/mod.csd", .{cache_path});
+        const package_file = try std.fmt.allocPrint(allocator, "{s}/mod.💀", .{cache_path});
         defer allocator.free(package_file);
         
         try std.fs.cwd().writeFile(.{ .sub_path = package_file, .data = mock_content });
@@ -653,7 +653,7 @@ pub const commands = struct {
         while (dep_iter.next()) |entry| {
             const dep = entry.value_ptr.*;
             try writer.writer().print("    // {s}\n", .{dep.name});
-            try writer.writer().print("    b.addPackagePath(\"{s}\", \".cursed/packages/{s}/mod.csd\");\n", .{dep.name, dep.name});
+            try writer.writer().print("    b.addPackagePath(\"{s}\", \".cursed/packages/{s}/mod.💀.💀\");\n", .{dep.name, dep.name});
         }
         
         try writer.writer().writeAll("}\n\n");
@@ -662,7 +662,7 @@ pub const commands = struct {
         var dep_iter2 = manifest.dependencies.iterator();
         while (dep_iter2.next()) |entry| {
             const dep = entry.value_ptr.*;
-            try writer.writer().print("    pub const {s} = \".cursed/packages/{s}/mod.csd\";\n", .{dep.name, dep.name});
+            try writer.writer().print("    pub const {s} = \".cursed/packages/{s}/mod.💀.💀\";\n", .{dep.name, dep.name});
         }
         try writer.writer().writeAll("};\n");
         
@@ -820,7 +820,7 @@ pub const commands = struct {
         }
         
         // Check if main file exists
-        const main_file = manifest.main orelse "src/lib.csd";
+        const main_file = manifest.main orelse "src/lib.💀";
         std.fs.cwd().access(main_file, .{}) catch {
             print("❌ Main file not found: {s}\n", .{main_file});
             return;

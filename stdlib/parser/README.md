@@ -264,11 +264,11 @@ The parser integrates with other compiler phases:
 Run comprehensive tests:
 ```bash
 # Test parsing module
-cargo run --bin cursed stdlib/parser/test_parser.csd
+cargo run --bin cursed stdlib/parser/test_parser.💀
 
 # Test both interpretation and compilation
-cargo run --bin cursed stdlib/parser/test_parser.csd
-cargo run --bin cursed -- compile stdlib/parser/test_parser.csd
+cargo run --bin cursed stdlib/parser/test_parser.💀
+cargo run --bin cursed -- compile stdlib/parser/test_parser.💀
 ./test_parser
 ```
 

@@ -1,30 +1,30 @@
-Error at comprehensive_stdlib_validation_basic.csd:29:5 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
-Error at comprehensive_stdlib_validation_basic.csd:29:5 - Synchronizing parser after error (context: synchronize)
+Error at comprehensive_stdlib_validation_basic.💀:29:5 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+Error at comprehensive_stdlib_validation_basic.💀:29:5 - Synchronizing parser after error (context: synchronize)
 INFO: Recovered at delimiter 'RightParen' after skipping 8 tokens
-Error at comprehensive_stdlib_validation_basic.csd:30:28 - Error parsing function statement
+Error at comprehensive_stdlib_validation_basic.💀:30:28 - Error parsing function statement
 INFO: Recovered at delimiter 'RightParen' after skipping 8 tokens
 INFO: Attempting additional statement recovery
-Error at comprehensive_stdlib_validation_basic.csd:42:1 - Failed to parse statement
+Error at comprehensive_stdlib_validation_basic.💀:42:1 - Failed to parse statement
 INFO: Recovered at delimiter 'RightParen' after skipping 3 tokens
 INFO: Attempting additional statement recovery
-Error at comprehensive_stdlib_validation_basic.csd:46:5 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
-Error at comprehensive_stdlib_validation_basic.csd:46:5 - Synchronizing parser after error (context: synchronize)
+Error at comprehensive_stdlib_validation_basic.💀:46:5 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+Error at comprehensive_stdlib_validation_basic.💀:46:5 - Synchronizing parser after error (context: synchronize)
 INFO: Recovered at delimiter 'RightParen' after skipping 8 tokens
-Error at comprehensive_stdlib_validation_basic.csd:47:23 - Failed to parse statement
+Error at comprehensive_stdlib_validation_basic.💀:47:23 - Failed to parse statement
 INFO: Recovered at delimiter 'RightParen' after skipping 4 tokens
 INFO: Attempting additional statement recovery
-Error at comprehensive_stdlib_validation_basic.csd:58:35 - Error parsing variable declaration
+Error at comprehensive_stdlib_validation_basic.💀:58:35 - Error parsing variable declaration
 INFO: Recovered at delimiter 'RightParen' after skipping 5 tokens
-Error at comprehensive_stdlib_validation_basic.csd:60:31 - Error parsing function statement
+Error at comprehensive_stdlib_validation_basic.💀:60:31 - Error parsing function statement
 INFO: Recovered at delimiter 'RightParen' after skipping 3 tokens
 INFO: Attempting additional statement recovery
-Error at comprehensive_stdlib_validation_basic.csd:70:5 - Failed to parse statement
+Error at comprehensive_stdlib_validation_basic.💀:70:5 - Failed to parse statement
 INFO: Recovered at statement keyword 'Sus' after skipping 5 tokens
 INFO: Attempting additional statement recovery
-Error at comprehensive_stdlib_validation_basic.csd:83:1 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
-Error at comprehensive_stdlib_validation_basic.csd:83:1 - Synchronizing parser after error (context: synchronize)
+Error at comprehensive_stdlib_validation_basic.💀:83:1 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+Error at comprehensive_stdlib_validation_basic.💀:83:1 - Synchronizing parser after error (context: synchronize)
 INFO: Recovered at statement keyword 'Slay' after skipping 1 tokens
-Error at comprehensive_stdlib_validation_basic.csd:85:1 - Failed to parse statement
+Error at comprehensive_stdlib_validation_basic.💀:85:1 - Failed to parse statement
 INFO: Recovered at delimiter 'RightParen' after skipping 3 tokens
 INFO: Attempting additional statement recovery
 

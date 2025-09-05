@@ -120,11 +120,11 @@ git checkout -b feature/awesome-improvement
 # 3. Test your changes
 zig build test                    # Unit tests
 ./scripts/test-examples.sh        # Example tests
-valgrind ./zig-out/bin/cursed-zig simple_test.csd  # Memory tests
+valgrind ./zig-out/bin/cursed-zig simple_test.💀  # Memory tests
 
 # 4. Format and lint
-./zig-out/bin/cursed-fmt src/**/*.csd
-./zig-out/bin/cursed-lint src/**/*.csd
+./zig-out/bin/cursed-fmt src/**/*.💀
+./zig-out/bin/cursed-lint src/**/*.💀
 
 # 5. Commit changes
 git add .
@@ -300,7 +300,7 @@ test "user authentication with invalid credentials" {
 # Test script: test_web_server_integration.sh
 
 # Start test server
-./zig-out/bin/cursed-zig examples/web-server.csd &
+./zig-out/bin/cursed-zig examples/web-server.💀 &
 SERVER_PID=$!
 sleep 2
 

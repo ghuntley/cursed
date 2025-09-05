@@ -260,14 +260,14 @@ Run the working test suite:
 
 ```bash
 # Test basic functionality
-cargo run --bin cursed stdlib/rpc_vibes/final_test.csd
+cargo run --bin cursed stdlib/rpc_vibes/final_test.💀
 
 # Test compilation mode
-cargo run --bin cursed -- compile stdlib/rpc_vibes/final_test.csd
+cargo run --bin cursed -- compile stdlib/rpc_vibes/final_test.💀
 ./final_test
 
 # Test ultra simple functionality
-cargo run --bin cursed stdlib/rpc_vibes/ultra_simple_test.csd
+cargo run --bin cursed stdlib/rpc_vibes/ultra_simple_test.💀
 ```
 
 Note: The module demonstrates core RPC concepts but may have limitations due to current CURSED interpreter constraints with complex function parameters.

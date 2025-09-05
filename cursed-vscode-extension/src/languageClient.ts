@@ -56,7 +56,7 @@ export class CursedLanguageClient implements vscode.Disposable {
             ],
             synchronize: {
                 fileEvents: [
-                    vscode.workspace.createFileSystemWatcher('**/*.csd'),
+                    vscode.workspace.createFileSystemWatcher('**/*.💀'),
                     vscode.workspace.createFileSystemWatcher('**/CursedPackage.toml'),
                     vscode.workspace.createFileSystemWatcher('**/CursedBuild.toml')
                 ]

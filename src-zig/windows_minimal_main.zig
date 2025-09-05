@@ -142,7 +142,7 @@ pub fn main() !void {
     defer std.process.argsFree(allocator, args);
 
     if (args.len < 2) {
-        std.debug.print("Usage: cursed <file.csd>\n", .{});
+        std.debug.print("Usage: cursed <file.💀.💀>\n", .{});
         return;
     }
 
@@ -156,7 +156,7 @@ pub fn main() !void {
     
     if (std.mem.eql(u8, filename, "--help")) {
         std.debug.print("CURSED Compiler - Windows Minimal Build\n", .{});
-        std.debug.print("Usage: cursed <file.csd>\n", .{});
+        std.debug.print("Usage: cursed <file.💀.💀>\n", .{});
         std.debug.print("       cursed --version\n", .{});
         std.debug.print("       cursed --help\n", .{});
         std.debug.print("\nNote: This Windows build has limited functionality.\n", .{});

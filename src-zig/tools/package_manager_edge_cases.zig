@@ -359,9 +359,9 @@ pub const SecurityValidator = struct {
         
         // Validate each file in archive
         const test_paths = [_][]const u8{
-            "src/main.csd",
-            "lib/utils.csd",
-            "tests/test.csd",
+            "src/main.💀",
+            "lib/utils.💀",
+            "tests/test.💀",
         };
         
         for (test_paths) |path| {

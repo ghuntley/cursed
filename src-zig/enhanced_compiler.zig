@@ -94,7 +94,7 @@ pub fn compileProgram(allocator: Allocator, source: []const u8, filename: []cons
         .C_Backend => try compileToCBackend(allocator, source, filename, config),
         .LLVM_Backend => {
             const output_filename = config.output_path orelse blk: {
-                if (std.mem.endsWith(u8, filename, ".csd"))
+                if (std.mem.endsWith(u8, filename, ".💀"))
                     break :blk try std.fmt.allocPrint(allocator, "{s}", .{filename[0..filename.len - 4]})
                 else
                     break :blk try std.fmt.allocPrint(allocator, "{s}_compiled", .{filename});
@@ -152,7 +152,7 @@ fn compileToCBackend(allocator: Allocator, source: []const u8, filename: []const
     print("[4/5] Compiling C to executable...\n", .{});
     
     const output_filename = config.output_path orelse blk: {
-        if (std.mem.endsWith(u8, filename, ".csd"))
+        if (std.mem.endsWith(u8, filename, ".💀"))
             break :blk try std.fmt.allocPrint(allocator, "{s}", .{filename[0..filename.len - 4]})
         else
             break :blk try std.fmt.allocPrint(allocator, "{s}_compiled", .{filename});

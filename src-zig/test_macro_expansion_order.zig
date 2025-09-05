@@ -213,7 +213,7 @@ test "hygiene violation detection" {
     _ = try hygiene_ctx.declareSymbol("x", .Variable);
     
     // Begin macro expansion that shadows the variable
-    _ = try hygiene_ctx.beginMacroExpansion("test_macro", "test.csd:1");
+    _ = try hygiene_ctx.beginMacroExpansion("test_macro", "test.💀.💀:1");
     
     // Declare variable with same name (should trigger hygiene violation)
     _ = try hygiene_ctx.declareSymbol("x", .Variable);

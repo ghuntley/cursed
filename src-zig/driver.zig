@@ -351,12 +351,12 @@ test "Frontend with debug options" {
 
 test "FrontendResult initialization" {
     const allocator = testing.allocator;
-    var result = FrontendResult.init(allocator, "test.csd");
+    var result = FrontendResult.init(allocator, "test.💀");
     defer result.deinit();
     
     try testing.expect(result.success == false);
     try testing.expect(result.error_count == 0);
-    try testing.expect(std.mem.eql(u8, result.file_path, "test.csd"));
+    try testing.expect(std.mem.eql(u8, result.file_path, "test.💀"));
 }
 
 test "Simple CURSED source processing" {
@@ -366,7 +366,7 @@ test "Simple CURSED source processing" {
         \\vibez.spill(x)
     ;
     
-    var result = try processCursedSource(allocator, source, "test.csd");
+    var result = try processCursedSource(allocator, source, "test.💀");
     defer result.deinit();
     
     try testing.expect(result.getTokenCount() > 0);
@@ -377,7 +377,7 @@ test "Empty source handling" {
     const allocator = testing.allocator;
     const source = "";
     
-    var result = try processCursedSource(allocator, source, "empty.csd");
+    var result = try processCursedSource(allocator, source, "empty.💀");
     defer result.deinit();
     
     // Should still produce at least EOF token
@@ -388,7 +388,7 @@ test "Invalid syntax error handling" {
     const allocator = testing.allocator;
     const source = "sus x drip = @ invalid syntax here";
     
-    var result = processCursedSource(allocator, source, "invalid.csd") catch |err| {
+    var result = processCursedSource(allocator, source, "invalid.💀") catch |err| {
         // Should fail with parser error
         try testing.expect(err == FrontendError.ParserError or err == FrontendError.LexerError);
         return;
@@ -411,7 +411,7 @@ test "Token limit enforcement" {
     options.max_tokens = 5; // Very small limit
     
     var frontend = Frontend.init(allocator, options);
-    var result = try frontend.runFrontend(source, "limited.csd");
+    var result = try frontend.runFrontend(source, "limited.💀");
     defer result.deinit();
     
     try testing.expect(result.getTokenCount() <= 5);
@@ -421,7 +421,7 @@ test "Debug mode output" {
     const allocator = testing.allocator;
     const source = "sus x drip = 42";
     
-    var result = try processCursedSourceDebug(allocator, source, "debug.csd");
+    var result = try processCursedSourceDebug(allocator, source, "debug.💀");
     defer result.deinit();
     
     // Debug mode should still work and produce valid results
@@ -443,7 +443,7 @@ test "Complex CURSED program processing" {
         \\vibez.spill(result)
     ;
     
-    var result = try processCursedSource(allocator, source, "fibonacci.csd");
+    var result = try processCursedSource(allocator, source, "fibonacci.💀");
     defer result.deinit();
     
     try testing.expect(result.success == true or result.error_count == 0);
@@ -458,7 +458,7 @@ test "Memory management" {
     // Process multiple sources to test cleanup
     for (0..10) |i| {
         var filename_buf: [32]u8 = undefined;
-        const filename = try std.fmt.bufPrint(filename_buf[0..], "test{}.csd", .{i});
+        const filename = try std.fmt.bufPrint(filename_buf[0..], "test{}.💀", .{i});
         
         var result = try processCursedSource(allocator, source, filename);
         defer result.deinit();

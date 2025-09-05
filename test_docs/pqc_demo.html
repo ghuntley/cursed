@@ -17,322 +17,322 @@
             <div class="doc-item" id="(public_key, secret_key)">
                 <h4>(public_key, secret_key)</h4>
                 <pre class="signature"><code>facts (public_key, secret_key) = KyberKem::keygen(level)?</code></pre>
-                <p class="source">Source: <a href="file://./examples/pqc_demo.csd#L54">pqc_demo.csd:54</a></p>
+                <p class="source">Source: <a href="file://./examples/pqc_demo.💀#L54">pqc_demo.💀:54</a></p>
             </div>
             <div class="doc-item" id="(ciphertext, shared_secret1)">
                 <h4>(ciphertext, shared_secret1)</h4>
                 <pre class="signature"><code>facts (ciphertext, shared_secret1) = KyberKem::encaps(&public_key)?</code></pre>
-                <p class="source">Source: <a href="file://./examples/pqc_demo.csd#L60">pqc_demo.csd:60</a></p>
+                <p class="source">Source: <a href="file://./examples/pqc_demo.💀#L60">pqc_demo.💀:60</a></p>
             </div>
             <div class="doc-item" id="shared_secret2">
                 <h4>shared_secret2</h4>
                 <pre class="signature"><code>facts shared_secret2 = KyberKem::decaps(&secret_key, &ciphertext)?</code></pre>
-                <p class="source">Source: <a href="file://./examples/pqc_demo.csd#L66">pqc_demo.csd:66</a></p>
+                <p class="source">Source: <a href="file://./examples/pqc_demo.💀#L66">pqc_demo.💀:66</a></p>
             </div>
             <div class="doc-item" id="(public_key, secret_key)">
                 <h4>(public_key, secret_key)</h4>
                 <pre class="signature"><code>facts (public_key, secret_key) = DilithiumSignature::keygen(SecurityLevel::Level3)?</code></pre>
-                <p class="source">Source: <a href="file://./examples/pqc_demo.csd#L94">pqc_demo.csd:94</a></p>
+                <p class="source">Source: <a href="file://./examples/pqc_demo.💀#L94">pqc_demo.💀:94</a></p>
             </div>
             <div class="doc-item" id="signature">
                 <h4>signature</h4>
                 <pre class="signature"><code>facts signature = DilithiumSignature::sign(&secret_key, message.as_bytes())?</code></pre>
-                <p class="source">Source: <a href="file://./examples/pqc_demo.csd#L108">pqc_demo.csd:108</a></p>
+                <p class="source">Source: <a href="file://./examples/pqc_demo.💀#L108">pqc_demo.💀:108</a></p>
             </div>
             <div class="doc-item" id="is_valid">
                 <h4>is_valid</h4>
                 <pre class="signature"><code>facts is_valid = DilithiumSignature::verify(&public_key, message.as_bytes(), &signature)?</code></pre>
-                <p class="source">Source: <a href="file://./examples/pqc_demo.csd#L112">pqc_demo.csd:112</a></p>
+                <p class="source">Source: <a href="file://./examples/pqc_demo.💀#L112">pqc_demo.💀:112</a></p>
             </div>
             <div class="doc-item" id="tampered_message">
                 <h4>tampered_message</h4>
                 <pre class="signature"><code>facts tampered_message = format!("{}TAMPERED", message)</code></pre>
-                <p class="source">Source: <a href="file://./examples/pqc_demo.csd#L120">pqc_demo.csd:120</a></p>
+                <p class="source">Source: <a href="file://./examples/pqc_demo.💀#L120">pqc_demo.💀:120</a></p>
             </div>
             <div class="doc-item" id="tampered_valid">
                 <h4>tampered_valid</h4>
                 <pre class="signature"><code>facts tampered_valid = DilithiumSignature::verify(&public_key, tampered_message.as_bytes(), &signature)?</code></pre>
-                <p class="source">Source: <a href="file://./examples/pqc_demo.csd#L121">pqc_demo.csd:121</a></p>
+                <p class="source">Source: <a href="file://./examples/pqc_demo.💀#L121">pqc_demo.💀:121</a></p>
             </div>
             <div class="doc-item" id="(public_key, secret_key)">
                 <h4>(public_key, secret_key)</h4>
                 <pre class="signature"><code>facts (public_key, secret_key) = SphincsPlusSignature::keygen(SecurityLevel::Level1)?</code></pre>
-                <p class="source">Source: <a href="file://./examples/pqc_demo.csd#L135">pqc_demo.csd:135</a></p>
+                <p class="source">Source: <a href="file://./examples/pqc_demo.💀#L135">pqc_demo.💀:135</a></p>
             </div>
             <div class="doc-item" id="message_bytes">
                 <h4>message_bytes</h4>
                 <pre class="signature"><code>facts message_bytes = lowkey (typeof(data) == "string") {</code></pre>
-                <p class="source">Source: <a href="file://./examples/pqc_demo.csd#L148">pqc_demo.csd:148</a></p>
+                <p class="source">Source: <a href="file://./examples/pqc_demo.💀#L148">pqc_demo.💀:148</a></p>
             </div>
             <div class="doc-item" id="signature">
                 <h4>signature</h4>
                 <pre class="signature"><code>facts signature = SphincsPlusSignature::sign(&secret_key, message_bytes)?</code></pre>
-                <p class="source">Source: <a href="file://./examples/pqc_demo.csd#L157">pqc_demo.csd:157</a></p>
+                <p class="source">Source: <a href="file://./examples/pqc_demo.💀#L157">pqc_demo.💀:157</a></p>
             </div>
             <div class="doc-item" id="is_valid">
                 <h4>is_valid</h4>
                 <pre class="signature"><code>facts is_valid = SphincsPlusSignature::verify(&public_key, message_bytes, &signature)?</code></pre>
-                <p class="source">Source: <a href="file://./examples/pqc_demo.csd#L161">pqc_demo.csd:161</a></p>
+                <p class="source">Source: <a href="file://./examples/pqc_demo.💀#L161">pqc_demo.💀:161</a></p>
             </div>
             <div class="doc-item" id="(public_key, secret_key)">
                 <h4>(public_key, secret_key)</h4>
                 <pre class="signature"><code>facts (public_key, secret_key) = FalconSignature::keygen(level)?</code></pre>
-                <p class="source">Source: <a href="file://./examples/pqc_demo.csd#L182">pqc_demo.csd:182</a></p>
+                <p class="source">Source: <a href="file://./examples/pqc_demo.💀#L182">pqc_demo.💀:182</a></p>
             </div>
             <div class="doc-item" id="document">
                 <h4>document</h4>
                 <pre class="signature"><code>facts document = "CONFIDENTIAL DOCUMENT\n\nThis document contains sensitive information that requires digital signatures for authenticity and non-repudiation. Falcon signatures provide compact post-quantum security.\n\nSigned by: CURSED PQC Demo\nTimestamp: 2024-12-06"</code></pre>
-                <p class="source">Source: <a href="file://./examples/pqc_demo.csd#L188">pqc_demo.csd:188</a></p>
+                <p class="source">Source: <a href="file://./examples/pqc_demo.💀#L188">pqc_demo.💀:188</a></p>
             </div>
             <div class="doc-item" id="signature">
                 <h4>signature</h4>
                 <pre class="signature"><code>facts signature = FalconSignature::sign(&secret_key, document.as_bytes())?</code></pre>
-                <p class="source">Source: <a href="file://./examples/pqc_demo.csd#L193">pqc_demo.csd:193</a></p>
+                <p class="source">Source: <a href="file://./examples/pqc_demo.💀#L193">pqc_demo.💀:193</a></p>
             </div>
             <div class="doc-item" id="is_valid">
                 <h4>is_valid</h4>
                 <pre class="signature"><code>facts is_valid = FalconSignature::verify(&public_key, document.as_bytes(), &signature)?</code></pre>
-                <p class="source">Source: <a href="file://./examples/pqc_demo.csd#L199">pqc_demo.csd:199</a></p>
+                <p class="source">Source: <a href="file://./examples/pqc_demo.💀#L199">pqc_demo.💀:199</a></p>
             </div>
             <div class="doc-item" id="(public_key, secret_key)">
                 <h4>(public_key, secret_key)</h4>
                 <pre class="signature"><code>facts (public_key, secret_key) = NtruEncryption::keygen(level)?</code></pre>
-                <p class="source">Source: <a href="file://./examples/pqc_demo.csd#L221">pqc_demo.csd:221</a></p>
+                <p class="source">Source: <a href="file://./examples/pqc_demo.💀#L221">pqc_demo.💀:221</a></p>
             </div>
             <div class="doc-item" id="plaintext_bytes">
                 <h4>plaintext_bytes</h4>
                 <pre class="signature"><code>facts plaintext_bytes = lowkey (typeof(plaintext) == "string") {</code></pre>
-                <p class="source">Source: <a href="file://./examples/pqc_demo.csd#L235">pqc_demo.csd:235</a></p>
+                <p class="source">Source: <a href="file://./examples/pqc_demo.💀#L235">pqc_demo.💀:235</a></p>
             </div>
             <div class="doc-item" id="ciphertext">
                 <h4>ciphertext</h4>
                 <pre class="signature"><code>facts ciphertext = NtruEncryption::encrypt(&public_key, plaintext_bytes)?</code></pre>
-                <p class="source">Source: <a href="file://./examples/pqc_demo.csd#L244">pqc_demo.csd:244</a></p>
+                <p class="source">Source: <a href="file://./examples/pqc_demo.💀#L244">pqc_demo.💀:244</a></p>
             </div>
             <div class="doc-item" id="decrypted">
                 <h4>decrypted</h4>
                 <pre class="signature"><code>facts decrypted = NtruEncryption::decrypt(&secret_key, &ciphertext)?</code></pre>
-                <p class="source">Source: <a href="file://./examples/pqc_demo.csd#L250">pqc_demo.csd:250</a></p>
+                <p class="source">Source: <a href="file://./examples/pqc_demo.💀#L250">pqc_demo.💀:250</a></p>
             </div>
             <div class="doc-item" id="metrics">
                 <h4>metrics</h4>
                 <pre class="signature"><code>facts metrics = PqcBenchmark::benchmark_kyber(level, iterations)?</code></pre>
-                <p class="source">Source: <a href="file://./examples/pqc_demo.csd#L273">pqc_demo.csd:273</a></p>
+                <p class="source">Source: <a href="file://./examples/pqc_demo.💀#L273">pqc_demo.💀:273</a></p>
             </div>
             <div class="doc-item" id="metrics">
                 <h4>metrics</h4>
                 <pre class="signature"><code>facts metrics = PqcBenchmark::benchmark_dilithium(level, iterations)?</code></pre>
-                <p class="source">Source: <a href="file://./examples/pqc_demo.csd#L287">pqc_demo.csd:287</a></p>
+                <p class="source">Source: <a href="file://./examples/pqc_demo.💀#L287">pqc_demo.💀:287</a></p>
             </div>
             <div class="doc-item" id="all_results">
                 <h4>all_results</h4>
                 <pre class="signature"><code>facts all_results = PqcBenchmark::benchmark_all(5)?</code></pre>
-                <p class="source">Source: <a href="file://./examples/pqc_demo.csd#L300">pqc_demo.csd:300</a></p>
+                <p class="source">Source: <a href="file://./examples/pqc_demo.💀#L300">pqc_demo.💀:300</a></p>
             </div>
             <div class="doc-item" id="assessments">
                 <h4>assessments</h4>
                 <pre class="signature"><code>facts assessments = QuantumResistanceAssessment::assess_all_algorithms()</code></pre>
-                <p class="source">Source: <a href="file://./examples/pqc_demo.csd#L314">pqc_demo.csd:314</a></p>
+                <p class="source">Source: <a href="file://./examples/pqc_demo.💀#L314">pqc_demo.💀:314</a></p>
             </div>
             <div class="doc-item" id="report">
                 <h4>report</h4>
                 <pre class="signature"><code>facts report = QuantumResistanceAssessment::generate_readiness_report()</code></pre>
-                <p class="source">Source: <a href="file://./examples/pqc_demo.csd#L332">pqc_demo.csd:332</a></p>
+                <p class="source">Source: <a href="file://./examples/pqc_demo.💀#L332">pqc_demo.💀:332</a></p>
             </div>
             <div class="doc-item" id="(kyber_pub, kyber_sec)">
                 <h4>(kyber_pub, kyber_sec)</h4>
                 <pre class="signature"><code>facts (kyber_pub, kyber_sec) = KyberKem::keygen(SecurityLevel::Level3)?</code></pre>
-                <p class="source">Source: <a href="file://./examples/pqc_demo.csd#L362">pqc_demo.csd:362</a></p>
+                <p class="source">Source: <a href="file://./examples/pqc_demo.💀#L362">pqc_demo.💀:362</a></p>
             </div>
             <div class="doc-item" id="(ciphertext, shared_secret)">
                 <h4>(ciphertext, shared_secret)</h4>
                 <pre class="signature"><code>facts (ciphertext, shared_secret) = KyberKem::encaps(&kyber_pub)?</code></pre>
-                <p class="source">Source: <a href="file://./examples/pqc_demo.csd#L363">pqc_demo.csd:363</a></p>
+                <p class="source">Source: <a href="file://./examples/pqc_demo.💀#L363">pqc_demo.💀:363</a></p>
             </div>
             <div class="doc-item" id="(auth_pub, auth_sec)">
                 <h4>(auth_pub, auth_sec)</h4>
                 <pre class="signature"><code>facts (auth_pub, auth_sec) = DilithiumSignature::keygen(SecurityLevel::Level3)?</code></pre>
-                <p class="source">Source: <a href="file://./examples/pqc_demo.csd#L367">pqc_demo.csd:367</a></p>
+                <p class="source">Source: <a href="file://./examples/pqc_demo.💀#L367">pqc_demo.💀:367</a></p>
             </div>
             <div class="doc-item" id="auth_message">
                 <h4>auth_message</h4>
                 <pre class="signature"><code>facts auth_message = format!("Key exchange session established. Shared secret hash: {}",</code></pre>
-                <p class="source">Source: <a href="file://./examples/pqc_demo.csd#L368">pqc_demo.csd:368</a></p>
+                <p class="source">Source: <a href="file://./examples/pqc_demo.💀#L368">pqc_demo.💀:368</a></p>
             </div>
             <div class="doc-item" id="signature">
                 <h4>signature</h4>
                 <pre class="signature"><code>facts signature = DilithiumSignature::sign(&auth_sec, auth_message.as_bytes())?</code></pre>
-                <p class="source">Source: <a href="file://./examples/pqc_demo.csd#L370">pqc_demo.csd:370</a></p>
+                <p class="source">Source: <a href="file://./examples/pqc_demo.💀#L370">pqc_demo.💀:370</a></p>
             </div>
             <div class="doc-item" id="is_authenticated">
                 <h4>is_authenticated</h4>
                 <pre class="signature"><code>facts is_authenticated = DilithiumSignature::verify(&auth_pub, auth_message.as_bytes(), &signature)?</code></pre>
-                <p class="source">Source: <a href="file://./examples/pqc_demo.csd#L371">pqc_demo.csd:371</a></p>
+                <p class="source">Source: <a href="file://./examples/pqc_demo.💀#L371">pqc_demo.💀:371</a></p>
             </div>
             <div class="doc-item" id="document">
                 <h4>document</h4>
                 <pre class="signature"><code>facts document = "IMPORTANT CONTRACT\n\nThis document requires multiple digital signatures for legal validity in the post-quantum era.\n\nContract ID: PQC-2024-001"</code></pre>
-                <p class="source">Source: <a href="file://./examples/pqc_demo.csd#L378">pqc_demo.csd:378</a></p>
+                <p class="source">Source: <a href="file://./examples/pqc_demo.💀#L378">pqc_demo.💀:378</a></p>
             </div>
             <div class="doc-item" id="dilithium_sig">
                 <h4>dilithium_sig</h4>
                 <pre class="signature"><code>facts dilithium_sig = DilithiumSignature::sign(&auth_sec, document.as_bytes())?</code></pre>
-                <p class="source">Source: <a href="file://./examples/pqc_demo.csd#L381">pqc_demo.csd:381</a></p>
+                <p class="source">Source: <a href="file://./examples/pqc_demo.💀#L381">pqc_demo.💀:381</a></p>
             </div>
             <div class="doc-item" id="(falcon_pub, falcon_sec)">
                 <h4>(falcon_pub, falcon_sec)</h4>
                 <pre class="signature"><code>facts (falcon_pub, falcon_sec) = FalconSignature::keygen(SecurityLevel::Level1)?</code></pre>
-                <p class="source">Source: <a href="file://./examples/pqc_demo.csd#L385">pqc_demo.csd:385</a></p>
+                <p class="source">Source: <a href="file://./examples/pqc_demo.💀#L385">pqc_demo.💀:385</a></p>
             </div>
             <div class="doc-item" id="falcon_sig">
                 <h4>falcon_sig</h4>
                 <pre class="signature"><code>facts falcon_sig = FalconSignature::sign(&falcon_sec, document.as_bytes())?</code></pre>
-                <p class="source">Source: <a href="file://./examples/pqc_demo.csd#L386">pqc_demo.csd:386</a></p>
+                <p class="source">Source: <a href="file://./examples/pqc_demo.💀#L386">pqc_demo.💀:386</a></p>
             </div>
             <div class="doc-item" id="dilithium_valid">
                 <h4>dilithium_valid</h4>
                 <pre class="signature"><code>facts dilithium_valid = DilithiumSignature::verify(&auth_pub, document.as_bytes(), &dilithium_sig)?</code></pre>
-                <p class="source">Source: <a href="file://./examples/pqc_demo.csd#L390">pqc_demo.csd:390</a></p>
+                <p class="source">Source: <a href="file://./examples/pqc_demo.💀#L390">pqc_demo.💀:390</a></p>
             </div>
             <div class="doc-item" id="falcon_valid">
                 <h4>falcon_valid</h4>
                 <pre class="signature"><code>facts falcon_valid = FalconSignature::verify(&falcon_pub, document.as_bytes(), &falcon_sig)?</code></pre>
-                <p class="source">Source: <a href="file://./examples/pqc_demo.csd#L391">pqc_demo.csd:391</a></p>
+                <p class="source">Source: <a href="file://./examples/pqc_demo.💀#L391">pqc_demo.💀:391</a></p>
             </div>
             <div class="doc-item" id="(alice_kyber_pub, alice_kyber_sec)">
                 <h4>(alice_kyber_pub, alice_kyber_sec)</h4>
                 <pre class="signature"><code>facts (alice_kyber_pub, alice_kyber_sec) = KyberKem::keygen(SecurityLevel::Level3)?</code></pre>
-                <p class="source">Source: <a href="file://./examples/pqc_demo.csd#L408">pqc_demo.csd:408</a></p>
+                <p class="source">Source: <a href="file://./examples/pqc_demo.💀#L408">pqc_demo.💀:408</a></p>
             </div>
             <div class="doc-item" id="(alice_sign_pub, alice_sign_sec)">
                 <h4>(alice_sign_pub, alice_sign_sec)</h4>
                 <pre class="signature"><code>facts (alice_sign_pub, alice_sign_sec) = DilithiumSignature::keygen(SecurityLevel::Level3)?</code></pre>
-                <p class="source">Source: <a href="file://./examples/pqc_demo.csd#L409">pqc_demo.csd:409</a></p>
+                <p class="source">Source: <a href="file://./examples/pqc_demo.💀#L409">pqc_demo.💀:409</a></p>
             </div>
             <div class="doc-item" id="(bob_kyber_pub, bob_kyber_sec)">
                 <h4>(bob_kyber_pub, bob_kyber_sec)</h4>
                 <pre class="signature"><code>facts (bob_kyber_pub, bob_kyber_sec) = KyberKem::keygen(SecurityLevel::Level3)?</code></pre>
-                <p class="source">Source: <a href="file://./examples/pqc_demo.csd#L412">pqc_demo.csd:412</a></p>
+                <p class="source">Source: <a href="file://./examples/pqc_demo.💀#L412">pqc_demo.💀:412</a></p>
             </div>
             <div class="doc-item" id="(bob_sign_pub, bob_sign_sec)">
                 <h4>(bob_sign_pub, bob_sign_sec)</h4>
                 <pre class="signature"><code>facts (bob_sign_pub, bob_sign_sec) = DilithiumSignature::keygen(SecurityLevel::Level3)?</code></pre>
-                <p class="source">Source: <a href="file://./examples/pqc_demo.csd#L413">pqc_demo.csd:413</a></p>
+                <p class="source">Source: <a href="file://./examples/pqc_demo.💀#L413">pqc_demo.💀:413</a></p>
             </div>
             <div class="doc-item" id="message">
                 <h4>message</h4>
                 <pre class="signature"><code>facts message = "Meet me at the secure location at 3 PM. This message is confidential."</code></pre>
-                <p class="source">Source: <a href="file://./examples/pqc_demo.csd#L416">pqc_demo.csd:416</a></p>
+                <p class="source">Source: <a href="file://./examples/pqc_demo.💀#L416">pqc_demo.💀:416</a></p>
             </div>
             <div class="doc-item" id="(encaps_ciphertext, shared_key)">
                 <h4>(encaps_ciphertext, shared_key)</h4>
                 <pre class="signature"><code>facts (encaps_ciphertext, shared_key) = KyberKem::encaps(&bob_kyber_pub)?</code></pre>
-                <p class="source">Source: <a href="file://./examples/pqc_demo.csd#L419">pqc_demo.csd:419</a></p>
+                <p class="source">Source: <a href="file://./examples/pqc_demo.💀#L419">pqc_demo.💀:419</a></p>
             </div>
             <div class="doc-item" id="message_signature">
                 <h4>message_signature</h4>
                 <pre class="signature"><code>facts message_signature = DilithiumSignature::sign(&alice_sign_sec, message.as_bytes())?</code></pre>
-                <p class="source">Source: <a href="file://./examples/pqc_demo.csd#L422">pqc_demo.csd:422</a></p>
+                <p class="source">Source: <a href="file://./examples/pqc_demo.💀#L422">pqc_demo.💀:422</a></p>
             </div>
             <div class="doc-item" id="bob_shared_key">
                 <h4>bob_shared_key</h4>
                 <pre class="signature"><code>facts bob_shared_key = KyberKem::decaps(&bob_kyber_sec, &encaps_ciphertext)?</code></pre>
-                <p class="source">Source: <a href="file://./examples/pqc_demo.csd#L425">pqc_demo.csd:425</a></p>
+                <p class="source">Source: <a href="file://./examples/pqc_demo.💀#L425">pqc_demo.💀:425</a></p>
             </div>
             <div class="doc-item" id="signature_valid">
                 <h4>signature_valid</h4>
                 <pre class="signature"><code>facts signature_valid = DilithiumSignature::verify(&alice_sign_pub, message.as_bytes(), &message_signature)?</code></pre>
-                <p class="source">Source: <a href="file://./examples/pqc_demo.csd#L426">pqc_demo.csd:426</a></p>
+                <p class="source">Source: <a href="file://./examples/pqc_demo.💀#L426">pqc_demo.💀:426</a></p>
             </div>
             <div class="doc-item" id="software_hash">
                 <h4>software_hash</h4>
                 <pre class="signature"><code>facts software_hash = "sha256:a7b2c3d4e5f6789012345678901234567890abcdef1234567890abcdef123456"</code></pre>
-                <p class="source">Source: <a href="file://./examples/pqc_demo.csd#L439">pqc_demo.csd:439</a></p>
+                <p class="source">Source: <a href="file://./examples/pqc_demo.💀#L439">pqc_demo.💀:439</a></p>
             </div>
             <div class="doc-item" id="publisher_info">
                 <h4>publisher_info</h4>
                 <pre class="signature"><code>facts publisher_info = "CURSED Language Team - Official Release v1.0.0"</code></pre>
-                <p class="source">Source: <a href="file://./examples/pqc_demo.csd#L440">pqc_demo.csd:440</a></p>
+                <p class="source">Source: <a href="file://./examples/pqc_demo.💀#L440">pqc_demo.💀:440</a></p>
             </div>
             <div class="doc-item" id="signing_data">
                 <h4>signing_data</h4>
                 <pre class="signature"><code>facts signing_data = format!("{}\n{}\nTimestamp: 2024-12-06T10:30:00Z", software_hash, publisher_info)</code></pre>
-                <p class="source">Source: <a href="file://./examples/pqc_demo.csd#L441">pqc_demo.csd:441</a></p>
+                <p class="source">Source: <a href="file://./examples/pqc_demo.💀#L441">pqc_demo.💀:441</a></p>
             </div>
             <div class="doc-item" id="(publisher_pub, publisher_sec)">
                 <h4>(publisher_pub, publisher_sec)</h4>
                 <pre class="signature"><code>facts (publisher_pub, publisher_sec) = FalconSignature::keygen(SecurityLevel::Level5)?</code></pre>
-                <p class="source">Source: <a href="file://./examples/pqc_demo.csd#L444">pqc_demo.csd:444</a></p>
+                <p class="source">Source: <a href="file://./examples/pqc_demo.💀#L444">pqc_demo.💀:444</a></p>
             </div>
             <div class="doc-item" id="code_signature">
                 <h4>code_signature</h4>
                 <pre class="signature"><code>facts code_signature = FalconSignature::sign(&publisher_sec, signing_data.as_bytes())?</code></pre>
-                <p class="source">Source: <a href="file://./examples/pqc_demo.csd#L445">pqc_demo.csd:445</a></p>
+                <p class="source">Source: <a href="file://./examples/pqc_demo.💀#L445">pqc_demo.💀:445</a></p>
             </div>
             <div class="doc-item" id="signature_verified">
                 <h4>signature_verified</h4>
                 <pre class="signature"><code>facts signature_verified = FalconSignature::verify(&publisher_pub, signing_data.as_bytes(), &code_signature)?</code></pre>
-                <p class="source">Source: <a href="file://./examples/pqc_demo.csd#L448">pqc_demo.csd:448</a></p>
+                <p class="source">Source: <a href="file://./examples/pqc_demo.💀#L448">pqc_demo.💀:448</a></p>
             </div>
             <div class="doc-item" id="(device_pub, device_sec)">
                 <h4>(device_pub, device_sec)</h4>
                 <pre class="signature"><code>facts (device_pub, device_sec) = KyberKem::keygen(SecurityLevel::Level1)?  // Smaller keys</code></pre>
-                <p class="source">Source: <a href="file://./examples/pqc_demo.csd#L461">pqc_demo.csd:461</a></p>
+                <p class="source">Source: <a href="file://./examples/pqc_demo.💀#L461">pqc_demo.💀:461</a></p>
             </div>
             <div class="doc-item" id="(server_pub, server_sec)">
                 <h4>(server_pub, server_sec)</h4>
                 <pre class="signature"><code>facts (server_pub, server_sec) = KyberKem::keygen(SecurityLevel::Level1)?</code></pre>
-                <p class="source">Source: <a href="file://./examples/pqc_demo.csd#L462">pqc_demo.csd:462</a></p>
+                <p class="source">Source: <a href="file://./examples/pqc_demo.💀#L462">pqc_demo.💀:462</a></p>
             </div>
             <div class="doc-item" id="device_id">
                 <h4>device_id</h4>
                 <pre class="signature"><code>facts device_id = "IoT-Device-12345"</code></pre>
-                <p class="source">Source: <a href="file://./examples/pqc_demo.csd#L465">pqc_demo.csd:465</a></p>
+                <p class="source">Source: <a href="file://./examples/pqc_demo.💀#L465">pqc_demo.💀:465</a></p>
             </div>
             <div class="doc-item" id="timestamp">
                 <h4>timestamp</h4>
                 <pre class="signature"><code>facts timestamp = "1701864600" // Unix timestamp</code></pre>
-                <p class="source">Source: <a href="file://./examples/pqc_demo.csd#L466">pqc_demo.csd:466</a></p>
+                <p class="source">Source: <a href="file://./examples/pqc_demo.💀#L466">pqc_demo.💀:466</a></p>
             </div>
             <div class="doc-item" id="auth_data">
                 <h4>auth_data</h4>
                 <pre class="signature"><code>facts auth_data = format!("{}:{}", device_id, timestamp)</code></pre>
-                <p class="source">Source: <a href="file://./examples/pqc_demo.csd#L467">pqc_demo.csd:467</a></p>
+                <p class="source">Source: <a href="file://./examples/pqc_demo.💀#L467">pqc_demo.💀:467</a></p>
             </div>
             <div class="doc-item" id="(iot_ciphertext, iot_shared_secret)">
                 <h4>(iot_ciphertext, iot_shared_secret)</h4>
                 <pre class="signature"><code>facts (iot_ciphertext, iot_shared_secret) = KyberKem::encaps(&server_pub)?</code></pre>
-                <p class="source">Source: <a href="file://./examples/pqc_demo.csd#L470">pqc_demo.csd:470</a></p>
+                <p class="source">Source: <a href="file://./examples/pqc_demo.💀#L470">pqc_demo.💀:470</a></p>
             </div>
             <div class="doc-item" id="recommended">
                 <h4>recommended</h4>
                 <pre class="signature"><code>facts recommended = get_recommended_algorithm(use_case, level)?</code></pre>
-                <p class="source">Source: <a href="file://./examples/pqc_demo.csd#L540">pqc_demo.csd:540</a></p>
+                <p class="source">Source: <a href="file://./examples/pqc_demo.💀#L540">pqc_demo.💀:540</a></p>
             </div>
             <div class="doc-item" id="sample_data">
                 <h4>sample_data</h4>
                 <pre class="signature"><code>facts sample_data = "Post-Quantum Cryptography"</code></pre>
-                <p class="source">Source: <a href="file://./examples/pqc_demo.csd#L550">pqc_demo.csd:550</a></p>
+                <p class="source">Source: <a href="file://./examples/pqc_demo.💀#L550">pqc_demo.💀:550</a></p>
             </div>
             <div class="doc-item" id="hex_encoded">
                 <h4>hex_encoded</h4>
                 <pre class="signature"><code>facts hex_encoded = bytes_to_hex(sample_data.as_bytes())</code></pre>
-                <p class="source">Source: <a href="file://./examples/pqc_demo.csd#L551">pqc_demo.csd:551</a></p>
+                <p class="source">Source: <a href="file://./examples/pqc_demo.💀#L551">pqc_demo.💀:551</a></p>
             </div>
             <div class="doc-item" id="decoded_back">
                 <h4>decoded_back</h4>
                 <pre class="signature"><code>facts decoded_back = hex_to_bytes(&hex_encoded)?</code></pre>
-                <p class="source">Source: <a href="file://./examples/pqc_demo.csd#L552">pqc_demo.csd:552</a></p>
+                <p class="source">Source: <a href="file://./examples/pqc_demo.💀#L552">pqc_demo.💀:552</a></p>
             </div>
             <div class="doc-item" id="decoded_string">
                 <h4>decoded_string</h4>
                 <pre class="signature"><code>facts decoded_string = String::from_utf8(decoded_back)?</code></pre>
-                <p class="source">Source: <a href="file://./examples/pqc_demo.csd#L553">pqc_demo.csd:553</a></p>
+                <p class="source">Source: <a href="file://./examples/pqc_demo.💀#L553">pqc_demo.💀:553</a></p>
             </div>
             <div class="doc-item" id="kyber_params">
                 <h4>kyber_params</h4>
                 <pre class="signature"><code>facts kyber_params = vibe_check level {</code></pre>
-                <p class="source">Source: <a href="file://./examples/pqc_demo.csd#L570">pqc_demo.csd:570</a></p>
+                <p class="source">Source: <a href="file://./examples/pqc_demo.💀#L570">pqc_demo.💀:570</a></p>
             </div>
         </section>
     </main>

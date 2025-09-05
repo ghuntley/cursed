@@ -515,10 +515,10 @@ Run the comprehensive test suite:
 
 ```bash
 # Test interpretation mode
-cargo run --bin cursed stdlib/vibe_net/test_vibe_net.csd
+cargo run --bin cursed stdlib/vibe_net/test_vibe_net.💀
 
 # Test compilation mode
-cargo run --bin cursed -- compile stdlib/vibe_net/test_vibe_net.csd
+cargo run --bin cursed -- compile stdlib/vibe_net/test_vibe_net.💀
 ./test_vibe_net
 
 # Both-mode verification
@@ -526,10 +526,10 @@ test_both_modes() {
     local program=$1
     cargo run --bin cursed "$program" > interp_output.txt
     cargo run --bin cursed -- compile "$program"
-    ./"$(basename "$program" .csd)" > comp_output.txt
+    ./"$(basename "$program" .💀)" > comp_output.txt
     diff interp_output.txt comp_output.txt
 }
-test_both_modes "stdlib/vibe_net/test_vibe_net.csd"
+test_both_modes "stdlib/vibe_net/test_vibe_net.💀"
 ```
 
 ## Performance Considerations

@@ -478,7 +478,7 @@ slay handle_request(headers map[tea]tea, data tea) tea {
 Run the comprehensive test suite:
 
 ```bash
-cargo run --bin cursed stdlib/trace_tea/test_trace_tea.csd
+cargo run --bin cursed stdlib/trace_tea/test_trace_tea.💀
 ```
 
 The test suite covers:

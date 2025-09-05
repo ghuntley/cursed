@@ -1,6 +1,6 @@
 ERROR: No CURSED stdlib implementation found for module 'vibez': error.ModuleNotFound
-SELF-HOSTING: Please implement stdlib/vibez/mod.csd for true self-hosting
-❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/arithmetic/02_edge_cases.csd: error.ModuleNotFound
+SELF-HOSTING: Please implement stdlib/vibez/mod.💀 for true self-hosting
+❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/arithmetic/02_edge_cases.💀: error.ModuleNotFound
 Executing 0 deferred statements
 error(gpa): memory address 0x7ea1e7520000 leaked: 
 /snap/zig/14937/lib/std/array_list.zig:1231:56: 0x128193e in ensureTotalCapacityPrecise (std.zig)

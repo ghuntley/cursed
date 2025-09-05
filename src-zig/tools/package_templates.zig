@@ -52,9 +52,9 @@ pub const templates = struct {
         .description = "A reusable CURSED library",
         .template_type = .library,
         .files = &[_]Template.FileTemplate{
-            .{ .path = "src/lib.csd", .content = library_main },
-            .{ .path = "tests/lib_test.csd", .content = library_test },
-            .{ .path = "examples/usage.csd", .content = library_example },
+            .{ .path = "src/lib.💀", .content = library_main },
+            .{ .path = "tests/lib_test.💀", .content = library_test },
+            .{ .path = "examples/usage.💀", .content = library_example },
             .{ .path = "docs/api.md", .content = library_docs },
         },
         .dependencies = &[_][]const u8{},
@@ -66,9 +66,9 @@ pub const templates = struct {
         .description = "A standalone CURSED application",
         .template_type = .binary,
         .files = &[_]Template.FileTemplate{
-            .{ .path = "src/main.csd", .content = binary_main },
-            .{ .path = "src/cli.csd", .content = binary_cli },
-            .{ .path = "tests/main_test.csd", .content = binary_test },
+            .{ .path = "src/main.💀", .content = binary_main },
+            .{ .path = "src/cli.💀", .content = binary_cli },
+            .{ .path = "tests/main_test.💀", .content = binary_test },
             .{ .path = "README.md", .content = binary_readme },
         },
         .dependencies = &[_][]const u8{"stringz"},
@@ -80,12 +80,12 @@ pub const templates = struct {
         .description = "A web application with HTTP server",
         .template_type = .webapp,
         .files = &[_]Template.FileTemplate{
-            .{ .path = "src/main.csd", .content = webapp_main },
-            .{ .path = "src/routes.csd", .content = webapp_routes },
-            .{ .path = "src/middleware.csd", .content = webapp_middleware },
+            .{ .path = "src/main.💀", .content = webapp_main },
+            .{ .path = "src/routes.💀", .content = webapp_routes },
+            .{ .path = "src/middleware.💀", .content = webapp_middleware },
             .{ .path = "static/index.html", .content = webapp_html },
             .{ .path = "static/style.css", .content = webapp_css },
-            .{ .path = "tests/server_test.csd", .content = webapp_test },
+            .{ .path = "tests/server_test.💀", .content = webapp_test },
         },
         .dependencies = &[_][]const u8{ "http", "json", "stringz" },
         .dev_dependencies = &[_][]const u8{"testz"},
@@ -96,11 +96,11 @@ pub const templates = struct {
         .description = "A REST API server",
         .template_type = .api_server,
         .files = &[_]Template.FileTemplate{
-            .{ .path = "src/main.csd", .content = api_main },
-            .{ .path = "src/handlers.csd", .content = api_handlers },
-            .{ .path = "src/models.csd", .content = api_models },
-            .{ .path = "src/auth.csd", .content = api_auth },
-            .{ .path = "tests/api_test.csd", .content = api_test },
+            .{ .path = "src/main.💀", .content = api_main },
+            .{ .path = "src/handlers.💀", .content = api_handlers },
+            .{ .path = "src/models.💀", .content = api_models },
+            .{ .path = "src/auth.💀", .content = api_auth },
+            .{ .path = "tests/api_test.💀", .content = api_test },
             .{ .path = "docs/openapi.yaml", .content = api_docs },
         },
         .dependencies = &[_][]const u8{ "http", "json", "crypto", "database" },
@@ -112,10 +112,10 @@ pub const templates = struct {
         .description = "A command-line interface tool",
         .template_type = .cli_tool,
         .files = &[_]Template.FileTemplate{
-            .{ .path = "src/main.csd", .content = cli_main },
-            .{ .path = "src/commands.csd", .content = cli_commands },
-            .{ .path = "src/config.csd", .content = cli_config },
-            .{ .path = "tests/cli_test.csd", .content = cli_test },
+            .{ .path = "src/main.💀", .content = cli_main },
+            .{ .path = "src/commands.💀", .content = cli_commands },
+            .{ .path = "src/config.💀", .content = cli_config },
+            .{ .path = "tests/cli_test.💀", .content = cli_test },
             .{ .path = "README.md", .content = cli_readme },
         },
         .dependencies = &[_][]const u8{ "stringz", "config" },
@@ -385,7 +385,7 @@ const binary_readme =
 \\```bash
 \\./app help
 \\./app version
-\\./app run myfile.csd
+\\./app run myfile.💀.💀
 \\```
 \\
 \\## Options
@@ -1478,7 +1478,7 @@ const cli_commands =
 \\    
 \\    // Create main file
 \\    sus main_content tea = "slay main() {\n    vibez.spill(\"Hello from " + project_name + "!\")\n}"
-\\    write_file(project_name + "/src/main.csd", main_content)
+\\    write_file(project_name + "/src/main.💀", main_content)
 \\    
 \\    // Create config file
 \\    sus config_content tea = generate_config_file(project_name)
@@ -1978,10 +1978,10 @@ fn createManifestContent(allocator: Allocator, project_name: []const u8, templat
     try writer.writer().writeAll("license = \"MIT\"\n");
     
     switch (template.template_type) {
-        .library => try writer.writer().writeAll("main = \"src/lib.csd\"\n"),
-        .binary, .cli_tool => try writer.writer().writeAll("main = \"src/main.csd\"\n"),
-        .webapp, .api_server => try writer.writer().writeAll("main = \"src/main.csd\"\n"),
-        .testing_framework => try writer.writer().writeAll("main = \"src/lib.csd\"\n"),
+        .library => try writer.writer().writeAll("main = \"src/lib.💀.💀\"\n"),
+        .binary, .cli_tool => try writer.writer().writeAll("main = \"src/main.💀.💀\"\n"),
+        .webapp, .api_server => try writer.writer().writeAll("main = \"src/main.💀.💀\"\n"),
+        .testing_framework => try writer.writer().writeAll("main = \"src/lib.💀.💀\"\n"),
     }
     
     // Dependencies

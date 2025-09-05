@@ -252,7 +252,7 @@ shutdown_scheduler()
 
 ```bash
 # Run comprehensive goroutine runtime tests
-./zig-out/bin/cursed-zig stdlib/concurrenz/test_goroutine_runtime.csd
+./zig-out/bin/cursed-zig stdlib/concurrenz/test_goroutine_runtime.💀
 ```
 
 ### Test Categories
@@ -373,10 +373,10 @@ shutdown_scheduler()
 zig build
 
 # Run the test suite
-./zig-out/bin/cursed-zig stdlib/concurrenz/test_goroutine_runtime.csd
+./zig-out/bin/cursed-zig stdlib/concurrenz/test_goroutine_runtime.💀
 
 # Run memory leak tests
-valgrind --leak-check=full ./zig-out/bin/cursed-zig test_goroutine_runtime.csd
+valgrind --leak-check=full ./zig-out/bin/cursed-zig test_goroutine_runtime.💀
 ```
 
 ### Testing Guidelines

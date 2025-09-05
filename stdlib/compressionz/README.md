@@ -219,7 +219,7 @@ The GZIP implementation includes:
 Run the comprehensive test suite:
 
 ```bash
-./zig-out/bin/cursed stdlib/compressionz/test_compressionz.csd
+./zig-out/bin/cursed stdlib/compressionz/test_compressionz.💀
 ```
 
 The test suite covers:

@@ -170,10 +170,10 @@ Run the comprehensive test suite:
 
 ```bash
 # Test interpretation mode
-cargo run --bin cursed stdlib/config_package/test_config_package.csd
+cargo run --bin cursed stdlib/config_package/test_config_package.💀
 
 # Test compilation mode
-cargo run --bin cursed -- compile stdlib/config_package/test_config_package.csd
+cargo run --bin cursed -- compile stdlib/config_package/test_config_package.💀
 ./test_config_package
 ```
 

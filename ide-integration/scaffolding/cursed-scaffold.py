@@ -232,7 +232,7 @@ class CursedScaffold:
         
         print(f"\n🚀 To get started:")
         print(f"   cd {target_dir}")
-        print(f"   cursed-zig src/main.csd")
+        print(f"   cursed-zig src/main.💀")
 
 def main():
     """Main entry point."""

@@ -206,7 +206,7 @@ ready (file_path.exists()) {
 #### Path Relationships
 ```cursed
 sus base_dir pathz.Path = pathz.from_string("/home/user/projects")
-sus project_file pathz.Path = pathz.from_string("/home/user/projects/myapp/src/main.csd")
+sus project_file pathz.Path = pathz.from_string("/home/user/projects/myapp/src/main.💀")
 
 // Get relative path
 sus relative pathz.Path = project_file.relative_to(base_dir) fam {
@@ -215,7 +215,7 @@ sus relative pathz.Path = project_file.relative_to(base_dir) fam {
         damn pathz.Path.from(".")
     }
 }
-vibez.spill("Relative path:", relative.to_string())  // "myapp/src/main.csd"
+vibez.spill("Relative path:", relative.to_string())  // "myapp/src/main.💀"
 
 // Check path containment (security)
 sus is_contained lit = pathz.is_contained_within(project_file, base_dir)
@@ -253,7 +253,7 @@ sus source_files []pathz.Path = pathz.list_dir(project_dir) fam {
 // Filter for CURSED source files
 sus cursed_files []pathz.Path = []pathz.Path{}
 bestie (sus file pathz.Path : source_files) {
-    ready (file.extension() == ".csd") {
+    ready (file.extension() == ".💀") {
         cursed_files.push(file)
     }
 }
@@ -323,11 +323,11 @@ slay copy_with_progress(src pathz.Path, dest pathz.Path) yikes<> {
 
 ### Path Patterns and Globbing
 
-**Why globbing?** File selection patterns like `*.csd` or `test/**/*.txt` are essential for build tools, file processing, and directory operations.
+**Why globbing?** File selection patterns like `*.💀` or `test/**/*.txt` are essential for build tools, file processing, and directory operations.
 
 ```cursed
 // Create path pattern
-sus source_pattern pathz.PathPattern = pathz.create_pattern("src/**/*.csd") fam {
+sus source_pattern pathz.PathPattern = pathz.create_pattern("src/**/*.💀") fam {
     when "invalid_pattern" -> handle_pattern_error()
 }
 
@@ -342,7 +342,7 @@ bestie (sus file pathz.Path : source_files) {
 }
 
 // Complex pattern matching
-sus test_pattern pathz.PathPattern = pathz.create_pattern("test/**/test_*.csd")
+sus test_pattern pathz.PathPattern = pathz.create_pattern("test/**/test_*.💀")
 sus backup_pattern pathz.PathPattern = pathz.create_pattern("**/*.{bak,tmp,~}")
 
 // Multiple pattern matching
@@ -422,7 +422,7 @@ bestie (sus event pathz.WatchEvent : watcher.events()) {
     sick (event.kind) {
         when pathz.EventKind.Create -> {
             vibez.spill("File created:", event.path.to_string())
-            ready (event.path.extension() == ".csd") {
+            ready (event.path.extension() == ".💀") {
                 trigger_build()
             }
         }
@@ -666,7 +666,7 @@ slay secure_file_access(base_dir pathz.Path, user_path tea) yikes<tea> {
 **Why comprehensive path testing?** Path operations have many platform-specific edge cases and security implications that require thorough testing.
 
 ```cursed
-// stdlib/pathz/test_pathz.csd
+// stdlib/pathz/test_pathz.💀
 yeet "testz"
 yeet "pathz"
 
@@ -748,7 +748,7 @@ slay test_path_patterns() {
     }
     
     testz.assert_true(pattern.matches(pathz.from_string("README.md")))
-    testz.assert_true(pattern.matches(pathz.from_string("main.csd")))
+    testz.assert_true(pattern.matches(pathz.from_string("main.💀")))
     testz.assert_true(pattern.matches(pathz.from_string("notes.txt")))
     testz.assert_false(pattern.matches(pathz.from_string("binary.exe")))
 }
@@ -785,16 +785,16 @@ slay main() {
 ### Integration Tests
 ```bash
 # Test with real file system operations
-./zig-out/bin/cursed-zig stdlib/pathz/integration_test.csd
+./zig-out/bin/cursed-zig stdlib/pathz/integration_test.💀
 
 # Memory safety testing
-valgrind --leak-check=full ./zig-out/bin/cursed-zig stdlib/pathz/memory_test.csd
+valgrind --leak-check=full ./zig-out/bin/cursed-zig stdlib/pathz/memory_test.💀
 
 # Performance benchmarks
-./zig-out/bin/cursed-zig stdlib/pathz/benchmark_test.csd
+./zig-out/bin/cursed-zig stdlib/pathz/benchmark_test.💀
 
 # Cross-platform testing
-./zig-out/bin/cursed-zig stdlib/pathz/platform_test.csd
+./zig-out/bin/cursed-zig stdlib/pathz/platform_test.💀
 ```
 
 ## Implementation Choices Explained

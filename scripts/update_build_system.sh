@@ -68,15 +68,15 @@ fi
 # Test basic functionality
 if [ -f "zig-out/bin/cursed-zig" ]; then
     echo "Testing basic functionality..."
-    echo 'vibez.spill("Compatibility test successful!")' > compat_test.csd
+    echo 'vibez.spill("Compatibility test successful!")' > compat_test.💀
     
-    if ./zig-out/bin/cursed-zig compat_test.csd; then
+    if ./zig-out/bin/cursed-zig compat_test.💀; then
         echo "✅ Runtime compatibility confirmed"
     else
         echo "⚠️  Runtime test failed - check interpreter compatibility"
     fi
     
-    rm -f compat_test.csd
+    rm -f compat_test.💀
 else
     echo "⚠️  No binary produced - build may have issues"
 fi

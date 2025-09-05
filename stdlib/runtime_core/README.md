@@ -75,7 +75,7 @@ Comprehensive error information for compiler diagnostics:
 sus err RuntimeError = RuntimeError_with_source(
     E_SYNTAX_ERROR, 
     "Unexpected token", 
-    "main.csd", 
+    "main.💀", 
     42
 )
 sus error_msg tea = RuntimeError_to_string(err)
@@ -115,7 +115,7 @@ The Runtime Core library is designed specifically for compiler workloads:
 Run the comprehensive test suite:
 
 ```bash
-./cursed-unified stdlib/runtime_core/test_runtime_core.csd
+./cursed-unified stdlib/runtime_core/test_runtime_core.💀
 ```
 
 ## Implementation Notes

@@ -427,10 +427,10 @@ Run the comprehensive test suite:
 
 ```bash
 # Test interpretation mode
-cargo run --bin cursed stdlib/clock_bait/test_clock_bait.csd
+cargo run --bin cursed stdlib/clock_bait/test_clock_bait.💀
 
 # Test compilation mode
-cargo run --bin cursed -- compile stdlib/clock_bait/test_clock_bait.csd
+cargo run --bin cursed -- compile stdlib/clock_bait/test_clock_bait.💀
 ./test_clock_bait
 ```
 

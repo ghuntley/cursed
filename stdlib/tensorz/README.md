@@ -172,7 +172,7 @@ The library follows CURSED's error handling patterns:
 
 Run the comprehensive test suite:
 ```bash
-./zig-out/bin/cursed stdlib/tensorz/test_tensorz.csd
+./zig-out/bin/cursed stdlib/tensorz/test_tensorz.💀
 ```
 
 The test suite covers:

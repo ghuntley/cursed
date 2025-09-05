@@ -112,8 +112,8 @@ The module includes mock data for realistic testing:
 Debug output from successful test run shows:
 
 ```
-✅ Successfully read CURSED stdlib file stdlib/fs/mod.csd (1978 bytes)
-✅ Successfully parsed CURSED stdlib stdlib/fs/mod.csd (21 statements)  
+✅ Successfully read CURSED stdlib file stdlib/fs/mod.💀 (1978 bytes)
+✅ Successfully parsed CURSED stdlib stdlib/fs/mod.💀 (21 statements)  
 ✅ Registering CURSED stdlib function 'fs.read_file'
 ✅ Registering CURSED stdlib function 'fs.write_file'
 ✅ Registering CURSED stdlib function 'fs.exists'

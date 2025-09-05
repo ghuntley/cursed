@@ -209,7 +209,7 @@ For production use, extend `execute_function_safely()` to support your applicati
 Run the test suite to verify framework functionality:
 
 ```bash
-cargo run --bin cursed stdlib/performance_testing/test_performance_testing.csd
+cargo run --bin cursed stdlib/performance_testing/test_performance_testing.💀
 ```
 
 The test suite includes:

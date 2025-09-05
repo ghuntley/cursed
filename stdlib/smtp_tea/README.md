@@ -321,7 +321,7 @@ smtp_tea.SMTP_SSL = 465      # SMTP over SSL/TLS
 Run the comprehensive test suite:
 
 ```bash
-cargo run --bin cursed stdlib/smtp_tea/test_smtp_tea.csd
+cargo run --bin cursed stdlib/smtp_tea/test_smtp_tea.💀
 ```
 
 The test suite covers:

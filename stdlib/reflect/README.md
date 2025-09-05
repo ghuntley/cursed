@@ -84,7 +84,7 @@ vibez.spill("Person has " + core.tea(reflect.get_struct_field_count(person_type)
 ## Testing
 
 ```bash
-cargo run --bin cursed stdlib/reflect/test_reflect.csd
+cargo run --bin cursed stdlib/reflect/test_reflect.💀
 ```
 
 ## Status

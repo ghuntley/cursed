@@ -29,9 +29,9 @@ pub fn main() !void {
     print("-----------------------------------\n", .{});
     
     const source1 = "\"unterminated string\nsus x normie = 42;";
-    try error_reporter.addSourceFile("test1.csd", source1);
+    try error_reporter.addSourceFile("test1.💀", source1);
     
-    var lexer1 = enhanced_lexer.Lexer.init(allocator, source1, "test1.csd", &error_reporter) catch |err| {
+    var lexer1 = enhanced_lexer.Lexer.init(allocator, source1, "test1.💀", &error_reporter) catch |err| {
         print("Failed to initialize lexer: {any}\n", .{err});
         return;
     };
@@ -61,9 +61,9 @@ pub fn main() !void {
         \\sus another_var tea = "valid"
     ;
     
-    try error_reporter2.addSourceFile("test2.csd", source2);
+    try error_reporter2.addSourceFile("test2.💀", source2);
     
-    var lexer2 = enhanced_lexer.Lexer.init(allocator, source2, "test2.csd", &error_reporter2) catch |err| {
+    var lexer2 = enhanced_lexer.Lexer.init(allocator, source2, "test2.💀", &error_reporter2) catch |err| {
         print("Failed to initialize lexer: {any}\n", .{err});
         return;
     };
@@ -84,7 +84,7 @@ pub fn main() !void {
     error_reporter3.setColors(true);
 
     // Manually create diagnostic with suggestions
-    const location = error_reporting.SourceLocation.init("demo.csd", 10, 15, 120);
+    const location = error_reporting.SourceLocation.init("demo.💀", 10, 15, 120);
     
     try error_reporter3.reportError(
         .E201_UndefinedVariable,
@@ -95,13 +95,13 @@ pub fn main() !void {
     try error_reporter3.reportError(
         .E109_InvalidFunction,
         "Invalid function declaration syntax",
-        error_reporting.SourceLocation.init("demo.csd", 15, 1, 200)
+        error_reporting.SourceLocation.init("demo.💀", 15, 1, 200)
     );
 
     try error_reporter3.reportWarning(
         .E203_TypeMismatch,
         "Implicit conversion from 'normie' to 'tea' may lose precision",
-        error_reporting.SourceLocation.init("demo.csd", 20, 25, 300)
+        error_reporting.SourceLocation.init("demo.💀", 20, 25, 300)
     );
 
     try error_reporter3.printDiagnostics(std.io.getStdErr().writer());
@@ -117,7 +117,7 @@ pub fn main() !void {
     // Generate many errors to test limits
     var i: u32 = 1;
     while (i <= 5) : (i += 1) {
-        const loc = error_reporting.SourceLocation.init("stress_test.csd", i, 10, i * 50);
+        const loc = error_reporting.SourceLocation.init("stress_test.💀", i, 10, i * 50);
         const message = try std.fmt.allocPrint(allocator, "Error number {d} for testing", .{i});
         defer allocator.free(message);
         

@@ -7,7 +7,7 @@ pub fn main() !void {
     const allocator = gpa.allocator();
     
     // Read the fizzbuzz source file
-    const source = try std.fs.cwd().readFileAlloc(allocator, "fizzbuzz.csd", 1024 * 1024);
+    const source = try std.fs.cwd().readFileAlloc(allocator, "fizzbuzz.💀", 1024 * 1024);
     defer allocator.free(source);
     
     std.debug.print("🧪 Testing LLVM IR generation for FizzBuzz...\n", .{});

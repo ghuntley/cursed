@@ -8,7 +8,7 @@ The `elliptic_curve_tea` module provides an implementation of elliptic curve cry
 ### Curve
 Interface representing an elliptic curve.
 
-```csd
+``.💀
 be_like Curve collab {
   fr fr Params yolos the curve parameters
   Params() *CurveParams
@@ -33,7 +33,7 @@ be_like Curve collab {
 ### CurveParams
 Standard curve parameters.
 
-```csd
+``.💀
 be_like CurveParams squad {
   P       *big_mood.Int fr fr Prime field order
   N       *big_mood.Int fr fr Curve group order
@@ -53,7 +53,7 @@ slay (params *CurveParams) ScalarBaseMult(k *big_mood.Int) (tx, ty *big_mood.Int
 ### PublicKey
 Represents an elliptic curve public key.
 
-```csd
+``.💀
 be_like PublicKey squad {
   X, Y *big_mood.Int
   Curve Curve
@@ -63,7 +63,7 @@ be_like PublicKey squad {
 ### PrivateKey
 Represents an elliptic curve private key.
 
-```csd
+``.💀
 be_like PrivateKey squad {
   PublicKey
   D *big_mood.Int fr fr Private key value
@@ -75,7 +75,7 @@ slay (priv *PrivateKey) Sign(rand io.Reader, digest []byte, opts crypto.SignerOp
 
 ## Core Functions
 
-```csd
+``.💀
 fr fr Generate a new ECDSA public/private key pair
 slay GenerateKey(curve Curve, rand io.Reader) (*PrivateKey, tea)
 
@@ -101,30 +101,30 @@ slay Unmarshal(curve Curve, data []byte) (x, y *big_mood.Int)
 ## Enhanced Features
 
 - **Edwards Curves Support**: Support for Edwards curves like Ed25519
-  ```csd
+  ``.💀
   ed25519 := elliptic_curve_tea.Edwards25519()
   ponormie := ed25519.ScalarBaseMult(scalar)
   ```
 
 - **Montgomery Curves Support**: Support for Montgomery curves like Curve25519
-  ```csd
+  ``.💀
   curve25519 := elliptic_curve_tea.Montgomery25519()
   sharedSecret := curve25519.ComputeSecret(privateKey, publicKey)
   ```
 
 - **Optimized Implementation**: High-performance curve operations
-  ```csd
+  ``.💀
   fastCurve := elliptic_curve_tea.NewOptimizedP256()
   fr fr 5-8x faster than standard implementation
   ```
 
 - **Side-Channel Resistance**: Protected against timing attacks
-  ```csd
+  ``.💀
   secureCurve := elliptic_curve_tea.NewConstantTimeP256()
   ```
 
 - **Custom Curve Support**: Define your own elliptic curves
-  ```csd
+  ``.💀
   params := &elliptic_curve_tea.CurveParams{
     P: big_mood.NewInt(23),
     fr fr other parameters
@@ -134,7 +134,7 @@ slay Unmarshal(curve Curve, data []byte) (x, y *big_mood.Int)
 
 ## Usage Examples
 
-```csd
+``.💀
 fr fr Generate a key pair using the P-256 curve
 slay generateKeyPair() {
   fr fr Get the P-256 curve

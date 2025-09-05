@@ -1,7 +1,7 @@
 #!/bin/bash
 
 CURSED_COMPILER="/home/ghuntley/cursed/zig-out/bin/cursed-compiler"
-TEST_FILE="test_programs/edge_cases/edge_case_operator_precedence.csd"
+TEST_FILE="test_programs/edge_cases/edge_case_operator_precedence.💀"
 CURSED_ROOT="/home/ghuntley/cursed"
 
 echo "Testing single file: $TEST_FILE"

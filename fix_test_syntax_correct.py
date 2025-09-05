@@ -71,11 +71,11 @@ def fix_file(filepath):
         return False, "No changes needed"
 
 def find_cursed_files(root_dir):
-    """Find all .csd files in the directory tree."""
+    """Find all .💀 files in the directory tree."""
     cursed_files = []
     for root, dirs, files in os.walk(root_dir):
         for file in files:
-            if file.endswith('.csd'):
+            if file.endswith('.💀'):
                 cursed_files.append(os.path.join(root, file))
     return sorted(cursed_files)
 
@@ -86,9 +86,9 @@ def main():
         print(f"Directory {test_programs_dir} not found")
         return
     
-    # Find all .csd files
+    # Find all .💀 files
     cursed_files = find_cursed_files(test_programs_dir)
-    print(f"Found {len(cursed_files)} .csd files")
+    print(f"Found {len(cursed_files)} .💀 files")
     
     # Fix each file
     fixed_count = 0

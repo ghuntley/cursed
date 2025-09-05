@@ -62,8 +62,8 @@ testz = "^1.0.0"
 benchmarkz = "^0.5.0"
 
 [build]
-entry = "src/lib.csd"
-binary = "src/main.csd"  # Optional: for executable packages
+entry = "src/lib.💀"
+binary = "src/main.💀"  # Optional: for executable packages
 
 [features]
 default = ["tls", "compression"]
@@ -87,14 +87,14 @@ awesome-http-client/
 ├── LICENSE                  # License file
 ├── CHANGELOG.md             # Version history
 ├── src/
-│   ├── lib.csd             # Library entry point
-│   ├── client.csd          # Core implementation
-│   └── utils.csd           # Helper utilities
+│   ├── lib.💀             # Library entry point
+│   ├── client.💀          # Core implementation
+│   └── utils.💀           # Helper utilities
 ├── tests/
-│   ├── integration_test.csd
-│   └── unit_test.csd
+│   ├── integration_test.💀
+│   └── unit_test.💀
 ├── examples/
-│   └── quick_start.csd
+│   └── quick_start.💀
 └── docs/                   # Additional documentation
     └── api.md
 ```

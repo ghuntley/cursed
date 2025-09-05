@@ -468,7 +468,7 @@ slay find_slot(table SymbolTable<T>, key tea, hash normie) normie {
 ```bash
 # Run hash map tests
 zig build test
-./zig-out/bin/cursed-zig stdlib/hash_map_enhanced/test_hash_map_enhanced.csd
+./zig-out/bin/cursed-zig stdlib/hash_map_enhanced/test_hash_map_enhanced.💀
 ```
 
 ### Performance Benchmarks

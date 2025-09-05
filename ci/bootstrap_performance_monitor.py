@@ -86,16 +86,16 @@ class PerformanceMonitor:
     def create_test_programs(self):
         """Create test programs for benchmarking"""
         test_programs = {
-            "simple.csd": '''vibez.spill("Hello from CURSED!")''',
+            "simple.💀": '''vibez.spill("Hello from CURSED!")''',
             
-            "math.csd": '''
+            "math.💀": '''
 sus x normie = 42
 sus y normie = 24
 sus result normie = x + y * 2
 vibez.spill("Math result: " + result.to_string())
 ''',
             
-            "fibonacci.csd": '''
+            "fibonacci.💀": '''
 slay fibonacci(n normie) normie {
     lowkey (n <= 1) {
         damn n
@@ -107,7 +107,7 @@ sus result normie = fibonacci(15)
 vibez.spill("Fibonacci(15) = " + result.to_string())
 ''',
             
-            "control_flow.csd": '''
+            "control_flow.💀": '''
 sus count normie = 10
 periodt (count > 0) {
     lowkey (count % 2 == 0) {
@@ -119,7 +119,7 @@ periodt (count > 0) {
 }
 ''',
             
-            "complex.csd": '''
+            "complex.💀": '''
 slay factorial(n normie) normie {
     lowkey (n <= 1) {
         damn 1
@@ -164,7 +164,7 @@ bestie (i := 1; i <= 5; i++) {
         # Try to compile Stage 2
         print("\n🔨 Compiling Stage 2 compiler...")
         stage2_compile_time, stage2_compile_exit, _, stage2_compile_stderr = self.time_command(
-            [original_compiler, "--", "compile", "src/bootstrap/stage2/main.csd", "-o", "cursed_stage2"],
+            [original_compiler, "--", "compile", "src/bootstrap/stage2/main.💀", "-o", "cursed_stage2"],
             "Stage 2 compilation"
         )
         

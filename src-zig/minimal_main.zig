@@ -42,7 +42,7 @@ pub fn main() !void {
     }
     
     // Check if it's a CURSED file
-    if (std.mem.endsWith(u8, command, ".csd")) {
+    if (std.mem.endsWith(u8, command, ".💀")) {
         try runCursedFile(allocator, command);
     } else {
         std.debug.print("Error: Unknown command '{s}'\n", .{command});
@@ -60,15 +60,15 @@ fn printVersion() !void {
 fn printUsage() !void {
     std.debug.print("CURSED Programming Language Compiler\n\n", .{});
     std.debug.print("USAGE:\n", .{});
-    std.debug.print("  cursed [OPTIONS] <file.csd>\n", .{});
+    std.debug.print("  cursed [OPTIONS] <file.💀.💀>\n", .{});
     std.debug.print("  cursed [COMMAND]\n\n", .{});
     std.debug.print("OPTIONS:\n", .{});
     std.debug.print("  --version     Show version information\n", .{});
     std.debug.print("  --help        Show this help message\n\n", .{});
     std.debug.print("COMMANDS:\n", .{});
-    std.debug.print("  <file.csd>    Execute CURSED source file\n\n", .{});
+    std.debug.print("  <file.💀.💀>    Execute CURSED source file\n\n", .{});
     std.debug.print("EXAMPLES:\n", .{});
-    std.debug.print("  cursed hello.csd          # Execute hello.csd\n", .{});
+    std.debug.print("  cursed hello.💀.💀          # Execute hello.💀.💀\n", .{});
     std.debug.print("  cursed --version          # Show version\n\n", .{});
     std.debug.print("Oracle Priority 2: Build System Migration COMPLETE\n", .{});
     std.debug.print("✓ Zig 0.15.1 API compatibility\n", .{});

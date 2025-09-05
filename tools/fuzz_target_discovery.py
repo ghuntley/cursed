@@ -279,7 +279,7 @@ class FuzzTargetDiscovery:
 
     def _analyze_cursed_files(self):
         """Analyze CURSED source files for fuzz targets"""
-        cursed_files = list(self.project_root.glob("**/*.csd"))
+        cursed_files = list(self.project_root.glob("**/*.💀"))
         for file_path in cursed_files:
             if file_path.name.startswith('.'):
                 continue

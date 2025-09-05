@@ -1,0 +1,663 @@
+// CURSED Package Manager - Pure CURSED Implementation
+// Main package manager module for dependency resolution, installation, and publishing
+
+yeet "testz"
+yeet "vibez"
+yeet "jsonz"
+yeet "httpz"
+yeet "filez"
+yeet "stringz"
+yeet "arrayz"
+yeet "hashz"
+
+// Package version structure
+squad PackageVersion {
+    spill major drip
+    spill minor drip
+    spill patch drip
+    
+    slay new(major drip, minor drip, patch drip) PackageVersion {
+        damn PackageVersion{major: major, minor: minor, patch: patch}
+    }
+    
+    slay toString(self PackageVersion) tea {
+        damn format_str("{}.{}.{}", self.major, self.minor, self.patch)
+    }
+    
+    slay satisfies(self PackageVersion, constraint tea) lit {
+        // Parse constraint like "^1.0.0", "~1.2.0", ">=1.0.0"
+        ready (starts_with(constraint, "^")) {
+            sus required PackageVersion = parseVersion(slice_str(constraint, 1))
+            damn self.major == required.major && 
+                 (self.minor > required.minor || 
+                  (self.minor == required.minor && self.patch >= required.patch))
+        }
+        
+        ready (starts_with(constraint, "~")) {
+            sus required PackageVersion = parseVersion(slice_str(constraint, 1))
+            damn self.major == required.major && 
+                 self.minor == required.minor && 
+                 self.patch >= required.patch
+        }
+        
+        ready (starts_with(constraint, ">=")) {
+            sus required PackageVersion = parseVersion(slice_str(constraint, 2))
+            damn self.compare(required) >= 0
+        }
+        
+        ready (starts_with(constraint, ">")) {
+            sus required PackageVersion = parseVersion(slice_str(constraint, 1))
+            damn self.compare(required) > 0
+        }
+        
+        ready (starts_with(constraint, "<=")) {
+            sus required PackageVersion = parseVersion(slice_str(constraint, 2))
+            damn self.compare(required) <= 0
+        }
+        
+        ready (starts_with(constraint, "<")) {
+            sus required PackageVersion = parseVersion(slice_str(constraint, 1))
+            damn self.compare(required) < 0
+        }
+        
+        // Exact version match
+        sus required PackageVersion = parseVersion(constraint)
+        damn self.compare(required) == 0
+    }
+    
+    slay compare(self PackageVersion, other PackageVersion) drip {
+        ready (self.major != other.major) { damn self.major - other.major }
+        ready (self.minor != other.minor) { damn self.minor - other.minor }
+        damn self.patch - other.patch
+    }
+}
+
+slay parseVersion(version_str tea) PackageVersion {
+    sus parts tea[value] = split_str(version_str, ".")
+    ready (len(parts) != 3) {
+        damn PackageVersion.new(0, 0, 0)
+    }
+    
+    sus major drip = parse_int(parts[0])
+    sus minor drip = parse_int(parts[1])
+    sus patch drip = parse_int(parts[2])
+    
+    damn PackageVersion.new(major, minor, patch)
+}
+
+// Package dependency structure
+squad PackageDependency {
+    spill name tea
+    spill version_constraint tea
+    spill source tea  // "registry", "git", "local", "url"
+    spill url tea     // for git/url sources
+    spill is_dev lit  // development dependency
+    
+    slay new(name tea, constraint tea) PackageDependency {
+        damn PackageDependency{
+            name: name,
+            version_constraint: constraint,
+            source: "registry",
+            url: "",
+            is_dev: cringe
+        }
+    }
+    
+    slay newGit(name tea, url tea, version tea) PackageDependency {
+        damn PackageDependency{
+            name: name,
+            version_constraint: version,
+            source: "git",
+            url: url,
+            is_dev: cringe
+        }
+    }
+    
+    slay newDev(name tea, constraint tea) PackageDependency {
+        sus dep PackageDependency = PackageDependency.new(name, constraint)
+        dep.is_dev = based
+        damn dep
+    }
+}
+
+// Package manifest structure (package.💀)
+squad PackageManifest {
+    spill name tea
+    spill version tea
+    spill description tea
+    spill authors tea[value]
+    spill license tea
+    spill keywords tea[value]
+    spill repository tea
+    spill dependencies PackageDependency[value]
+    spill dev_dependencies PackageDependency[value]
+    spill build_dependencies PackageDependency[value]
+    spill bin_targets tea[value]
+    spill lib_targets tea[value]
+    
+    slay new(name tea, version tea) PackageManifest {
+        damn PackageManifest{
+            name: name,
+            version: version,
+            description: "",
+            authors: tea[value]{},
+            license: "MIT",
+            keywords: tea[value]{},
+            repository: "",
+            dependencies: PackageDependency[value]{},
+            dev_dependencies: PackageDependency[value]{},
+            build_dependencies: PackageDependency[value]{},
+            bin_targets: tea[value]{},
+            lib_targets: tea[value]{}
+        }
+    }
+    
+    slay loadFromFile(path tea) PackageManifest {
+        ready (!file_exists(path)) {
+            damn PackageManifest.new("", "0.1.0")
+        }
+        
+        sus content tea = read_file(path)
+        damn parseManifest(content)
+    }
+    
+    slay saveToFile(self PackageManifest, path tea) {
+        sus content tea = self.toManifestFormat()
+        write_file(path, content)
+    }
+    
+    slay toManifestFormat(self PackageManifest) tea {
+        sus result tea = ""
+        
+        result = concat_str(result, format_str("package \"{}\"\n{\n", self.name))
+        result = concat_str(result, format_str("    version = \"{}\"\n", self.version))
+        result = concat_str(result, format_str("    description = \"{}\"\n", self.description))
+        
+        ready (len(self.authors) > 0) {
+            result = concat_str(result, "    authors = [")
+            sus i drip = 0
+            bestie (i < len(self.authors)) {
+                ready (i > 0) { result = concat_str(result, ", ") }
+                result = concat_str(result, format_str("\"{}\"", self.authors[i]))
+                i = i + 1
+            }
+            result = concat_str(result, "]\n")
+        }
+        
+        result = concat_str(result, format_str("    license = \"{}\"\n", self.license))
+        
+        ready (len(self.dependencies) > 0) {
+            result = concat_str(result, "\n    dependencies = {\n")
+            sus i drip = 0
+            bestie (i < len(self.dependencies)) {
+                sus dep PackageDependency = self.dependencies[i]
+                result = concat_str(result, format_str("        \"{}\" = \"{}\"\n", dep.name, dep.version_constraint))
+                i = i + 1
+            }
+            result = concat_str(result, "    }\n")
+        }
+        
+        ready (len(self.dev_dependencies) > 0) {
+            result = concat_str(result, "\n    dev_dependencies = {\n")
+            sus i drip = 0
+            bestie (i < len(self.dev_dependencies)) {
+                sus dep PackageDependency = self.dev_dependencies[i]
+                result = concat_str(result, format_str("        \"{}\" = \"{}\"\n", dep.name, dep.version_constraint))
+                i = i + 1
+            }
+            result = concat_str(result, "    }\n")
+        }
+        
+        result = concat_str(result, "}\n")
+        damn result
+    }
+    
+    slay addDependency(self PackageManifest, dep PackageDependency) {
+        ready (dep.is_dev) {
+            self.dev_dependencies = append_array(self.dev_dependencies, dep)
+        } otherwise {
+            self.dependencies = append_array(self.dependencies, dep)
+        }
+    }
+    
+    slay removeDependency(self PackageManifest, name tea) lit {
+        // Remove from regular dependencies
+        sus new_deps PackageDependency[value] = PackageDependency[value]{}
+        sus found lit = cringe
+        
+        sus i drip = 0
+        bestie (i < len(self.dependencies)) {
+            ready (self.dependencies[i].name != name) {
+                new_deps = append_array(new_deps, self.dependencies[i])
+            } otherwise {
+                found = based
+            }
+            i = i + 1
+        }
+        self.dependencies = new_deps
+        
+        // Remove from dev dependencies
+        sus new_dev_deps PackageDependency[value] = PackageDependency[value]{}
+        i = 0
+        bestie (i < len(self.dev_dependencies)) {
+            ready (self.dev_dependencies[i].name != name) {
+                new_dev_deps = append_array(new_dev_deps, self.dev_dependencies[i])
+            } otherwise {
+                found = based
+            }
+            i = i + 1
+        }
+        self.dev_dependencies = new_dev_deps
+        
+        damn found
+    }
+}
+
+slay parseManifest(content tea) PackageManifest {
+    // Simple manifest parser - in production would use proper parser
+    sus manifest PackageManifest = PackageManifest.new("", "0.1.0")
+    
+    sus lines tea[value] = split_str(content, "\n")
+    sus i drip = 0
+    bestie (i < len(lines)) {
+        sus line tea = trim_str(lines[i])
+        
+        ready (starts_with(line, "package ")) {
+            sus name_start drip = find_str(line, "\"") + 1
+            sus name_end drip = find_str(slice_str(line, name_start), "\"") + name_start
+            manifest.name = slice_str(line, name_start, name_end)
+        }
+        
+        ready (contains_str(line, "version = ")) {
+            sus value tea = extractQuotedValue(line)
+            manifest.version = value
+        }
+        
+        ready (contains_str(line, "description = ")) {
+            sus value tea = extractQuotedValue(line)
+            manifest.description = value
+        }
+        
+        // Parse dependencies section
+        ready (contains_str(line, "dependencies = {")) {
+            i = i + 1
+            bestie (i < len(lines) && !contains_str(lines[i], "}")) {
+                sus dep_line tea = trim_str(lines[i])
+                ready (contains_str(dep_line, "=")) {
+                    sus dep PackageDependency = parseDependencyLine(dep_line)
+                    manifest.dependencies = append_array(manifest.dependencies, dep)
+                }
+                i = i + 1
+            }
+        }
+        
+        // Parse dev_dependencies section
+        ready (contains_str(line, "dev_dependencies = {")) {
+            i = i + 1
+            bestie (i < len(lines) && !contains_str(lines[i], "}")) {
+                sus dep_line tea = trim_str(lines[i])
+                ready (contains_str(dep_line, "=")) {
+                    sus dep PackageDependency = parseDependencyLine(dep_line)
+                    dep.is_dev = based
+                    manifest.dev_dependencies = append_array(manifest.dev_dependencies, dep)
+                }
+                i = i + 1
+            }
+        }
+        
+        i = i + 1
+    }
+    
+    damn manifest
+}
+
+slay extractQuotedValue(line tea) tea {
+    sus start drip = find_str(line, "\"") + 1
+    sus end drip = find_str(slice_str(line, start), "\"") + start
+    damn slice_str(line, start, end)
+}
+
+slay parseDependencyLine(line tea) PackageDependency {
+    sus parts tea[value] = split_str(line, "=")
+    ready (len(parts) != 2) {
+        damn PackageDependency.new("", "")
+    }
+    
+    sus name tea = trim_str(replace_str(parts[0], "\"", ""))
+    sus version tea = trim_str(replace_str(parts[1], "\"", ""))
+    damn PackageDependency.new(name, version)
+}
+
+// Package resolution and dependency graph
+squad PackageResolver {
+    spill cache_dir tea
+    spill registry_url tea
+    spill installed_packages PackageInfo[value]
+    
+    slay new(cache_dir tea) PackageResolver {
+        damn PackageResolver{
+            cache_dir: cache_dir,
+            registry_url: "https://packages.cursed.dev/api/v1",
+            installed_packages: PackageInfo[value]{}
+        }
+    }
+    
+    slay resolvePackage(self PackageResolver, name tea, constraint tea) PackageInfo {
+        // Check if already installed and satisfies constraint
+        sus i drip = 0
+        bestie (i < len(self.installed_packages)) {
+            sus pkg PackageInfo = self.installed_packages[i]
+            ready (pkg.name == name && pkg.version.satisfies(constraint)) {
+                damn pkg
+            }
+            i = i + 1
+        }
+        
+        // Fetch from registry
+        damn self.fetchFromRegistry(name, constraint)
+    }
+    
+    slay fetchFromRegistry(self PackageResolver, name tea, constraint tea) PackageInfo {
+        sus url tea = format_str("{}/packages/{}", self.registry_url, name)
+        sus response tea = http_get(url)
+        sus package_info PackageInfo = parsePackageInfo(response)
+        
+        // Find version that satisfies constraint
+        sus i drip = 0
+        bestie (i < len(package_info.versions)) {
+            sus version tea = package_info.versions[i]
+            sus pkg_version PackageVersion = parseVersion(version)
+            ready (pkg_version.satisfies(constraint)) {
+                package_info.version = pkg_version
+                damn package_info
+            }
+            i = i + 1
+        }
+        
+        // No suitable version found
+        vibez.spill("Error: No version of {} satisfies {}", name, constraint)
+        damn PackageInfo.new("", PackageVersion.new(0, 0, 0))
+    }
+    
+    slay resolveDependencies(self PackageResolver, manifest PackageManifest) PackageInfo[value]{
+        sus resolved PackageInfo[value] = PackageInfo[value]{}
+        sus to_resolve PackageDependency[value] = manifest.dependencies
+        
+        // Add dev dependencies if in development mode
+        sus i drip = 0
+        bestie (i < len(manifest.dev_dependencies)) {
+            to_resolve = append_array(to_resolve, manifest.dev_dependencies[i])
+            i = i + 1
+        }
+        
+        // Resolve each dependency
+        i = 0
+        bestie (i < len(to_resolve)) {
+            sus dep PackageDependency = to_resolve[i]
+            sus pkg PackageInfo = self.resolvePackage(dep.name, dep.version_constraint)
+            ready (pkg.name != "") {
+                resolved = append_array(resolved, pkg)
+                
+                // Recursively resolve transitive dependencies
+                sus dep_manifest PackageManifest = pkg.getManifest()
+                sus transitive_deps PackageInfo[value] = self.resolveDependencies(dep_manifest)
+                
+                sus j drip = 0
+                bestie (j < len(transitive_deps)) {
+                    resolved = append_array(resolved, transitive_deps[j])
+                    j = j + 1
+                }
+            }
+            i = i + 1
+        }
+        
+        damn removeDuplicates(resolved)
+    }
+    
+    slay installPackage(self PackageResolver, pkg PackageInfo) lit {
+        sus install_dir tea = format_str("{}/{}", self.cache_dir, pkg.name)
+        
+        // Create installation directory
+        create_dir(install_dir)
+        
+        // Download package archive
+        sus download_url tea = format_str("{}/packages/{}/{}/download", 
+                                         self.registry_url, pkg.name, pkg.version.toString())
+        sus archive_path tea = format_str("{}/package.tar.gz", install_dir)
+        
+        ready (!download_file(download_url, archive_path)) {
+            vibez.spill("Failed to download package {}", pkg.name)
+            damn cringe
+        }
+        
+        // Extract archive
+        ready (!extract_archive(archive_path, install_dir)) {
+            vibez.spill("Failed to extract package {}", pkg.name)
+            damn cringe
+        }
+        
+        // Add to installed packages
+        self.installed_packages = append_array(self.installed_packages, pkg)
+        
+        vibez.spill("Installed {} version {}", pkg.name, pkg.version.toString())
+        damn based
+    }
+}
+
+squad PackageInfo {
+    spill name tea
+    spill version PackageVersion
+    spill description tea
+    spill versions tea[value]
+    spill dependencies PackageDependency[value]
+    spill download_url tea
+    
+    slay new(name tea, version PackageVersion) PackageInfo {
+        damn PackageInfo{
+            name: name,
+            version: version,
+            description: "",
+            versions: tea[value]{},
+            dependencies: PackageDependency[value]{},
+            download_url: ""
+        }
+    }
+    
+    slay getManifest(self PackageInfo) PackageManifest {
+        sus manifest PackageManifest = PackageManifest.new(self.name, self.version.toString())
+        manifest.dependencies = self.dependencies
+        damn manifest
+    }
+}
+
+slay parsePackageInfo(json_str tea) PackageInfo {
+    // Simple JSON parsing - in production would use proper JSON parser
+    sus info PackageInfo = PackageInfo.new("", PackageVersion.new(0, 0, 0))
+    
+    // Extract name
+    sus name_start drip = find_str(json_str, "\"name\":\"") + 8
+    sus name_end drip = find_str(slice_str(json_str, name_start), "\"") + name_start
+    info.name = slice_str(json_str, name_start, name_end)
+    
+    // Extract latest version
+    sus version_start drip = find_str(json_str, "\"version\":\"") + 11
+    sus version_end drip = find_str(slice_str(json_str, version_start), "\"") + version_start
+    sus version_str tea = slice_str(json_str, version_start, version_end)
+    info.version = parseVersion(version_str)
+    
+    damn info
+}
+
+slay removeDuplicates(packages PackageInfo[value]) PackageInfo[value]{
+    sus unique PackageInfo[value] = PackageInfo[value]{}
+    
+    sus i drip = 0
+    bestie (i < len(packages)) {
+        sus pkg PackageInfo = packages[i]
+        sus found lit = cringe
+        
+        sus j drip = 0
+        bestie (j < len(unique)) {
+            ready (unique[j].name == pkg.name) {
+                found = based
+                break
+            }
+            j = j + 1
+        }
+        
+        ready (!found) {
+            unique = append_array(unique, pkg)
+        }
+        i = i + 1
+    }
+    
+    damn unique
+}
+
+// Package manager commands
+slay cmd_init(name tea, version tea) lit {
+    ready (file_exists("package.💀")) {
+        vibez.spill("Package already initialized (package.💀 exists)")
+        damn cringe
+    }
+    
+    sus manifest PackageManifest = PackageManifest.new(name, version)
+    manifest.description = "A CURSED package"
+    manifest.saveToFile("package.💀")
+    
+    vibez.spill("Initialized package {} version {}", name, version)
+    damn based
+}
+
+slay cmd_add(name tea, version tea, is_dev lit) lit {
+    ready (!file_exists("package.💀")) {
+        vibez.spill("No package.💀 found. Run 'package-manager init' first.")
+        damn cringe
+    }
+    
+    sus manifest PackageManifest = PackageManifest.loadFromFile("package.💀")
+    
+    sus dep PackageDependency = ready (is_dev) {
+        damn PackageDependency.newDev(name, version)
+    } otherwise {
+        damn PackageDependency.new(name, version)
+    }
+    
+    manifest.addDependency(dep)
+    manifest.saveToFile("package.💀")
+    
+    sus dep_type tea = ready (is_dev) { damn "dev dependency" } otherwise { damn "dependency" }
+    vibez.spill("Added {} {} version {}", dep_type, name, version)
+    damn based
+}
+
+slay cmd_remove(name tea) lit {
+    ready (!file_exists("package.💀")) {
+        vibez.spill("No package.💀 found.")
+        damn cringe
+    }
+    
+    sus manifest PackageManifest = PackageManifest.loadFromFile("package.💀")
+    sus removed lit = manifest.removeDependency(name)
+    
+    ready (removed) {
+        manifest.saveToFile("package.💀")
+        vibez.spill("Removed dependency {}", name)
+        damn based
+    } otherwise {
+        vibez.spill("Package {} not found in dependencies", name)
+        damn cringe
+    }
+}
+
+slay cmd_install() lit {
+    ready (!file_exists("package.💀")) {
+        vibez.spill("No package.💀 found.")
+        damn cringe
+    }
+    
+    sus manifest PackageManifest = PackageManifest.loadFromFile("package.💀")
+    sus resolver PackageResolver = PackageResolver.new(".cursed/cache")
+    
+    vibez.spill("Resolving dependencies...")
+    sus packages PackageInfo[value] = resolver.resolveDependencies(manifest)
+    
+    vibez.spill("Installing {} packages...", len(packages))
+    sus i drip = 0
+    bestie (i < len(packages)) {
+        ready (!resolver.installPackage(packages[i])) {
+            vibez.spill("Failed to install {}", packages[i].name)
+            damn cringe
+        }
+        i = i + 1
+    }
+    
+    vibez.spill("Installation complete!")
+    damn based
+}
+
+slay cmd_search(query tea) {
+    sus resolver PackageResolver = PackageResolver.new(".cursed/cache")
+    sus url tea = format_str("{}/search?q={}", resolver.registry_url, query)
+    sus response tea = http_get(url)
+    
+    vibez.spill("Search results for '{}':", query)
+    vibez.spill(response)
+}
+
+slay cmd_publish() lit {
+    ready (!file_exists("package.💀")) {
+        vibez.spill("No package.💀 found.")
+        damn cringe
+    }
+    
+    sus manifest PackageManifest = PackageManifest.loadFromFile("package.💀")
+    
+    // Create package archive
+    sus archive_name tea = format_str("{}-{}.tar.gz", manifest.name, manifest.version)
+    
+    vibez.spill("Creating package archive...")
+    ready (!create_archive(".", archive_name)) {
+        vibez.spill("Failed to create package archive")
+        damn cringe
+    }
+    
+    // Upload to registry
+    sus resolver PackageResolver = PackageResolver.new(".cursed/cache")
+    sus upload_url tea = format_str("{}/publish", resolver.registry_url)
+    
+    vibez.spill("Publishing to registry...")
+    ready (!upload_file(upload_url, archive_name)) {
+        vibez.spill("Failed to publish package")
+        damn cringe
+    }
+    
+    vibez.spill("Published {} version {}", manifest.name, manifest.version)
+    damn based
+}
+
+// Helper functions (would be implemented in stdlib modules)
+slay download_file(url tea, path tea) lit {
+    // Implementation would use httpz module
+    damn based
+}
+
+slay extract_archive(archive_path tea, dest_dir tea) lit {
+    // Implementation would use compression stdlib
+    damn based
+}
+
+slay create_archive(source_dir tea, archive_path tea) lit {
+    // Implementation would use compression stdlib
+    damn based
+}
+
+slay upload_file(url tea, file_path tea) lit {
+    // Implementation would use httpz module
+    damn based
+}
+
+slay http_get(url tea) tea {
+    // Implementation would use httpz module
+    damn "{\"name\":\"example\",\"version\":\"1.0.0\"}"
+}

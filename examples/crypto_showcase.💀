@@ -1,0 +1,380 @@
+fr fr/ fr fr CURSED Crypto Showcase - Maximum Security Demo periodt
+fr fr/ 
+fr fr/ This example demonstrates the complete CURSED crypto ecosystem including:
+fr fr/ - Symmetric encryption (AES-256-GCM, ChaCha20-Poly1305)
+fr fr/ - Asymmetric cryptography (RSA, ECDSA, Ed25519, X25519)
+fr fr/ - Hash functions (SHA-256, SHA-512, MD5)
+fr fr/ - Key derivation (PBKDF2, scrypt)
+fr fr/ - Secure random generation
+fr fr/ - Real-world usage patterns
+fr fr/ 
+fr fr/ Usage: cursed examples/crypto_showcase.💀
+
+yeet "stdlib::crypto"
+yeet "stdlib::io"
+
+fr fr/ slay Main crypto showcase function
+function main() {
+    println("🔐 Welcome to the CURSED Crypto Showcase! Maximum security bestie!")?;
+    println("")?;
+    
+    // Initialize crypto ecosystem
+    println("📦 Initializing crypto ecosystem...")?;
+    crypto::init_crypto()?;
+    println("✅ Crypto ecosystem ready!")?;
+    println("")?;
+    
+    // Demonstrate symmetric encryption
+    demonstrate_symmetric_encryption()?;
+    
+    // Demonstrate asymmetric cryptography
+    demonstrate_asymmetric_crypto()?;
+    
+    // Demonstrate hash functions
+    demonstrate_hash_functions()?;
+    
+    // Demonstrate key derivation
+    demonstrate_key_derivation()?;
+    
+    // Demonstrate secure random generation
+    demonstrate_random_generation()?;
+    
+    // Show crypto system information
+    show_crypto_info()?;
+    
+    println("🎉 Crypto showcase completed - maximum security achieved periodt!")?;
+}
+
+fr fr/ bestie Demonstrate symmetric encryption capabilities
+function demonstrate_symmetric_encryption() {
+    println("🔒 === Symmetric Encryption Demo ===")?;
+    
+    sus secret_message = "This is a top secret message for encryption demo! 🤫";
+    sus additional_data = "metadata for authentication";
+    
+    println("Original message: \"{}\"", secret_message)?;
+    println("Additional data: \"{}\"", additional_data)?;
+    println("")?;
+    
+    // AES-256-GCM encryption
+    println("🛡️  Testing AES-256-GCM...")?;
+    sus aes_key = crypto::generate_encryption_key("AES-256-GCM", 32)?;
+    sus aes_cipher = crypto::create_aes256_gcm_cipher(aes_key)?;
+    
+    sus aes_encrypted = crypto::encrypt(aes_cipher, secret_message, additional_data)?;
+    println("✅ AES-256-GCM encryption successful")?;
+    println("   Ciphertext length: {} bytes", aes_encrypted.ciphertext.length)?;
+    println("   Nonce: {} bytes", aes_encrypted.nonce.length)?;
+    println("   Tag: {} bytes", aes_encrypted.tag.length)?;
+    
+    sus aes_decrypted = crypto::decrypt(aes_cipher, aes_encrypted, additional_data)?;
+    println("✅ AES-256-GCM decryption successful")?;
+    println("   Decrypted: \"{}\"", aes_decrypted.plaintext)?;
+    println("   Verified: {}", aes_decrypted.verified)?;
+    println("")?;
+    
+    // ChaCha20-Poly1305 encryption
+    println("🚀 Testing ChaCha20-Poly1305...")?;
+    sus chacha_key = crypto::generate_encryption_key("ChaCha20-Poly1305", 32)?;
+    sus chacha_cipher = crypto::create_chacha20_poly1305_cipher(chacha_key)?;
+    
+    sus chacha_encrypted = crypto::encrypt(chacha_cipher, secret_message, additional_data)?;
+    println("✅ ChaCha20-Poly1305 encryption successful")?;
+    println("   Ciphertext length: {} bytes", chacha_encrypted.ciphertext.length)?;
+    
+    sus chacha_decrypted = crypto::decrypt(chacha_cipher, chacha_encrypted, additional_data)?;
+    println("✅ ChaCha20-Poly1305 decryption successful")?;
+    println("   Decrypted: \"{}\"", chacha_decrypted.plaintext)?;
+    println("")?;
+}
+
+fr fr/ vibes Demonstrate asymmetric cryptography
+function demonstrate_asymmetric_crypto() {
+    println("🔐 === Asymmetric Cryptography Demo ===")?;
+    
+    // RSA key generation and operations
+    println("📊 Testing RSA-2048...")?;
+    sus rsa_keypair = crypto::generate_rsa_keypair(2048)?;
+    println("✅ RSA-2048 keypair generated")?;
+    println("   Public key size: {} bits", rsa_keypair.key_size)?;
+    
+    // ECDSA digital signatures
+    println("✍️  Testing ECDSA P-256 signatures...")?;
+    sus ecdsa_keypair = crypto::generate_ecdsa_keypair("P-256")?;
+    println("✅ ECDSA P-256 keypair generated")?;
+    
+    sus document = "Important legal document that needs digital signature";
+    sus signature = crypto::ecdsa_sign(ecdsa_keypair.private_key, document)?;
+    println("✅ Document signed with ECDSA")?;
+    
+    sus verified = crypto::ecdsa_verify(ecdsa_keypair.public_key, document, signature)?;
+    println("✅ Signature verification: {}", verified)?;
+    println("")?;
+    
+    // Ed25519 signatures (faster)
+    println("⚡ Testing Ed25519 signatures...")?;
+    sus ed25519_keypair = crypto::generate_ed25519_keypair()?;
+    println("✅ Ed25519 keypair generated")?;
+    
+    sus ed25519_signature = crypto::ed25519_sign(ed25519_keypair.private_key, document)?;
+    sus ed25519_verified = crypto::ed25519_verify(ed25519_keypair.public_key, document, ed25519_signature)?;
+    println("✅ Ed25519 signature verification: {}", ed25519_verified)?;
+    println("")?;
+    
+    // X25519 key exchange
+    println("🤝 Testing X25519 key exchange...")?;
+    sus alice_keypair = crypto::generate_x25519_keypair()?;
+    sus bob_keypair = crypto::generate_x25519_keypair()?;
+    
+    sus shared_secret_alice = crypto::x25519_key_exchange(alice_keypair.private_key, bob_keypair.public_key)?;
+    sus shared_secret_bob = crypto::x25519_key_exchange(bob_keypair.private_key, alice_keypair.public_key)?;
+    
+    println("✅ X25519 key exchange completed")?;
+    println("   Shared secrets match: {}", shared_secret_alice == shared_secret_bob)?;
+    println("")?;
+}
+
+fr fr/ facts Demonstrate hash functions
+function demonstrate_hash_functions() {
+    println("# === Hash Functions Demo ===")?;
+    
+    sus test_data = "The quick brown fox jumps over the lazy dog";
+    println("Input data: \"{}\"", test_data)?;
+    println("")?;
+    
+    // SHA-256
+    sus sha256_hash = crypto::sha256(test_data)?;
+    println("🔒 SHA-256: {}", sha256_hash)?;
+    
+    // SHA-512
+    sus sha512_hash = crypto::sha512(test_data)?;
+    println("🔐 SHA-512: {}", sha512_hash)?;
+    
+    // MD5 (legacy compatibility)
+    sus md5_hash = crypto::md5(test_data)?;
+    println("⚠️  MD5 (legacy): {}", md5_hash)?;
+    println("   ⚠️  Warning: MD5 is cryptographically broken!")?;
+    println("")?;
+    
+    // Demonstrate hash properties
+    println("🔍 Hash Properties:")?;
+    println("   - SHA-256 length: {} characters", sha256_hash.length)?;
+    println("   - SHA-512 length: {} characters", sha512_hash.length)?;
+    println("   - MD5 length: {} characters", md5_hash.length)?;
+    
+    // Avalanche effect demonstration
+    sus modified_data = "The quick brown fox jumps over the lazy cat"; // Changed "dog" to "cat"
+    sus modified_sha256 = crypto::sha256(modified_data)?;
+    println("   - Original SHA-256: {}", sha256_hash[0:16])?;
+    println("   - Modified SHA-256: {}", modified_sha256[0:16])?;
+    println("   - Small change causes large hash difference!")?;
+    println("")?;
+}
+
+fr fr/ damn Demonstrate key derivation functions
+function demonstrate_key_derivation() {
+    println("🔑 === Key Derivation Demo ===")?;
+    
+    sus password = "secure_user_password_123";
+    sus salt = crypto::generate_random_bytes(32)?;
+    
+    println("Password: \"{}\"", password)?;
+    println("Salt: {} random bytes", salt.length)?;
+    println("")?;
+    
+    // PBKDF2 key derivation
+    println("🏗️  Testing PBKDF2...")?;
+    sus pbkdf2_key = crypto::derive_key_pbkdf2(password, salt, 100000, 32)?;
+    println("✅ PBKDF2 derivation completed")?;
+    println("   Iterations: 100,000")?;
+    println("   Derived key: {} bytes", pbkdf2_key.length)?;
+    println("   Algorithm: PBKDF2-HMAC-SHA-256")?;
+    println("")?;
+    
+    // scrypt key derivation
+    println("⚡ Testing scrypt...")?;
+    sus scrypt_key = crypto::derive_key_scrypt(password, salt, 32768, 8, 1, 32)?;
+    println("✅ scrypt derivation completed")?;
+    println("   Parameters: N=32768, r=8, p=1")?;
+    println("   Derived key: {} bytes", scrypt_key.length)?;
+    println("")?;
+    
+    // Demonstrate deterministic behavior
+    sus pbkdf2_key2 = crypto::derive_key_pbkdf2(password, salt, 100000, 32)?;
+    println("🔍 Deterministic behavior:")?;
+    println("   Same inputs produce same output: {}", pbkdf2_key == pbkdf2_key2)?;
+    println("")?;
+}
+
+fr fr/ periodt Demonstrate secure random generation
+function demonstrate_random_generation() {
+    println("🎲 === Secure Random Generation Demo ===")?;
+    
+    // Generate different types of random data
+    sus random_bytes = crypto::generate_random_bytes(32)?;
+    println("🔀 Random bytes: {} bytes generated", random_bytes.length)?;
+    
+    sus random_hex = crypto::generate_random_hex(16)?;
+    println("🔤 Random hex: {}", random_hex)?;
+    
+    sus random_base64 = crypto::generate_random_base64(24)?;
+    println("📝 Random base64: {}", random_base64)?;
+    
+    sus random_number = crypto::generate_random_u64()?;
+    println("🔢 Random number: {}", random_number)?;
+    
+    sus random_range = crypto::generate_random_range(1, 1000)?;
+    println("🎯 Random in range [1, 1000]: {}", random_range)?;
+    println("")?;
+    
+    // Test entropy quality
+    sus entropy_ok = crypto::test_entropy_quality()?;
+    println("🧪 Entropy quality test: {}", entropy_ok ? "PASSED" : "FAILED")?;
+    
+    // Show RNG statistics
+    sus rng_stats = crypto::get_rng_statistics()?;
+    println("📊 RNG Statistics:")?;
+    println("   Bytes generated: {}", rng_stats.bytes_generated)?;
+    println("   Generation count: {}", rng_stats.generation_count)?;
+    println("   Error count: {}", rng_stats.errors_count)?;
+    println("")?;
+}
+
+fr fr/ flex Show comprehensive crypto system information
+function show_crypto_info() {
+    println("ℹ️  === Crypto System Information ===")?;
+    
+    sus crypto_info = crypto::get_crypto_info()?;
+    println("🔐 CURSED Crypto Ecosystem")?;
+    println("   Version: {}", crypto_info.version)?;
+    println("   Security Level: {}", crypto_info.security_level)?;
+    println("")?;
+    
+    println("📦 Available Packages:")?;
+    lowkey (sus package in crypto_info.packages) {
+        println("   - {}: {}", package.name, package.description)?;
+        println("     Version: {}, Security: {}", package.version, package.security_level)?;
+    }
+    println("")?;
+    
+    println("🛠️  Available Features:")?;
+    lowkey (sus feature in crypto_info.features) {
+        println("   ✅ {}", feature)?;
+    }
+    println("")?;
+    
+    println("🔍 Available Algorithms:")?;
+    lowkey (sus category in crypto_info.algorithms) {
+        println("   {}: {}", category.key, category.value.join(", "))?;
+    }
+    println("")?;
+    
+    // Security audit information
+    if crypto_info.security_audit {
+        println("🛡️  Security Audit:")?;
+        println("   Compliance Level: {}", crypto_info.security_audit.compliance_level)?;
+        println("   Overall Score: {:.1}%", crypto_info.security_audit.overall_score)?;
+        println("   Vulnerabilities: {}", crypto_info.security_audit.vulnerabilities_count)?;
+    }
+    println("")?;
+}
+
+fr fr/ sus Error handling demonstration
+function demonstrate_error_handling() {
+    println("⚠️  === Error Handling Demo ===")?;
+    
+    // Demonstrate proper error handling
+    vibe_check {
+        sus invalid_key = "too_short";
+        sus cipher = crypto::create_aes256_gcm_cipher(invalid_key); // This should fail
+        mood "InvalidKeySize" => {
+            println("✅ Caught invalid key size error: {}", error.message)?;
+        }
+        mood "CryptoError" => {
+            println("✅ Caught crypto error: {}", error.message)?;
+        }
+        basic => {
+            println("❌ Unexpected error: {}", error)?;
+        }
+    }
+    
+    // Demonstrate authentication failure
+    vibe_check {
+        sus key = crypto::generate_encryption_key("AES-256-GCM", 32)?;
+        sus cipher = crypto::create_aes256_gcm_cipher(key)?;
+        sus encrypted = crypto::encrypt(cipher, "test message", "")?;
+        
+        // Tamper with the ciphertext
+        sus tampered = encrypted;
+        tampered.ciphertext[0] = tampered.ciphertext[0] ^ 1; // Flip one bit
+        
+        sus decrypted = crypto::decrypt(cipher, tampered, ""); // Should fail
+        mood "AuthenticationFailed" => {
+            println("✅ Correctly detected tampered ciphertext")?;
+        }
+        basic => {
+            println("❌ Should have detected tampering!")?;
+        }
+    }
+    
+    println("")?;
+}
+
+fr fr/ Real-world usage patterns
+function demonstrate_real_world_patterns() {
+    println("🌟 === Real-World Usage Patterns ===")?;
+    
+    // Pattern 1: Secure file encryption
+    println("📁 File Encryption Pattern:")?;
+    sus file_password = prompt("Enter password for file encryption: ")?;
+    sus file_salt = crypto::generate_random_bytes(32)?;
+    sus file_key = crypto::derive_key_pbkdf2(file_password, file_salt, 100000, 32)?;
+    sus file_cipher = crypto::create_aes256_gcm_cipher(file_key)?;
+    
+    sus file_content = "Sensitive file content that needs protection";
+    sus encrypted_file = crypto::encrypt(file_cipher, file_content, "")?;
+    
+    println("✅ File encrypted with password-derived key")?;
+    println("   Salt: {} bytes (store with file)", file_salt.length)?;
+    println("   Encrypted: {} bytes", encrypted_file.ciphertext.length)?;
+    println("")?;
+    
+    // Pattern 2: Digital signatures for documents
+    println("✍️  Document Signing Pattern:")?;
+    sus signing_keypair = crypto::generate_ed25519_keypair()?;
+    sus document_content = "Legal contract requiring digital signature";
+    sus document_hash = crypto::sha256(document_content)?;
+    sus document_signature = crypto::ed25519_sign(signing_keypair.private_key, document_hash)?;
+    
+    println("✅ Document signed")?;
+    println("   Document hash: {}", document_hash[0:16])?;
+    println("   Signature: {} bytes", document_signature.length)?;
+    
+    // Verification
+    sus signature_valid = crypto::ed25519_verify(signing_keypair.public_key, document_hash, document_signature)?;
+    println("   Verification: {}", signature_valid ? "VALID" : "INVALID")?;
+    println("")?;
+    
+    // Pattern 3: Secure messaging
+    println("💬 Secure Messaging Pattern:")?;
+    sus alice_keys = crypto::generate_x25519_keypair()?;
+    sus bob_keys = crypto::generate_x25519_keypair()?;
+    
+    // Key exchange
+    sus shared_secret = crypto::x25519_key_exchange(alice_keys.private_key, bob_keys.public_key)?;
+    sus message_key = crypto::sha256(shared_secret)?; // Derive message key
+    
+    // Encrypt message
+    sus message = "Secret message from Alice to Bob";
+    sus message_cipher = crypto::create_chacha20_poly1305_cipher(message_key[0:32])?;
+    sus encrypted_message = crypto::encrypt(message_cipher, message, "alice_to_bob")?;
+    
+    println("✅ Secure message encrypted")?;
+    println("   Shared secret established via X25519")?;
+    println("   Message encrypted with ChaCha20-Poly1305")?;
+    println("   Authenticated data: alice_to_bob")?;
+    println("")?;
+}
+
+fr fr Entry point
+main()?;

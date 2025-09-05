@@ -580,7 +580,7 @@ slay download_manager() {
 **Why comprehensive async testing?** Async code has subtle timing dependencies and race conditions that only appear under specific scheduling patterns.
 
 ```cursed
-// stdlib/asyncz/test_asyncz.csd
+// stdlib/asyncz/test_asyncz.💀
 yeet "testz"
 yeet "asyncz"
 
@@ -725,16 +725,16 @@ slay main() {
 ### Integration Tests
 ```bash
 # Test async I/O operations
-./zig-out/bin/cursed-zig stdlib/asyncz/io_integration_test.csd
+./zig-out/bin/cursed-zig stdlib/asyncz/io_integration_test.💀
 
 # Memory leak testing for async operations
-valgrind --leak-check=full ./zig-out/bin/cursed-zig stdlib/asyncz/memory_test.csd
+valgrind --leak-check=full ./zig-out/bin/cursed-zig stdlib/asyncz/memory_test.💀
 
 # Performance benchmarks
-./zig-out/bin/cursed-zig stdlib/asyncz/benchmark_test.csd
+./zig-out/bin/cursed-zig stdlib/asyncz/benchmark_test.💀
 
 # Stress test with many concurrent operations
-./zig-out/bin/cursed-zig stdlib/asyncz/stress_test.csd
+./zig-out/bin/cursed-zig stdlib/asyncz/stress_test.💀
 ```
 
 ## Implementation Choices Explained

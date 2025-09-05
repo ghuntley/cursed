@@ -56,7 +56,7 @@ verify_installation() {
 # Run a single test
 run_test() {
     local test_file="$1"
-    local test_name=$(basename "$test_file" .csd)
+    local test_name=$(basename "$test_file" .💀)
     
     TOTAL_TESTS=$((TOTAL_TESTS + 1))
     
@@ -71,7 +71,7 @@ run_test() {
     
     local output_file="$TEMP_DIR/$test_name.out"
     local error_file="$TEMP_DIR/$test_name.err"
-    local expected_file="${test_file%.csd}.expected"
+    local expected_file="${test_file%.💀}.expected"
     
     # Run the test
     if timeout 30s "$CURSED_BIN" "$test_file" > "$output_file" 2> "$error_file"; then
@@ -117,10 +117,10 @@ run_memory_tests() {
     echo -e "${BLUE}[INFO]${NC} Running memory safety tests..."
     
     local memory_test_files=(
-        "comprehensive_memory_test.csd"
-        "array_bounds_test.csd" 
-        "string_safety_test.csd"
-        "goroutine_memory_test.csd"
+        "comprehensive_memory_test.💀"
+        "array_bounds_test.💀" 
+        "string_safety_test.💀"
+        "goroutine_memory_test.💀"
     )
     
     for test_file in "${memory_test_files[@]}"; do
@@ -129,7 +129,7 @@ run_memory_tests() {
             # Run with valgrind if available
             if command -v valgrind >/dev/null 2>&1; then
                 echo -e "${BLUE}[INFO]${NC} Running $test_file with Valgrind..."
-                local valgrind_out="$TEMP_DIR/$(basename "$test_file" .csd).valgrind"
+                local valgrind_out="$TEMP_DIR/$(basename "$test_file" .💀).valgrind"
                 
                 if valgrind --error-exitcode=1 --leak-check=full \
                    --show-leak-kinds=all --track-origins=yes \
@@ -153,7 +153,7 @@ run_memory_tests() {
 run_performance_tests() {
     echo -e "${BLUE}[INFO]${NC} Running performance regression tests..."
     
-    local perf_test_file="$TEST_DIR/performance_benchmark.csd"
+    local perf_test_file="$TEST_DIR/performance_benchmark.💀"
     if [[ -f "$perf_test_file" ]]; then
         echo -e "${BLUE}[INFO]${NC} Running performance benchmark..."
         
@@ -200,7 +200,7 @@ run_performance_tests() {
 run_cross_compilation_tests() {
     echo -e "${BLUE}[INFO]${NC} Running cross-compilation tests..."
     
-    local simple_test="$TEST_DIR/basic_test.csd"
+    local simple_test="$TEST_DIR/basic_test.💀"
     if [[ ! -f "$simple_test" ]]; then
         echo -e "${YELLOW}[SKIP]${NC} No basic test file found for cross-compilation"
         return
@@ -234,7 +234,7 @@ run_cross_compilation_tests() {
 run_stdlib_tests() {
     echo -e "${BLUE}[INFO]${NC} Running standard library tests..."
     
-    local stdlib_test="comprehensive_stdlib_test.csd"
+    local stdlib_test="comprehensive_stdlib_test.💀"
     if [[ -f "$stdlib_test" ]]; then
         run_test "$stdlib_test"
     fi
@@ -246,7 +246,7 @@ run_stdlib_tests() {
     )
     
     for module in "${modules[@]}"; do
-        local module_test="$TEST_DIR/${module}_test.csd"
+        local module_test="$TEST_DIR/${module}_test.💀"
         if [[ -f "$module_test" ]]; then
             run_test "$module_test"
         fi
@@ -258,10 +258,10 @@ run_concurrency_tests() {
     echo -e "${BLUE}[INFO]${NC} Running concurrency tests..."
     
     local concurrency_tests=(
-        "goroutine_basic_test.csd"
-        "channel_operations_test.csd"
-        "concurrent_stress_test.csd"
-        "race_condition_test.csd"
+        "goroutine_basic_test.💀"
+        "channel_operations_test.💀"
+        "concurrent_stress_test.💀"
+        "race_condition_test.💀"
     )
     
     for test in "${concurrency_tests[@]}"; do
@@ -277,9 +277,9 @@ run_error_tests() {
     echo -e "${BLUE}[INFO]${NC} Running error handling tests..."
     
     local error_tests=(
-        "error_propagation_test.csd"
-        "panic_recovery_test.csd"
-        "resource_cleanup_test.csd"
+        "error_propagation_test.💀"
+        "panic_recovery_test.💀"
+        "resource_cleanup_test.💀"
     )
     
     for test in "${error_tests[@]}"; do
@@ -294,7 +294,7 @@ run_error_tests() {
 run_syntax_tests() {
     echo -e "${BLUE}[INFO]${NC} Running syntax and parsing tests..."
     
-    # Find all .csd files in test directory
+    # Find all .💀 files in test directory
     while IFS= read -r -d '' test_file; do
         # Skip specific test categories handled elsewhere
         local basename=$(basename "$test_file")
@@ -303,7 +303,7 @@ run_syntax_tests() {
         fi
         
         run_test "$test_file"
-    done < <(find "$TEST_DIR" -name "*.csd" -type f -print0 2>/dev/null | head -50)
+    done < <(find "$TEST_DIR" -name "*.💀" -type f -print0 2>/dev/null | head -50)
 }
 
 # Report results

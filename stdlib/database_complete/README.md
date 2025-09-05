@@ -330,10 +330,10 @@ Run the comprehensive test suite:
 
 ```bash
 # Test interpretation mode
-cargo run --bin cursed stdlib/database_complete/test_database_complete.csd
+cargo run --bin cursed stdlib/database_complete/test_database_complete.💀
 
 # Test compilation mode
-cargo run --bin cursed -- compile stdlib/database_complete/test_database_complete.csd
+cargo run --bin cursed -- compile stdlib/database_complete/test_database_complete.💀
 ./test_database_complete
 ```
 

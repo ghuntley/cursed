@@ -193,16 +193,16 @@ Run the comprehensive test suite:
 
 ```bash
 # Test interpretation mode
-cargo run --bin cursed stdlib/squish_core/test_squish_core.csd
+cargo run --bin cursed stdlib/squish_core/test_squish_core.💀
 
 # Test compilation mode
-cargo run --bin cursed -- compile stdlib/squish_core/test_squish_core.csd
+cargo run --bin cursed -- compile stdlib/squish_core/test_squish_core.💀
 ./test_squish_core
 
 # Both-mode verification
 test_both_modes() {
-    cargo run --bin cursed stdlib/squish_core/test_squish_core.csd > interp_output.txt
-    cargo run --bin cursed -- compile stdlib/squish_core/test_squish_core.csd
+    cargo run --bin cursed stdlib/squish_core/test_squish_core.💀 > interp_output.txt
+    cargo run --bin cursed -- compile stdlib/squish_core/test_squish_core.💀
     ./test_squish_core > comp_output.txt
     diff interp_output.txt comp_output.txt
 }

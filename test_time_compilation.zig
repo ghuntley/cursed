@@ -11,7 +11,7 @@ pub fn main() !void {
     defer std.process.argsFree(allocator, args);
 
     if (args.len < 2) {
-        print("Usage: test_time_compilation <time_test.csd>\n", .{});
+        print("Usage: test_time_compilation <time_test.💀.💀>\n", .{});
         return;
     }
 

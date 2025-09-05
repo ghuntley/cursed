@@ -94,10 +94,10 @@ class Cursed < Formula
       vibez.spill(greeting);
     EOS
     
-    (testpath/"test.csd").write testprog
+    (testpath/"test.💀").write testprog
     
     # Test interpreter mode
-    output = shell_output("#{bin}/cursed test.csd")
+    output = shell_output("#{bin}/cursed test.💀")
     assert_match "Hello, Homebrew!", output
     
     # Test LSP server
@@ -122,7 +122,7 @@ class Cursed < Formula
     
     # Test standard library accessibility
     assert_predicate pkgshare/"stdlib", :exist?
-    assert_predicate pkgshare/"stdlib/vibez.csd", :exist?
+    assert_predicate pkgshare/"stdlib/vibez.💀", :exist?
     
     # Test advanced features
     advanced_testprog = <<~EOS
@@ -145,8 +145,8 @@ class Cursed < Formula
       vibez.spill("Uppercase:", upper_text);
     EOS
     
-    (testpath/"advanced_test.csd").write advanced_testprog
-    output = shell_output("#{bin}/cursed advanced_test.csd")
+    (testpath/"advanced_test.💀").write advanced_testprog
+    output = shell_output("#{bin}/cursed advanced_test.💀")
     assert_match "Fibonacci(10) = 55", output
     assert_match "CURSED rocks!", output.upcase
     
@@ -171,8 +171,8 @@ class Cursed < Formula
       vibez.spill("Result:", result);
     EOS
     
-    (testpath/"error_test.csd").write error_testprog
-    output = shell_output("#{bin}/cursed error_test.csd")
+    (testpath/"error_test.💀").write error_testprog
+    output = shell_output("#{bin}/cursed error_test.💀")
     assert_match "Result: 5", output
     
     # Performance test
@@ -194,8 +194,8 @@ class Cursed < Formula
       vibez.spill("Time:", duration, "ms");
     EOS
     
-    (testpath/"perf_test.csd").write perf_testprog
-    output = shell_output("#{bin}/cursed perf_test.csd")
+    (testpath/"perf_test.💀").write perf_testprog
+    output = shell_output("#{bin}/cursed perf_test.💀")
     assert_match "Sum:", output
     assert_match "Time:", output
   end
@@ -214,9 +214,9 @@ class Cursed < Formula
       🎉 CURSED Programming Language is now installed!
       
       Getting Started:
-        • Create a new CURSED program: echo 'yeet "vibez"; vibez.spill("Hello, World!");' > hello.csd
-        • Run your program: cursed hello.csd
-        • Format your code: cursed-fmt hello.csd
+        • Create a new CURSED program: echo 'yeet "vibez"; vibez.spill("Hello, World!");' > hello.💀
+        • Run your program: cursed hello.💀
+        • Format your code: cursed-fmt hello.💀
         • Start LSP server: cursed-lsp --stdio
       
       Environment Setup:

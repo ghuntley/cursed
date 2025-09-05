@@ -137,7 +137,7 @@ pub const ArgParser = struct {
         
         pub const TestArgs = struct {
             test_dir: []const u8 = "stdlib",
-            pattern: []const u8 = "test_*.csd",
+            pattern: []const u8 = "test_*.💀",
             filter: ?[]const u8 = null,
             parallel: bool = false,
             timeout: u64 = 30,
@@ -976,7 +976,7 @@ pub fn testCLI() !void {
     var parser = ArgParser.init(allocator, "cursed");
     
     // Test argument parsing
-    const test_args = [_][]const u8{ "compile", "--optimize", "--output=test", "main.csd" };
+    const test_args = [_][]const u8{ "compile", "--optimize", "--output=test", "main.💀" };
     try parser.parse(&test_args);
     
     // Test validation

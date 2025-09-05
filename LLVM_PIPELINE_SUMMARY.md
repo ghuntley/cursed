@@ -54,7 +54,7 @@ I have successfully fixed and enhanced the LLVM IR pipeline in `src-zig/llvm_ir_
 
 ## Generated Files Example
 
-### Source Code (`demo.csd`)
+### Source Code (`demo.💀`)
 ```cursed
 slay main_character() {
 }

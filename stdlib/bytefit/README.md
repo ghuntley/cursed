@@ -186,10 +186,10 @@ Run the comprehensive test suite:
 
 ```bash
 # Test interpretation mode
-cargo run --bin cursed stdlib/bytefit/test_bytefit.csd
+cargo run --bin cursed stdlib/bytefit/test_bytefit.💀
 
 # Test compilation mode
-cargo run --bin cursed -- compile stdlib/bytefit/test_bytefit.csd
+cargo run --bin cursed -- compile stdlib/bytefit/test_bytefit.💀
 ./test_bytefit
 ```
 

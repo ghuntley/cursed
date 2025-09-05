@@ -263,7 +263,7 @@ slay monitorService() {
 Run the test suite:
 
 ```bash
-cargo run --bin cursed stdlib/oglogging/test_oglogging.csd
+cargo run --bin cursed stdlib/oglogging/test_oglogging.💀
 ```
 
 The test suite covers:

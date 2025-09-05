@@ -18,257 +18,257 @@
                 <h4>config</h4>
                 <pre class="signature"><code>facts config = web::SessionConfig {</code></pre>
                 <p class="description">system including Redis and Database session stores.</p>
-                <p class="source">Source: <a href="file://./examples/session_timeout_stores.csd#L37">session_timeout_stores.csd:37</a></p>
+                <p class="source">Source: <a href="file://./examples/session_timeout_stores.💀#L37">session_timeout_stores.💀:37</a></p>
             </div>
             <div class="doc-item" id="server_config">
                 <h4>server_config</h4>
                 <pre class="signature"><code>facts server_config = web::ServerConfig::default();</code></pre>
-                <p class="source">Source: <a href="file://./examples/session_timeout_stores.csd#L47">session_timeout_stores.csd:47</a></p>
+                <p class="source">Source: <a href="file://./examples/session_timeout_stores.💀#L47">session_timeout_stores.💀:47</a></p>
             </div>
             <div class="doc-item" id="timeout_middleware">
                 <h4>timeout_middleware</h4>
                 <pre class="signature"><code>facts timeout_middleware = timeout_middleware::TimeoutMiddleware::new(server_config, config.clone());</code></pre>
-                <p class="source">Source: <a href="file://./examples/session_timeout_stores.csd#L48">session_timeout_stores.csd:48</a></p>
+                <p class="source">Source: <a href="file://./examples/session_timeout_stores.💀#L48">session_timeout_stores.💀:48</a></p>
             </div>
             <div class="doc-item" id="store">
                 <h4>store</h4>
                 <pre class="signature"><code>facts store = session_timeout::TimeoutMemorySessionStore::new(config);</code></pre>
-                <p class="source">Source: <a href="file://./examples/session_timeout_stores.csd#L49">session_timeout_stores.csd:49</a></p>
+                <p class="source">Source: <a href="file://./examples/session_timeout_stores.💀#L49">session_timeout_stores.💀:49</a></p>
             </div>
             <div class="doc-item" id="session">
                 <h4>session</h4>
                 <pre class="signature"><code>facts session = web::Session {</code></pre>
-                <p class="source">Source: <a href="file://./examples/session_timeout_stores.csd#L52">session_timeout_stores.csd:52</a></p>
+                <p class="source">Source: <a href="file://./examples/session_timeout_stores.💀#L52">session_timeout_stores.💀:52</a></p>
             </div>
             <div class="doc-item" id="loaded">
                 <h4>loaded</h4>
                 <pre class="signature"><code>facts loaded = store.load_with_timeout("memory_test_session", &timeout_middleware).await?;</code></pre>
-                <p class="source">Source: <a href="file://./examples/session_timeout_stores.csd#L67">session_timeout_stores.csd:67</a></p>
+                <p class="source">Source: <a href="file://./examples/session_timeout_stores.💀#L67">session_timeout_stores.💀:67</a></p>
             </div>
             <div class="doc-item" id="exists">
                 <h4>exists</h4>
                 <pre class="signature"><code>facts exists = store.exists_with_timeout("memory_test_session", &timeout_middleware).await?;</code></pre>
-                <p class="source">Source: <a href="file://./examples/session_timeout_stores.csd#L71">session_timeout_stores.csd:71</a></p>
+                <p class="source">Source: <a href="file://./examples/session_timeout_stores.💀#L71">session_timeout_stores.💀:71</a></p>
             </div>
             <div class="doc-item" id="exists_after">
                 <h4>exists_after</h4>
                 <pre class="signature"><code>facts exists_after = store.exists_with_timeout("memory_test_session", &timeout_middleware).await?;</code></pre>
-                <p class="source">Source: <a href="file://./examples/session_timeout_stores.csd#L78">session_timeout_stores.csd:78</a></p>
+                <p class="source">Source: <a href="file://./examples/session_timeout_stores.💀#L78">session_timeout_stores.💀:78</a></p>
             </div>
             <div class="doc-item" id="temp_dir">
                 <h4>temp_dir</h4>
                 <pre class="signature"><code>facts temp_dir = std::env::temp_dir().join("cursed_session_test");</code></pre>
-                <p class="source">Source: <a href="file://./examples/session_timeout_stores.csd#L87">session_timeout_stores.csd:87</a></p>
+                <p class="source">Source: <a href="file://./examples/session_timeout_stores.💀#L87">session_timeout_stores.💀:87</a></p>
             </div>
             <div class="doc-item" id="config">
                 <h4>config</h4>
                 <pre class="signature"><code>facts config = web::SessionConfig {</code></pre>
-                <p class="source">Source: <a href="file://./examples/session_timeout_stores.csd#L90">session_timeout_stores.csd:90</a></p>
+                <p class="source">Source: <a href="file://./examples/session_timeout_stores.💀#L90">session_timeout_stores.💀:90</a></p>
             </div>
             <div class="doc-item" id="server_config">
                 <h4>server_config</h4>
                 <pre class="signature"><code>facts server_config = web::ServerConfig::default();</code></pre>
-                <p class="source">Source: <a href="file://./examples/session_timeout_stores.csd#L100">session_timeout_stores.csd:100</a></p>
+                <p class="source">Source: <a href="file://./examples/session_timeout_stores.💀#L100">session_timeout_stores.💀:100</a></p>
             </div>
             <div class="doc-item" id="timeout_middleware">
                 <h4>timeout_middleware</h4>
                 <pre class="signature"><code>facts timeout_middleware = timeout_middleware::TimeoutMiddleware::new(server_config, config.clone());</code></pre>
-                <p class="source">Source: <a href="file://./examples/session_timeout_stores.csd#L101">session_timeout_stores.csd:101</a></p>
+                <p class="source">Source: <a href="file://./examples/session_timeout_stores.💀#L101">session_timeout_stores.💀:101</a></p>
             </div>
             <div class="doc-item" id="store">
                 <h4>store</h4>
                 <pre class="signature"><code>facts store = session_timeout::TimeoutFileSessionStore::new(temp_dir, config)?;</code></pre>
-                <p class="source">Source: <a href="file://./examples/session_timeout_stores.csd#L102">session_timeout_stores.csd:102</a></p>
+                <p class="source">Source: <a href="file://./examples/session_timeout_stores.💀#L102">session_timeout_stores.💀:102</a></p>
             </div>
             <div class="doc-item" id="session">
                 <h4>session</h4>
                 <pre class="signature"><code>facts session = web::Session {</code></pre>
-                <p class="source">Source: <a href="file://./examples/session_timeout_stores.csd#L105">session_timeout_stores.csd:105</a></p>
+                <p class="source">Source: <a href="file://./examples/session_timeout_stores.💀#L105">session_timeout_stores.💀:105</a></p>
             </div>
             <div class="doc-item" id="loaded">
                 <h4>loaded</h4>
                 <pre class="signature"><code>facts loaded = store.load_with_timeout("file_test_session", &timeout_middleware).await?;</code></pre>
-                <p class="source">Source: <a href="file://./examples/session_timeout_stores.csd#L120">session_timeout_stores.csd:120</a></p>
+                <p class="source">Source: <a href="file://./examples/session_timeout_stores.💀#L120">session_timeout_stores.💀:120</a></p>
             </div>
             <div class="doc-item" id="exists">
                 <h4>exists</h4>
                 <pre class="signature"><code>facts exists = store.exists_with_timeout("file_test_session", &timeout_middleware).await?;</code></pre>
-                <p class="source">Source: <a href="file://./examples/session_timeout_stores.csd#L124">session_timeout_stores.csd:124</a></p>
+                <p class="source">Source: <a href="file://./examples/session_timeout_stores.💀#L124">session_timeout_stores.💀:124</a></p>
             </div>
             <div class="doc-item" id="exists_after">
                 <h4>exists_after</h4>
                 <pre class="signature"><code>facts exists_after = store.exists_with_timeout("file_test_session", &timeout_middleware).await?;</code></pre>
-                <p class="source">Source: <a href="file://./examples/session_timeout_stores.csd#L131">session_timeout_stores.csd:131</a></p>
+                <p class="source">Source: <a href="file://./examples/session_timeout_stores.💀#L131">session_timeout_stores.💀:131</a></p>
             </div>
             <div class="doc-item" id="redis_url">
                 <h4>redis_url</h4>
                 <pre class="signature"><code>facts redis_url = "redis://localhost:6379/15"; // Use test database 15</code></pre>
-                <p class="source">Source: <a href="file://./examples/session_timeout_stores.csd#L141">session_timeout_stores.csd:141</a></p>
+                <p class="source">Source: <a href="file://./examples/session_timeout_stores.💀#L141">session_timeout_stores.💀:141</a></p>
             </div>
             <div class="doc-item" id="config">
                 <h4>config</h4>
                 <pre class="signature"><code>facts config = web::SessionConfig {</code></pre>
-                <p class="source">Source: <a href="file://./examples/session_timeout_stores.csd#L143">session_timeout_stores.csd:143</a></p>
+                <p class="source">Source: <a href="file://./examples/session_timeout_stores.💀#L143">session_timeout_stores.💀:143</a></p>
             </div>
             <div class="doc-item" id="server_config">
                 <h4>server_config</h4>
                 <pre class="signature"><code>facts server_config = web::ServerConfig::default();</code></pre>
-                <p class="source">Source: <a href="file://./examples/session_timeout_stores.csd#L155">session_timeout_stores.csd:155</a></p>
+                <p class="source">Source: <a href="file://./examples/session_timeout_stores.💀#L155">session_timeout_stores.💀:155</a></p>
             </div>
             <div class="doc-item" id="timeout_middleware">
                 <h4>timeout_middleware</h4>
                 <pre class="signature"><code>facts timeout_middleware = timeout_middleware::TimeoutMiddleware::new(server_config, config.clone());</code></pre>
-                <p class="source">Source: <a href="file://./examples/session_timeout_stores.csd#L156">session_timeout_stores.csd:156</a></p>
+                <p class="source">Source: <a href="file://./examples/session_timeout_stores.💀#L156">session_timeout_stores.💀:156</a></p>
             </div>
             <div class="doc-item" id="store">
                 <h4>store</h4>
                 <pre class="signature"><code>facts store = session_timeout::TimeoutRedisSessionStore::new(redis_url, config).await?;</code></pre>
-                <p class="source">Source: <a href="file://./examples/session_timeout_stores.csd#L157">session_timeout_stores.csd:157</a></p>
+                <p class="source">Source: <a href="file://./examples/session_timeout_stores.💀#L157">session_timeout_stores.💀:157</a></p>
             </div>
             <div class="doc-item" id="session">
                 <h4>session</h4>
                 <pre class="signature"><code>facts session = web::Session {</code></pre>
-                <p class="source">Source: <a href="file://./examples/session_timeout_stores.csd#L160">session_timeout_stores.csd:160</a></p>
+                <p class="source">Source: <a href="file://./examples/session_timeout_stores.💀#L160">session_timeout_stores.💀:160</a></p>
             </div>
             <div class="doc-item" id="loaded">
                 <h4>loaded</h4>
                 <pre class="signature"><code>facts loaded = store.load_with_timeout("redis_test_session", &timeout_middleware).await?;</code></pre>
-                <p class="source">Source: <a href="file://./examples/session_timeout_stores.csd#L175">session_timeout_stores.csd:175</a></p>
+                <p class="source">Source: <a href="file://./examples/session_timeout_stores.💀#L175">session_timeout_stores.💀:175</a></p>
             </div>
             <div class="doc-item" id="exists">
                 <h4>exists</h4>
                 <pre class="signature"><code>facts exists = store.exists_with_timeout("redis_test_session", &timeout_middleware).await?;</code></pre>
-                <p class="source">Source: <a href="file://./examples/session_timeout_stores.csd#L179">session_timeout_stores.csd:179</a></p>
+                <p class="source">Source: <a href="file://./examples/session_timeout_stores.💀#L179">session_timeout_stores.💀:179</a></p>
             </div>
             <div class="doc-item" id="cleaned">
                 <h4>cleaned</h4>
                 <pre class="signature"><code>facts cleaned = store.cleanup_with_timeout(&timeout_middleware).await?;</code></pre>
-                <p class="source">Source: <a href="file://./examples/session_timeout_stores.csd#L186">session_timeout_stores.csd:186</a></p>
+                <p class="source">Source: <a href="file://./examples/session_timeout_stores.💀#L186">session_timeout_stores.💀:186</a></p>
             </div>
             <div class="doc-item" id="exists_after">
                 <h4>exists_after</h4>
                 <pre class="signature"><code>facts exists_after = store.exists_with_timeout("redis_test_session", &timeout_middleware).await?;</code></pre>
-                <p class="source">Source: <a href="file://./examples/session_timeout_stores.csd#L193">session_timeout_stores.csd:193</a></p>
+                <p class="source">Source: <a href="file://./examples/session_timeout_stores.💀#L193">session_timeout_stores.💀:193</a></p>
             </div>
             <div class="doc-item" id="db_config">
                 <h4>db_config</h4>
                 <pre class="signature"><code>facts db_config = db::DatabaseConfig {</code></pre>
-                <p class="source">Source: <a href="file://./examples/session_timeout_stores.csd#L207">session_timeout_stores.csd:207</a></p>
+                <p class="source">Source: <a href="file://./examples/session_timeout_stores.💀#L207">session_timeout_stores.💀:207</a></p>
             </div>
             <div class="doc-item" id="config">
                 <h4>config</h4>
                 <pre class="signature"><code>facts config = web::SessionConfig {</code></pre>
-                <p class="source">Source: <a href="file://./examples/session_timeout_stores.csd#L214">session_timeout_stores.csd:214</a></p>
+                <p class="source">Source: <a href="file://./examples/session_timeout_stores.💀#L214">session_timeout_stores.💀:214</a></p>
             </div>
             <div class="doc-item" id="server_config">
                 <h4>server_config</h4>
                 <pre class="signature"><code>facts server_config = web::ServerConfig::default();</code></pre>
-                <p class="source">Source: <a href="file://./examples/session_timeout_stores.csd#L225">session_timeout_stores.csd:225</a></p>
+                <p class="source">Source: <a href="file://./examples/session_timeout_stores.💀#L225">session_timeout_stores.💀:225</a></p>
             </div>
             <div class="doc-item" id="timeout_middleware">
                 <h4>timeout_middleware</h4>
                 <pre class="signature"><code>facts timeout_middleware = timeout_middleware::TimeoutMiddleware::new(server_config, config.clone());</code></pre>
-                <p class="source">Source: <a href="file://./examples/session_timeout_stores.csd#L226">session_timeout_stores.csd:226</a></p>
+                <p class="source">Source: <a href="file://./examples/session_timeout_stores.💀#L226">session_timeout_stores.💀:226</a></p>
             </div>
             <div class="doc-item" id="store">
                 <h4>store</h4>
                 <pre class="signature"><code>facts store = session_timeout::TimeoutDatabaseSessionStore::new(db_config, config).await?;</code></pre>
-                <p class="source">Source: <a href="file://./examples/session_timeout_stores.csd#L227">session_timeout_stores.csd:227</a></p>
+                <p class="source">Source: <a href="file://./examples/session_timeout_stores.💀#L227">session_timeout_stores.💀:227</a></p>
             </div>
             <div class="doc-item" id="session">
                 <h4>session</h4>
                 <pre class="signature"><code>facts session = web::Session {</code></pre>
-                <p class="source">Source: <a href="file://./examples/session_timeout_stores.csd#L230">session_timeout_stores.csd:230</a></p>
+                <p class="source">Source: <a href="file://./examples/session_timeout_stores.💀#L230">session_timeout_stores.💀:230</a></p>
             </div>
             <div class="doc-item" id="loaded">
                 <h4>loaded</h4>
                 <pre class="signature"><code>facts loaded = store.load_with_timeout("db_test_session", &timeout_middleware).await?;</code></pre>
-                <p class="source">Source: <a href="file://./examples/session_timeout_stores.csd#L245">session_timeout_stores.csd:245</a></p>
+                <p class="source">Source: <a href="file://./examples/session_timeout_stores.💀#L245">session_timeout_stores.💀:245</a></p>
             </div>
             <div class="doc-item" id="exists">
                 <h4>exists</h4>
                 <pre class="signature"><code>facts exists = store.exists_with_timeout("db_test_session", &timeout_middleware).await?;</code></pre>
-                <p class="source">Source: <a href="file://./examples/session_timeout_stores.csd#L249">session_timeout_stores.csd:249</a></p>
+                <p class="source">Source: <a href="file://./examples/session_timeout_stores.💀#L249">session_timeout_stores.💀:249</a></p>
             </div>
             <div class="doc-item" id="cleaned">
                 <h4>cleaned</h4>
                 <pre class="signature"><code>facts cleaned = store.cleanup_with_timeout(&timeout_middleware).await?;</code></pre>
-                <p class="source">Source: <a href="file://./examples/session_timeout_stores.csd#L258">session_timeout_stores.csd:258</a></p>
+                <p class="source">Source: <a href="file://./examples/session_timeout_stores.💀#L258">session_timeout_stores.💀:258</a></p>
             </div>
             <div class="doc-item" id="exists_after">
                 <h4>exists_after</h4>
                 <pre class="signature"><code>facts exists_after = store.exists_with_timeout("db_test_session", &timeout_middleware).await?;</code></pre>
-                <p class="source">Source: <a href="file://./examples/session_timeout_stores.csd#L265">session_timeout_stores.csd:265</a></p>
+                <p class="source">Source: <a href="file://./examples/session_timeout_stores.💀#L265">session_timeout_stores.💀:265</a></p>
             </div>
             <div class="doc-item" id="memory_config">
                 <h4>memory_config</h4>
                 <pre class="signature"><code>facts memory_config = web::SessionConfig {</code></pre>
-                <p class="source">Source: <a href="file://./examples/session_timeout_stores.csd#L280">session_timeout_stores.csd:280</a></p>
+                <p class="source">Source: <a href="file://./examples/session_timeout_stores.💀#L280">session_timeout_stores.💀:280</a></p>
             </div>
             <div class="doc-item" id="memory_manager">
                 <h4>memory_manager</h4>
                 <pre class="signature"><code>facts memory_manager = session_timeout::TimeoutSessionManager::new(memory_config.clone()).await?;</code></pre>
-                <p class="source">Source: <a href="file://./examples/session_timeout_stores.csd#L290">session_timeout_stores.csd:290</a></p>
+                <p class="source">Source: <a href="file://./examples/session_timeout_stores.💀#L290">session_timeout_stores.💀:290</a></p>
             </div>
             <div class="doc-item" id="server_config">
                 <h4>server_config</h4>
                 <pre class="signature"><code>facts server_config = web::ServerConfig::default();</code></pre>
-                <p class="source">Source: <a href="file://./examples/session_timeout_stores.csd#L291">session_timeout_stores.csd:291</a></p>
+                <p class="source">Source: <a href="file://./examples/session_timeout_stores.💀#L291">session_timeout_stores.💀:291</a></p>
             </div>
             <div class="doc-item" id="timeout_middleware">
                 <h4>timeout_middleware</h4>
                 <pre class="signature"><code>facts timeout_middleware = timeout_middleware::TimeoutMiddleware::new(server_config, memory_config);</code></pre>
-                <p class="source">Source: <a href="file://./examples/session_timeout_stores.csd#L292">session_timeout_stores.csd:292</a></p>
+                <p class="source">Source: <a href="file://./examples/session_timeout_stores.💀#L292">session_timeout_stores.💀:292</a></p>
             </div>
             <div class="doc-item" id="new_session">
                 <h4>new_session</h4>
                 <pre class="signature"><code>facts new_session = memory_manager.create_session_with_timeout(&timeout_middleware).await?;</code></pre>
-                <p class="source">Source: <a href="file://./examples/session_timeout_stores.csd#L295">session_timeout_stores.csd:295</a></p>
+                <p class="source">Source: <a href="file://./examples/session_timeout_stores.💀#L295">session_timeout_stores.💀:295</a></p>
             </div>
             <div class="doc-item" id="loaded_session">
                 <h4>loaded_session</h4>
                 <pre class="signature"><code>facts loaded_session = memory_manager.load_session_with_timeout(&new_session.id, &timeout_middleware).await?;</code></pre>
-                <p class="source">Source: <a href="file://./examples/session_timeout_stores.csd#L299">session_timeout_stores.csd:299</a></p>
+                <p class="source">Source: <a href="file://./examples/session_timeout_stores.💀#L299">session_timeout_stores.💀:299</a></p>
             </div>
             <div class="doc-item" id="temp_dir">
                 <h4>temp_dir</h4>
                 <pre class="signature"><code>facts temp_dir = std::env::temp_dir().join("cursed_session_manager_test");</code></pre>
-                <p class="source">Source: <a href="file://./examples/session_timeout_stores.csd#L309">session_timeout_stores.csd:309</a></p>
+                <p class="source">Source: <a href="file://./examples/session_timeout_stores.💀#L309">session_timeout_stores.💀:309</a></p>
             </div>
             <div class="doc-item" id="file_config">
                 <h4>file_config</h4>
                 <pre class="signature"><code>facts file_config = web::SessionConfig {</code></pre>
-                <p class="source">Source: <a href="file://./examples/session_timeout_stores.csd#L312">session_timeout_stores.csd:312</a></p>
+                <p class="source">Source: <a href="file://./examples/session_timeout_stores.💀#L312">session_timeout_stores.💀:312</a></p>
             </div>
             <div class="doc-item" id="file_manager">
                 <h4>file_manager</h4>
                 <pre class="signature"><code>facts file_manager = session_timeout::TimeoutSessionManager::new(file_config.clone()).await?;</code></pre>
-                <p class="source">Source: <a href="file://./examples/session_timeout_stores.csd#L322">session_timeout_stores.csd:322</a></p>
+                <p class="source">Source: <a href="file://./examples/session_timeout_stores.💀#L322">session_timeout_stores.💀:322</a></p>
             </div>
             <div class="doc-item" id="file_timeout_middleware">
                 <h4>file_timeout_middleware</h4>
                 <pre class="signature"><code>facts file_timeout_middleware = timeout_middleware::TimeoutMiddleware::new(server_config, file_config);</code></pre>
-                <p class="source">Source: <a href="file://./examples/session_timeout_stores.csd#L323">session_timeout_stores.csd:323</a></p>
+                <p class="source">Source: <a href="file://./examples/session_timeout_stores.💀#L323">session_timeout_stores.💀:323</a></p>
             </div>
             <div class="doc-item" id="file_session">
                 <h4>file_session</h4>
                 <pre class="signature"><code>facts file_session = file_manager.create_session_with_timeout(&file_timeout_middleware).await?;</code></pre>
-                <p class="source">Source: <a href="file://./examples/session_timeout_stores.csd#L326">session_timeout_stores.csd:326</a></p>
+                <p class="source">Source: <a href="file://./examples/session_timeout_stores.💀#L326">session_timeout_stores.💀:326</a></p>
             </div>
             <div class="doc-item" id="file_loaded">
                 <h4>file_loaded</h4>
                 <pre class="signature"><code>facts file_loaded = file_manager.load_session_with_timeout(&file_session.id, &file_timeout_middleware).await?;</code></pre>
-                <p class="source">Source: <a href="file://./examples/session_timeout_stores.csd#L329">session_timeout_stores.csd:329</a></p>
+                <p class="source">Source: <a href="file://./examples/session_timeout_stores.💀#L329">session_timeout_stores.💀:329</a></p>
             </div>
             <div class="doc-item" id="expired_session">
                 <h4>expired_session</h4>
                 <pre class="signature"><code>facts expired_session = web::Session {</code></pre>
-                <p class="source">Source: <a href="file://./examples/session_timeout_stores.csd#L335">session_timeout_stores.csd:335</a></p>
+                <p class="source">Source: <a href="file://./examples/session_timeout_stores.💀#L335">session_timeout_stores.💀:335</a></p>
             </div>
             <div class="doc-item" id="expired_loaded">
                 <h4>expired_loaded</h4>
                 <pre class="signature"><code>facts expired_loaded = memory_manager.load_session_with_timeout("expired_test", &timeout_middleware).await?;</code></pre>
-                <p class="source">Source: <a href="file://./examples/session_timeout_stores.csd#L347">session_timeout_stores.csd:347</a></p>
+                <p class="source">Source: <a href="file://./examples/session_timeout_stores.💀#L347">session_timeout_stores.💀:347</a></p>
             </div>
         </section>
     </main>

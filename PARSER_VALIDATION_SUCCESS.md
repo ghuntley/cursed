@@ -115,13 +115,13 @@ sus stdlib_result drip = mathz.add_two(5, 3);
 ```bash
 # Build and test basic parsing
 zig build
-./zig-out/bin/cursed-compiler --interpret tests/parser/test_basic_parsing.csd
+./zig-out/bin/cursed-compiler --interpret tests/parser/test_basic_parsing.💀
 
 # Test arithmetic expressions
-./zig-out/bin/cursed-compiler --interpret tests/parser/test_arithmetic_expressions.csd
+./zig-out/bin/cursed-compiler --interpret tests/parser/test_arithmetic_expressions.💀
 
 # Test function calls
-./zig-out/bin/cursed-compiler --interpret tests/parser/test_function_calls.csd
+./zig-out/bin/cursed-compiler --interpret tests/parser/test_function_calls.💀
 
 # Run comprehensive test suite
 cd test_suite && ./parity_test_runner.sh

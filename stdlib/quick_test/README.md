@@ -303,7 +303,7 @@ print_test_summary()
 Run the comprehensive test suite:
 
 ```bash
-cargo run --bin cursed stdlib/quick_test/test_quick_test.csd
+cargo run --bin cursed stdlib/quick_test/test_quick_test.💀
 ```
 
 This will test all QuickTest features and provide a demonstration of capabilities.

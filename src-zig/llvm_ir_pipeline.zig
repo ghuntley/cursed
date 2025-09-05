@@ -3224,10 +3224,10 @@ pub const LLVMIRPipeline = struct {
         defer module_arena.deinit();
         const tmp_allocator = module_arena.allocator();
         
-        // 1. Locate the .csd file - try multiple paths like interpreter
-        const local_path = try std.fmt.allocPrint(tmp_allocator, "stdlib/{s}/mod.csd", .{module_name});
-        const parent_path = try std.fmt.allocPrint(tmp_allocator, "../stdlib/{s}/mod.csd", .{module_name});
-        const layer1_path = try std.fmt.allocPrint(tmp_allocator, "../stdlib/layer1/{s}.csd", .{module_name});
+        // 1. Locate the .💀 file - try multiple paths like interpreter
+        const local_path = try std.fmt.allocPrint(tmp_allocator, "stdlib/{s}/mod.💀", .{module_name});
+        const parent_path = try std.fmt.allocPrint(tmp_allocator, "../stdlib/{s}/mod.💀", .{module_name});
+        const layer1_path = try std.fmt.allocPrint(tmp_allocator, "../stdlib/layer1/{s}.💀", .{module_name});
         
         const source = std.fs.cwd().readFileAlloc(tmp_allocator, local_path, std.math.maxInt(usize)) catch |err1| blk: {
             if (err1 == error.FileNotFound) {

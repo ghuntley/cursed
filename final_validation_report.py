@@ -253,15 +253,15 @@ def generate_report():
         print(f"Test programs directory not found: {test_programs_dir}")
         return 1
         
-    # Find all .csd files
+    # Find all .💀 files
     csd_files = []
     for root, dirs, files in os.walk(test_programs_dir):
         for file in files:
-            if file.endswith('.csd'):
+            if file.endswith('.💀'):
                 csd_files.append(Path(root) / file)
                 
     if not csd_files:
-        print("No .csd files found")
+        print("No .💀 files found")
         return 1
         
     print("🔍 CURSED Test Suite Final Validation Report")

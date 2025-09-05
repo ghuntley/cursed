@@ -60,7 +60,7 @@ npm run build
 tree-sitter build-wasm
 
 # Parse a file
-npx tree-sitter parse examples/hello.csd
+npx tree-sitter parse examples/hello.💀
 ```
 
 ## IDE Integration

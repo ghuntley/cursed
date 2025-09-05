@@ -132,7 +132,7 @@ match path.extension(file_path) {
 yeet "path"
 
 sus base_dir = "/home/user/projects"
-sus target_file = "/home/user/projects/myapp/src/main.csd"
+sus target_file = "/home/user/projects/myapp/src/main.💀"
 
 sus relative = path.relative(base_dir, target_file)
 vibez.spillf("From {} to {}", base_dir, target_file)
@@ -197,8 +197,8 @@ slay build_project_structure(project_name tea) {
     sus files []tea = [
         path.join(base, "README.md"),
         path.join(base, "Cargo.toml"),
-        path.join(base, "src", "main.csd"),
-        path.join(base, "tests", "integration_test.csd")
+        path.join(base, "src", "main.💀"),
+        path.join(base, "tests", "integration_test.💀")
     ]
     
     vibez.spill("Key files:")
@@ -245,14 +245,14 @@ match safe_resolve_path(user_input, base) {
 ```bash
 echo 'yeet "path"
 sus joined = path.join("home", "user", "file.txt")
-vibez.spillf("Joined path: {}", joined)' > path_test.csd
+vibez.spillf("Joined path: {}", joined)' > path_test.💀
 
-./cursed-unified path_test.csd
+./cursed-unified path_test.💀
 ```
 
 ### Compilation Mode
 ```bash
-./cursed-unified --compile path_test.csd
+./cursed-unified --compile path_test.💀
 ./path_test
 ```
 

@@ -38,12 +38,12 @@ The CURSED concurrency module has been completely transformed from simplified pl
 
 ```
 stdlib/concurrenz/
-├── mod.csd                           # Main module with enhanced implementations
-├── goroutine_runtime.csd            # Enhanced goroutine runtime system
-├── os_primitives.csd                # Real OS integration layer
-├── real_goroutine_tracking.csd      # Comprehensive goroutine management
-├── enhanced_loop_control.csd        # Production loop control structures
-├── test_enhanced_concurrency.csd    # Comprehensive test suite
+├── mod.💀                           # Main module with enhanced implementations
+├── goroutine_runtime.💀            # Enhanced goroutine runtime system
+├── os_primitives.💀                # Real OS integration layer
+├── real_goroutine_tracking.💀      # Comprehensive goroutine management
+├── enhanced_loop_control.💀        # Production loop control structures
+├── test_enhanced_concurrency.💀    # Comprehensive test suite
 └── ENHANCED_CONCURRENCY_IMPLEMENTATION_SUMMARY.md
 ```
 
@@ -118,13 +118,13 @@ real_goroutine_tracking.print_goroutine_stack_trace(goroutine_id)
 zig build
 
 # Run basic functionality test
-./zig-out/bin/cursed-zig test_basic_enhanced_concurrency.csd
+./zig-out/bin/cursed-zig test_basic_enhanced_concurrency.💀
 
 # Run comprehensive test suite
-./zig-out/bin/cursed-zig stdlib/concurrenz/test_enhanced_concurrency.csd
+./zig-out/bin/cursed-zig stdlib/concurrenz/test_enhanced_concurrency.💀
 
 # Memory safety validation (should show 0 leaks)
-valgrind --leak-check=full ./zig-out/bin/cursed-zig test_basic_enhanced_concurrency.csd
+valgrind --leak-check=full ./zig-out/bin/cursed-zig test_basic_enhanced_concurrency.💀
 ```
 
 ### Test Coverage

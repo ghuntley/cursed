@@ -774,7 +774,7 @@ test "basic hygiene violation detection" {
     _ = try hygiene_ctx.declareSymbol("x", .Variable);
     
     // Begin macro expansion
-    _ = try hygiene_ctx.beginMacroExpansion("test_macro", "test.csd:10");
+    _ = try hygiene_ctx.beginMacroExpansion("test_macro", "test.💀.💀:10");
     
     // Try to declare a variable with the same name (should detect shadowing)
     _ = try hygiene_ctx.declareSymbol("x", .Variable);
@@ -792,7 +792,7 @@ test "symbol resolution with renaming" {
     defer hygiene_ctx.deinit();
     
     // Begin macro expansion
-    _ = try hygiene_ctx.beginMacroExpansion("test_macro", "test.csd:5");
+    _ = try hygiene_ctx.beginMacroExpansion("test_macro", "test.💀.💀:5");
     
     // Declare a symbol
     const renamed = try hygiene_ctx.declareSymbol("temp", .Variable);

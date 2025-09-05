@@ -9,7 +9,7 @@ compile_errors=0
 interpreter_errors=0
 exit_code_warnings=0
 
-for file in test_suite/test_programs/*/*.csd; do
+for file in test_suite/test_programs/*/*.💀; do
     if [[ "$file" == *".skip" ]]; then
         continue
     fi

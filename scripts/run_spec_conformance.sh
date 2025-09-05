@@ -133,7 +133,7 @@ echo -e "\n${YELLOW}7. Spec Example Validation${NC}"
 echo "-------------------------"
 
 # Create temp file with spec examples
-cat > /tmp/spec_examples.csd << 'EOF'
+cat > /tmp/spec_examples.💀 << 'EOF'
 vibe main
 
 yeet "fmt"
@@ -200,7 +200,7 @@ EOF
 
 # Test parsing the spec examples
 echo "Testing spec examples parsing..."
-cargo run --bin cursed /tmp/spec_examples.csd > /dev/null 2>&1
+cargo run --bin cursed /tmp/spec_examples.💀 > /dev/null 2>&1
 SPEC_PARSE_RESULT=$?
 
 if [ $SPEC_PARSE_RESULT -eq 0 ]; then
@@ -211,7 +211,7 @@ else
 fi
 
 # Clean up
-rm -f /tmp/spec_examples.csd
+rm -f /tmp/spec_examples.💀
 
 echo "============================================"
 exit $OVERALL_SUCCESS

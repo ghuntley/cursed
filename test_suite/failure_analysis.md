@@ -25,7 +25,7 @@ The test suite reveals **severe critical issues** that prevent the CURSED compil
 
 **Impact:** Interpreter crashes with alignment panics, preventing execution
 
-**Example from `error_recovery_missing_imports.csd`:**
+**Example from `error_recovery_missing_imports.💀`:**
 ```
 thread 1820456 panic: incorrect alignment
 /home/ghuntley/cursed/src-zig/interpreter.zig:808:42: 0x1278fbf in executeBlockStatement
@@ -41,8 +41,8 @@ const stmt: *ast.Statement = @ptrCast(@alignCast(stmt_ptr));
 **Impact:** Parser fails on valid CURSED syntax, particularly control flow
 
 **Examples:**
-- `02_fizzbuzz.csd`: "Error parsing complex expression statement"
-- `01_if_statements.csd`: "Error parsing complex expression statement"
+- `02_fizzbuzz.💀`: "Error parsing complex expression statement"
+- `01_if_statements.💀`: "Error parsing complex expression statement"
 - Parser fails on `else lowkey` constructs at line 10:11
 
 **Root Cause:** 
@@ -58,9 +58,9 @@ const stmt: *ast.Statement = @ptrCast(@alignCast(stmt_ptr));
 **Impact:** Programs run in interpreter but fail to compile or crash when compiled
 
 **Examples:**
-- `complex/01_nested_operations.csd`: Interprets ✅, Compiles with runtime error ❌
-- `edge_cases/edge_case_boundary_values.csd`: Interprets ✅, Compilation fails ❌
-- `errors/02_undefined_variable.csd`: Interprets ✅, Compilation fails ❌
+- `complex/01_nested_operations.💀`: Interprets ✅, Compiles with runtime error ❌
+- `edge_cases/edge_case_boundary_values.💀`: Interprets ✅, Compilation fails ❌
+- `errors/02_undefined_variable.💀`: Interprets ✅, Compilation fails ❌
 
 **Root Cause:** 
 - LLVM IR generation pipeline has critical bugs
@@ -76,7 +76,7 @@ const stmt: *ast.Statement = @ptrCast(@alignCast(stmt_ptr));
 
 **Examples:**
 
-`error_recovery_missing_imports.csd`:
+`error_recovery_missing_imports.💀`:
 - Uses `damn main()` instead of `slay main_character()`
 - Uses C-style comments `fr fr` (should be valid according to specs?)
 - Inconsistent with CURSED language specification
@@ -92,35 +92,35 @@ const stmt: *ast.Statement = @ptrCast(@alignCast(stmt_ptr));
 
 ### MEMORY MANAGEMENT FAILURES (2 tests)
 ```
-errors/error_recovery_missing_imports.csd - Alignment panic crash
-errors/01_division_by_zero.csd - Interpreter crash
+errors/error_recovery_missing_imports.💀 - Alignment panic crash
+errors/01_division_by_zero.💀 - Interpreter crash
 ```
 
 ### PARSER FAILURES (5 tests)
 ```
-complex/02_fizzbuzz.csd - else lowkey parsing
-control_flow/01_if_statements.csd - Complex expression statements  
-control_flow/control_flow_comprehensive.csd - Statement parsing
-control_flow/control_flow_if_else.csd - Conditional parsing
-edge_cases/edge_case_operator_precedence.csd - Expression precedence
+complex/02_fizzbuzz.💀 - else lowkey parsing
+control_flow/01_if_statements.💀 - Complex expression statements  
+control_flow/control_flow_comprehensive.💀 - Statement parsing
+control_flow/control_flow_if_else.💀 - Conditional parsing
+edge_cases/edge_case_operator_precedence.💀 - Expression precedence
 ```
 
 ### COMPILATION FAILURES (6 tests)
 ```
-complex/01_nested_operations.csd - Runtime error in compiled binary
-edge_cases/edge_case_boundary_values.csd - Compilation failed
-edge_cases/edge_case_complex_expressions.csd - Compilation failed  
-errors/02_undefined_variable.csd - Compilation failed
-errors/error_missing_package.csd - Compilation failed
-errors/error_syntax_recovery.csd - Runtime error in compiled binary
+complex/01_nested_operations.💀 - Runtime error in compiled binary
+edge_cases/edge_case_boundary_values.💀 - Compilation failed
+edge_cases/edge_case_complex_expressions.💀 - Compilation failed  
+errors/02_undefined_variable.💀 - Compilation failed
+errors/error_missing_package.💀 - Compilation failed
+errors/error_syntax_recovery.💀 - Runtime error in compiled binary
 ```
 
 ### OUTPUT MISMATCH FAILURES (4 tests)
 ```
-control_flow/02_loops.csd - Different error messages
-edge_cases/02_empty_inputs.csd - Different error messages
-edge_cases/edge_case_operator_precedence.csd - Different error handling
-errors/error_recovery_missing_imports.csd - Different error output
+control_flow/02_loops.💀 - Different error messages
+edge_cases/02_empty_inputs.💀 - Different error messages
+edge_cases/edge_case_operator_precedence.💀 - Different error handling
+errors/error_recovery_missing_imports.💀 - Different error output
 ```
 
 ## Immediate Action Items (Priority Order)

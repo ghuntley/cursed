@@ -55,7 +55,7 @@ crypto = "1.5.0"
 code_generator = "1.0.0"
 
 [testing]
-test_patterns = ["test_*.csd", "*_test.csd", "tests/*.csd"]
+test_patterns = ["test_*.💀", "*_test.💀", "tests/*.💀"]
 parallel_tests = true
 ```
 
@@ -127,11 +127,11 @@ The build system expects a standard project structure:
 my_project/
 ├── CursedBuild.toml          # Build configuration
 ├── src/                      # Source files
-│   ├── main.csd             # Main target
-│   └── lib.csd              # Library code
+│   ├── main.💀             # Main target
+│   └── lib.💀              # Library code
 ├── tests/                    # Test files
-│   ├── test_main.csd        # Tests for main
-│   └── integration_test.csd  # Integration tests
+│   ├── test_main.💀        # Tests for main
+│   └── integration_test.💀  # Integration tests
 ├── build/                    # Build output (generated)
 └── docs/                     # Documentation
 ```
@@ -195,9 +195,9 @@ The build system includes a comprehensive testing framework:
 
 Tests are automatically discovered based on file patterns:
 
-- `test_*.csd` - Test files starting with "test_"
-- `*_test.csd` - Test files ending with "_test"
-- `tests/*.csd` - All files in the tests directory
+- `test_*.💀` - Test files starting with "test_"
+- `*_test.💀` - Test files ending with "_test"
+- `tests/*.💀` - All files in the tests directory
 
 ### Test Execution
 
@@ -289,7 +289,7 @@ targets = ["main"]
 ```
 
 ```cursed
-# src/main.csd
+# src/main.💀
 vibez.spill("Hello, CURSED!")
 ```
 

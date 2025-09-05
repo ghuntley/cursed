@@ -481,7 +481,7 @@ slay process_json_log_stream(stream_path tea) drip {
 **Why comprehensive JSON testing?** JSON's flexibility creates many edge cases (Unicode, large numbers, deep nesting) that can cause security issues or data corruption.
 
 ```cursed
-// stdlib/jsonz/test_jsonz.csd
+// stdlib/jsonz/test_jsonz.💀
 yeet "testz"
 yeet "jsonz"
 
@@ -592,16 +592,16 @@ slay main() {
 ### Integration Tests
 ```bash
 # Test with real API data
-./zig-out/bin/cursed-zig stdlib/jsonz/api_integration_test.csd
+./zig-out/bin/cursed-zig stdlib/jsonz/api_integration_test.💀
 
 # Memory safety testing
-valgrind --leak-check=full ./zig-out/bin/cursed-zig stdlib/jsonz/memory_test.csd
+valgrind --leak-check=full ./zig-out/bin/cursed-zig stdlib/jsonz/memory_test.💀
 
 # Performance benchmarking
-./zig-out/bin/cursed-zig stdlib/jsonz/benchmark_test.csd
+./zig-out/bin/cursed-zig stdlib/jsonz/benchmark_test.💀
 
 # Streaming large file test
-./zig-out/bin/cursed-zig stdlib/jsonz/streaming_test.csd large_dataset.json
+./zig-out/bin/cursed-zig stdlib/jsonz/streaming_test.💀 large_dataset.json
 ```
 
 ## Security Considerations

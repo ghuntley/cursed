@@ -25,14 +25,14 @@ ITERATIONS=3  # Number of test iterations for averaging
 
 # Representative CURSED programs for testing
 REPRESENTATIVE_PROGRAMS=(
-    "benchmarks/oracle_macro_performance_suite.csd:macro:Oracle macro performance suite"
-    "benchmarks/pgo_benchmark_suite.csd:micro:PGO-specific benchmark suite" 
-    "comprehensive_stdlib_test.csd:stdlib:Comprehensive standard library test"
-    "advanced_features_test.csd:language:Advanced language features test"
-    "comprehensive_test.csd:integration:Full integration test"
-    "test_suite/basic_syntax.csd:basic:Basic syntax validation"
-    "examples/fibonacci_recursive.csd:algorithm:Recursive algorithm test"
-    "examples/concurrent_processing.csd:concurrency:Concurrency performance test"
+    "benchmarks/oracle_macro_performance_suite.💀:macro:Oracle macro performance suite"
+    "benchmarks/pgo_benchmark_suite.💀:micro:PGO-specific benchmark suite" 
+    "comprehensive_stdlib_test.💀:stdlib:Comprehensive standard library test"
+    "advanced_features_test.💀:language:Advanced language features test"
+    "comprehensive_test.💀:integration:Full integration test"
+    "test_suite/basic_syntax.💀:basic:Basic syntax validation"
+    "examples/fibonacci_recursive.💀:algorithm:Recursive algorithm test"
+    "examples/concurrent_processing.💀:concurrency:Concurrency performance test"
 )
 
 # Validation categories
@@ -137,8 +137,8 @@ measure_program_performance() {
         log_with_timestamp "  Iteration $i/$iterations"
         
         # Clean previous artifacts
-        local binary_path="${program_path%.csd}"
-        rm -f "$binary_path" "${program_path%.csd}.ll" "${program_path%.csd}.o" 2>/dev/null || true
+        local binary_path="${program_path%.💀}"
+        rm -f "$binary_path" "${program_path%.💀}.ll" "${program_path%.💀}.o" 2>/dev/null || true
         
         # Measure compilation time
         local compile_start=$(date +%s%N)

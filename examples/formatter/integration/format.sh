@@ -14,7 +14,7 @@ NC='\033[0m' # No Color
 CHECK_MODE=false
 QUIET_MODE=false
 CONFIG_FILE=""
-INCLUDE_PATTERN="**/*.csd"
+INCLUDE_PATTERN="**/*.💀"
 EXCLUDE_PATTERN=""
 TARGET_DIR="."
 
@@ -27,12 +27,12 @@ show_help() {
     echo "  -c, --check       Check formatting without making changes"
     echo "  -q, --quiet       Suppress output except errors"
     echo "  -f, --config FILE Use specific config file"
-    echo "  -i, --include PAT Include files matching pattern (default: **/*.csd)"
+    echo "  -i, --include PAT Include files matching pattern (default: **/*.💀)"
     echo "  -e, --exclude PAT Exclude files matching pattern"
     echo "  -h, --help        Show this help message"
     echo ""
     echo "Examples:"
-    echo "  $0                          # Format all .csd files in current directory"
+    echo "  $0                          # Format all .💀 files in current directory"
     echo "  $0 --check src/             # Check formatting in src/ directory"
     echo "  $0 --config=team.toml ./    # Use custom config file"
     echo "  $0 --exclude='**/test_*'    # Exclude test files"

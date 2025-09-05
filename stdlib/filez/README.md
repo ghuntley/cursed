@@ -354,7 +354,7 @@ The filez module uses a runtime bridge pattern where critical functions are impl
 ## Testing
 Run the comprehensive test suite:
 ```bash
-./zig-out/bin/cursed stdlib/filez/test_filez.csd
+./zig-out/bin/cursed stdlib/filez/test_filez.💀
 ```
 
 The test suite covers:

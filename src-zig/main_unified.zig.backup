@@ -1221,7 +1221,7 @@ fn handleLintCommand(allocator: Allocator, args: [][]const u8) !void {
 
 fn handleCheckCommand(allocator: Allocator, args: [][]const u8) !void {
     if (args.len == 0) {
-        print("Usage: cursed check <file.csd> [OPTIONS]\n", .{});
+        print("Usage: cursed check <file.💀> [OPTIONS]\n", .{});
         print("Options:\n", .{});
         print("  --verbose        Show detailed type checking information\n", .{});
         return;
@@ -1353,7 +1353,7 @@ fn lintDirectory(allocator: Allocator, cursed_linter: *linter.Linter, dir_path: 
 
     var iterator = dir.iterate();
     while (try iterator.next()) |entry| {
-        if (entry.kind == .file and std.mem.endsWith(u8, entry.name, ".csd")) {
+        if (entry.kind == .file and std.mem.endsWith(u8, entry.name, ".💀")) {
             const full_path = try std.fs.path.join(allocator, &[_][]const u8{ dir_path, entry.name });
             defer allocator.free(full_path);
 
@@ -1425,7 +1425,7 @@ fn loadModuleFunctions(allocator: Allocator, functions: *FunctionStore, module_n
 // Helper function to resolve module path
 fn resolveModulePath(allocator: Allocator, module_name: []const u8, stdlib_path: ?[]const u8) ![]const u8 {
     if (stdlib_path) |custom_path| {
-        return try std.fmt.allocPrint(allocator, "{s}/{s}/mod.csd", .{ custom_path, module_name });
+        return try std.fmt.allocPrint(allocator, "{s}/{s}/mod.💀", .{ custom_path, module_name });
     }
     
     // Find project root and use stdlib
@@ -1433,7 +1433,7 @@ fn resolveModulePath(allocator: Allocator, module_name: []const u8, stdlib_path:
     var buf: [1024]u8 = undefined;
     const current_dir = try cwd.realpath(".", &buf);
     
-    return try std.fmt.allocPrint(allocator, "{s}/stdlib/{s}/mod.csd", .{ current_dir, module_name });
+    return try std.fmt.allocPrint(allocator, "{s}/stdlib/{s}/mod.💀", .{ current_dir, module_name });
 }
 
 // Handle stdlib function calls with runtime implementation
@@ -1554,11 +1554,11 @@ fn printUsage() void {
     print("CURSED Zig Compiler - Unified Implementation v1.0.0\n", .{});
     print("The Gen Z Programming Language with slang syntax\n", .{});
     print("\nUsage: cursed <command> [arguments]\n", .{});
-    print("       cursed <file.csd> [OPTIONS]    # Interpret/compile CURSED file\n", .{});
+    print("       cursed <file.💀> [OPTIONS]    # Interpret/compile CURSED file\n", .{});
     print("       cursed --version\n", .{});
     print("       cursed --help\n", .{});
     print("\nCommands:\n", .{});
-    print("  check <file.csd>     Type check CURSED source code\n", .{});
+    print("  check <file.💀>     Type check CURSED source code\n", .{});
     print("  format <file|dir>    Format CURSED source code\n", .{});
     print("  lint <file|dir>      Lint CURSED source code\n", .{});
     print("\nExecution Options:\n", .{});

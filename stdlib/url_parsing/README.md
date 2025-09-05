@@ -383,10 +383,10 @@ Run the comprehensive test suite:
 
 ```bash
 # Test interpretation mode
-cargo run --bin cursed stdlib/url_parsing/test_url_parsing.csd
+cargo run --bin cursed stdlib/url_parsing/test_url_parsing.💀
 
 # Test compilation mode
-cargo run --bin cursed -- compile stdlib/url_parsing/test_url_parsing.csd
+cargo run --bin cursed -- compile stdlib/url_parsing/test_url_parsing.💀
 ./test_url_parsing
 ```
 

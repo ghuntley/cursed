@@ -606,7 +606,7 @@ test "error propagation system" {
     
     // Test yikes error creation
     const location = ErrorContext.SourceLocation{
-        .file = "test.csd",
+        .file = "test.💀",
         .line = 10,
         .column = 5,
     };

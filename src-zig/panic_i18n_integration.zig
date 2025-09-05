@@ -531,7 +531,7 @@ test "i18n panic context" {
     var context = I18nPanicContext.init(allocator, .Yikes, 42);
     defer context.deinit();
 
-    try context.setLocation("test_function", "test.csd", 10, 5);
+    try context.setLocation("test_function", "test.💀", 10, 5);
     try context.addData("extra", "test_data");
 
     try std.testing.expect(context.error_code == 42);

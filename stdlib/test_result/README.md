@@ -71,7 +71,7 @@ lowkey TestResult.is_pass(pass_result) {
 sus result TestResult = TestResult.pass("test_enhanced", "assert_eq", "Enhanced test")
 result = TestResult.with_execution_time(result, 150)
 result = TestResult.with_line_number(result, 42)
-result = TestResult.with_file_name(result, "test.csd")
+result = TestResult.with_file_name(result, "test.💀")
 result = TestResult.with_metadata(result, "author", "developer")
 ```
 
@@ -84,7 +84,7 @@ sus result TestResult = TestResultBuilder.new("test_complex", "assert_eq")
     .actual("actual_value")
     .execution_time(100)
     .line_number(25)
-    .file_name("complex_test.csd")
+    .file_name("complex_test.💀")
     .metadata("complexity", "high")
     .build()
 ```
@@ -284,14 +284,14 @@ print_test_report()
 
 ```bash
 # Test interpretation mode
-cargo run --bin cursed stdlib/test_result/test_test_result.csd
+cargo run --bin cursed stdlib/test_result/test_test_result.💀
 
 # Test compilation mode
-cargo run --bin cursed -- compile stdlib/test_result/test_test_result.csd
+cargo run --bin cursed -- compile stdlib/test_result/test_test_result.💀
 ./test_test_result
 
 # Test integration with testz
-cargo run --bin cursed test_testz_working.csd
+cargo run --bin cursed test_testz_working.💀
 ```
 
 ### Test Type System Integration

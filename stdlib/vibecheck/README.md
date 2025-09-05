@@ -303,10 +303,10 @@ Run the comprehensive test suite:
 
 ```bash
 # Test interpretation mode
-cargo run --bin cursed stdlib/vibecheck/test_vibecheck.csd
+cargo run --bin cursed stdlib/vibecheck/test_vibecheck.💀
 
 # Test compilation mode
-cargo run --bin cursed -- compile stdlib/vibecheck/test_vibecheck.csd
+cargo run --bin cursed -- compile stdlib/vibecheck/test_vibecheck.💀
 ./test_vibecheck
 ```
 

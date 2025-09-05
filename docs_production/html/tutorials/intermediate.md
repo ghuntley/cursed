@@ -16,7 +16,7 @@
 ### Creating Modules
 Modules help organize code into reusable components.
 
-**File: `math_utils.csd`**
+**File: `math_utils.💀`**
 ```cursed
 # Module for mathematical utilities
 vibe math_utils
@@ -70,16 +70,16 @@ sus factorial normie = math.calculate_factorial(5)
 ### Package Structure
 ```
 my_project/
-├── main.csd
+├── main.💀
 ├── CursedPackage.toml
 ├── src/
 │   ├── math/
-│   │   ├── mod.csd
-│   │   ├── calculator.csd
-│   │   └── statistics.csd
+│   │   ├── mod.💀
+│   │   ├── calculator.💀
+│   │   └── statistics.💀
 │   └── utils/
-│       ├── mod.csd
-│       └── helpers.csd
+│       ├── mod.💀
+│       └── helpers.💀
 ```
 
 ## Structs and Methods

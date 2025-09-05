@@ -293,10 +293,10 @@ Run the test suite to verify functionality:
 
 ```bash
 # Test interpretation mode
-cargo run --bin cursed stdlib/big_mood/test_big_mood.csd
+cargo run --bin cursed stdlib/big_mood/test_big_mood.💀
 
 # Test compilation mode  
-cargo run --bin cursed -- compile stdlib/big_mood/test_big_mood.csd
+cargo run --bin cursed -- compile stdlib/big_mood/test_big_mood.💀
 ./test_big_mood
 ```
 

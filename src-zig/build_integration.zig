@@ -451,7 +451,7 @@ pub const BuildIntegration = struct {
         
         for (self.dependencies.items) |dep| {
             // Map dependency name to its main module path
-            const main_module_files = [_][]const u8{ "lib.csd", "main.csd", "mod.csd" };
+            const main_module_files = [_][]const u8{ "lib.💀", "main.💀", "mod.💀" };
             
             for (main_module_files) |module_file| {
                 const module_path = try std.fs.path.join(self.allocator, &[_][]const u8{ dep.path, "src", module_file });

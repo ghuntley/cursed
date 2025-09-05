@@ -240,7 +240,7 @@ sus config_content tea = process_template(engine, config_template)
 
 Test the template engine:
 ```bash
-cargo run --bin cursed stdlib/template_engine/test_template_engine.csd
+cargo run --bin cursed stdlib/template_engine/test_template_engine.💀
 ```
 
 ## Template Examples

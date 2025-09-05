@@ -428,7 +428,7 @@ bestie circuit_name, state := range global_error_metrics.circuit_breaker_states 
 
 ```cursed
 fr fr Complete e-commerce flow with error recovery
-fr fr See enterprise_demo.csd for full example
+fr fr See enterprise_demo.💀 for full example
 demo_ecommerce_order_processing()
 ```
 
@@ -576,13 +576,13 @@ create_cascade_failure_alert(3)  fr fr 3+ services affected
 Run the comprehensive test suite:
 
 ```bash
-./zig-out/bin/cursed-zig stdlib/enhanced_error/test_enterprise_recovery.csd
+./zig-out/bin/cursed-zig stdlib/enhanced_error/test_enterprise_recovery.💀
 ```
 
 Run the production demos:
 
 ```bash
-./zig-out/bin/cursed-zig stdlib/enhanced_error/enterprise_demo.csd
+./zig-out/bin/cursed-zig stdlib/enhanced_error/enterprise_demo.💀
 ```
 
 ## License

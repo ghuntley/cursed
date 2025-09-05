@@ -102,21 +102,21 @@ test_binary() {
     fi
     
     # Test with simple CURSED program
-    echo 'vibez.spill("Cross-compilation test successful!")' > test_cross_compile.csd
+    echo 'vibez.spill("Cross-compilation test successful!")' > test_cross_compile.💀
     
     if [[ "$target" == "aarch64-linux" ]]; then
         # ARM64 binary on x86_64 - can't execute directly
         print_warning "ARM64 binary on x86_64 host - skipping execution test"
     else
         # x86_64-linux should work
-        if "$binary" test_cross_compile.csd >/dev/null 2>&1; then
+        if "$binary" test_cross_compile.💀 >/dev/null 2>&1; then
             print_success "✅ Binary execution test passed"
         else
             print_warning "⚠️  Binary execution test failed"
         fi
     fi
     
-    rm -f test_cross_compile.csd
+    rm -f test_cross_compile.💀
 }
 
 # Function to show help

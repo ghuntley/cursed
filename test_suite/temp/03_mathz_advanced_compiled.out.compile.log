@@ -5,7 +5,7 @@
 🚀 Starting complete LLVM compilation pipeline...
 📦 Processing import: mathz
 DEBUG: Loading and compiling CURSED module: mathz
-DEBUG: Successfully read CURSED module stdlib/mathz/mod.csd (1357 bytes)
+DEBUG: Successfully read CURSED module stdlib/mathz/mod.💀 (1357 bytes)
 DEBUG: Successfully parsed CURSED module mathz (11 statements)
 DEBUG: Compiling CURSED stdlib function: mathz.abs
 DEBUG: Compiling CURSED stdlib function: mathz.max
@@ -21,7 +21,7 @@ DEBUG: Compiling CURSED stdlib function: mathz.clamp
 DEBUG: Successfully compiled CURSED module: mathz
 📦 Processing import: vibez
 DEBUG: Loading and compiling CURSED module: vibez
-DEBUG: Successfully read CURSED module stdlib/vibez/mod.csd (655 bytes)
+DEBUG: Successfully read CURSED module stdlib/vibez/mod.💀 (655 bytes)
 DEBUG: Successfully parsed CURSED module vibez (6 statements)
 DEBUG: Compiling CURSED stdlib function: vibez.spill
 DEBUG: Compiling CURSED stdlib function: vibez.spillln_message

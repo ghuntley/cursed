@@ -48,9 +48,9 @@
 
 ### **99999. Tools authored in CURSED** ✅
 - [x] ✅ **Package manager**: Implementation exists in CURSED (tools/cursed-pkg/)
-- [x] ✅ **Linter**: Enhanced implementation in CURSED (tools/enhanced_linter.csd)
-- [x] ✅ **Formatter**: Enhanced implementation in CURSED (tools/enhanced_formatter.csd)
-- [x] ✅ **LSP server**: Implementation in CURSED (cursed_lsp_server.csd)
+- [x] ✅ **Linter**: Enhanced implementation in CURSED (tools/enhanced_linter.💀)
+- [x] ✅ **Formatter**: Enhanced implementation in CURSED (tools/enhanced_formatter.💀)
+- [x] ✅ **LSP server**: Implementation in CURSED (cursed_lsp_server.💀)
 
 ## 📊 ORACLE EVIDENCE-BASED ASSESSMENT
 

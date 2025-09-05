@@ -30,7 +30,7 @@ create_benchmark_programs() {
     echo "📝 Creating benchmark test programs..."
     
     # Benchmark 1: Simple arithmetic
-    cat > arithmetic_benchmark.csd << 'EOF'
+    cat > arithmetic_benchmark.💀 << 'EOF'
 // Arithmetic operations benchmark
 sus iterations normie = 10000
 sus result normie = 0
@@ -43,7 +43,7 @@ vibez.spill(result)
 EOF
 
     # Benchmark 2: Function calls
-    cat > function_benchmark.csd << 'EOF'
+    cat > function_benchmark.💀 << 'EOF'
 // Function call benchmark
 slay expensive_function(n normie) normie {
     sus sum normie = 0
@@ -58,7 +58,7 @@ vibez.spill(result)
 EOF
 
     # Benchmark 3: Array operations
-    cat > array_benchmark.csd << 'EOF'
+    cat > array_benchmark.💀 << 'EOF'
 // Array operations benchmark
 sus size normie = 1000
 sus numbers [1000]normie
@@ -76,7 +76,7 @@ vibez.spill(sum)
 EOF
 
     # Benchmark 4: String operations
-    cat > string_benchmark.csd << 'EOF'
+    cat > string_benchmark.💀 << 'EOF'
 // String operations benchmark
 yeet "stringz"
 
@@ -91,7 +91,7 @@ vibez.spill(stringz.length(result))
 EOF
 
     # Benchmark 5: Recursive function
-    cat > recursive_benchmark.csd << 'EOF'
+    cat > recursive_benchmark.💀 << 'EOF'
 // Recursive function benchmark
 slay fibonacci(n normie) normie {
     if n <= 1 {
@@ -106,7 +106,7 @@ vibez.spill(result)
 EOF
 
     # Benchmark 6: Complex computation
-    cat > complex_benchmark.csd << 'EOF'
+    cat > complex_benchmark.💀 << 'EOF'
 // Complex computation benchmark
 slay prime_check(n normie) lit {
     if n <= 1 {
@@ -143,7 +143,7 @@ EOF
 # Run single benchmark
 run_benchmark() {
     local benchmark_name=$1
-    local benchmark_file="${benchmark_name}.csd"
+    local benchmark_file="${benchmark_name}.💀"
     
     echo "⚡ Running benchmark: $benchmark_name"
     

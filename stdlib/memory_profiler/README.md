@@ -587,7 +587,7 @@ slay configure_profiler_limits(max_allocations normie, max_memory normie) {
 ```bash
 # Run memory profiler tests
 zig build test
-./zig-out/bin/cursed-zig stdlib/memory_profiler/test_memory_profiler.csd
+./zig-out/bin/cursed-zig stdlib/memory_profiler/test_memory_profiler.💀
 ```
 
 ### Validation Tests

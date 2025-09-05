@@ -14,7 +14,7 @@ The CURSED programming language has successfully achieved **pure self-hosting**,
 - **LLVM Backend**: Qualified name resolution for stdlib function calls working
 
 ### 🎯 **Phase 2: Stdlib Integration** ✅ COMPLETE  
-- **Pure CURSED Implementation**: All stdlib modules implemented in `.csd` files
+- **Pure CURSED Implementation**: All stdlib modules implemented in `.💀` files
 - **Module Loading**: Hybrid interpreter/compiler loading system functional
 - **Function Resolution**: Stdlib functions resolve correctly in both modes
 

@@ -207,10 +207,10 @@ The module includes comprehensive tests covering:
 
 ```bash
 # Test interpretation mode
-cargo run --bin cursed stdlib/binary_drip/test_binary_drip.csd
+cargo run --bin cursed stdlib/binary_drip/test_binary_drip.💀
 
 # Test native compilation mode
-cargo run --bin cursed -- compile stdlib/binary_drip/test_binary_drip.csd
+cargo run --bin cursed -- compile stdlib/binary_drip/test_binary_drip.💀
 ./test_binary_drip
 ```
 

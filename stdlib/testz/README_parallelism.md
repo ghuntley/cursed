@@ -75,7 +75,7 @@ export CURSED_TEST_BENCHMARK=true          # Run in benchmark mode
 # Run all tests in parallel with 4 workers
 export CURSED_TEST_PARALLEL=true
 export CURSED_TEST_WORKERS=4
-./zig-out/bin/cursed stdlib/testz/parallel_test_runner.csd
+./zig-out/bin/cursed stdlib/testz/parallel_test_runner.💀
 ```
 
 ### Development Mode
@@ -86,7 +86,7 @@ export CURSED_TEST_WORKERS=2
 export CURSED_TEST_VERBOSE=true
 export CURSED_TEST_FAIL_FAST=true
 export CURSED_TEST_DEBUG=true
-./zig-out/bin/cursed stdlib/testz/parallel_test_runner.csd
+./zig-out/bin/cursed stdlib/testz/parallel_test_runner.💀
 ```
 
 ### CI/CD Pipeline
@@ -99,7 +99,7 @@ export CURSED_TEST_FAIL_FAST=true
 export CURSED_TEST_EXCLUDE="*manual*"
 export CURSED_TEST_OUTPUT_FORMAT=json
 export CURSED_TEST_REPORT_FILE=ci_results.json
-./zig-out/bin/cursed stdlib/testz/parallel_test_runner.csd
+./zig-out/bin/cursed stdlib/testz/parallel_test_runner.💀
 ```
 
 ### Performance Benchmarking
@@ -111,7 +111,7 @@ export CURSED_TEST_TIMEOUT=300
 export CURSED_TEST_FILTER="*benchmark*"
 export CURSED_TEST_PROFILE=true
 export CURSED_TEST_VERBOSE=true
-./zig-out/bin/cursed stdlib/testz/parallel_test_runner.csd
+./zig-out/bin/cursed stdlib/testz/parallel_test_runner.💀
 ```
 
 ### Filtered Test Execution
@@ -120,12 +120,12 @@ export CURSED_TEST_VERBOSE=true
 export CURSED_TEST_FILTER="*crypto*"
 export CURSED_TEST_PARALLEL=true
 export CURSED_TEST_WORKERS=2
-./zig-out/bin/cursed stdlib/testz/parallel_test_runner.csd
+./zig-out/bin/cursed stdlib/testz/parallel_test_runner.💀
 
 # Exclude slow tests for quick validation
 export CURSED_TEST_EXCLUDE="*slow*"
 export CURSED_TEST_PARALLEL=true
-./zig-out/bin/cursed stdlib/testz/parallel_test_runner.csd
+./zig-out/bin/cursed stdlib/testz/parallel_test_runner.💀
 ```
 
 ## 🏗️ Architecture
@@ -220,10 +220,10 @@ export CURSED_TEST_PARALLEL=true
 ### Run Parallelism Tests
 ```bash
 # Test the parallelism control system
-./zig-out/bin/cursed stdlib/testz/test_parallelism_control.csd
+./zig-out/bin/cursed stdlib/testz/test_parallelism_control.💀
 
 # Test configuration system
-./zig-out/bin/cursed stdlib/testz/parallel_runner_config.csd
+./zig-out/bin/cursed stdlib/testz/parallel_runner_config.💀
 ```
 
 ### Test Different Configurations
@@ -231,13 +231,13 @@ export CURSED_TEST_PARALLEL=true
 # Test with different worker counts
 for workers in 1 2 4 8; do
     echo "Testing with $workers workers"
-    CURSED_TEST_WORKERS=$workers ./zig-out/bin/cursed stdlib/testz/parallel_test_runner.csd
+    CURSED_TEST_WORKERS=$workers ./zig-out/bin/cursed stdlib/testz/parallel_test_runner.💀
 done
 
 # Test memory limits
 for memory in 128 256 512 1024; do
     echo "Testing with ${memory}MB memory limit"
-    CURSED_TEST_MEMORY_LIMIT=$memory ./zig-out/bin/cursed stdlib/testz/parallel_test_runner.csd
+    CURSED_TEST_MEMORY_LIMIT=$memory ./zig-out/bin/cursed stdlib/testz/parallel_test_runner.💀
 done
 ```
 
@@ -245,10 +245,10 @@ done
 ```bash
 # Sequential vs Parallel comparison
 echo "=== Sequential Execution ==="
-time CURSED_TEST_PARALLEL=false ./zig-out/bin/cursed stdlib/testz/parallel_test_runner.csd
+time CURSED_TEST_PARALLEL=false ./zig-out/bin/cursed stdlib/testz/parallel_test_runner.💀
 
 echo "=== Parallel Execution ==="
-time CURSED_TEST_PARALLEL=true CURSED_TEST_WORKERS=4 ./zig-out/bin/cursed stdlib/testz/parallel_test_runner.csd
+time CURSED_TEST_PARALLEL=true CURSED_TEST_WORKERS=4 ./zig-out/bin/cursed stdlib/testz/parallel_test_runner.💀
 ```
 
 ## 🔍 Debugging and Troubleshooting
@@ -257,19 +257,19 @@ time CURSED_TEST_PARALLEL=true CURSED_TEST_WORKERS=4 ./zig-out/bin/cursed stdlib
 ```bash
 export CURSED_TEST_DEBUG=true
 export CURSED_TEST_VERBOSE=true
-./zig-out/bin/cursed stdlib/testz/parallel_test_runner.csd
+./zig-out/bin/cursed stdlib/testz/parallel_test_runner.💀
 ```
 
 ### Monitor Resource Usage
 ```bash
 export CURSED_TEST_PROFILE=true
-./zig-out/bin/cursed stdlib/testz/parallel_test_runner.csd
+./zig-out/bin/cursed stdlib/testz/parallel_test_runner.💀
 ```
 
 ### Configuration Validation
 ```bash
 # Validate current configuration
-./zig-out/bin/cursed stdlib/testz/parallel_runner_config.csd
+./zig-out/bin/cursed stdlib/testz/parallel_runner_config.💀
 ```
 
 ## 📈 Performance Tips
@@ -301,7 +301,7 @@ export CURSED_TEST_PROFILE=true
     CURSED_TEST_TIMEOUT: 120
     CURSED_TEST_OUTPUT_FORMAT: json
     CURSED_TEST_REPORT_FILE: test_results.json
-  run: ./zig-out/bin/cursed stdlib/testz/parallel_test_runner.csd
+  run: ./zig-out/bin/cursed stdlib/testz/parallel_test_runner.💀
 ```
 
 ### Docker Integration
@@ -309,7 +309,7 @@ export CURSED_TEST_PROFILE=true
 ENV CURSED_TEST_PARALLEL=true
 ENV CURSED_TEST_WORKERS=4
 ENV CURSED_TEST_MEMORY_LIMIT=512
-RUN ./zig-out/bin/cursed stdlib/testz/parallel_test_runner.csd
+RUN ./zig-out/bin/cursed stdlib/testz/parallel_test_runner.💀
 ```
 
 ## 📝 Implementation Status

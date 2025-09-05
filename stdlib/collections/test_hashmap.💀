@@ -1,0 +1,383 @@
+fr fr CURSED HashMap Test Suite
+fr fr Comprehensive tests for the native HashMap implementation
+
+yeet "testz"
+yeet "hashmap.💀"
+
+fr fr ================================
+fr fr Test Basic Operations
+fr fr ================================
+
+slay test_hashmap_new() {
+    test_start("HashMap New")
+    
+    sus map HashMap = hashmap_new()
+    
+    assert_eq_int(hashmap_len(map), 0)
+    assert_true(hashmap_is_empty(map))
+    assert_eq_int(map.capacity, 16)
+}
+
+slay test_hashmap_with_capacity() {
+    test_start("HashMap With Capacity")
+    
+    sus map HashMap = hashmap_with_capacity(32)
+    
+    assert_eq_int(hashmap_len(map), 0)
+    assert_true(hashmap_is_empty(map))
+    assert_eq_int(map.capacity, 32)
+}
+
+slay test_hashmap_insert_and_get() {
+    test_start("HashMap Insert and Get")
+    
+    sus map HashMap = hashmap_new()
+    
+    map = hashmap_insert(map, "key1", "value1")
+    map = hashmap_insert(map, "key2", "value2")
+    map = hashmap_insert(map, "key3", "value3")
+    
+    assert_eq_int(hashmap_len(map), 3)
+    assert_false(hashmap_is_empty(map))
+    
+    assert_eq_string(hashmap_get(map, "key1"), "value1")
+    assert_eq_string(hashmap_get(map, "key2"), "value2")
+    assert_eq_string(hashmap_get(map, "key3"), "value3")
+}
+
+slay test_hashmap_insert_update() {
+    test_start("HashMap Insert Update")
+    
+    sus map HashMap = hashmap_new()
+    
+    map = hashmap_insert(map, "key1", "value1")
+    assert_eq_string(hashmap_get(map, "key1"), "value1")
+    assert_eq_int(hashmap_len(map), 1)
+    
+    fr fr Update existing key
+    map = hashmap_insert(map, "key1", "updated_value")
+    assert_eq_string(hashmap_get(map, "key1"), "updated_value")
+    assert_eq_int(hashmap_len(map), 1)
+}
+
+slay test_hashmap_contains_key() {
+    test_start("HashMap Contains Key")
+    
+    sus map HashMap = hashmap_new()
+    
+    map = hashmap_insert(map, "exists", "value")
+    
+    assert_true(hashmap_contains_key(map, "exists"))
+    assert_false(hashmap_contains_key(map, "not_exists"))
+}
+
+slay test_hashmap_remove() {
+    test_start("HashMap Remove")
+    
+    sus map HashMap = hashmap_new()
+    
+    map = hashmap_insert(map, "key1", "value1")
+    map = hashmap_insert(map, "key2", "value2")
+    
+    assert_eq_int(hashmap_len(map), 2)
+    assert_true(hashmap_contains_key(map, "key1"))
+    
+    map = hashmap_remove(map, "key1")
+    
+    assert_eq_int(hashmap_len(map), 1)
+    assert_false(hashmap_contains_key(map, "key1"))
+    assert_true(hashmap_contains_key(map, "key2"))
+}
+
+slay test_hashmap_clear() {
+    test_start("HashMap Clear")
+    
+    sus map HashMap = hashmap_new()
+    
+    map = hashmap_insert(map, "key1", "value1")
+    map = hashmap_insert(map, "key2", "value2")
+    map = hashmap_insert(map, "key3", "value3")
+    
+    assert_eq_int(hashmap_len(map), 3)
+    
+    map = hashmap_clear(map)
+    
+    assert_eq_int(hashmap_len(map), 0)
+    assert_true(hashmap_is_empty(map))
+    assert_false(hashmap_contains_key(map, "key1"))
+    assert_false(hashmap_contains_key(map, "key2"))
+    assert_false(hashmap_contains_key(map, "key3"))
+}
+
+fr fr ================================
+fr fr Test Edge Cases
+fr fr ================================
+
+slay test_hashmap_empty_operations() {
+    test_start("HashMap Empty Operations")
+    
+    sus map HashMap = hashmap_new()
+    
+    assert_eq_string(hashmap_get(map, "nonexistent"), "")
+    assert_false(hashmap_contains_key(map, "nonexistent"))
+    
+    fr fr Remove from empty map should not crash
+    map = hashmap_remove(map, "nonexistent")
+    assert_eq_int(hashmap_len(map), 0)
+}
+
+slay test_hashmap_single_item() {
+    test_start("HashMap Single Item")
+    
+    sus map HashMap = hashmap_new()
+    
+    map = hashmap_insert(map, "only", "one")
+    
+    assert_eq_int(hashmap_len(map), 1)
+    assert_eq_string(hashmap_get(map, "only"), "one")
+    assert_true(hashmap_contains_key(map, "only"))
+    
+    map = hashmap_remove(map, "only")
+    
+    assert_eq_int(hashmap_len(map), 0)
+    assert_false(hashmap_contains_key(map, "only"))
+}
+
+slay test_hashmap_many_items() {
+    test_start("HashMap Many Items")
+    
+    sus map HashMap = hashmap_new()
+    
+    fr fr Insert many items to trigger resize
+    sus i normie = 0
+    bestie i < 20 {
+        sus key tea = "key" + tea(i)
+        sus value tea = "value" + tea(i)
+        map = hashmap_insert(map, key, value)
+        i = i + 1
+    }
+    
+    assert_eq_int(hashmap_len(map), 20)
+    
+    fr fr Verify all items are accessible
+    i = 0
+    bestie i < 20 {
+        sus key tea = "key" + tea(i)
+        sus expected_value tea = "value" + tea(i)
+        assert_true(hashmap_contains_key(map, key))
+        assert_eq_string(hashmap_get(map, key), expected_value)
+        i = i + 1
+    }
+}
+
+fr fr ================================
+fr fr Test Hash Functions
+fr fr ================================
+
+slay test_hash_string_function() {
+    test_start("Hash String Function")
+    
+    sus hash1 normie = hash_string("hello")
+    sus hash2 normie = hash_string("world")
+    sus hash3 normie = hash_string("hello")
+    
+    fr fr Same string should have same hash
+    assert_eq_int(hash1, hash3)
+    
+    fr fr Different strings should have different hashes (usually)
+    fr fr Note: Hash collisions are possible but unlikely for simple cases
+    assert_true(hash1 != hash2)
+}
+
+slay test_hash_int_function() {
+    test_start("Hash Int Function")
+    
+    sus hash1 normie = hash_int(42)
+    sus hash2 normie = hash_int(100)
+    sus hash3 normie = hash_int(42)
+    
+    fr fr Same int should have same hash
+    assert_eq_int(hash1, hash3)
+    
+    fr fr Different ints should have different hashes
+    assert_true(hash1 != hash2)
+}
+
+fr fr ================================
+fr fr Test Array Operations
+fr fr ================================
+
+slay test_hashmap_keys() {
+    test_start("HashMap Keys")
+    
+    sus map HashMap = hashmap_new()
+    
+    map = hashmap_insert(map, "key1", "value1")
+    map = hashmap_insert(map, "key2", "value2")
+    map = hashmap_insert(map, "key3", "value3")
+    
+    sus keys tea[value] = hashmap_keys(map)
+    
+    fr fr Should have 3 keys
+    assert_eq_int(hashmap_len(map), 3)
+    
+    fr fr Keys array should contain all keys (order may vary)
+    sus found_key1 lit = cap
+    sus found_key2 lit = cap
+    sus found_key3 lit = cap
+    
+    sus i normie = 0
+    bestie i < 3 {
+        lowkey keys[i] == "key1" {
+            found_key1 = based
+        }
+        lowkey keys[i] == "key2" {
+            found_key2 = based
+        }
+        lowkey keys[i] == "key3" {
+            found_key3 = based
+        }
+        i = i + 1
+    }
+    
+    assert_true(found_key1)
+    assert_true(found_key2)
+    assert_true(found_key3)
+}
+
+slay test_hashmap_values() {
+    test_start("HashMap Values")
+    
+    sus map HashMap = hashmap_new()
+    
+    map = hashmap_insert(map, "key1", "value1")
+    map = hashmap_insert(map, "key2", "value2")
+    map = hashmap_insert(map, "key3", "value3")
+    
+    sus values tea[value] = hashmap_values(map)
+    
+    fr fr Should have 3 values
+    assert_eq_int(hashmap_len(map), 3)
+    
+    fr fr Values array should contain all values (order may vary)
+    sus found_value1 lit = cap
+    sus found_value2 lit = cap
+    sus found_value3 lit = cap
+    
+    sus i normie = 0
+    bestie i < 3 {
+        lowkey values[i] == "value1" {
+            found_value1 = based
+        }
+        lowkey values[i] == "value2" {
+            found_value2 = based
+        }
+        lowkey values[i] == "value3" {
+            found_value3 = based
+        }
+        i = i + 1
+    }
+    
+    assert_true(found_value1)
+    assert_true(found_value2)
+    assert_true(found_value3)
+}
+
+fr fr ================================
+fr fr Test Collision Handling
+fr fr ================================
+
+slay test_hashmap_collision_handling() {
+    test_start("HashMap Collision Handling")
+    
+    sus map HashMap = hashmap_with_capacity(4)  fr fr Small capacity to force collisions
+    
+    fr fr Insert items that may collide
+    map = hashmap_insert(map, "a", "value_a")
+    map = hashmap_insert(map, "b", "value_b")
+    map = hashmap_insert(map, "c", "value_c")
+    map = hashmap_insert(map, "d", "value_d")
+    
+    fr fr All items should be retrievable despite collisions
+    assert_eq_string(hashmap_get(map, "a"), "value_a")
+    assert_eq_string(hashmap_get(map, "b"), "value_b")
+    assert_eq_string(hashmap_get(map, "c"), "value_c")
+    assert_eq_string(hashmap_get(map, "d"), "value_d")
+    
+    assert_eq_int(hashmap_len(map), 4)
+}
+
+fr fr ================================
+fr fr Test Resize Behavior
+fr fr ================================
+
+slay test_hashmap_resize() {
+    test_start("HashMap Resize")
+    
+    sus map HashMap = hashmap_with_capacity(8)
+    
+    fr fr Fill beyond load factor to trigger resize
+    sus i normie = 0
+    bestie i < 10 {
+        sus key tea = "key" + tea(i)
+        sus value tea = "value" + tea(i)
+        map = hashmap_insert(map, key, value)
+        i = i + 1
+    }
+    
+    fr fr Map should have resized
+    assert_true(map.capacity > 8)
+    assert_eq_int(hashmap_len(map), 10)
+    
+    fr fr All items should still be accessible after resize
+    i = 0
+    bestie i < 10 {
+        sus key tea = "key" + tea(i)
+        sus expected_value tea = "value" + tea(i)
+        assert_true(hashmap_contains_key(map, key))
+        assert_eq_string(hashmap_get(map, key), expected_value)
+        i = i + 1
+    }
+}
+
+fr fr ================================
+fr fr Run All Tests
+fr fr ================================
+
+slay run_all_hashmap_tests() {
+    vibez.spill("Running CURSED HashMap Test Suite...")
+    vibez.spill("=" * 50)
+    
+    reset_test_state()
+    
+    fr fr Basic operations
+    test_hashmap_new()
+    test_hashmap_with_capacity()
+    test_hashmap_insert_and_get()
+    test_hashmap_insert_update()
+    test_hashmap_contains_key()
+    test_hashmap_remove()
+    test_hashmap_clear()
+    
+    fr fr Edge cases
+    test_hashmap_empty_operations()
+    test_hashmap_single_item()
+    test_hashmap_many_items()
+    
+    fr fr Hash functions
+    test_hash_string_function()
+    test_hash_int_function()
+    
+    fr fr Array operations
+    test_hashmap_keys()
+    test_hashmap_values()
+    
+    fr fr Advanced features
+    test_hashmap_collision_handling()
+    test_hashmap_resize()
+    
+    print_test_summary()
+}
+
+fr fr Execute tests
+run_all_hashmap_tests()

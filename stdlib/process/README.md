@@ -503,10 +503,10 @@ Run the comprehensive test suite:
 
 ```bash
 # Test in interpretation mode
-cargo run --bin cursed stdlib/process/test_process.csd
+cargo run --bin cursed stdlib/process/test_process.💀
 
 # Test in compilation mode
-cargo run --bin cursed -- compile stdlib/process/test_process.csd
+cargo run --bin cursed -- compile stdlib/process/test_process.💀
 ./test_process
 ```
 

@@ -29,9 +29,9 @@ PRODUCTION_FLAGS="-Doptimize=ReleaseFast -Dpgo-use=true -Dllvm-opt=O3 -Dlto=true
 
 # Test programs for performance measurement
 TEST_PROGRAMS=(
-    "benchmarks/oracle_macro_performance_suite.csd"
-    "benchmarks/pgo_benchmark_suite.csd"
-    "comprehensive_stdlib_test.csd"
+    "benchmarks/oracle_macro_performance_suite.💀"
+    "benchmarks/pgo_benchmark_suite.💀"
+    "comprehensive_stdlib_test.💀"
 )
 
 # Function to log with timestamp

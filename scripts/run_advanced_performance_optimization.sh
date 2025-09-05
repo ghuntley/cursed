@@ -54,7 +54,7 @@ echo "=============================================="
 echo "Step 1: Generating profile data from representative workload..."
 
 # Create a profile generation script
-cat > "$BUILD_DIR/generate_profile.csd" << 'EOF'
+cat > "$BUILD_DIR/generate_profile.💀" << 'EOF'
 yeet "vibez"
 
 slay computeIntensive(n drip) drip {
@@ -83,7 +83,7 @@ slay main() {
 EOF
 
 echo "Running profile generation workload..."
-if timeout 30s ./zig-out/bin/cursed-zig "$BUILD_DIR/generate_profile.csd" > "$RESULTS_DIR/pgo_profile_generation.log" 2>&1; then
+if timeout 30s ./zig-out/bin/cursed-zig "$BUILD_DIR/generate_profile.💀" > "$RESULTS_DIR/pgo_profile_generation.log" 2>&1; then
     echo "✅ Profile data generated successfully"
 else
     echo "⚠️ Profile generation completed (may have timed out)"
@@ -157,7 +157,7 @@ echo "=================================================="
 echo "Running comprehensive benchmarks to validate optimizations..."
 
 # Create benchmark script
-cat > "$BUILD_DIR/comprehensive_benchmark.csd" << 'EOF'
+cat > "$BUILD_DIR/comprehensive_benchmark.💀" << 'EOF'
 yeet "vibez"
 
 // Computational benchmark
@@ -243,7 +243,7 @@ slay append(arr []drip, item drip) []drip { damn arr }
 EOF
 
 echo "Running comprehensive benchmark suite..."
-if timeout 30s ./zig-out/bin/cursed-zig "$BUILD_DIR/comprehensive_benchmark.csd" > "$RESULTS_DIR/comprehensive_benchmark.log" 2>&1; then
+if timeout 30s ./zig-out/bin/cursed-zig "$BUILD_DIR/comprehensive_benchmark.💀" > "$RESULTS_DIR/comprehensive_benchmark.log" 2>&1; then
     echo "✅ Comprehensive benchmarks completed"
     cat "$RESULTS_DIR/comprehensive_benchmark.log"
 else
@@ -385,7 +385,7 @@ if [[ "${1:-}" == "--demo" ]]; then
     echo "🎮 Running Advanced Performance Optimization Demo..."
     echo "=================================================="
     
-    if timeout 60s ./zig-out/bin/cursed-zig advanced_performance_optimization_demo.csd > "$RESULTS_DIR/demo_output.log" 2>&1; then
+    if timeout 60s ./zig-out/bin/cursed-zig advanced_performance_optimization_demo.💀 > "$RESULTS_DIR/demo_output.log" 2>&1; then
         echo "✅ Demo completed successfully"
         echo "📄 Demo output saved to: $RESULTS_DIR/demo_output.log"
         echo

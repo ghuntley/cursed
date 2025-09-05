@@ -31,7 +31,7 @@ declare -i INTERPRETER_ERRORS=0
 echo "Scanning test directory..."
 
 # Get list of test files
-test_files=($(find $TEST_DIR -name "*.csd" -type f | sort))
+test_files=($(find $TEST_DIR -name "*.💀" -type f | sort))
 total_files=${#test_files[@]}
 
 echo "Found $total_files test files"

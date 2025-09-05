@@ -164,7 +164,7 @@ High-level plugin management with automatic loading and lifecycle management.
 yeet "plug_vibes"
 
 fr fr Load a plugin
-sus plugin, err := plug_vibes.Load("math_plugin.csd")
+sus plugin, err := plug_vibes.Load("math_plugin.💀")
 if err != "" {
     vibez.spill("Failed to load plugin:", err)
     yolo
@@ -211,7 +211,7 @@ if startErr == "" {
 }
 
 fr fr Load specific plugin
-sus mathPlugin, loadErr := manager.LoadPlugin("math_tools.csd")
+sus mathPlugin, loadErr := manager.LoadPlugin("math_tools.💀")
 if loadErr == "" {
     vibez.spill("Math plugin loaded")
 }
@@ -232,8 +232,8 @@ fr fr Create registry
 sus registry := plug_vibes.NewPlugRegistry()
 
 fr fr Load and register plugins
-sus plugin1, err1 := registry.LoadAndRegister("plugin1.csd", "plugin1")
-sus plugin2, err2 := registry.LoadAndRegister("plugin2.csd", "plugin2")
+sus plugin1, err1 := registry.LoadAndRegister("plugin1.💀", "plugin1")
+sus plugin2, err2 := registry.LoadAndRegister("plugin2.💀", "plugin2")
 
 if err1 == "" && err2 == "" {
     vibez.spill("Both plugins loaded")
@@ -261,12 +261,12 @@ fr fr Create hook for content filtering
 sus hook := plug_vibes.NewPlugHook("filter_content")
 
 fr fr Register plugins with hook
-sus filterPlugin, filterErr := plug_vibes.Load("content_filter.csd")
+sus filterPlugin, filterErr := plug_vibes.Load("content_filter.💀")
 if filterErr == "" {
     hook.Register(filterPlugin, 10)  fr fr Priority 10
 }
 
-sus cleanupPlugin, cleanupErr := plug_vibes.Load("cleanup_filter.csd")
+sus cleanupPlugin, cleanupErr := plug_vibes.Load("cleanup_filter.💀")
 if cleanupErr == "" {
     hook.Register(cleanupPlugin, 5)  fr fr Priority 5
 }
@@ -299,7 +299,7 @@ sus sandboxOpts := plug_vibes.SandboxOptions{
 sus sandbox := plug_vibes.NewSandbox(sandboxOpts)
 
 fr fr Load plugin in sandbox
-sus safePlugin, safeErr := sandbox.LoadPlugin("untrusted_plugin.csd")
+sus safePlugin, safeErr := sandbox.LoadPlugin("untrusted_plugin.💀")
 if safeErr == "" {
     fr fr Execute function safely
     sus result, execErr := sandbox.ExecuteFunc(safePlugin, "ProcessData", "input data")
@@ -338,10 +338,10 @@ fr fr Generate key pair for signing
 sus privateKey, publicKey, keyErr := plug_vibes.GeneratePluginKeyPair()
 if keyErr == "" {
     fr fr Sign plugin
-    sus signErr := plug_vibes.SignPlugin("my_plugin.csd", privateKey)
+    sus signErr := plug_vibes.SignPlugin("my_plugin.💀", privateKey)
     if signErr == "" {
         fr fr Verify signature
-        sus verified, verifyErr := plug_vibes.VerifyPluginSignature("my_plugin.csd", publicKey)
+        sus verified, verifyErr := plug_vibes.VerifyPluginSignature("my_plugin.💀", publicKey)
         if verifyErr == "" && verified {
             vibez.spill("Plugin signature verified")
         }

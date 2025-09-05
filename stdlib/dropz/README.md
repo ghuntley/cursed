@@ -185,7 +185,7 @@ check create_err == "" {
 
 ```cursed
 # Read source file for compilation
-sus source_code, source_err := dropz.read_source_file("main.csd")
+sus source_code, source_err := dropz.read_source_file("main.💀")
 check source_err == "" {
     vibez.spill("Source code loaded: " + source_code.length.(tea) + " characters")
 }
@@ -272,16 +272,16 @@ Run the comprehensive test suite:
 
 ```bash
 # Test interpretation mode
-cargo run --bin cursed stdlib/dropz/test_dropz.csd
+cargo run --bin cursed stdlib/dropz/test_dropz.💀
 
 # Test compilation mode
-cargo run --bin cursed -- compile stdlib/dropz/test_dropz.csd
+cargo run --bin cursed -- compile stdlib/dropz/test_dropz.💀
 ./test_dropz
 
 # Both-mode verification
 test_both_modes() {
-    cargo run --bin cursed stdlib/dropz/test_dropz.csd > interp_output.txt
-    cargo run --bin cursed -- compile stdlib/dropz/test_dropz.csd
+    cargo run --bin cursed stdlib/dropz/test_dropz.💀 > interp_output.txt
+    cargo run --bin cursed -- compile stdlib/dropz/test_dropz.💀
     ./test_dropz > comp_output.txt
     diff interp_output.txt comp_output.txt
 }
@@ -307,8 +307,8 @@ The dropz module is essential for CURSED self-hosting:
 
 ```
 dropz/
-├── mod.csd           # Main module implementation
-├── test_dropz.csd    # Comprehensive test suite
+├── mod.💀           # Main module implementation
+├── test_dropz.💀    # Comprehensive test suite
 └── README.md         # This documentation
 
 Features:

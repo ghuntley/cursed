@@ -30,8 +30,8 @@ temp_files = "1.0.0"
 
 [[bin]]
 name = "productivity"
-path = "src/main.csd"
+path = "src/main.💀"
 
 [[bin]]
 name = "prod-config"
-path = "src/bin/config.csd"
+path = "src/bin/config.💀"

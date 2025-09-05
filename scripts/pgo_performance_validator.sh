@@ -9,7 +9,7 @@ echo "🚀 CURSED PGO Performance Validation System"
 echo "=============================================="
 
 # Configuration
-BENCHMARK_FILE="benchmarks/pgo_benchmark_suite.csd"
+BENCHMARK_FILE="benchmarks/pgo_benchmark_suite.💀"
 BASELINE_BINARY="./zig-out/bin/cursed-zig"
 PGO_BINARY="./zig-out/bin/cursed-zig-pgo" 
 ITERATIONS=5

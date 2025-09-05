@@ -183,7 +183,7 @@ The module uses Taylor series expansions for trigonometric and exponential funct
 Run the comprehensive test suite:
 
 ```bash
-cargo run --bin cursed stdlib/complex_vibe/test_complex_vibe.csd
+cargo run --bin cursed stdlib/complex_vibe/test_complex_vibe.💀
 ```
 
 The test suite includes:

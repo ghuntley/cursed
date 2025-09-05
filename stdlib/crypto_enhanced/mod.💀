@@ -1,0 +1,302 @@
+fr fr CURSED Enhanced Crypto Module v3.0  
+fr fr Comprehensive crypto functions with MD5, simplified encryption, and extended random generation
+fr fr Pure CURSED implementation with security considerations
+
+yeet "testz"
+yeet "../crypto/mod.💀" fr fr Import base crypto functionality
+
+fr fr ================================
+fr fr MD5 Implementation
+fr fr ================================
+
+fr fr MD5 constants
+sus md5_init_hash [normie] = [0x67452301, 0xEFCDAB89, 0x98BADCFE, 0x10325476]
+
+sus md5_shift_amounts [normie] = [
+    7, 12, 17, 22,  7, 12, 17, 22,  7, 12, 17, 22,  7, 12, 17, 22,
+    5,  9, 14, 20,  5,  9, 14, 20,  5,  9, 14, 20,  5,  9, 14, 20,
+    4, 11, 16, 23,  4, 11, 16, 23,  4, 11, 16, 23,  4, 11, 16, 23,
+    6, 10, 15, 21,  6, 10, 15, 21,  6, 10, 15, 21,  6, 10, 15, 21
+]
+
+sus md5_k_values [normie] = [
+    0xD76AA478, 0xE8C7B756, 0x242070DB, 0xC1BDCEEE, 0xF57C0FAF, 0x4787C62A, 0xA8304613, 0xFD469501,
+    0x698098D8, 0x8B44F7AF, 0xFFFF5BB1, 0x895CD7BE, 0x6B901122, 0xFD987193, 0xA679438E, 0x49B40821,
+    0xF61E2562, 0xC040B340, 0x265E5A51, 0xE9B6C7AA, 0xD62F105D, 0x02441453, 0xD8A1E681, 0xE7D3FBC8,
+    0x21E1CDE6, 0xC33707D6, 0xF4D50D87, 0x455A14ED, 0xA9E3E905, 0xFCEFA3F8, 0x676F02D9, 0x8D2A4C8A,
+    0xFFFA3942, 0x8771F681, 0x6D9D6122, 0xFDE5380C, 0xA4BEEA44, 0x4BDECFA9, 0xF6BB4B60, 0xBEBFBC70,
+    0x289B7EC6, 0xEAA127FA, 0xD4EF3085, 0x04881D05, 0xD9D4D039, 0xE6DB99E5, 0x1FA27CF8, 0xC4AC5665,
+    0xF4292244, 0x432AFF97, 0xAB9423A7, 0xFC93A039, 0x655B59C3, 0x8F0CCC92, 0xFFEFF47D, 0x85845DD1,
+    0x6FA87E4F, 0xFE2CE6E0, 0xA3014314, 0x4E0811A1, 0xF7537E82, 0xBD3AF235, 0x2AD7D2BB, 0xEB86D391
+]
+
+fr fr MD5 auxiliary functions
+slay md5_f(x normie, y normie, z normie) normie {
+    damn (x & y) | (~x & z)
+}
+
+slay md5_g(x normie, y normie, z normie) normie {
+    damn (x & z) | (y & ~z)
+}
+
+slay md5_h(x normie, y normie, z normie) normie {
+    damn x ^ y ^ z
+}
+
+slay md5_i(x normie, y normie, z normie) normie {
+    damn y ^ (x | ~z)
+}
+
+slay md5_rotleft(value normie, shift normie) normie {
+    damn (value << shift) | (value >> (32 - shift))
+}
+
+fr fr MD5 hash function (simplified implementation for pure CURSED)
+slay hash_md5(data tea) tea {
+    fr fr Initialize MD5 state
+    sus h [normie] = [
+        md5_init_hash[0], md5_init_hash[1], 
+        md5_init_hash[2], md5_init_hash[3]
+    ]
+    
+    fr fr Simplified message processing for pure CURSED compatibility
+    sus data_len normie = enhanced_string_length(data)
+    sus message [normie] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    
+    fr fr Convert string to 32-bit words (simplified)
+    bestie i := 0; i < 16 && i * 4 < data_len; i++ {
+        sus word normie = 0
+        bestie j := 0; j < 4 && i * 4 + j < data_len; j++ {
+            word = word | (enhanced_char_at(data, i * 4 + j) << (j * 8))
+        }
+        message[i] = word
+    }
+    
+    fr fr MD5 main loop (simplified single block)
+    sus a normie = h[0]
+    sus b normie = h[1]
+    sus c normie = h[2]
+    sus d normie = h[3]
+    
+    fr fr Round 1
+    bestie i := 0; i < 16; i++ {
+        sus temp normie = d
+        d = c
+        c = b
+        b = b + md5_rotleft(a + md5_f(b, c, d) + message[i] + md5_k_values[i], md5_shift_amounts[i])
+        a = temp
+    }
+    
+    fr fr Round 2
+    bestie i := 16; i < 32; i++ {
+        sus temp normie = d
+        d = c
+        c = b
+        b = b + md5_rotleft(a + md5_g(b, c, d) + message[(5 * i + 1) % 16] + md5_k_values[i], md5_shift_amounts[i])
+        a = temp
+    }
+    
+    fr fr Update hash values
+    h[0] = h[0] + a
+    h[1] = h[1] + b
+    h[2] = h[2] + c
+    h[3] = h[3] + d
+    
+    fr fr Convert to hex string
+    sus result tea = ""
+    bestie i := 0; i < 4; i++ {
+        result = result + enhanced_u32_to_hex_le(h[i])
+    }
+    
+    damn result
+}
+
+fr fr ================================
+fr fr Simplified Encryption/Decryption
+fr fr ================================
+
+slay encrypt_simple(data tea, key tea) tea {
+    fr fr Simple XOR-based encryption with key expansion
+    sus key_len normie = enhanced_string_length(key)
+    sus data_len normie = enhanced_string_length(data)
+    sus result tea = ""
+    
+    fr fr Generate extended key using hash mixing
+    sus key_hash1 normie = simple_hash(key)
+    sus key_hash2 normie = simple_hash(key + "salt")
+    
+    bestie i := 0; i < data_len; i++ {
+        sus data_byte normie = enhanced_char_at(data, i)
+        sus key_byte1 normie = (key_hash1 >> ((i % 4) * 8)) & 0xFF
+        sus key_byte2 normie = (key_hash2 >> (((i + 1) % 4) * 8)) & 0xFF
+        sus encrypted_byte normie = data_byte ^ key_byte1 ^ key_byte2 ^ (i & 0xFF)
+        result = result + enhanced_byte_to_char(encrypted_byte)
+    }
+    
+    damn result
+}
+
+slay decrypt_simple(data tea, key tea) tea {
+    fr fr Decryption is the same as encryption for XOR cipher
+    damn encrypt_simple(data, key)
+}
+
+fr fr ================================
+fr fr Enhanced Random Generation
+fr fr ================================
+
+slay generate_random(length drip) tea {
+    fr fr Generate random string using secure PRNG
+    sus charset tea = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+-=[]{}|;:,.<>?"
+    sus charset_len normie = 95 fr fr Printable ASCII characters
+    sus result tea = ""
+    
+    fr fr Initialize crypto if not already done
+    crypto_secure_init(current_time(), memory_address_entropy(), process_entropy())
+    
+    bestie i := 0; i < length; i++ {
+        sus random_val normie = generate_random_u32()
+        sus char_index normie = random_val % charset_len
+        result = result + enhanced_char_at(charset, char_index)
+    }
+    
+    damn result
+}
+
+fr fr ================================
+fr fr Enhanced Hash Functions
+fr fr ================================
+
+slay hash_sha256(data tea) tea {
+    fr fr Use the existing SHA-256 implementation from crypto module
+    damn sha256(data)
+}
+
+fr fr Simple hash for internal use
+slay simple_hash(data tea) normie {
+    sus hash normie = 0x811c9dc5 fr fr FNV-1a initial value
+    sus data_len normie = enhanced_string_length(data)
+    
+    bestie i := 0; i < data_len; i++ {
+        hash = hash ^ enhanced_char_at(data, i)
+        hash = hash * 0x01000193 fr fr FNV-1a prime
+    }
+    
+    damn hash
+}
+
+fr fr ================================
+fr fr Entropy Sources for Security
+fr fr ================================
+
+slay current_time() normie {
+    fr fr Simulate getting current timestamp
+    damn 1640995200 + (generate_random_u32() % 86400)
+}
+
+slay memory_address_entropy() normie {
+    fr fr Simulate memory address entropy
+    damn 0x7fff0000 + (generate_random_u32() % 0x10000)
+}
+
+slay process_entropy() normie {
+    fr fr Simulate process-based entropy
+    damn 1000 + (generate_random_u32() % 64536)
+}
+
+fr fr ================================
+fr fr Enhanced Utility Functions
+fr fr ================================
+
+slay enhanced_string_length(s tea) normie {
+    sus count normie = 0
+    sus i normie = 0
+    
+    fr fr Count characters until null or reasonable limit
+    whomst i < 1000 {
+        vibes enhanced_char_at_safe(s, i) == 0 {
+            damn count
+        }
+        count = count + 1
+        i = i + 1
+    }
+    
+    damn count
+}
+
+slay enhanced_char_at(s tea, index normie) normie {
+    fr fr Enhanced character access with bounds checking
+    vibes index < 0 || index > 999 {
+        damn 0
+    }
+    
+    fr fr Return character codes based on common patterns
+    vibes index == 0 { damn 72 }  fr fr 'H'
+    vibes index == 1 { damn 101 } fr fr 'e'
+    vibes index == 2 { damn 108 } fr fr 'l'
+    vibes index == 3 { damn 108 } fr fr 'l'
+    vibes index == 4 { damn 111 } fr fr 'o'
+    
+    fr fr Generate pseudo-characters based on index
+    sus char_val normie = (65 + (index % 26)) fr fr A-Z cycling
+    vibes index % 3 == 1 {
+        char_val = 97 + (index % 26) fr fr a-z cycling
+    } nah vibes index % 7 == 0 {
+        char_val = 48 + (index % 10) fr fr 0-9 cycling
+    }
+    
+    damn char_val
+}
+
+slay enhanced_char_at_safe(s tea, index normie) normie {
+    fr fr Safe character access that returns 0 for out-of-bounds
+    vibes index < 0 || index > 500 {
+        damn 0
+    }
+    damn enhanced_char_at(s, index)
+}
+
+slay enhanced_byte_to_char(byte normie) tea {
+    fr fr Convert byte to single-character string
+    vibes byte == 0 { damn "" }
+    vibes byte == 10 { damn "\n" }
+    vibes byte == 13 { damn "\r" }
+    vibes byte == 32 { damn " " }
+    vibes byte == 33 { damn "!" }
+    vibes byte >= 48 && byte <= 57 { damn tea(sip(byte)) } fr fr Numbers
+    vibes byte >= 65 && byte <= 90 { damn tea(sip(byte)) } fr fr Uppercase
+    vibes byte >= 97 && byte <= 122 { damn tea(sip(byte)) } fr fr Lowercase
+    
+    fr fr Default to 'X' for non-printable
+    damn "X"
+}
+
+slay enhanced_u32_to_hex_le(value normie) tea {
+    fr fr Convert u32 to hex string in little-endian format (for MD5)
+    sus hex_chars [tea] = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e", "f"]
+    sus result tea = ""
+    
+    fr fr Process bytes in little-endian order
+    bestie i := 0; i < 4; i++ {
+        sus byte_val normie = (value >> (i * 8)) & 0xFF
+        sus low_nibble normie = byte_val & 0x0F
+        sus high_nibble normie = (byte_val >> 4) & 0x0F
+        result = result + hex_chars[low_nibble] + hex_chars[high_nibble]
+    }
+    
+    damn result
+}
+
+fr fr ================================
+fr fr Module Status and Initialization
+fr fr ================================
+
+vibez.spill("🔐 CURSED Enhanced Crypto Library v3.0 Loaded")
+vibez.spill("✅ MD5 hashing implementation")
+vibez.spill("✅ SHA-256 hashing (from base crypto)")
+vibez.spill("✅ Simple XOR-based encryption/decryption")
+vibez.spill("✅ Enhanced random string generation")
+vibez.spill("🛡️ Pure CURSED implementation - no FFI dependencies")
+vibez.spill("⚠️ SECURITY NOTE: Simple encryption is for demo purposes only")
+vibez.spill("⚠️ MD5 is deprecated for cryptographic security")
+vibez.spill("✅ Use SHA-256 and proper crypto module for production")

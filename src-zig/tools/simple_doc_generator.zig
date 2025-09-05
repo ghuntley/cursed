@@ -245,7 +245,7 @@ pub fn main() !void {
     
     var iterator = dir.iterate();
     while (try iterator.next()) |entry| {
-        if (entry.kind == .file and std.mem.endsWith(u8, entry.name, ".csd")) {
+        if (entry.kind == .file and std.mem.endsWith(u8, entry.name, ".💀")) {
             const file_path = try std.fs.path.join(allocator, &[_][]const u8{ source_dir, entry.name });
             defer allocator.free(file_path);
             

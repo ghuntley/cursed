@@ -39,7 +39,7 @@ run_test() {
     
     if [ "$mode" = "interpret" ]; then
         # Interpreter mode
-        timeout 30s ../../zig-out/bin/cursed-zig main.csd > /dev/null 2>&1
+        timeout 30s ../../zig-out/bin/cursed-zig main.💀 > /dev/null 2>&1
         if [ $? -eq 0 ]; then
             echo "✅"
             PASSED_TESTS=$((PASSED_TESTS + 1))
@@ -50,9 +50,9 @@ run_test() {
     else
         # Compilation mode
         if [ "$platform" = "native" ]; then
-            ../../zig-out/bin/cursed-zig --compile main.csd > /dev/null 2>&1
+            ../../zig-out/bin/cursed-zig --compile main.💀 > /dev/null 2>&1
         else
-            ../../zig-out/bin/cursed-zig --compile --target=$platform main.csd > /dev/null 2>&1
+            ../../zig-out/bin/cursed-zig --compile --target=$platform main.💀 > /dev/null 2>&1
         fi
         
         if [ $? -eq 0 ]; then
@@ -76,7 +76,7 @@ test_memory_safety() {
     
     if command -v valgrind >/dev/null 2>&1; then
         timeout 60s valgrind --leak-check=full --error-exitcode=1 \
-            ../../zig-out/bin/cursed-zig main.csd > /dev/null 2>&1
+            ../../zig-out/bin/cursed-zig main.💀 > /dev/null 2>&1
         if [ $? -eq 0 ]; then
             echo "✅"
             PASSED_TESTS=$((PASSED_TESTS + 1))
@@ -116,7 +116,7 @@ echo "  Running basic performance tests..."
 
 cd cli-tool
 echo -n "  CLI tool performance... "
-time (timeout 10s ../../zig-out/bin/cursed-zig main.csd list --path . > /dev/null 2>&1)
+time (timeout 10s ../../zig-out/bin/cursed-zig main.💀 list --path . > /dev/null 2>&1)
 if [ $? -eq 0 ]; then
     echo "✅"
 else
@@ -125,7 +125,7 @@ fi
 
 cd ../concurrent-app
 echo -n "  Concurrency performance... "
-time (timeout 15s ../../zig-out/bin/cursed-zig main.csd > /dev/null 2>&1)
+time (timeout 15s ../../zig-out/bin/cursed-zig main.💀 > /dev/null 2>&1)
 if [ $? -eq 0 ]; then
     echo "✅"
 else
@@ -141,7 +141,7 @@ echo "🎯 Feature Demonstration Tests"
 # CLI Tool features
 echo -n "  CLI: File listing... "
 cd cli-tool
-../../zig-out/bin/cursed-zig main.csd list --path .. > /dev/null 2>&1
+../../zig-out/bin/cursed-zig main.💀 list --path .. > /dev/null 2>&1
 if [ $? -eq 0 ]; then
     echo "✅"
 else
@@ -149,7 +149,7 @@ else
 fi
 
 echo -n "  CLI: File search... "
-../../zig-out/bin/cursed-zig main.csd search --pattern "*.csd" > /dev/null 2>&1
+../../zig-out/bin/cursed-zig main.💀 search --pattern "*.💀" > /dev/null 2>&1
 if [ $? -eq 0 ]; then
     echo "✅"
 else
@@ -161,7 +161,7 @@ cd ..
 # Crypto App features
 echo -n "  Crypto: Encryption algorithms... "
 cd crypto-app
-timeout 20s ../../zig-out/bin/cursed-zig main.csd > /dev/null 2>&1
+timeout 20s ../../zig-out/bin/cursed-zig main.💀 > /dev/null 2>&1
 if [ $? -eq 0 ]; then
     echo "✅"
 else
@@ -173,7 +173,7 @@ cd ..
 # Database App features  
 echo -n "  Database: CRUD operations... "
 cd database-app
-timeout 15s ../../zig-out/bin/cursed-zig main.csd > /dev/null 2>&1
+timeout 15s ../../zig-out/bin/cursed-zig main.💀 > /dev/null 2>&1
 if [ $? -eq 0 ]; then
     echo "✅"
 else
@@ -185,7 +185,7 @@ cd ..
 # Concurrent App features
 echo -n "  Concurrency: Producer-consumer... "
 cd concurrent-app
-timeout 10s ../../zig-out/bin/cursed-zig main.csd > /dev/null 2>&1
+timeout 10s ../../zig-out/bin/cursed-zig main.💀 > /dev/null 2>&1
 if [ $? -eq 0 ]; then
     echo "✅"
 else
@@ -197,7 +197,7 @@ cd ..
 # Web Server features (quick test)
 echo -n "  Web Server: HTTP handling... "
 cd web-server
-timeout 5s ../../zig-out/bin/cursed-zig main.csd > /dev/null 2>&1 &
+timeout 5s ../../zig-out/bin/cursed-zig main.💀 > /dev/null 2>&1 &
 SERVER_PID=$!
 sleep 2
 curl -s http://localhost:8080 > /dev/null 2>&1
@@ -238,9 +238,9 @@ fi
 
 echo
 echo "🔍 For detailed testing:"
-echo "  - Individual app testing: cd <app-name> && ../../zig-out/bin/cursed-zig main.csd"
-echo "  - Memory leak checking: valgrind ../../zig-out/bin/cursed-zig main.csd"
-echo "  - Cross-compilation: ../../zig-out/bin/cursed-zig --compile --target=<target> main.csd"
-echo "  - Performance profiling: time ../../zig-out/bin/cursed-zig main.csd"
+echo "  - Individual app testing: cd <app-name> && ../../zig-out/bin/cursed-zig main.💀"
+echo "  - Memory leak checking: valgrind ../../zig-out/bin/cursed-zig main.💀"
+echo "  - Cross-compilation: ../../zig-out/bin/cursed-zig --compile --target=<target> main.💀"
+echo "  - Performance profiling: time ../../zig-out/bin/cursed-zig main.💀"
 
 exit $FAILED_TESTS

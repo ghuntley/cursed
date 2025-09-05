@@ -99,12 +99,12 @@ generate_api_docs() {
     )
     
     for module in "${stdlib_modules[@]}"; do
-        if [ -f "stdlib/${module}.csd" ]; then
+        if [ -f "stdlib/${module}.💀" ]; then
             log_info "Generating docs for $module..."
             
             # Use cursed-doc if available, otherwise create placeholder
             if [ -f "$(pwd)/zig-out/bin/cursed-doc" ]; then
-                "$(pwd)/zig-out/bin/cursed-doc" "stdlib/${module}.csd" > "$DOCS_DIR/api-docs/generated/${module}.md" || {
+                "$(pwd)/zig-out/bin/cursed-doc" "stdlib/${module}.💀" > "$DOCS_DIR/api-docs/generated/${module}.md" || {
                     log_warning "Failed to generate docs for $module, creating placeholder"
                     create_api_placeholder "$module"
                 }
@@ -172,7 +172,7 @@ validate_tutorial_code() {
         log_info "Validating $file..."
         
         # Extract CURSED code blocks and validate them
-        local temp_code_file="/tmp/tutorial_code_$$.csd"
+        local temp_code_file="/tmp/tutorial_code_$$.💀"
         
         # Extract code between ```cursed and ``` 
         sed -n '/```cursed/,/```/p' "$file" | sed '1d;$d' > "$temp_code_file"
@@ -203,12 +203,12 @@ build_interactive_examples() {
     
     mkdir -p "$DOCS_DIR/examples/compiled"
     
-    # Find all .csd files in examples directory
-    local example_files=$(find "$DOCS_DIR" -name "*.csd" -type f)
+    # Find all .💀 files in examples directory
+    local example_files=$(find "$DOCS_DIR" -name "*.💀" -type f)
     
     while IFS= read -r file; do
         if [ -f "$file" ]; then
-            local basename=$(basename "$file" .csd)
+            local basename=$(basename "$file" .💀)
             local dirname=$(dirname "$file")
             local relative_dir=${dirname#$DOCS_DIR/}
             

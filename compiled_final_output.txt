@@ -8,7 +8,7 @@
 🔧 Step 2: Linking object file with gcc...
 ✅ Successfully compiled to: test_print_output
 🎉 Compilation pipeline completed successfully!
-🎉 Successfully compiled test_print_output.csd to test_print_output
+🎉 Successfully compiled test_print_output.💀 to test_print_output
 🧹 Cleaning up LLVM IR Pipeline...
 ✅ LLVM IR Pipeline cleanup complete
 error(gpa): memory address 0x7c31627a0000 leaked: 

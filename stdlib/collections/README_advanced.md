@@ -258,17 +258,17 @@ sus stolen tea = work_stealing_queue_steal(wsq) // Thief steals work (FIFO)
 
 ```bash
 # Test all advanced collections
-cargo run --bin cursed stdlib/collections/test_advanced_collections.csd
+cargo run --bin cursed stdlib/collections/test_advanced_collections.💀
 
 # Test concurrent collections
-cargo run --bin cursed stdlib/collections/test_concurrent_collections.csd
+cargo run --bin cursed stdlib/collections/test_concurrent_collections.💀
 
 # Run performance benchmarks
-cargo run --bin cursed stdlib/collections/performance_benchmarks.csd
+cargo run --bin cursed stdlib/collections/performance_benchmarks.💀
 
 # Test both interpretation and compilation modes
-cargo run --bin cursed stdlib/collections/test_advanced_collections.csd
-cargo run --bin cursed -- compile stdlib/collections/test_advanced_collections.csd
+cargo run --bin cursed stdlib/collections/test_advanced_collections.💀
+cargo run --bin cursed -- compile stdlib/collections/test_advanced_collections.💀
 ./test_advanced_collections
 ```
 

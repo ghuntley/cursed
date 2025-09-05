@@ -262,7 +262,7 @@ pub const ModuleLoader = struct {
                 try path_buf.appendSlice(custom_path);
                 try path_buf.append(self.allocator, '/');
                 try path_buf.appendSlice(module_name);
-                try path_buf.appendSlice("/mod.csd");
+                try path_buf.appendSlice("/mod.💀");
             } else {
                 // Find project root and build standard path
                 const project_root = try self.findProjectRoot();
@@ -271,7 +271,7 @@ pub const ModuleLoader = struct {
                 try path_buf.appendSlice(project_root);
                 try path_buf.appendSlice("/stdlib/");
                 try path_buf.appendSlice(module_name);
-                try path_buf.appendSlice("/mod.csd");
+                try path_buf.appendSlice("/mod.💀");
             }
             
             // Double-check that the file actually exists before returning path

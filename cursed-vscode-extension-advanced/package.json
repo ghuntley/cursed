@@ -48,7 +48,7 @@
         "languages": [{
             "id": "cursed",
             "aliases": ["CURSED", "cursed"],
-            "extensions": [".csd"],
+            "extensions": [".💀"],
             "configuration": "./language-configuration.json",
             "icon": {
                 "light": "./assets/file-icon-light.svg",
@@ -510,7 +510,7 @@
                             "program": {
                                 "type": "string",
                                 "description": "Absolute path to the CURSED file to debug",
-                                "default": "${workspaceFolder}/main.csd"
+                                "default": "${workspaceFolder}/main.💀"
                             },
                             "args": {
                                 "type": "array",
@@ -545,7 +545,7 @@
                         "type": "cursed",
                         "request": "launch",
                         "name": "Launch CURSED Program",
-                        "program": "${workspaceFolder}/main.csd",
+                        "program": "${workspaceFolder}/main.💀",
                         "cwd": "${workspaceFolder}",
                         "stopOnEntry": false
                     }
@@ -558,7 +558,7 @@
                             "type": "cursed",
                             "request": "launch",
                             "name": "Launch CURSED Program",
-                            "program": "^\"\\${workspaceFolder}/main.csd\"",
+                            "program": "^\"\\${workspaceFolder}/main.💀\"",
                             "cwd": "^\"\\${workspaceFolder}\"",
                             "stopOnEntry": false
                         }

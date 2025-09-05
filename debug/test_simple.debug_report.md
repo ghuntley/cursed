@@ -1,6 +1,6 @@
 # CURSED Debug Information Report
 
-## Source File: test_simple.csd
+## Source File: test_simple.💀
 ## Generated: 2025-06-09 12:33:52 UTC
 
 ## Debug Statistics
@@ -13,7 +13,7 @@ Debug Stats: 1 symbols, depth 0, 1 CUs, 1 functions, 0 vars, 0 types (enabled)
 
 | Line | Location |
 |------|----------|
-| 1 | test_simple.csd:1 |
+| 1 | test_simple.💀:1 |
 
 ## Configuration
 

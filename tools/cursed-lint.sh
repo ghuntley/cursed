@@ -2,13 +2,13 @@
 
 # CURSED Linter - Command Line Interface
 # Production-ready static analysis tool for CURSED language
-# Usage: cursed-lint <file.csd> [options]
+# Usage: cursed-lint <file.💀> [options]
 
 set -e
 
 # Configuration
 CURSED_BIN="./zig-out/bin/cursed-zig"
-LINTER_SCRIPT="cursed-lint.csd"
+LINTER_SCRIPT="cursed-lint.💀"
 CONFIG_FILE=".cursed-lint.toml"
 
 # Colors for output
@@ -33,7 +33,7 @@ show_usage() {
     print_colored $CYAN "Production-grade static analysis for CURSED language"
     echo ""
     print_colored $YELLOW "USAGE:"
-    echo "    cursed-lint <file.csd> [options]"
+    echo "    cursed-lint <file.💀> [options]"
     echo "    cursed-lint <directory> [options]"
     echo ""
     print_colored $YELLOW "OPTIONS:"
@@ -53,11 +53,11 @@ show_usage() {
     echo "    See documentation: https://cursed-lang.org/tools/linter"
     echo ""
     print_colored $YELLOW "EXAMPLES:"
-    echo "    cursed-lint main.csd"
+    echo "    cursed-lint main.💀"
     echo "    cursed-lint src/"
-    echo "    cursed-lint app.csd --preset strict"
+    echo "    cursed-lint app.💀 --preset strict"
     echo "    cursed-lint src/ --format json > report.json"
-    echo "    cursed-lint *.csd --no-color --quiet"
+    echo "    cursed-lint *.💀 --no-color --quiet"
     echo "    cursed-lint src/ --fix --dry-run"
     echo ""
     print_colored $YELLOW "EXIT CODES:"

@@ -122,7 +122,7 @@ hashmap_example()
 ### Basic Operations
 
 ```cursed
-yeet "stdlib/collections/hashmap.csd"
+yeet "stdlib/collections/hashmap.💀"
 
 slay main() {
     sus map HashMap = hashmap_new()
@@ -198,10 +198,10 @@ Run the comprehensive test suite:
 
 ```bash
 # Run HashMap tests
-cargo run --bin cursed stdlib/collections/test_hashmap.csd
+cargo run --bin cursed stdlib/collections/test_hashmap.💀
 
 # Run all collections tests
-cargo run --bin cursed stdlib/collections/test_collections.csd
+cargo run --bin cursed stdlib/collections/test_collections.💀
 ```
 
 The test suite covers:

@@ -439,7 +439,7 @@ Streaming format includes:
 ```bash
 # Run encoding tests
 zig build test
-./zig-out/bin/cursed-zig stdlib/gob_encode_vibes/test_gob_encode_vibes.csd
+./zig-out/bin/cursed-zig stdlib/gob_encode_vibes/test_gob_encode_vibes.💀
 ```
 
 ### Test Coverage

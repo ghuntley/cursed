@@ -221,7 +221,7 @@ pub fn main() !void {
 
 fn printUsage() void {
     print("CURSED Stable Minimal Compiler\n", .{});
-    print("Usage: cursed-stable <file.csd> [options]\n", .{});
+    print("Usage: cursed-stable <file.💀.💀> [options]\n", .{});
     print("\n", .{});
     print("Options:\n", .{});
     print("  --help      Show this help message\n", .{});

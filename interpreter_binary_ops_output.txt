@@ -1,13 +1,13 @@
-Error at test_binary_ops_minimal.csd:3:1 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
-Error at test_binary_ops_minimal.csd:3:1 - Synchronizing parser after error (context: synchronize)
+Error at test_binary_ops_minimal.💀:3:1 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+Error at test_binary_ops_minimal.💀:3:1 - Synchronizing parser after error (context: synchronize)
 INFO: Recovered at semicolon after skipping 6 tokens
-Error at test_binary_ops_minimal.csd:4:1 - Failed to parse statement
+Error at test_binary_ops_minimal.💀:4:1 - Failed to parse statement
 INFO: Recovered at delimiter 'RightParen' after skipping 3 tokens
 INFO: Attempting additional statement recovery
-Error at test_binary_ops_minimal.csd:12:18 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
-Error at test_binary_ops_minimal.csd:12:18 - Synchronizing parser after error (context: synchronize)
+Error at test_binary_ops_minimal.💀:12:18 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+Error at test_binary_ops_minimal.💀:12:18 - Synchronizing parser after error (context: synchronize)
 INFO: Recovered at semicolon after skipping 2 tokens
-Error at test_binary_ops_minimal.csd:13:1 - Failed to parse statement
+Error at test_binary_ops_minimal.💀:13:1 - Failed to parse statement
 INFO: Recovered at delimiter 'RightParen' after skipping 3 tokens
 INFO: Attempting additional statement recovery
 

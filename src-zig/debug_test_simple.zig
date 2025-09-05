@@ -9,11 +9,11 @@ test "debug infrastructure basic test" {
     
     // Test enabling debug
     debug_enabled = true;
-    source_file = "test.csd";
+    source_file = "test.💀";
     
     try testing.expect(debug_enabled == true);
     try testing.expect(source_file != null);
-    try testing.expectEqualStrings(source_file.?, "test.csd");
+    try testing.expectEqualStrings(source_file.?, "test.💀");
     
     std.debug.print("✅ Debug infrastructure basic test passed\n", .{});
 }

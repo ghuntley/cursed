@@ -153,7 +153,7 @@ The snapshot testing framework integrates seamlessly with continuous integration
 
 ```bash
 # Run tests in CI
-cargo run --bin cursed stdlib/snapshot_testing/test_snapshot_testing.csd
+cargo run --bin cursed stdlib/snapshot_testing/test_snapshot_testing.💀
 
 # Validate all snapshots
 cargo run --bin cursed -- validate-snapshots
@@ -167,7 +167,7 @@ cargo run --bin cursed -- cleanup-snapshots
 Run the comprehensive test suite:
 
 ```bash
-cargo run --bin cursed stdlib/snapshot_testing/test_snapshot_testing.csd
+cargo run --bin cursed stdlib/snapshot_testing/test_snapshot_testing.💀
 ```
 
 The test suite covers:

@@ -7,82 +7,82 @@ Working from: /home/ghuntley/cursed/test_suite/.. (for stdlib loading)
 Scanning for test files...
 Found 108 test files
 
-[1m[1/108] Testing: arithmetic/01_mixed_types.csd[0m
+[1m[1/108] Testing: arithmetic/01_mixed_types.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[2/108] Testing: arithmetic/02_edge_cases.csd[0m
+[1m[2/108] Testing: arithmetic/02_edge_cases.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[3/108] Testing: arithmetic/03_operator_precedence.csd[0m
+[1m[3/108] Testing: arithmetic/03_operator_precedence.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[4/108] Testing: arithmetic/04_complex_expressions.csd[0m
+[1m[4/108] Testing: arithmetic/04_complex_expressions.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[5/108] Testing: arithmetic/arithmetic_basic_operations.csd[0m
+[1m[5/108] Testing: arithmetic/arithmetic_basic_operations.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[6/108] Testing: arithmetic/division_semantics_test.csd[0m
+[1m[6/108] Testing: arithmetic/division_semantics_test.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[7/108] Testing: arithmetic/feature_arithmetic_operations.csd[0m
+[1m[7/108] Testing: arithmetic/feature_arithmetic_operations.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[8/108] Testing: arithmetic/overflow_edge_cases.csd[0m
+[1m[8/108] Testing: arithmetic/overflow_edge_cases.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[9/108] Testing: basic/01_hello_world.csd[0m
+[1m[9/108] Testing: basic/01_hello_world.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[10/108] Testing: basic/02_simple_arithmetic.csd[0m
+[1m[10/108] Testing: basic/02_simple_arithmetic.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[11/108] Testing: basic/03_variable_assignment.csd[0m
+[1m[11/108] Testing: basic/03_variable_assignment.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[12/108] Testing: basic/basic_hello_world.csd[0m
+[1m[12/108] Testing: basic/basic_hello_world.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[13/108] Testing: basic/hello_world_simple.csd[0m
+[1m[13/108] Testing: basic/hello_world_simple.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[14/108] Testing: complex/01_nested_operations.csd[0m
+[1m[14/108] Testing: complex/01_nested_operations.💀[0m
   Result: [33mPASS (EXIT_CODE_ISSUE: exit 24, output correct)[0m
 ---
-[1m[15/108] Testing: complex/02_fizzbuzz.csd[0m
+[1m[15/108] Testing: complex/02_fizzbuzz.💀[0m
   Result: [33mPASS (EXIT_CODE_ISSUE: exit 112, output correct)[0m
 ---
-[1m[16/108] Testing: comprehensive/control_flow_comprehensive.csd[0m
+[1m[16/108] Testing: comprehensive/control_flow_comprehensive.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[17/108] Testing: comprehensive/function_definitions_test.csd[0m
+[1m[17/108] Testing: comprehensive/function_definitions_test.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[18/108] Testing: comprehensive/test_comprehensive_language_features.csd[0m
+[1m[18/108] Testing: comprehensive/test_comprehensive_language_features.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[19/108] Testing: control_flow/01_if_statements.csd[0m
+[1m[19/108] Testing: control_flow/01_if_statements.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[20/108] Testing: control_flow/02_loops.csd[0m
+[1m[20/108] Testing: control_flow/02_loops.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[21/108] Testing: control_flow/control_flow_comprehensive.csd[0m
+[1m[21/108] Testing: control_flow/control_flow_comprehensive.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[22/108] Testing: control_flow/control_flow_if_else.csd[0m
+[1m[22/108] Testing: control_flow/control_flow_if_else.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[23/108] Testing: control_flow/feature_control_flow_comprehensive.csd[0m
+[1m[23/108] Testing: control_flow/feature_control_flow_comprehensive.💀[0m
   Result: [33mPASS (EXIT_CODE_ISSUE: exit 37, output correct)[0m
 ---
-[1m[24/108] Testing: edge_cases/01_boundary_conditions.csd[0m
+[1m[24/108] Testing: edge_cases/01_boundary_conditions.💀[0m
   Result: [33mPASS (EXIT_CODE_ISSUE: exit 37, output correct)[0m
 ---
-[1m[25/108] Testing: edge_cases/02_empty_inputs.csd[0m
+[1m[25/108] Testing: edge_cases/02_empty_inputs.💀[0m
   Result: [32mPASS[0m
 ---
-[1m[26/108] Testing: edge_cases/02_extreme_inputs.csd[0m
+[1m[26/108] Testing: edge_cases/02_extreme_inputs.💀[0m
   Result: [31mFAIL (OUTPUT_MISMATCH)[0m
   [36mInterpreter (exit: 0):[0m
     "=== Extreme Input Tests ===" 

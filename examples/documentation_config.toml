@@ -68,7 +68,7 @@ exclude_patterns = [
 ]
 
 include_patterns = [
-    "**/*.csd",
+    "**/*.💀",
     "**/*.cursed",
     "**/README.md",
     "**/docs/**/*.md"

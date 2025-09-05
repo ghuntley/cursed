@@ -60,7 +60,7 @@ pub fn main() !void {
 fn printUsage() void {
     print("CURSED Interactive Debugger\n\n", .{});
     print("USAGE:\n", .{});
-    print("    cursed-debug <file.csd>\n\n", .{});
+    print("    cursed-debug <file.💀.💀>\n\n", .{});
     print("FEATURES:\n", .{});
     print("    • Interactive debugging with breakpoints\n", .{});
     print("    • Step-by-step execution\n", .{});
@@ -80,6 +80,6 @@ fn printUsage() void {
     print("    help/h         Show help message\n", .{});
     print("    quit/q         Exit debugger\n\n", .{});
     print("EXAMPLES:\n", .{});
-    print("    cursed-debug hello.csd\n", .{});
-    print("    cursed-debug fibonacci.csd\n", .{});
+    print("    cursed-debug hello.💀.💀\n", .{});
+    print("    cursed-debug fibonacci.💀.💀\n", .{});
 }

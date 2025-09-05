@@ -277,14 +277,14 @@ The module includes comprehensive test coverage:
 
 ```bash
 # Run comprehensive I/O tests
-cargo run --bin cursed stdlib/io/test_io_comprehensive.csd
+cargo run --bin cursed stdlib/io/test_io_comprehensive.💀
 
 # Run basic I/O tests
-cargo run --bin cursed stdlib/io/test_io.csd
+cargo run --bin cursed stdlib/io/test_io.💀
 
 # Test both interpretation and compilation modes
-cargo run --bin cursed stdlib/io/test_io_comprehensive.csd  # Interpretation
-cargo run --bin cursed -- compile stdlib/io/test_io_comprehensive.csd  # Compilation
+cargo run --bin cursed stdlib/io/test_io_comprehensive.💀  # Interpretation
+cargo run --bin cursed -- compile stdlib/io/test_io_comprehensive.💀  # Compilation
 ./test_io_comprehensive
 ```
 

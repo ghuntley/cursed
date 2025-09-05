@@ -186,7 +186,7 @@ sus result normie = x + y  # Type mismatch
         print(f"🔍 Running differential test: {test_name}")
         
         # Create temporary test file
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.csd', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.💀', delete=False) as f:
             f.write(program_content)
             test_file = f.name
         
@@ -418,7 +418,7 @@ def main():
     if not os.path.exists(args.stage2):
         print(f"❌ Stage 2 compiler not found: {args.stage2}")
         print("   Try building it first with:")
-        print(f"   {args.original} -- compile src/bootstrap/stage2/main.csd -o cursed_stage2")
+        print(f"   {args.original} -- compile src/bootstrap/stage2/main.💀 -o cursed_stage2")
         return 1
     
     # Run differential testing

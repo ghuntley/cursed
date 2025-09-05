@@ -450,7 +450,7 @@ fn handleFormat(allocator: Allocator, args: [][]const u8) !void {
     
     print("Formatting CURSED source files in {s}...\n", .{project_dir});
     
-    // Find and format all .csd files
+    // Find and format all .💀 files
     var dir = std.fs.cwd().openDir(project_dir, .{ .iterate = true }) catch |err| {
         print("Error opening directory: {s}\n", .{err});
         return;
@@ -461,7 +461,7 @@ fn handleFormat(allocator: Allocator, args: [][]const u8) !void {
     defer walker.deinit();
     
     while (try walker.next()) |entry| {
-        if (entry.kind == .file and std.mem.endsWith(u8, entry.path, ".csd")) {
+        if (entry.kind == .file and std.mem.endsWith(u8, entry.path, ".💀")) {
             print("Formatting: {s}\n", .{entry.path});
             // Format logic would go here
         }

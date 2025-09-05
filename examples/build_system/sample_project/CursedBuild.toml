@@ -17,19 +17,19 @@ edition = "2024"
 [[targets]]
 name = "my-cursed-app"
 type = "bin"
-path = "src/main.csd"
+path = "src/main.💀"
 required_features = []
 
 [[targets]]
 name = "helper-tool"
 type = "bin"
-path = "src/bin/helper.csd"
+path = "src/bin/helper.💀"
 required_features = ["dev-tools"]
 
 [[targets]]
 name = "my-cursed-app-lib"
 type = "lib"
-path = "src/lib.csd"
+path = "src/lib.💀"
 required_features = []
 
 # Build profiles for different scenarios

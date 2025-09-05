@@ -442,11 +442,11 @@ assert_eq_string(entries[0].message, "test message")
 
 See the `examples/` directory for complete working examples:
 
-- `examples/basic_logging.csd` - Simple logging setup
-- `examples/structured_logging.csd` - Advanced structured logging
-- `examples/production_setup.csd` - Production-ready configuration
-- `examples/performance_test.csd` - High-throughput logging benchmark
-- `examples/custom_backend.csd` - Creating custom backends
+- `examples/basic_logging.💀` - Simple logging setup
+- `examples/structured_logging.💀` - Advanced structured logging
+- `examples/production_setup.💀` - Production-ready configuration
+- `examples/performance_test.💀` - High-throughput logging benchmark
+- `examples/custom_backend.💀` - Creating custom backends
 
 ## Integration
 

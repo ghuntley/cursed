@@ -133,7 +133,7 @@ MEMORY_LEAK_TESTS=0
 run_single_test() {
     local test_file="$1"
     local category="$2"
-    local test_name=$(basename "$test_file" .csd)
+    local test_name=$(basename "$test_file" .💀)
     local start_time=$(date +%s%3N)
     
     local test_output_file="$OUTPUT_DIR/${category}_${test_name}_$TIMESTAMP.log"
@@ -211,11 +211,11 @@ run_test_category() {
         return
     fi
     
-    # Find all .csd files in the category
+    # Find all .💀 files in the category
     local test_files=()
     while IFS= read -r -d '' file; do
         test_files+=("$file")
-    done < <(find "$test_dir" -name "*.csd" -print0 | sort -z)
+    done < <(find "$test_dir" -name "*.💀" -print0 | sort -z)
     
     if [ ${#test_files[@]} -eq 0 ]; then
         log_warning "No test files found in $test_dir"
@@ -284,7 +284,7 @@ if [ -f "$OUTPUT_DIR/test_results_raw.txt" ]; then
     while read -r status test_file duration memory_leaks error_message; do
         [ -z "$status" ] && continue
         
-        local test_name=$(basename "$test_file" .csd)
+        local test_name=$(basename "$test_file" .💀)
         local category=$(basename "$(dirname "$test_file")")
         local status_emoji
         

@@ -85,7 +85,7 @@ tree-sitter/
 - ✅ **Comment toggling**
 
 ### VS Code Extension
-- ✅ **File association** (.csd files)
+- ✅ **File association** (.💀 files)
 - ✅ **Syntax highlighting** with TextMate grammar
 - ✅ **Code snippets** for common patterns
 - ✅ **Language configuration** for formatting
@@ -128,7 +128,7 @@ The VS Code extension includes 20+ code snippets:
 ### Test Files
 - `basic.txt` - Core language features
 - `cursed-comprehensive.txt` - Complex real-world example
-- Integration with existing `.csd` files
+- Integration with existing `.💀` files
 
 ## 🔨 Build Process
 
@@ -215,7 +215,7 @@ npm test
 ### VS Code Extension
 1. Open `tree-sitter/vscode-extension/` in VS Code
 2. Press `F5` to launch extension development host
-3. Open a `.csd` file to test syntax highlighting
+3. Open a `.💀` file to test syntax highlighting
 4. Use code snippets by typing prefixes like `main`, `slay`, etc.
 
 ### Integration with Other Editors
@@ -274,6 +274,6 @@ The tree-sitter grammar is designed to work alongside the main CURSED compiler:
 - **Error recovery** for incomplete code during editing
 - **Incremental parsing** for fast IDE response
 - **Semantic analysis** preparation for LSP integration
-- **Test compatibility** with existing `.csd` files
+- **Test compatibility** with existing `.💀` files
 
 This tree-sitter implementation moves CURSED from 0% to 100% completion for IDE tooling support, enabling professional development environments for CURSED programming.

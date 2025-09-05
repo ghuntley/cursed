@@ -171,7 +171,7 @@ pub fn compileProgramWithOutput(allocator: Allocator, source: []const u8, filena
     
     const output_filename = if (output_file) |custom_output| 
         try allocator.dupe(u8, custom_output)
-    else if (std.mem.endsWith(u8, filename, ".csd"))
+    else if (std.mem.endsWith(u8, filename, ".💀"))
         try std.fmt.allocPrint(allocator, "{s}", .{filename[0..filename.len - 4]})
     else
         try std.fmt.allocPrint(allocator, "{s}_compiled", .{filename});

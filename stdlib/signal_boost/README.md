@@ -318,7 +318,7 @@ lowkey signal_send_process(target_pid, rt_signal) {
 Run the comprehensive test suite:
 
 ```bash
-cargo run --bin cursed stdlib/signal_boost/test_signal_boost.csd
+cargo run --bin cursed stdlib/signal_boost/test_signal_boost.💀
 ```
 
 The test suite covers:

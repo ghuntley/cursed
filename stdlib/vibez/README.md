@@ -334,7 +334,7 @@ slay safe_output(message tea) lit {
 
 ### Unit Tests
 ```cursed
-// stdlib/vibez/test_vibez.csd
+// stdlib/vibez/test_vibez.💀
 yeet "testz"
 yeet "vibez"
 
@@ -372,13 +372,13 @@ slay main() {
 ### Integration Tests
 ```bash
 # Test interactive input/output
-echo "test input" | ./zig-out/bin/cursed-zig stdlib/vibez/interactive_test.csd
+echo "test input" | ./zig-out/bin/cursed-zig stdlib/vibez/interactive_test.💀
 
 # Test color output
-./zig-out/bin/cursed-zig stdlib/vibez/color_test.csd | less -R
+./zig-out/bin/cursed-zig stdlib/vibez/color_test.💀 | less -R
 
 # Performance benchmarks
-./zig-out/bin/cursed-zig stdlib/vibez/benchmark_test.csd
+./zig-out/bin/cursed-zig stdlib/vibez/benchmark_test.💀
 ```
 
 ## Platform Support

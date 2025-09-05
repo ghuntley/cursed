@@ -279,14 +279,14 @@ slay process_node(node normie) {
 
 ## Testing
 
-The module includes comprehensive tests in `test_ast_mood.csd`:
+The module includes comprehensive tests in `test_ast_mood.💀`:
 
 ```bash
 # Run AST mood tests
-cargo run --bin cursed stdlib/ast_mood/test_ast_mood.csd
+cargo run --bin cursed stdlib/ast_mood/test_ast_mood.💀
 
 # Test compilation mode
-cargo run --bin cursed -- compile stdlib/ast_mood/test_ast_mood.csd
+cargo run --bin cursed -- compile stdlib/ast_mood/test_ast_mood.💀
 ./test_ast_mood
 ```
 

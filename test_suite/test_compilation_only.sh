@@ -49,12 +49,12 @@ show_output() {
     echo
 }
 
-# Find all .csd test files and process them
-mapfile -t test_files < <(find "$TEST_DIR" -name "*.csd" | sort)
+# Find all .💀 test files and process them
+mapfile -t test_files < <(find "$TEST_DIR" -name "*.💀" | sort)
 
 for test_file in "${test_files[@]}"; do
     TOTAL=$((TOTAL + 1))
-    test_name=$(basename "$test_file" .csd)
+    test_name=$(basename "$test_file" .💀)
     
     echo -e "${BOLD}Testing: $test_name${RESET}"
     

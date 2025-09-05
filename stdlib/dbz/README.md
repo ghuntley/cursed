@@ -319,7 +319,7 @@ bestie i := 0; i < len(electronics); i++ {
 Run the comprehensive test suite:
 
 ```bash
-./zig-out/bin/cursed-zig stdlib/dbz/test_dbz.csd
+./zig-out/bin/cursed-zig stdlib/dbz/test_dbz.💀
 ```
 
 The test suite covers:

@@ -183,7 +183,7 @@ Common aliases are supported:
 
 Run the comprehensive test suite:
 ```bash
-cargo run --bin cursed stdlib/time_zone_drip/test_time_zone_drip.csd
+cargo run --bin cursed stdlib/time_zone_drip/test_time_zone_drip.💀
 ```
 
 ## Implementation Notes

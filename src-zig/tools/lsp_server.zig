@@ -1775,14 +1775,14 @@ pub fn testLSP() !void {
 
     // Test document open
     const open_message = 
-        \\{"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{"uri":"file:///test.csd","version":1,"languageId":"cursed","text":"slay test_function() {\n    vibez.spill(\"Hello CURSED!\")\n}"}}}
+        \\{"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{"uri":"file:///test.💀","version":1,"languageId":"cursed","text":"slay test_function() {\n    vibez.spill(\"Hello CURSED!\")\n}"}}}
     ;
     
     _ = try handler.handleMessage(open_message);
 
     // Test completion
     const completion_message = 
-        \\{"jsonrpc":"2.0","id":2,"method":"textDocument/completion","params":{"textDocument":{"uri":"file:///test.csd"},"position":{"line":1,"character":4}}}
+        \\{"jsonrpc":"2.0","id":2,"method":"textDocument/completion","params":{"textDocument":{"uri":"file:///test.💀"},"position":{"line":1,"character":4}}}
     ;
     
     if (try handler.handleMessage(completion_message)) |response| {

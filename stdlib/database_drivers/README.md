@@ -283,14 +283,14 @@ redis_result := execute_query(&registry, redis_conn.connection_id, "GET key")
 
 ```bash
 # Test interpretation mode
-cargo run --bin cursed stdlib/database_drivers/test_database_drivers.csd
+cargo run --bin cursed stdlib/database_drivers/test_database_drivers.💀
 
 # Test compilation mode
-cargo run --bin cursed -- compile stdlib/database_drivers/test_database_drivers.csd
+cargo run --bin cursed -- compile stdlib/database_drivers/test_database_drivers.💀
 ./test_database_drivers
 
 # Verify both modes produce identical output
-diff <(cargo run --bin cursed stdlib/database_drivers/test_database_drivers.csd) \
+diff <(cargo run --bin cursed stdlib/database_drivers/test_database_drivers.💀) \
      <(./test_database_drivers)
 ```
 

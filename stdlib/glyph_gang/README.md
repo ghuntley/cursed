@@ -328,13 +328,13 @@ vibez.spill("Folded: " + folded) # "hello world"
 Run the test suite:
 
 ```bash
-cargo run --bin cursed stdlib/glyph_gang/test_glyph_gang.csd
+cargo run --bin cursed stdlib/glyph_gang/test_glyph_gang.💀
 ```
 
 Compile and run tests:
 
 ```bash
-cargo run --bin cursed -- compile stdlib/glyph_gang/test_glyph_gang.csd
+cargo run --bin cursed -- compile stdlib/glyph_gang/test_glyph_gang.💀
 ./test_glyph_gang
 ```
 

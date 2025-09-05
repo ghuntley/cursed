@@ -89,15 +89,15 @@ fi
 # Create results directory
 mkdir -p "${SCRIPT_DIR}/results"
 
-# Find all .csd test files and process them
+# Find all .💀 test files and process them
 echo "Scanning for test files..."
-mapfile -t test_files < <(find "$TEST_DIR" -name "*.csd" | sort)
+mapfile -t test_files < <(find "$TEST_DIR" -name "*.💀" | sort)
 echo "Found ${#test_files[@]} test files"
 echo
 
 for test_file in "${test_files[@]}"; do
     TOTAL=$((TOTAL + 1))
-    test_name=$(basename "$test_file" .csd)
+    test_name=$(basename "$test_file" .💀)
     relative_path="${test_file#$TEST_DIR/}"
     
     echo -e "${BOLD}[$TOTAL/${#test_files[@]}] Testing: $relative_path${RESET}"
@@ -346,7 +346,7 @@ EOF
 echo "## Tests by Category" >> "$report_file"
 echo "" >> "$report_file"
 for category in $(find "$TEST_DIR" -type d -mindepth 1 | sed "s|$TEST_DIR/||" | sort); do
-    count=$(find "$TEST_DIR/$category" -name "*.csd" | wc -l)
+    count=$(find "$TEST_DIR/$category" -name "*.💀" | wc -l)
     if [[ $count -gt 0 ]]; then
         echo "- **$category**: $count tests" >> "$report_file"
     fi

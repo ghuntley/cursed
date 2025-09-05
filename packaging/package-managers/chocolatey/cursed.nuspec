@@ -70,7 +70,7 @@ This package installs the complete CURSED development environment:
 After installation, create your first CURSED program:
 
 ```cursed
-# hello.csd
+# hello.💀
 yeet "vibez";
 
 sus message tea = "Hello, Windows!";
@@ -79,7 +79,7 @@ vibez.spill(message);
 
 Run it:
 ```cmd
-cursed hello.csd
+cursed hello.💀
 ```
 
 ## Language Highlights

@@ -302,7 +302,7 @@ echo "Created minimal C shims in runtime/minimal_shims.{h,c}"
 # Create pure CURSED implementations for high-level operations
 mkdir -p stdlib/pure_cursed_runtime
 
-cat > stdlib/pure_cursed_runtime/mod.csd << 'EOF'
+cat > stdlib/pure_cursed_runtime/mod.💀 << 'EOF'
 # Pure CURSED Runtime Bridge
 # Provides essential runtime functions using minimal C shims
 
@@ -367,7 +367,7 @@ slay random_bytes(length normie) tea {
 }
 EOF
 
-cat > stdlib/pure_cursed_runtime/test_pure_cursed_runtime.csd << 'EOF'
+cat > stdlib/pure_cursed_runtime/test_pure_cursed_runtime.💀 << 'EOF'
 yeet "testz"
 yeet "pure_cursed_runtime"
 
@@ -436,4 +436,4 @@ echo ""
 echo "To use the minimal shims:"
 echo "1. ./scripts/compile_minimal_shims.sh"
 echo "2. cargo build"
-echo "3. Test with: cargo run --bin cursed stdlib/pure_cursed_runtime/test_pure_cursed_runtime.csd"
+echo "3. Test with: cargo run --bin cursed stdlib/pure_cursed_runtime/test_pure_cursed_runtime.💀"

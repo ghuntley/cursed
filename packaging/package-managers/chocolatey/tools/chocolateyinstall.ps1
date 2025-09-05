@@ -118,9 +118,9 @@ Write-Host ""
 Write-Host "🎉 CURSED Programming Language v$version installed successfully!" -ForegroundColor Green
 Write-Host ""
 Write-Host "Quick Start:" -ForegroundColor Yellow
-Write-Host "  1. Create a new file: hello.csd" -ForegroundColor White
+Write-Host "  1. Create a new file: hello.💀" -ForegroundColor White
 Write-Host "  2. Add content: yeet `"vibez`"; vibez.spill(`"Hello, Windows!`");" -ForegroundColor White
-Write-Host "  3. Run it: cursed hello.csd" -ForegroundColor White
+Write-Host "  3. Run it: cursed hello.💀" -ForegroundColor White
 Write-Host ""
 Write-Host "Available Commands:" -ForegroundColor Yellow
 Write-Host "  cursed        - CURSED compiler" -ForegroundColor White

@@ -93,14 +93,14 @@ test_basic_functionality() {
     fi
     
     # Test comprehensive stdlib
-    if [[ -f "comprehensive_stdlib_test.csd" ]]; then
-        if ! $CURSED_EXECUTABLE comprehensive_stdlib_test.csd &> /dev/null; then
+    if [[ -f "comprehensive_stdlib_test.💀" ]]; then
+        if ! $CURSED_EXECUTABLE comprehensive_stdlib_test.💀 &> /dev/null; then
             log_warning "Comprehensive stdlib test failed or not available"
         else
             log_success "Comprehensive stdlib test passed"
         fi
     else
-        log_warning "comprehensive_stdlib_test.csd not found"
+        log_warning "comprehensive_stdlib_test.💀 not found"
     fi
     
     log_success "Basic functionality tests passed"
@@ -116,7 +116,7 @@ run_memory_safety_tests() {
     log_info "Running memory safety tests with Valgrind..."
     
     # Create a simple test file for memory validation
-    cat > /tmp/memory_test.csd << 'EOF'
+    cat > /tmp/memory_test.💀 << 'EOF'
 yeet "testz"
 yeet "arrayz"
 
@@ -143,7 +143,7 @@ EOF
     
     # Run with Valgrind
     if valgrind --leak-check=full --error-exitcode=1 --quiet \
-       $CURSED_EXECUTABLE /tmp/memory_test.csd > "$TEST_OUTPUT_DIR/memory_safety.log" 2>&1; then
+       $CURSED_EXECUTABLE /tmp/memory_test.💀 > "$TEST_OUTPUT_DIR/memory_safety.log" 2>&1; then
         log_success "Memory safety test passed - no leaks detected"
     else
         log_error "Memory safety test failed - check $TEST_OUTPUT_DIR/memory_safety.log"
@@ -152,7 +152,7 @@ EOF
     fi
     
     # Cleanup
-    rm -f /tmp/memory_test.csd
+    rm -f /tmp/memory_test.💀
 }
 
 # Run test categories
@@ -260,7 +260,7 @@ validate_performance() {
     local start_time=$(date +%s%N)
     
     # Run a basic performance test
-    cat > /tmp/perf_test.csd << 'EOF'
+    cat > /tmp/perf_test.💀 << 'EOF'
 slay fibonacci(n drip) drip {
     ready (n <= 1) { damn n }
     damn fibonacci(n - 1) + fibonacci(n - 2)
@@ -270,7 +270,7 @@ sus result drip = fibonacci(20)
 vibez.spill("Fibonacci(20) =", result)
 EOF
     
-    $CURSED_EXECUTABLE /tmp/perf_test.csd > /dev/null 2>&1
+    $CURSED_EXECUTABLE /tmp/perf_test.💀 > /dev/null 2>&1
     
     local end_time=$(date +%s%N)
     local duration=$(( (end_time - start_time) / 1000000 )) # Convert to milliseconds
@@ -284,7 +284,7 @@ EOF
     fi
     
     # Cleanup
-    rm -f /tmp/perf_test.csd
+    rm -f /tmp/perf_test.💀
 }
 
 # System information
@@ -357,7 +357,7 @@ main() {
 cleanup() {
     echo ""
     log_warning "Script interrupted. Cleaning up..."
-    rm -f /tmp/memory_test.csd /tmp/perf_test.csd
+    rm -f /tmp/memory_test.💀 /tmp/perf_test.💀
     exit 130
 }
 

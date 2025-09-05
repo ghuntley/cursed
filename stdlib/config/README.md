@@ -303,14 +303,14 @@ Run the comprehensive test suite:
 
 ```bash
 # Test interpretation mode
-cargo run --bin cursed stdlib/config/test_config.csd
+cargo run --bin cursed stdlib/config/test_config.💀
 
 # Test compilation mode
-cargo run --bin cursed -- compile stdlib/config/test_config.csd
+cargo run --bin cursed -- compile stdlib/config/test_config.💀
 ./test_config
 
 # Test both modes with verification
-test_both_modes stdlib/config/test_config.csd
+test_both_modes stdlib/config/test_config.💀
 ```
 
 ## Error Handling

@@ -240,13 +240,13 @@ slay ServiceB(ctx vibe_context.Context, data interface{}) {
 
 Run the test suite:
 ```bash
-cargo run --bin cursed stdlib/vibe_context/test_vibe_context.csd
+cargo run --bin cursed stdlib/vibe_context/test_vibe_context.💀
 ```
 
 Test both interpretation and compilation modes:
 ```bash
-cargo run --bin cursed stdlib/vibe_context/test_vibe_context.csd
-cargo run --bin cursed -- compile stdlib/vibe_context/test_vibe_context.csd
+cargo run --bin cursed stdlib/vibe_context/test_vibe_context.💀
+cargo run --bin cursed -- compile stdlib/vibe_context/test_vibe_context.💀
 ./test_vibe_context
 ```
 

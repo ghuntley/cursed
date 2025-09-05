@@ -275,7 +275,7 @@ vibez.spill("Secure random: %d", secureValue)
 Run the comprehensive test suite:
 
 ```bash
-cargo run --bin cursed stdlib/math_rand_tea/test_math_rand_tea.csd
+cargo run --bin cursed stdlib/math_rand_tea/test_math_rand_tea.💀
 ```
 
 The test suite includes:

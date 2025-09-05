@@ -264,13 +264,13 @@ pub fn main() !void {
     
     // Try to run the error handling demo
     std.debug.print("\n");
-    parser.parseFile("error_handling_demo.csd") catch |err| {
-        std.debug.print("Could not run error_handling_demo.csd: {s}\n", .{err});
+    parser.parseFile("error_handling_demo.💀") catch |err| {
+        std.debug.print("Could not run error_handling_demo.💀.💀: {s}\n", .{err});
     };
     
     std.debug.print("\n");
-    parser.parseFile("concurrency_demo.csd") catch |err| {
-        std.debug.print("Could not run concurrency_demo.csd: {s}\n", .{err});
+    parser.parseFile("concurrency_demo.💀") catch |err| {
+        std.debug.print("Could not run concurrency_demo.💀.💀: {s}\n", .{err});
     };
     
     // Run integration tests directly

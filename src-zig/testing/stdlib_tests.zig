@@ -20,21 +20,21 @@ pub const StdlibTestSuite = struct {
 
 // Core stdlib modules to test
 const stdlib_modules = [_]StdlibTestSuite{
-    .{ .module_name = "testz", .test_file_path = "stdlib/testz/test_testz.csd" },
-    .{ .module_name = "math", .test_file_path = "stdlib/math/test_math.csd" },
-    .{ .module_name = "io", .test_file_path = "stdlib/io/test_io.csd" },
-    .{ .module_name = "string_simple", .test_file_path = "stdlib/string_simple/test_string_simple.csd" },
-    .{ .module_name = "collections", .test_file_path = "stdlib/collections/test_collections.csd" },
-    .{ .module_name = "error_drip", .test_file_path = "stdlib/error_drip/test_error_drip.csd" },
-    .{ .module_name = "atomic_drip", .test_file_path = "stdlib/atomic_drip/test_atomic_drip.csd" },
-    .{ .module_name = "concurrenz", .test_file_path = "stdlib/concurrenz/test_concurrenz.csd" },
-    .{ .module_name = "gc", .test_file_path = "stdlib/gc/test_gc.csd" },
-    .{ .module_name = "memory", .test_file_path = "stdlib/memory/test_memory.csd" },
-    .{ .module_name = "fs", .test_file_path = "stdlib/fs/test_fs.csd" },
-    .{ .module_name = "vibe_net", .test_file_path = "stdlib/vibe_net/test_vibe_net.csd" },
-    .{ .module_name = "web_vibez", .test_file_path = "stdlib/web_vibez/test_web_vibez.csd" },
-    .{ .module_name = "cryptz", .test_file_path = "stdlib/cryptz/test_cryptz.csd" },
-    .{ .module_name = "serialization", .test_file_path = "stdlib/serialization/test_serialization.csd" },
+    .{ .module_name = "testz", .test_file_path = "stdlib/testz/test_testz.💀" },
+    .{ .module_name = "math", .test_file_path = "stdlib/math/test_math.💀" },
+    .{ .module_name = "io", .test_file_path = "stdlib/io/test_io.💀" },
+    .{ .module_name = "string_simple", .test_file_path = "stdlib/string_simple/test_string_simple.💀" },
+    .{ .module_name = "collections", .test_file_path = "stdlib/collections/test_collections.💀" },
+    .{ .module_name = "error_drip", .test_file_path = "stdlib/error_drip/test_error_drip.💀" },
+    .{ .module_name = "atomic_drip", .test_file_path = "stdlib/atomic_drip/test_atomic_drip.💀" },
+    .{ .module_name = "concurrenz", .test_file_path = "stdlib/concurrenz/test_concurrenz.💀" },
+    .{ .module_name = "gc", .test_file_path = "stdlib/gc/test_gc.💀" },
+    .{ .module_name = "memory", .test_file_path = "stdlib/memory/test_memory.💀" },
+    .{ .module_name = "fs", .test_file_path = "stdlib/fs/test_fs.💀" },
+    .{ .module_name = "vibe_net", .test_file_path = "stdlib/vibe_net/test_vibe_net.💀" },
+    .{ .module_name = "web_vibez", .test_file_path = "stdlib/web_vibez/test_web_vibez.💀" },
+    .{ .module_name = "cryptz", .test_file_path = "stdlib/cryptz/test_cryptz.💀" },
+    .{ .module_name = "serialization", .test_file_path = "stdlib/serialization/test_serialization.💀" },
 };
 
 pub const StdlibTestResult = struct {
@@ -408,14 +408,14 @@ pub const StdlibTestRunner = struct {
         
         const module_path = try std.fmt.allocPrint(
             self.allocator, 
-            "{s}/stdlib/{s}/mod.csd", 
+            "{s}/stdlib/{s}/mod.💀", 
             .{ self.workspace_root, module_name }
         );
         defer self.allocator.free(module_path);
 
         // Check if module file exists
         std.fs.cwd().access(module_path, .{}) catch {
-            std.debug.writer().print("⚠️  No mod.csd found\n", .{});
+            std.debug.writer().print("⚠️  No mod.💀.💀 found\n", .{});
             return;
         };
 

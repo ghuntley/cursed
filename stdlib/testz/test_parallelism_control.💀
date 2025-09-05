@@ -1,0 +1,310 @@
+fr fr ================================
+fr fr Test Suite for Parallel Test Runner
+fr fr Validates parallelism control, environment configuration, and resource management
+fr fr ================================
+
+yeet "testz"
+
+fr fr Test environment configuration reading
+slay test_environment_config() {
+    test_start("Environment Configuration")
+    
+    fr fr Test default environment config
+    sus env_config EnvironmentConfig = read_environment_config()
+    
+    assert_true(env_config.cursed_test_parallel)
+    assert_eq_int(env_config.cursed_test_workers, 4)
+    assert_eq_int(env_config.cursed_test_timeout, 30)
+    assert_eq_string(env_config.cursed_test_filter, "*")
+    assert_false(env_config.cursed_test_verbose)
+    assert_true(env_config.cursed_test_isolation)
+    
+    vibez.spill("✅ Environment configuration test passed")
+}
+
+fr fr Test parallelism configuration creation
+slay test_parallelism_config() {
+    test_start("Parallelism Configuration")
+    
+    sus env_config EnvironmentConfig = read_environment_config()
+    sus parallel_config ParallelismConfig = create_parallelism_config(env_config)
+    
+    assert_eq_string(parallel_config.execution_mode, "parallel")
+    assert_eq_int(parallel_config.max_workers, 4)
+    assert_true(parallel_config.load_balancing)
+    assert_true(parallel_config.resource_monitoring)
+    
+    vibez.spill("✅ Parallelism configuration test passed")
+}
+
+fr fr Test resource manager initialization
+slay test_resource_manager() {
+    test_start("Resource Manager")
+    
+    sus env_config EnvironmentConfig = read_environment_config()
+    sus parallel_config ParallelismConfig = create_parallelism_config(env_config)
+    sus resource_manager ResourceManager = initialize_resource_manager(parallel_config)
+    
+    assert_eq_int(resource_manager.total_memory, 1024)
+    assert_eq_int(resource_manager.cpu_cores, 4)
+    assert_eq_int(resource_manager.active_workers, 0)
+    assert_eq_int(resource_manager.memory_threshold, 80)
+    
+    vibez.spill("✅ Resource manager test passed")
+}
+
+fr fr Test worker pool creation
+slay test_worker_pool() {
+    test_start("Worker Pool Creation")
+    
+    sus env_config EnvironmentConfig = read_environment_config()
+    sus parallel_config ParallelismConfig = create_parallelism_config(env_config)
+    sus worker_pool WorkerPool = create_worker_pool(parallel_config)
+    
+    assert_eq_string(worker_pool.pool_status, "initialized")
+    assert_eq_string(worker_pool.load_balancer.strategy, "resource_aware")
+    
+    fr fr Test that all workers are idle initially
+    sus i normie = 0
+    bestie (i < len(worker_pool.workers)) {
+        sus worker WorkerState = worker_pool.workers[i]
+        assert_eq_string(worker.status, "idle")
+        assert_eq_int(worker.test_count, 0)
+        assert_eq_int(worker.error_count, 0)
+        i = i + 1
+    }
+    
+    vibez.spill("✅ Worker pool test passed")
+}
+
+fr fr Test task creation and queuing
+slay test_task_management() {
+    test_start("Task Management")
+    
+    sus task TestTask = create_test_task("test_file.💀", "sample_test", 1)
+    
+    assert_eq_int(task.task_id, 1)
+    assert_eq_string(task.test_file, "test_file.💀")
+    assert_eq_string(task.test_name, "sample_test")
+    assert_eq_int(task.priority, 1)
+    assert_eq_int(task.retry_count, 0)
+    assert_eq_int(task.resource_requirements.memory_mb, 64)
+    
+    vibez.spill("✅ Task management test passed")
+}
+
+fr fr Test sequential execution
+slay test_sequential_execution() {
+    test_start("Sequential Execution")
+    
+    sus env_config EnvironmentConfig = read_environment_config()
+    env_config.cursed_test_verbose = based  fr fr Enable verbose for testing
+    
+    sus test_tasks [TestTask] = []
+    test_tasks = append_test_task(test_tasks, create_test_task("test1.💀", "test_one", 1))
+    test_tasks = append_test_task(test_tasks, create_test_task("test2.💀", "test_two", 2))
+    
+    sus results [TestExecutionResult] = execute_tests_sequential(test_tasks, env_config)
+    
+    fr fr Should have results for both tests
+    assert_eq_int(len(results), 2)
+    
+    vibez.spill("✅ Sequential execution test passed")
+}
+
+fr fr Test parallel execution
+slay test_parallel_execution() {
+    test_start("Parallel Execution")
+    
+    sus env_config EnvironmentConfig = read_environment_config()
+    sus parallel_config ParallelismConfig = create_parallelism_config(env_config)
+    
+    sus test_tasks [TestTask] = []
+    test_tasks = append_test_task(test_tasks, create_test_task("test1.💀", "test_one", 1))
+    test_tasks = append_test_task(test_tasks, create_test_task("test2.💀", "test_two", 2))
+    test_tasks = append_test_task(test_tasks, create_test_task("test3.💀", "test_three", 3))
+    
+    sus results [TestExecutionResult] = execute_tests_parallel(test_tasks, parallel_config, env_config)
+    
+    fr fr Should have results for all tests
+    assert_eq_int(len(results), 3)
+    
+    vibez.spill("✅ Parallel execution test passed")
+}
+
+fr fr Test adaptive execution strategy
+slay test_adaptive_execution() {
+    test_start("Adaptive Execution")
+    
+    sus env_config EnvironmentConfig = read_environment_config()
+    sus parallel_config ParallelismConfig = create_parallelism_config(env_config)
+    
+    sus test_tasks [TestTask] = []
+    test_tasks = append_test_task(test_tasks, create_test_task("small_test1.💀", "small_one", 1))
+    test_tasks = append_test_task(test_tasks, create_test_task("small_test2.💀", "small_two", 2))
+    
+    sus results [TestExecutionResult] = execute_tests_adaptive(test_tasks, parallel_config, env_config)
+    
+    fr fr Should execute and return results
+    assert_eq_int(len(results), 2)
+    
+    vibez.spill("✅ Adaptive execution test passed")
+}
+
+fr fr Test resource monitoring
+slay test_resource_monitoring() {
+    test_start("Resource Monitoring")
+    
+    sus env_config EnvironmentConfig = read_environment_config()
+    sus parallel_config ParallelismConfig = create_parallelism_config(env_config)
+    sus worker_pool WorkerPool = create_worker_pool(parallel_config)
+    sus resource_manager ResourceManager = initialize_resource_manager(parallel_config)
+    
+    fr fr Simulate high memory usage
+    worker_pool.workers[0].memory_usage = 500
+    worker_pool.workers[1].memory_usage = 400
+    
+    sus updated_manager ResourceManager = monitor_resources(resource_manager, worker_pool)
+    
+    fr fr Should detect high memory usage
+    assert_true(updated_manager.resource_warnings > 0)
+    
+    vibez.spill("✅ Resource monitoring test passed")
+}
+
+fr fr Test worker allocation strategies
+slay test_worker_allocation() {
+    test_start("Worker Allocation")
+    
+    sus env_config EnvironmentConfig = read_environment_config()
+    sus parallel_config ParallelismConfig = create_parallelism_config(env_config)
+    sus worker_pool WorkerPool = create_worker_pool(parallel_config)
+    sus resource_manager ResourceManager = initialize_resource_manager(parallel_config)
+    
+    sus task TestTask = create_test_task("test.💀", "allocation_test", 1)
+    
+    fr fr Test resource-aware allocation
+    sus worker_id normie = allocate_worker_resource_aware(worker_pool, task, resource_manager)
+    
+    fr fr Should allocate to first available worker
+    assert_true(worker_id >= 0)
+    assert_true(worker_id < parallel_config.max_workers)
+    
+    vibez.spill("✅ Worker allocation test passed")
+}
+
+fr fr Test fail-fast behavior
+slay test_fail_fast() {
+    test_start("Fail-Fast Behavior")
+    
+    sus env_config EnvironmentConfig = read_environment_config()
+    env_config.cursed_test_fail_fast = based  fr fr Enable fail-fast
+    
+    sus test_tasks [TestTask] = []
+    test_tasks = append_test_task(test_tasks, create_test_task("test1.💀", "test_pass", 1))
+    test_tasks = append_test_task(test_tasks, create_test_task("test2.💀", "test_fail", 2))  fr fr This will fail
+    test_tasks = append_test_task(test_tasks, create_test_task("test3.💀", "test_skip", 3))  fr fr Should be skipped
+    
+    sus results [TestExecutionResult] = execute_tests_sequential(test_tasks, env_config)
+    
+    fr fr Should stop after first failure, so should have <= 2 results
+    assert_true(len(results) <= 2)
+    
+    vibez.spill("✅ Fail-fast test passed")
+}
+
+fr fr Test configuration integration
+slay test_configuration_integration() {
+    test_start("Configuration Integration")
+    
+    sus config ParallelTestRunnerConfig = create_parallel_test_runner_config()
+    
+    fr fr Verify all components are properly configured
+    assert_true(config.env_config.cursed_test_parallel)
+    assert_eq_string(config.parallel_config.execution_mode, "parallel")
+    assert_eq_string(config.execution_strategy, config.parallel_config.execution_mode)
+    
+    vibez.spill("✅ Configuration integration test passed")
+}
+
+fr fr Test performance profiling
+slay test_performance_profiling() {
+    test_start("Performance Profiling")
+    
+    sus env_config EnvironmentConfig = read_environment_config()
+    env_config.cursed_test_profile = based  fr fr Enable profiling
+    
+    sus test_tasks [TestTask] = []
+    test_tasks = append_test_task(test_tasks, create_test_task("perf_test.💀", "performance_test", 1))
+    
+    sus results [TestExecutionResult] = execute_tests_sequential(test_tasks, env_config)
+    
+    fr fr Should complete successfully with profiling enabled
+    assert_eq_int(len(results), 1)
+    assert_true(results[0].success)
+    
+    vibez.spill("✅ Performance profiling test passed")
+}
+
+fr fr Test memory limit enforcement
+slay test_memory_limits() {
+    test_start("Memory Limit Enforcement")
+    
+    sus env_config EnvironmentConfig = read_environment_config()
+    sus parallel_config ParallelismConfig = create_parallelism_config(env_config)
+    
+    fr fr Verify memory limits are properly calculated
+    sus expected_memory_per_worker normie = env_config.cursed_test_memory_limit / env_config.cursed_test_workers
+    assert_eq_int(parallel_config.memory_per_worker, expected_memory_per_worker)
+    
+    vibez.spill("✅ Memory limits test passed")
+}
+
+fr fr Test cleanup behavior
+slay test_cleanup_behavior() {
+    test_start("Cleanup Behavior")
+    
+    sus env_config EnvironmentConfig = read_environment_config()
+    env_config.cursed_test_cleanup = based  fr fr Ensure cleanup is enabled
+    
+    sus task TestTask = create_test_task("cleanup_test.💀", "cleanup_test", 1)
+    
+    fr fr Test cleanup function doesn't crash
+    cleanup_test_environment(task)
+    
+    vibez.spill("✅ Cleanup behavior test passed")
+}
+
+fr fr Main test execution
+slay main_character() {
+    vibez.spill("🧪 Running Parallelism Control Tests")
+    vibez.spill("════════════════════════════════════")
+    
+    fr fr Run all test functions
+    test_environment_config()
+    test_parallelism_config()
+    test_resource_manager()
+    test_worker_pool()
+    test_task_management()
+    test_sequential_execution()
+    test_parallel_execution()
+    test_adaptive_execution()
+    test_resource_monitoring()
+    test_worker_allocation()
+    test_fail_fast()
+    test_configuration_integration()
+    test_performance_profiling()
+    test_memory_limits()
+    test_cleanup_behavior()
+    
+    fr fr Print final summary
+    print_test_summary()
+    
+    ready (all_tests_passed()) {
+        vibez.spill("🎉 All parallelism control tests passed!")
+        damn 0
+    } otherwise {
+        vibez.spill("❌ Some parallelism control tests failed")
+        damn 1
+    }
+}

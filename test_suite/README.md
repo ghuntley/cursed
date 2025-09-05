@@ -132,7 +132,7 @@ The test runner generates comprehensive reports showing:
 
 ### Manual Test Creation
 
-Create `.csd` files in the appropriate `test_programs/` subdirectory:
+Create `.💀` files in the appropriate `test_programs/` subdirectory:
 
 ```cursed
 // Test Description
@@ -160,8 +160,8 @@ Use the helper script to create additional test files:
 
 For each test program, the runner:
 
-1. **Interpreter Mode**: Runs `cursed-zig program.csd`
-2. **Compile Mode**: Runs `cursed-zig --compile -o binary program.csd`
+1. **Interpreter Mode**: Runs `cursed-zig program.💀`
+2. **Compile Mode**: Runs `cursed-zig --compile -o binary program.💀`
 3. **Binary Execution**: Runs the compiled binary
 4. **Output Comparison**: Compares stdout/stderr from both modes
 5. **Result Classification**: Categorizes as PASS/FAIL/COMPILE_ERROR/RUNTIME_ERROR

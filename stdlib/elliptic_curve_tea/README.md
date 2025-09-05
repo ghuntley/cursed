@@ -271,14 +271,14 @@ Protected against timing attacks and side-channel analysis.
 Run comprehensive tests with:
 
 ```bash
-cargo run --bin cursed stdlib/elliptic_curve_tea/test_elliptic_curve_tea.csd
+cargo run --bin cursed stdlib/elliptic_curve_tea/test_elliptic_curve_tea.💀
 ```
 
 Test both interpretation and compilation modes:
 
 ```bash
-cargo run --bin cursed stdlib/elliptic_curve_tea/test_elliptic_curve_tea.csd
-cargo run --bin cursed -- compile stdlib/elliptic_curve_tea/test_elliptic_curve_tea.csd
+cargo run --bin cursed stdlib/elliptic_curve_tea/test_elliptic_curve_tea.💀
+cargo run --bin cursed -- compile stdlib/elliptic_curve_tea/test_elliptic_curve_tea.💀
 ./test_elliptic_curve_tea
 ```
 

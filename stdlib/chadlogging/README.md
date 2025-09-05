@@ -232,17 +232,17 @@ slay process_request() lit {
 Run the comprehensive test suite:
 
 ```bash
-cargo run --bin cursed stdlib/chadlogging/test_chadlogging.csd
+cargo run --bin cursed stdlib/chadlogging/test_chadlogging.💀
 ```
 
 Test both interpretation and compilation modes:
 
 ```bash
 # Interpretation mode
-cargo run --bin cursed stdlib/chadlogging/test_chadlogging.csd
+cargo run --bin cursed stdlib/chadlogging/test_chadlogging.💀
 
 # Compilation mode
-cargo run --bin cursed -- compile stdlib/chadlogging/test_chadlogging.csd
+cargo run --bin cursed -- compile stdlib/chadlogging/test_chadlogging.💀
 ./test_chadlogging
 ```
 

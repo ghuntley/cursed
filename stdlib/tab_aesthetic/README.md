@@ -215,17 +215,17 @@ Output:
 Run the comprehensive test suite:
 
 ```bash
-cargo run --bin cursed stdlib/tab_aesthetic/test_tab_aesthetic.csd
+cargo run --bin cursed stdlib/tab_aesthetic/test_tab_aesthetic.💀
 ```
 
 Test both interpretation and compilation modes:
 
 ```bash
 # Interpretation mode
-cargo run --bin cursed stdlib/tab_aesthetic/test_tab_aesthetic.csd
+cargo run --bin cursed stdlib/tab_aesthetic/test_tab_aesthetic.💀
 
 # Compilation mode
-cargo run --bin cursed -- compile stdlib/tab_aesthetic/test_tab_aesthetic.csd
+cargo run --bin cursed -- compile stdlib/tab_aesthetic/test_tab_aesthetic.💀
 ./test_tab_aesthetic
 ```
 

@@ -73,7 +73,7 @@ def fix_array_syntax(content):
     return content, changes
 
 def process_file(file_path):
-    """Process a single .csd file."""
+    """Process a single .💀 file."""
     try:
         with open(file_path, 'r', encoding='utf-8') as f:
             original_content = f.read()
@@ -96,16 +96,16 @@ def main():
     total_changes = 0
     files_changed = 0
     
-    print("Searching for .csd files in stdlib directory...")
+    print("Searching for .💀 files in stdlib directory...")
     
-    # Find all .csd files recursively
+    # Find all .💀 files recursively
     csd_files = []
     for root, dirs, files in os.walk(stdlib_dir):
         for file in files:
-            if file.endswith('.csd'):
+            if file.endswith('.💀'):
                 csd_files.append(os.path.join(root, file))
     
-    print(f"Found {len(csd_files)} .csd files")
+    print(f"Found {len(csd_files)} .💀 files")
     
     for file_path in csd_files:
         changes = process_file(file_path)

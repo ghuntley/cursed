@@ -221,14 +221,14 @@ match deserialized {
 ```bash
 echo 'yeet "type_core"
 sus type_name = type_core.type_name(type_core.type_of(42))
-vibez.spillf("Type: {}", type_name)' > type_test.csd
+vibez.spillf("Type: {}", type_name)' > type_test.💀
 
-./cursed-unified type_test.csd
+./cursed-unified type_test.💀
 ```
 
 ### Compilation Mode
 ```bash
-./cursed-unified --compile type_test.csd
+./cursed-unified --compile type_test.💀
 ./type_test
 ```
 

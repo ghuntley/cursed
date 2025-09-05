@@ -1,8 +1,8 @@
-Error at /home/ghuntley/cursed/test_suite/test_programs/regression/regression_memory_management.csd:13:10 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
-Error at /home/ghuntley/cursed/test_suite/test_programs/regression/regression_memory_management.csd:13:10 - Synchronizing parser after error (context: synchronize)
+Error at /home/ghuntley/cursed/test_suite/test_programs/regression/regression_memory_management.💀:13:10 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+Error at /home/ghuntley/cursed/test_suite/test_programs/regression/regression_memory_management.💀:13:10 - Synchronizing parser after error (context: synchronize)
 INFO: Recovered at delimiter 'RightParen' after skipping 4 tokens
-Error at /home/ghuntley/cursed/test_suite/test_programs/regression/regression_memory_management.csd:13:38 - Error parsing function statement
-Error at /home/ghuntley/cursed/test_suite/test_programs/regression/regression_memory_management.csd:28:1 - Failed to parse statement
+Error at /home/ghuntley/cursed/test_suite/test_programs/regression/regression_memory_management.💀:13:38 - Error parsing function statement
+Error at /home/ghuntley/cursed/test_suite/test_programs/regression/regression_memory_management.💀:28:1 - Failed to parse statement
 
 === Error Recovery Statistics ===
 Total errors encountered: 2

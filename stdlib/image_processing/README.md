@@ -391,16 +391,16 @@ The module includes comprehensive tests covering:
 
 ```bash
 # Test interpretation mode
-cargo run --bin cursed stdlib/image_processing/test_image_processing.csd
+cargo run --bin cursed stdlib/image_processing/test_image_processing.💀
 
 # Test compilation mode
-cargo run --bin cursed -- compile stdlib/image_processing/test_image_processing.csd
+cargo run --bin cursed -- compile stdlib/image_processing/test_image_processing.💀
 ./test_image_processing
 
 # Both-mode verification
 test_both_modes() {
-    cargo run --bin cursed stdlib/image_processing/test_image_processing.csd > interp_output.txt
-    cargo run --bin cursed -- compile stdlib/image_processing/test_image_processing.csd
+    cargo run --bin cursed stdlib/image_processing/test_image_processing.💀 > interp_output.txt
+    cargo run --bin cursed -- compile stdlib/image_processing/test_image_processing.💀
     ./test_image_processing > comp_output.txt
     diff interp_output.txt comp_output.txt
 }

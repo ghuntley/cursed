@@ -298,7 +298,7 @@ vibez.spill("Features: ", dataset.num_features)
 
 Run the comprehensive test suite:
 ```bash
-./zig-out/bin/cursed stdlib/mlz/test_mlz.csd
+./zig-out/bin/cursed stdlib/mlz/test_mlz.💀
 ```
 
 The test suite covers:

@@ -663,7 +663,7 @@ slay safe_user_lookup(identifier tea, by_name lit) (*User, tea) {
 ```bash
 # Run user check tests
 zig build test
-./zig-out/bin/cursed-zig stdlib/user_check/test_user_check.csd
+./zig-out/bin/cursed-zig stdlib/user_check/test_user_check.💀
 ```
 
 ### Test Examples

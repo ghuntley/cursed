@@ -28,27 +28,27 @@ else
 fi
 
 echo -e "\n${BLUE}Step 2: Building backend server...${NC}"
-if ./zig-out/bin/cursed-zig --compile examples/web-dashboard/backend/server.csd -o "$BUILD_DIR/dashboard-server"; then
+if ./zig-out/bin/cursed-zig --compile examples/web-dashboard/backend/server.💀 -o "$BUILD_DIR/dashboard-server"; then
     echo -e "${GREEN}✅ Backend server compiled successfully${NC}"
 else
     echo -e "${YELLOW}⚠️  Backend server compilation failed, using interpreter mode${NC}"
     echo "#!/bin/bash" > "$BUILD_DIR/dashboard-server"
-    echo "exec $(pwd)/zig-out/bin/cursed-zig examples/web-dashboard/backend/server.csd" >> "$BUILD_DIR/dashboard-server"
+    echo "exec $(pwd)/zig-out/bin/cursed-zig examples/web-dashboard/backend/server.💀" >> "$BUILD_DIR/dashboard-server"
     chmod +x "$BUILD_DIR/dashboard-server"
 fi
 
 echo -e "\n${BLUE}Step 3: Building CLI administration tool...${NC}"
-if ./zig-out/bin/cursed-zig --compile examples/web-dashboard/cli/admin.csd -o "$BUILD_DIR/dashboard-admin"; then
+if ./zig-out/bin/cursed-zig --compile examples/web-dashboard/cli/admin.💀 -o "$BUILD_DIR/dashboard-admin"; then
     echo -e "${GREEN}✅ CLI tool compiled successfully${NC}"
 else
     echo -e "${YELLOW}⚠️  CLI tool compilation failed, using interpreter mode${NC}"
     echo "#!/bin/bash" > "$BUILD_DIR/dashboard-admin"
-    echo "exec $(pwd)/zig-out/bin/cursed-zig examples/web-dashboard/cli/admin.csd" >> "$BUILD_DIR/dashboard-admin"
+    echo "exec $(pwd)/zig-out/bin/cursed-zig examples/web-dashboard/cli/admin.💀" >> "$BUILD_DIR/dashboard-admin"
     chmod +x "$BUILD_DIR/dashboard-admin"
 fi
 
 echo -e "\n${BLUE}Step 4: Building frontend WebAssembly module...${NC}"
-if ./zig-out/bin/cursed-zig --compile --target=wasm32-freestanding examples/web-dashboard/frontend/app.csd -o "$BUILD_DIR/dashboard-frontend.wasm"; then
+if ./zig-out/bin/cursed-zig --compile --target=wasm32-freestanding examples/web-dashboard/frontend/app.💀 -o "$BUILD_DIR/dashboard-frontend.wasm"; then
     echo -e "${GREEN}✅ Frontend WASM compiled successfully${NC}"
 else
     echo -e "${YELLOW}⚠️  Frontend WASM compilation not available yet${NC}"
@@ -66,7 +66,7 @@ echo -e "\n${BLUE}Step 6: Testing builds...${NC}"
 
 # Test backend (just validate syntax)
 echo -e "Testing backend server..."
-if ./zig-out/bin/cursed-zig examples/web-dashboard/backend/server.csd --check; then
+if ./zig-out/bin/cursed-zig examples/web-dashboard/backend/server.💀 --check; then
     echo -e "${GREEN}✅ Backend server syntax valid${NC}"
 else
     echo -e "${YELLOW}⚠️  Backend server syntax check failed${NC}"
@@ -74,7 +74,7 @@ fi
 
 # Test CLI tool
 echo -e "Testing CLI administration tool..."
-if ./zig-out/bin/cursed-zig examples/web-dashboard/cli/admin.csd --check; then
+if ./zig-out/bin/cursed-zig examples/web-dashboard/cli/admin.💀 --check; then
     echo -e "${GREEN}✅ CLI tool syntax valid${NC}"
 else
     echo -e "${YELLOW}⚠️  CLI tool syntax check failed${NC}"
@@ -82,7 +82,7 @@ fi
 
 # Test frontend
 echo -e "Testing frontend application..."
-if ./zig-out/bin/cursed-zig examples/web-dashboard/frontend/app.csd --check; then
+if ./zig-out/bin/cursed-zig examples/web-dashboard/frontend/app.💀 --check; then
     echo -e "${GREEN}✅ Frontend application syntax valid${NC}"
 else
     echo -e "${YELLOW}⚠️  Frontend application syntax check failed${NC}"

@@ -22,7 +22,7 @@ cd cursed-taskman
 
 # Create project structure
 mkdir -p {src,static,templates,data}
-touch src/main.csd src/tasks.csd src/server.csd
+touch src/main.💀 src/tasks.💀 src/server.💀
 touch templates/{index.html,task.html}
 touch static/{style.css,app.js}
 ```
@@ -32,7 +32,7 @@ touch static/{style.css,app.js}
 Let's start with a simple HTTP server:
 
 ```cursed
-# src/server.csd
+# src/server.💀
 yeet "vibez"
 yeet "networkz"
 yeet "filez"
@@ -144,7 +144,7 @@ slay send_response(conn Connection, response Response) {
 Create a task management system:
 
 ```cursed
-# src/tasks.csd
+# src/tasks.💀
 yeet "vibez"
 yeet "jsonz"
 yeet "filez"
@@ -490,7 +490,7 @@ async function deleteTask(id) {
 Bring everything together:
 
 ```cursed
-# src/main.csd
+# src/main.💀
 yeet "vibez"
 yeet "server"
 yeet "tasks"
@@ -714,7 +714,7 @@ main() fam {
 
 ```bash
 # Build the application
-cursed-zig --compile src/main.csd -o taskman
+cursed-zig --compile src/main.💀 -o taskman
 
 # Run the server
 ./taskman

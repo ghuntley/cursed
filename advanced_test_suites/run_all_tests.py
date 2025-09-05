@@ -39,23 +39,23 @@ class TestRunner:
         # Test categories and their files
         self.test_suites = {
             "edge_cases": [
-                "advanced_test_suites/edge_cases/boundary_conditions.csd",
-                "advanced_test_suites/edge_cases/malformed_input.csd"
+                "advanced_test_suites/edge_cases/boundary_conditions.💀",
+                "advanced_test_suites/edge_cases/malformed_input.💀"
             ],
             "performance": [
-                "advanced_test_suites/performance/benchmark_suite.csd"
+                "advanced_test_suites/performance/benchmark_suite.💀"
             ],
             "integration": [
-                "advanced_test_suites/integration/module_integration.csd"
+                "advanced_test_suites/integration/module_integration.💀"
             ],
             "stress": [
-                "advanced_test_suites/stress/resource_exhaustion.csd"
+                "advanced_test_suites/stress/resource_exhaustion.💀"
             ],
             "security": [
-                "advanced_test_suites/security/injection_prevention.csd"
+                "advanced_test_suites/security/injection_prevention.💀"
             ],
             "cross_platform": [
-                "advanced_test_suites/cross_platform/platform_validation.csd"
+                "advanced_test_suites/cross_platform/platform_validation.💀"
             ]
         }
         

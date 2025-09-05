@@ -29,7 +29,7 @@ EXIT_CODE_ISSUES=0
 INTERPRETER_ERRORS=0
 
 echo "Scanning test directory..."
-find $TEST_DIR -name "*.csd" -type f | while read -r test_file; do
+find $TEST_DIR -name "*.💀" -type f | while read -r test_file; do
     TOTAL_TESTS=$((TOTAL_TESTS + 1))
     
     rel_path=${test_file#$TEST_DIR/}

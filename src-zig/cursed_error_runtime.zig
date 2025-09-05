@@ -492,7 +492,7 @@ test "CURSED error handling system" {
     const allocator = std.testing.allocator;
     
     // Test error creation
-    var handler = ErrorHandler.init(allocator, "test.csd");
+    var handler = ErrorHandler.init(allocator, "test.💀");
     defer handler.deinit();
     
     const error_obj = try handler.yikes("Test error", .Runtime, 100, 1, 10);

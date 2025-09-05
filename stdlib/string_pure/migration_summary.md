@@ -128,22 +128,22 @@ sus str_num tea = string_from_int(456)
 
 ### Interpretation Mode
 ```bash
-cargo run --bin cursed test_minimal_string_pure.csd
+cargo run --bin cursed test_minimal_string_pure.💀
 ```
 
 ### Compilation Mode
 ```bash
-cargo run --bin cursed -- compile test_minimal_string_pure.csd
+cargo run --bin cursed -- compile test_minimal_string_pure.💀
 ./test_minimal_string_pure
 ```
 
 ### Both-Mode Verification
 ```bash
 # Test interpretation
-cargo run --bin cursed test_minimal_string_pure.csd > interp_output.txt
+cargo run --bin cursed test_minimal_string_pure.💀 > interp_output.txt
 
 # Test compilation
-cargo run --bin cursed -- compile test_minimal_string_pure.csd
+cargo run --bin cursed -- compile test_minimal_string_pure.💀
 ./test_minimal_string_pure > comp_output.txt
 
 # Compare outputs

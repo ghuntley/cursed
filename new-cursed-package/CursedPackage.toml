@@ -2,7 +2,7 @@ name = "new-cursed-package"
 version = "0.1.0"
 description = "A reusable CURSED library"
 license = "MIT"
-main = "src/lib.csd"
+main = "src/lib.💀"
 authors = ["Your Name <your.email@example.com>"]
 
 [dependencies]

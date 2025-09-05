@@ -12,7 +12,7 @@ pub fn main() !void {
     ;
 
     // Write source to temp file
-    const file = try std.fs.cwd().createFile("temp_time_test.csd", .{});
+    const file = try std.fs.cwd().createFile("temp_time_test.💀", .{});
     defer file.close();
     try file.writeAll(source);
 

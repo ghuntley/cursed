@@ -400,7 +400,7 @@ The scanz module integrates well with other CURSED stdlib modules:
 Run the comprehensive test suite:
 
 ```bash
-./zig-out/bin/cursed-zig stdlib/scanz/test_scanz.csd
+./zig-out/bin/cursed-zig stdlib/scanz/test_scanz.💀
 ```
 
 The test suite includes:

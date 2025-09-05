@@ -115,13 +115,13 @@ fn printDebugHelp() void {
 fn printUsage() void {
     print("CURSED Interactive Debugger v1.0.0\n\n", .{});
     print("USAGE:\n", .{});
-    print("    cursed-debug <file.csd>\n\n", .{});
+    print("    cursed-debug <file.💀.💀>\n\n", .{});
     print("FEATURES:\n", .{});
     print("    • Interactive debugging session\n", .{});
     print("    • Step-by-step execution\n", .{});
     print("    • Program analysis\n", .{});
     print("    • Basic command interface\n\n", .{});
     print("EXAMPLES:\n", .{});
-    print("    cursed-debug hello.csd\n", .{});
-    print("    cursed-debug fibonacci.csd\n", .{});
+    print("    cursed-debug hello.💀.💀\n", .{});
+    print("    cursed-debug fibonacci.💀.💀\n", .{});
 }
