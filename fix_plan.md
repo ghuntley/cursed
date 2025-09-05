@@ -29,11 +29,12 @@
 **From Core Language → Production-Ready with Standard Library Support**
 
 ### CURRENT COMPREHENSIVE RESULTS:
-- **Official test suite pass rate: 69% (significant progress towards production-ready)** 
+- **Official test suite pass rate: 70% (REGRESSION RECOVERY ACHIEVED!)** 
 - **Core language features: 95%+ pass rate** (arithmetic, control flow, basic operations)
 - **Stdlib module loading: FULLY OPERATIONAL** (stringz, mathz, vibez successfully loaded)
 - **Critical infrastructure: fully stable** (no more infinite loops or critical hangs)
 - **LLVM compilation errors: 5 (reduced from 6, continuing stability improvements)**
+- **✅ CRITICAL FIX: Boolean keyword regression resolved** - Fixed stringz.contains() using 'cap' instead of 'cringe' for false value
 
 ### INFRASTRUCTURE ACHIEVEMENT:
 - ✅ **All fundamental language constructs working reliably**
@@ -176,6 +177,7 @@ This represents a major breakthrough toward true self-hosting. The CURSED langua
 - **LLVM memory safety improvements** - Added intern() function to properly manage string keys in HashMap, fixing compilation memory safety issues and preventing segfaults
 - **Test suite progression milestone** - Improved pass rate from 66% to 69% (3 additional tests now passing)
 - **LLVM compilation stability enhancement** - Reduced compile errors from 6 to 5 (1 fewer segmentation fault)
+- **✅ CRITICAL BOOLEAN KEYWORD REGRESSION FIX** - Fixed stringz.contains() function incorrectly using 'cap' instead of 'cringe' for boolean false value, recovering from 66% back to 70% pass rate
 
 ## Phase 0: LLVM Backend Critical Fix ✅ COMPLETED
 

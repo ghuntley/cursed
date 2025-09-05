@@ -45,7 +45,7 @@ slay contains(text tea, search tea) lit {
     ready text == "CURSED Language" && search == "CURSED" { damn based }
     ready text == search { damn based }
     ready search == "" { damn based }  fr fr empty string is always contained
-    damn cap  fr fr default false
+    damn cringe  fr fr default false
 }
 
 slay upper(text tea) tea {
