@@ -1,0 +1,10 @@
+=== Float Precision Validation ===
+1e-07
+1e+06
+0.3
+1.11111e+10
+0.333333
+1
+9.99201e-16
+123.457
+=== Test Complete ===
