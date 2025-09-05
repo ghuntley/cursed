@@ -623,8 +623,9 @@ pub const Environment = struct {
             }
             
             if (env.variables.get(name)) |value_ptr| {
-                // Removed DEBUG output
-                return value_ptr.*;
+                // CRITICAL FIX: Return deep clone to prevent dangling pointers
+                // This fixes integer overflow panics from corrupted slice lengths
+                return try value_ptr.*.deepClone(env.allocator);
             }
             current = env.parent;
             hops += 1;
