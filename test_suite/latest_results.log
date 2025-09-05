@@ -1,0 +1,132 @@
+[1mCURSED Test Suite - Fixed Version[0m
+====================================
+Compiler: /home/ghuntley/cursed/test_suite/../zig-out/bin/cursed-compiler
+Test directory: /home/ghuntley/cursed/test_suite/test_programs
+Working from: /home/ghuntley/cursed/test_suite/.. (for stdlib loading)
+
+Scanning for test files...
+Found 103 test files
+
+[1m[1/103] Testing: arithmetic/01_mixed_types.csd[0m
+  Result: [32mPASS[0m
+---
+[1m[2/103] Testing: arithmetic/02_edge_cases.csd[0m
+  Result: [32mPASS[0m
+---
+[1m[3/103] Testing: arithmetic/03_operator_precedence.csd[0m
+  Result: [32mPASS[0m
+---
+[1m[4/103] Testing: arithmetic/04_complex_expressions.csd[0m
+  Result: [32mPASS[0m
+---
+[1m[5/103] Testing: arithmetic/arithmetic_basic_operations.csd[0m
+  Result: [32mPASS[0m
+---
+[1m[6/103] Testing: arithmetic/division_semantics_test.csd[0m
+  Result: [32mPASS[0m
+---
+[1m[7/103] Testing: arithmetic/feature_arithmetic_operations.csd[0m
+  Result: [32mPASS[0m
+---
+[1m[8/103] Testing: arithmetic/overflow_edge_cases.csd[0m
+  Result: [31mFAIL (OUTPUT_MISMATCH)[0m
+  [36mInterpreter (exit: 0):[0m
+    === Overflow Edge Cases Test === 
+    Max int: 
+    2147483647 
+    Max int + 1 (should promote to float): 
+    2147483648 
+    Min int: 
+    -2147483648 
+    Negation of min int (should promote): 
+    2147483648 
+    Large multiplication (should promote): 
+    3000000000 
+    === Test Complete === 
+
+  [36mCompiled (exit: 0):[0m
+    === Overflow Edge Cases Test ===
+    Max int:
+    2147483647
+    Max int + 1 (should promote to float):
+    2.14748e+09
+    Min int:
+    2.14748e+09
+    Negation of min int (should promote):
+    -2.14748e+09
+    Large multiplication (should promote):
+    3e+09
+    === Test Complete ===
+
+  [33mHEX COMPARISON (to identify differences):[0m
+  [36mInterpreter HEX (exit: 0):[0m
+    00000000: 3d3d 3d20 4f76 6572 666c 6f77 2045 6467  === Overflow Edg
+    00000010: 6520 4361 7365 7320 5465 7374 203d 3d3d  e Cases Test ===
+    00000020: 200a 4d61 7820 696e 743a 200a 3231 3437   .Max int: .2147
+    00000030: 3438 3336 3437 200a 4d61 7820 696e 7420  483647 .Max int 
+    00000040: 2b20 3120 2873 686f 756c 6420 7072 6f6d  + 1 (should prom
+    00000050: 6f74 6520 746f 2066 6c6f 6174 293a 200a  ote to float): .
+    00000060: 3231 3437 3438 3336 3438 200a 4d69 6e20  2147483648 .Min 
+    00000070: 696e 743a 200a 2d32 3134 3734 3833 3634  int: .-214748364
+    00000080: 3820 0a4e 6567 6174 696f 6e20 6f66 206d  8 .Negation of m
+    00000090: 696e 2069 6e74 2028 7368 6f75 6c64 2070  in int (should p
+    000000a0: 726f 6d6f 7465 293a 200a 3231 3437 3438  romote): .214748
+    000000b0: 3336 3438 200a 4c61 7267 6520 6d75 6c74  3648 .Large mult
+    000000c0: 6970 6c69 6361 7469 6f6e 2028 7368 6f75  iplication (shou
+    000000d0: 6c64 2070 726f 6d6f 7465 293a 200a 3330  ld promote): .30
+    000000e0: 3030 3030 3030 3030 200a 3d3d 3d20 5465  00000000 .=== Te
+    000000f0: 7374 2043 6f6d 706c 6574 6520 3d3d 3d20  st Complete === 
+
+  [36mCompiled HEX (exit: 0):[0m
+    00000000: 3d3d 3d20 4f76 6572 666c 6f77 2045 6467  === Overflow Edg
+    00000010: 6520 4361 7365 7320 5465 7374 203d 3d3d  e Cases Test ===
+    00000020: 0a4d 6178 2069 6e74 3a0a 3231 3437 3438  .Max int:.214748
+    00000030: 3336 3437 0a4d 6178 2069 6e74 202b 2031  3647.Max int + 1
+    00000040: 2028 7368 6f75 6c64 2070 726f 6d6f 7465   (should promote
+    00000050: 2074 6f20 666c 6f61 7429 3a0a 322e 3134   to float):.2.14
+    00000060: 3734 3865 2b30 390a 4d69 6e20 696e 743a  748e+09.Min int:
+    00000070: 0a32 2e31 3437 3438 652b 3039 0a4e 6567  .2.14748e+09.Neg
+    00000080: 6174 696f 6e20 6f66 206d 696e 2069 6e74  ation of min int
+    00000090: 2028 7368 6f75 6c64 2070 726f 6d6f 7465   (should promote
+    000000a0: 293a 0a2d 322e 3134 3734 3865 2b30 390a  ):.-2.14748e+09.
+    000000b0: 4c61 7267 6520 6d75 6c74 6970 6c69 6361  Large multiplica
+    000000c0: 7469 6f6e 2028 7368 6f75 6c64 2070 726f  tion (should pro
+    000000d0: 6d6f 7465 293a 0a33 652b 3039 0a3d 3d3d  mote):.3e+09.===
+    000000e0: 2054 6573 7420 436f 6d70 6c65 7465 203d   Test Complete =
+    000000f0: 3d3d                                     ==
+
+---
+[1m[9/103] Testing: basic/01_hello_world.csd[0m
+  Result: [32mPASS[0m
+---
+[1m[10/103] Testing: basic/02_simple_arithmetic.csd[0m
+  Result: [32mPASS[0m
+---
+[1m[11/103] Testing: basic/03_variable_assignment.csd[0m
+  Result: [32mPASS[0m
+---
+[1m[12/103] Testing: basic/basic_hello_world.csd[0m
+  Result: [32mPASS[0m
+---
+[1m[13/103] Testing: basic/hello_world_simple.csd[0m
+  Result: [32mPASS[0m
+---
+[1m[14/103] Testing: complex/01_nested_operations.csd[0m
+  Result: [31mCOMPILE ERROR (interpreted worked)[0m
+  [36mInterpreter (exit: 0):[0m
+    === Nested Operations Test === 
+    Complex arithmetic: 
+    15 
+    Nested function calls: 
+    39 
+    Nested conditionals: 
+    x is between 10 and 20 
+    Multiple operations: 
+    12 
+    === Test Complete === 
+
+  [36mCompiled (exit: 1):[0m
+    Compilation failed
+
+---
+[1m[15/103] Testing: complex/02_fizzbuzz.csd[0m

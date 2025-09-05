@@ -1,0 +1,12 @@
+=== Overflow Edge Cases Test ===
+Max int:
+2147483647
+Max int + 1 (should promote to float):
+-2147483648
+Min int:
+-2147483648
+Negation of min int (should promote):
+-2147483648
+Large multiplication (should promote):
+-1294967296
+=== Test Complete ===
