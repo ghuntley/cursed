@@ -1833,9 +1833,8 @@ pub const LLVMIRPipeline = struct {
             if (is_float) {
                 return c.LLVMBuildFAdd(self.builder, left, right, "fadd_tmp");
             } else if (is_pointer_comparison) {
-                // String concatenation - for now, just return the first string
-                // TODO: Implement proper string concatenation
-                return left; // Temporary fallback
+                // String concatenation
+                return try self.generateStringConcatenation(left, right);
             } else {
                 // Check if this is likely to overflow (for edge cases like max_int + 1)
                 if (try self.isLikelyToOverflow(left, right, "add")) {
@@ -2075,9 +2074,7 @@ pub const LLVMIRPipeline = struct {
         }
         
         if (std.mem.eql(u8, function_name, "len")) {
-            // print("🔍 DEBUG: Handling len function call\n", .{});
             if (call.arguments.items.len != 1) {
-                // print("❌ DEBUG: len requires 1 argument, got {}\n", .{call.arguments.items.len});
                 return error.InvalidArgumentCount;
             }
             return try self.generateLenCall(call.arguments.items[0].*);
@@ -3048,6 +3045,7 @@ pub const LLVMIRPipeline = struct {
     /// Generate len function call for arrays
     fn generateLenCall(self: *LLVMIRPipeline, expr: ast.Expression) !c.LLVMValueRef {
         // Handle different expression types for len() function
+
         
         // Check if it's a string literal
         if (expr == .String) {
@@ -3066,10 +3064,33 @@ pub const LLVMIRPipeline = struct {
                 return c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), tracked_length, 0);
             }
             
-            // For string variables, we need to call the runtime strlen function
-            // For now, return a placeholder - this would need proper string length calculation
-            // TODO: Implement runtime string length calculation for string variables
-            return c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 0, 0);
+            // For string variables/parameters, call runtime strlen
+            // Get the variable value and call strlen on it
+            const var_value = try self.generateExpression(expr);
+            
+            // Call strlen on the string variable
+            const strlen_func = blk: {
+                if (self.functions.get("strlen")) |existing| {
+                    break :blk existing;
+                } else {
+                    const char_ptr_type = c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0);
+                    const strlen_type = c.LLVMFunctionType(
+                        c.LLVMInt64TypeInContext(self.context),
+                        @constCast(@ptrCast(&char_ptr_type)),
+                        1,
+                        0
+                    );
+                    const func = c.LLVMAddFunction(self.module, "strlen", strlen_type);
+                    try self.functions.put("strlen", func);
+                    break :blk func;
+                }
+            };
+            
+            const strlen_result = c.LLVMBuildCall2(self.builder, c.LLVMGlobalGetValueType(strlen_func), strlen_func, @constCast(@ptrCast(&[_]c.LLVMValueRef{var_value})), 1, "strlen_result");
+            
+            // Convert i64 strlen result to i32 for CURSED compatibility
+            const length_i32 = c.LLVMBuildTrunc(self.builder, strlen_result, c.LLVMInt32TypeInContext(self.context), "length_i32");
+            return length_i32;
         }
         
         // For other expressions, evaluate them and try to determine length
@@ -3750,5 +3771,104 @@ pub const LLVMIRPipeline = struct {
         // For non-constant cases or no overflow, use regular arithmetic
         // This prevents type system issues in stdlib functions
         return false;
+    }
+
+    /// Generate string concatenation in LLVM IR
+    /// Allocates memory and copies both strings to create a new concatenated string
+    fn generateStringConcatenation(self: *LLVMIRPipeline, left: c.LLVMValueRef, right: c.LLVMValueRef) !c.LLVMValueRef {
+        // Get strlen function for calculating string lengths
+        const strlen_func = blk: {
+            if (self.functions.get("strlen")) |existing| {
+                break :blk existing;
+            } else {
+                const char_ptr_type = c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0);
+                const strlen_type = c.LLVMFunctionType(
+                    c.LLVMInt64TypeInContext(self.context),
+                    @constCast(@ptrCast(&char_ptr_type)),
+                    1,
+                    0
+                );
+                const func = c.LLVMAddFunction(self.module, "strlen", strlen_type);
+                try self.functions.put("strlen", func);
+                break :blk func;
+            }
+        };
+        
+        // Get malloc function for memory allocation  
+        const malloc_func = blk: {
+            if (self.functions.get("malloc")) |existing| {
+                break :blk existing;
+            } else {
+                const size_type = c.LLVMInt64TypeInContext(self.context);
+                const char_ptr_type = c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0);
+                const malloc_type = c.LLVMFunctionType(
+                    char_ptr_type,
+                    @constCast(@ptrCast(&size_type)),
+                    1,
+                    0
+                );
+                const func = c.LLVMAddFunction(self.module, "malloc", malloc_type);
+                try self.functions.put("malloc", func);
+                break :blk func;
+            }
+        };
+        
+        // Get strcpy function for string copying
+        const strcpy_func = blk: {
+            if (self.functions.get("strcpy")) |existing| {
+                break :blk existing;
+            } else {
+                const char_ptr_type = c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0);
+                var strcpy_params = [_]c.LLVMTypeRef{ char_ptr_type, char_ptr_type };
+                const strcpy_type = c.LLVMFunctionType(
+                    char_ptr_type,
+                    @ptrCast(&strcpy_params),
+                    2,
+                    0
+                );
+                const func = c.LLVMAddFunction(self.module, "strcpy", strcpy_type);
+                try self.functions.put("strcpy", func);
+                break :blk func;
+            }
+        };
+        
+        // Get strcat function for string concatenation
+        const strcat_func = blk: {
+            if (self.functions.get("strcat")) |existing| {
+                break :blk existing;
+            } else {
+                const char_ptr_type = c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0);
+                var strcat_params = [_]c.LLVMTypeRef{ char_ptr_type, char_ptr_type };
+                const strcat_type = c.LLVMFunctionType(
+                    char_ptr_type,
+                    @ptrCast(&strcat_params),
+                    2,
+                    0
+                );
+                const func = c.LLVMAddFunction(self.module, "strcat", strcat_type);
+                try self.functions.put("strcat", func);
+                break :blk func;
+            }
+        };
+        
+        // Calculate lengths of both strings
+        const left_len = c.LLVMBuildCall2(self.builder, c.LLVMGlobalGetValueType(strlen_func), strlen_func, @constCast(@ptrCast(&[_]c.LLVMValueRef{left})), 1, "left_len");
+        const right_len = c.LLVMBuildCall2(self.builder, c.LLVMGlobalGetValueType(strlen_func), strlen_func, @constCast(@ptrCast(&[_]c.LLVMValueRef{right})), 1, "right_len");
+        
+        // Total length = left_len + right_len + 1 (for null terminator)
+        const total_len = c.LLVMBuildAdd(self.builder, left_len, right_len, "total_len_sum");
+        const one = c.LLVMConstInt(c.LLVMInt64TypeInContext(self.context), 1, 0);
+        const total_len_with_null = c.LLVMBuildAdd(self.builder, total_len, one, "total_len_with_null");
+        
+        // Allocate memory for the concatenated string
+        const result_ptr = c.LLVMBuildCall2(self.builder, c.LLVMGlobalGetValueType(malloc_func), malloc_func, @constCast(@ptrCast(&[_]c.LLVMValueRef{total_len_with_null})), 1, "concat_ptr");
+        
+        // Copy first string to result
+        _ = c.LLVMBuildCall2(self.builder, c.LLVMGlobalGetValueType(strcpy_func), strcpy_func, @constCast(@ptrCast(&[_]c.LLVMValueRef{ result_ptr, left })), 2, "strcpy_left");
+        
+        // Concatenate second string to result
+        _ = c.LLVMBuildCall2(self.builder, c.LLVMGlobalGetValueType(strcat_func), strcat_func, @constCast(@ptrCast(&[_]c.LLVMValueRef{ result_ptr, right })), 2, "strcat_right");
+        
+        return result_ptr;
     }
 };
