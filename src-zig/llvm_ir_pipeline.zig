@@ -2165,12 +2165,27 @@ pub const LLVMIRPipeline = struct {
             return error.UndefinedFunction;
         }
         
-        // Generate arguments and infer their types
+        // Generate arguments and normalize their types for CURSED semantics
+        const normie_type = c.LLVMInt32TypeInContext(self.context);
+        
         for (call.arguments.items, 0..) |arg, i| {
-            const arg_val = try self.generateExpression(arg.*);
-            llvm_args[i] = arg_val;
+            var arg_val = try self.generateExpression(arg.*);
+            var arg_type = c.LLVMTypeOf(arg_val);
             
-            const arg_type = c.LLVMTypeOf(arg_val);
+            // All CURSED integers are 'normie' (i32). Force the prototype to use i32
+            // and cast the value so the call itself is well-typed.
+            if (c.LLVMGetTypeKind(arg_type) == c.LLVMIntegerTypeKind) {
+                if (arg_type != normie_type) {
+                    const width = c.LLVMGetIntTypeWidth(arg_type);
+                    arg_val = if (width > 32)
+                        c.LLVMBuildTrunc(self.builder, arg_val, normie_type, "arg_to_i32")
+                    else
+                        c.LLVMBuildSExt(self.builder, arg_val, normie_type, "arg_to_i32");
+                    arg_type = normie_type;
+                }
+            }
+            
+            llvm_args[i] = arg_val;
             try param_types.append(self.allocator, arg_type);
         }
         
@@ -2307,17 +2322,49 @@ pub const LLVMIRPipeline = struct {
             
             // Check if the function exists in the compiled functions
             if (self.functions.get(qualified_name)) |stdlib_func| {
-                // Generate arguments
+                // Generate arguments with type conversion for CURSED semantics
                 var args = std.ArrayList(c.LLVMValueRef){};
                 defer args.deinit(self.allocator);
                 
-                for (method_call.arguments.items) |arg| {
-                    const arg_val = try self.generateExpression(arg.*);
+                // Get function parameter types for proper type conversion
+                const func_type = c.LLVMGlobalGetValueType(stdlib_func);
+                const param_count = c.LLVMCountParamTypes(func_type);
+                var param_types: [16]c.LLVMTypeRef = undefined;
+                if (param_count > 0) {
+                    c.LLVMGetParamTypes(func_type, @ptrCast(&param_types));
+                }
+                
+                for (method_call.arguments.items, 0..) |arg, i| {
+                    var arg_val = try self.generateExpression(arg.*);
+                    
+                    // Convert argument type to match function parameter type
+                    if (i < param_count) {
+                        const expected_type = param_types[i];
+                        const actual_type = c.LLVMTypeOf(arg_val);
+                        
+                        if (expected_type != actual_type) {
+                            // Handle integer type conversions - all CURSED integers should be i32
+                            if (c.LLVMGetTypeKind(expected_type) == c.LLVMIntegerTypeKind and 
+                                c.LLVMGetTypeKind(actual_type) == c.LLVMIntegerTypeKind) {
+                                
+                                const expected_width = c.LLVMGetIntTypeWidth(expected_type);
+                                const actual_width = c.LLVMGetIntTypeWidth(actual_type);
+                                
+                                if (expected_width < actual_width) {
+                                    // Truncate to smaller type (i64 -> i32)
+                                    arg_val = c.LLVMBuildTrunc(self.builder, arg_val, expected_type, "arg_trunc");
+                                } else if (expected_width > actual_width) {
+                                    // Extend to larger type (i16 -> i32)
+                                    arg_val = c.LLVMBuildSExt(self.builder, arg_val, expected_type, "arg_extend");
+                                }
+                            }
+                        }
+                    }
+                    
                     try args.append(self.allocator, arg_val);
                 }
                 
-                // Get the function type and call it
-                const func_type = c.LLVMGlobalGetValueType(stdlib_func);
+                // Call the function with properly typed arguments
                 const result_name = try self.arena.allocator().dupeZ(u8, try std.fmt.allocPrint(self.arena.allocator(), "{s}_result", .{method_call.method_name}));
                 return c.LLVMBuildCall2(self.builder, func_type, stdlib_func, args.items.ptr, @intCast(args.items.len), result_name);
             }
@@ -2401,7 +2448,63 @@ pub const LLVMIRPipeline = struct {
                 return c.LLVMConstInt(c.LLVMInt1TypeInContext(self.context), 1, 0);
             }
         } else if (std.mem.eql(u8, object_name, "collections")) {
-            // Handle collections functions by calling runtime
+            // Handle collections functions by calling the CURSED-compiled stdlib functions
+            // First try to load the module if not already loaded
+            try self.loadAndCompileModule("collections");
+            
+            // Generate the qualified function name (module.function)
+            const qualified_name = try std.fmt.allocPrint(self.arena.allocator(), "{s}.{s}", .{ object_name, method_call.method_name });
+            
+            // Check if the function exists in the compiled functions
+            if (self.functions.get(qualified_name)) |stdlib_func| {
+                // Generate arguments with type conversion for CURSED semantics
+                var args = std.ArrayList(c.LLVMValueRef){};
+                defer args.deinit(self.allocator);
+                
+                // Get function parameter types for proper type conversion
+                const func_type = c.LLVMGlobalGetValueType(stdlib_func);
+                const param_count = c.LLVMCountParamTypes(func_type);
+                var param_types: [16]c.LLVMTypeRef = undefined;
+                if (param_count > 0) {
+                    c.LLVMGetParamTypes(func_type, @ptrCast(&param_types));
+                }
+                
+                for (method_call.arguments.items, 0..) |arg, i| {
+                    var arg_val = try self.generateExpression(arg.*);
+                    
+                    // Convert argument type to match function parameter type
+                    if (i < param_count) {
+                        const expected_type = param_types[i];
+                        const actual_type = c.LLVMTypeOf(arg_val);
+                        
+                        if (expected_type != actual_type) {
+                            // Handle integer type conversions - all CURSED integers should be i32
+                            if (c.LLVMGetTypeKind(expected_type) == c.LLVMIntegerTypeKind and 
+                                c.LLVMGetTypeKind(actual_type) == c.LLVMIntegerTypeKind) {
+                                
+                                const expected_width = c.LLVMGetIntTypeWidth(expected_type);
+                                const actual_width = c.LLVMGetIntTypeWidth(actual_type);
+                                
+                                if (expected_width < actual_width) {
+                                    // Truncate to smaller type (i64 -> i32)
+                                    arg_val = c.LLVMBuildTrunc(self.builder, arg_val, expected_type, "arg_trunc");
+                                } else if (expected_width > actual_width) {
+                                    // Extend to larger type (i16 -> i32)
+                                    arg_val = c.LLVMBuildSExt(self.builder, arg_val, expected_type, "arg_extend");
+                                }
+                            }
+                        }
+                    }
+                    
+                    try args.append(self.allocator, arg_val);
+                }
+                
+                // Call the function with properly typed arguments
+                const result_name = try self.arena.allocator().dupeZ(u8, try std.fmt.allocPrint(self.arena.allocator(), "{s}_result", .{method_call.method_name}));
+                return c.LLVMBuildCall2(self.builder, func_type, stdlib_func, args.items.ptr, @intCast(args.items.len), result_name);
+            }
+            
+            // Fallback to hardcoded runtime functions for backwards compatibility
             if (std.mem.eql(u8, method_call.method_name, "Vec_new")) {
                 // Call runtime collections_vec_new()
                 const vec_new_fn = try self.getOrDeclareRuntimeFunction("collections_vec_new", &[_]c.LLVMTypeRef{}, c.LLVMInt64TypeInContext(self.context));
@@ -2466,7 +2569,63 @@ pub const LLVMIRPipeline = struct {
                 }
             }
         } else if (std.mem.eql(u8, object_name, "stringz")) {
-            // Handle stringz functions
+            // Handle stringz functions by calling the CURSED-compiled stdlib functions
+            // First try to load the module if not already loaded
+            try self.loadAndCompileModule("stringz");
+            
+            // Generate the qualified function name (module.function)
+            const qualified_name = try std.fmt.allocPrint(self.arena.allocator(), "{s}.{s}", .{ object_name, method_call.method_name });
+            
+            // Check if the function exists in the compiled functions
+            if (self.functions.get(qualified_name)) |stdlib_func| {
+                // Generate arguments with type conversion for CURSED semantics
+                var args = std.ArrayList(c.LLVMValueRef){};
+                defer args.deinit(self.allocator);
+                
+                // Get function parameter types for proper type conversion
+                const func_type = c.LLVMGlobalGetValueType(stdlib_func);
+                const param_count = c.LLVMCountParamTypes(func_type);
+                var param_types: [16]c.LLVMTypeRef = undefined;
+                if (param_count > 0) {
+                    c.LLVMGetParamTypes(func_type, @ptrCast(&param_types));
+                }
+                
+                for (method_call.arguments.items, 0..) |arg, i| {
+                    var arg_val = try self.generateExpression(arg.*);
+                    
+                    // Convert argument type to match function parameter type
+                    if (i < param_count) {
+                        const expected_type = param_types[i];
+                        const actual_type = c.LLVMTypeOf(arg_val);
+                        
+                        if (expected_type != actual_type) {
+                            // Handle integer type conversions - all CURSED integers should be i32
+                            if (c.LLVMGetTypeKind(expected_type) == c.LLVMIntegerTypeKind and 
+                                c.LLVMGetTypeKind(actual_type) == c.LLVMIntegerTypeKind) {
+                                
+                                const expected_width = c.LLVMGetIntTypeWidth(expected_type);
+                                const actual_width = c.LLVMGetIntTypeWidth(actual_type);
+                                
+                                if (expected_width < actual_width) {
+                                    // Truncate to smaller type (i64 -> i32)
+                                    arg_val = c.LLVMBuildTrunc(self.builder, arg_val, expected_type, "arg_trunc");
+                                } else if (expected_width > actual_width) {
+                                    // Extend to larger type (i16 -> i32)
+                                    arg_val = c.LLVMBuildSExt(self.builder, arg_val, expected_type, "arg_extend");
+                                }
+                            }
+                        }
+                    }
+                    
+                    try args.append(self.allocator, arg_val);
+                }
+                
+                // Call the function with properly typed arguments
+                const result_name = try self.arena.allocator().dupeZ(u8, try std.fmt.allocPrint(self.arena.allocator(), "{s}_result", .{method_call.method_name}));
+                return c.LLVMBuildCall2(self.builder, func_type, stdlib_func, args.items.ptr, @intCast(args.items.len), result_name);
+            }
+            
+            // Fallback to hardcoded runtime functions for backwards compatibility
             if (std.mem.eql(u8, method_call.method_name, "length")) {
                 if (method_call.arguments.items.len > 0) {
                     const str_arg = try self.generateExpression(method_call.arguments.items[0].*);
