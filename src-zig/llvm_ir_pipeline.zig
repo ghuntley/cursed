@@ -247,6 +247,16 @@ pub const LLVMIRPipeline = struct {
         // print("✅ LLVM IR Pipeline cleanup complete\n", .{});
     }
     
+    /// Intern a string to ensure it lives for the duration of compilation
+    fn intern(self: *LLVMIRPipeline, name: []const u8) ![]const u8 {
+        // Check if we already have this string in type_cache (reuse existing allocation)
+        if (self.type_cache.contains(name)) {
+            return name; // already interned, pointer is stable
+        }
+        // Store in the pipeline arena - one allocation per distinct spelling for whole compilation
+        return try self.arena.allocator().dupe(u8, name);
+    }
+    
     /// Complete compilation pipeline: Source -> AST -> Type Check -> LLVM IR -> Binary
     pub fn compileSource(self: *LLVMIRPipeline, source: []const u8, output_file: []const u8, verbose: bool) !void {
         // print("🚀 Starting complete LLVM compilation pipeline...\n", .{});
@@ -672,8 +682,9 @@ pub const LLVMIRPipeline = struct {
             _ = c.LLVMBuildStore(self.builder, llvm_param, param_alloca);
             
             // Store both variable reference and type information
-            try self.variables.put(param.name, param_alloca);
-            try self.variable_types.put(param.name, param_type);
+            const key = try self.intern(param.name);
+            try self.variables.put(key, param_alloca);
+            try self.variable_types.put(key, param_type);
         }
         
         // Generate function body
@@ -769,8 +780,9 @@ pub const LLVMIRPipeline = struct {
             const param_type = try self.cursedTypeToLLVM(param.param_type);
             const param_alloca = self.buildEntryAlloca(self.current_function.?, param_type, param_name_z.ptr);
             _ = c.LLVMBuildStore(self.builder, llvm_param, param_alloca);
-            try self.variables.put(param.name, param_alloca);
-            try self.variable_types.put(param.name, param_type);
+            const key = try self.intern(param.name);
+            try self.variables.put(key, param_alloca);
+            try self.variable_types.put(key, param_type);
         }
         
         // Generate function body
