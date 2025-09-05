@@ -1532,7 +1532,8 @@ pub const LLVMIRPipeline = struct {
                     if (is_float) {
                         return c.LLVMBuildFNeg(self.builder, operand_val, "fneg");
                     } else {
-                        return c.LLVMBuildNeg(self.builder, operand_val, "neg");
+                        // Integer negation with overflow checking (especially for -(-2147483648))
+                        return try self.buildUnaryNegationWithOverflowCheck(operand_val);
                     }
                 } else if (std.mem.eql(u8, unary.operator, "!")) {
                     return c.LLVMBuildNot(self.builder, operand_val, "not");
@@ -1830,19 +1831,22 @@ pub const LLVMIRPipeline = struct {
                 // TODO: Implement proper string concatenation
                 return left; // Temporary fallback
             } else {
-                return c.LLVMBuildAdd(self.builder, left, right, "add_tmp");
+                // Integer addition with overflow handling to match interpreter
+                return try self.buildIntegerOperationWithOverflowCheck(left, right, "add");
             }
         } else if (std.mem.eql(u8, bin_op.operator, "-")) {
             if (is_float) {
                 return c.LLVMBuildFSub(self.builder, left, right, "fsub_tmp");
             } else {
-                return c.LLVMBuildSub(self.builder, left, right, "sub_tmp");
+                // Integer subtraction with overflow handling to match interpreter
+                return try self.buildIntegerOperationWithOverflowCheck(left, right, "sub");
             }
         } else if (std.mem.eql(u8, bin_op.operator, "*")) {
             if (is_float) {
                 return c.LLVMBuildFMul(self.builder, left, right, "fmul_tmp");
             } else {
-                return c.LLVMBuildMul(self.builder, left, right, "mul_tmp");
+                // Integer multiplication with overflow handling to match interpreter
+                return try self.buildIntegerOperationWithOverflowCheck(left, right, "mul");
             }
         } else if (std.mem.eql(u8, bin_op.operator, "/")) {
             if (!left_is_float and !right_is_float) {
@@ -3544,132 +3548,125 @@ pub const LLVMIRPipeline = struct {
     /// Build integer operation with overflow checking, promoting to float on overflow
     /// Matches interpreter behavior for integer overflow handling
     fn buildIntegerOperationWithOverflowCheck(self: *LLVMIRPipeline, left: c.LLVMValueRef, right: c.LLVMValueRef, operation: []const u8) !c.LLVMValueRef {
-        // Get the current basic block info
-        const current_bb = c.LLVMGetInsertBlock(self.builder);
-        const current_func = c.LLVMGetBasicBlockParent(current_bb);
+        // Convert both operands to i64 and perform the operation in 64-bit
+        // Then check if the result fits in i32 range
+        const i32_type = c.LLVMInt32TypeInContext(self.context);
+        const i64_type = c.LLVMInt64TypeInContext(self.context);
+        const double_type = c.LLVMDoubleTypeInContext(self.context);
         
-        // Create basic blocks for overflow handling
-        const overflow_bb = c.LLVMAppendBasicBlockInContext(self.context, current_func, "overflow_promote");
-        const no_overflow_bb = c.LLVMAppendBasicBlockInContext(self.context, current_func, "no_overflow");
-        const continue_bb = c.LLVMAppendBasicBlockInContext(self.context, current_func, "continue");
+        // Extend operands to i64
+        const left_i64 = c.LLVMBuildSExt(self.builder, left, i64_type, "left_i64");
+        const right_i64 = c.LLVMBuildSExt(self.builder, right, i64_type, "right_i64");
         
-        // Select the appropriate LLVM overflow intrinsic
-        const overflow_intrinsic = if (std.mem.eql(u8, operation, "add"))
-            "llvm.sadd.with.overflow.i32"
+        // Perform the operation in 64-bit
+        const result_i64 = if (std.mem.eql(u8, operation, "add"))
+            c.LLVMBuildAdd(self.builder, left_i64, right_i64, "add_i64")
         else if (std.mem.eql(u8, operation, "sub"))
-            "llvm.ssub.with.overflow.i32"
+            c.LLVMBuildSub(self.builder, left_i64, right_i64, "sub_i64")
         else if (std.mem.eql(u8, operation, "mul"))
-            "llvm.smul.with.overflow.i32"
+            c.LLVMBuildMul(self.builder, left_i64, right_i64, "mul_i64")
         else
             return error.UnsupportedOperation;
         
-        // Declare the overflow intrinsic function if not already declared
-        const intrinsic_func = blk: {
-            if (self.functions.get(overflow_intrinsic)) |existing| {
-                break :blk existing;
-            } else {
-                // Create function type for overflow intrinsic: {i32, i1} (i32, i32)
-                const i32_type = c.LLVMInt32TypeInContext(self.context);
-                const i1_type = c.LLVMInt1TypeInContext(self.context);
-                
-                // Return type is a struct containing {result: i32, overflow: i1}
-                var struct_elements = [_]c.LLVMTypeRef{ i32_type, i1_type };
-                const struct_type = c.LLVMStructTypeInContext(self.context, @ptrCast(&struct_elements), 2, 0);
-                
-                // Parameter types: two i32s
-                var param_types = [_]c.LLVMTypeRef{ i32_type, i32_type };
-                const intrinsic_type = c.LLVMFunctionType(struct_type, @ptrCast(&param_types), 2, 0);
-                
-                const func = c.LLVMAddFunction(self.module, overflow_intrinsic, intrinsic_type);
-                try self.functions.put(overflow_intrinsic, func);
-                break :blk func;
-            }
-        };
+        // Check if result fits in i32 range
+        const i32_min = c.LLVMConstInt(i64_type, @as(u64, @bitCast(@as(i64, -2147483648))), 1); // -2^31
+        const i32_max = c.LLVMConstInt(i64_type, 2147483647, 0); // 2^31 - 1
         
-        // Ensure operands are i32
-        const i32_type = c.LLVMInt32TypeInContext(self.context);
-        const left_i32 = blk: {
-            const left_type = c.LLVMTypeOf(left);
-            if (c.LLVMGetTypeKind(left_type) == c.LLVMIntegerTypeKind) {
-                const left_width = c.LLVMGetIntTypeWidth(left_type);
-                const target_width = c.LLVMGetIntTypeWidth(i32_type);
-                if (left_width < target_width) {
-                    break :blk c.LLVMBuildSExt(self.builder, left, i32_type, "left_sext");
-                } else if (left_width > target_width) {
-                    break :blk c.LLVMBuildTrunc(self.builder, left, i32_type, "left_trunc");
-                } else {
-                    break :blk left; // Already i32
-                }
-            } else {
-                break :blk left; // Not an integer, use as-is
-            }
-        };
-        const right_i32 = blk: {
-            const right_type = c.LLVMTypeOf(right);
-            if (c.LLVMGetTypeKind(right_type) == c.LLVMIntegerTypeKind) {
-                const right_width = c.LLVMGetIntTypeWidth(right_type);
-                const target_width = c.LLVMGetIntTypeWidth(i32_type);
-                if (right_width < target_width) {
-                    break :blk c.LLVMBuildSExt(self.builder, right, i32_type, "right_sext");
-                } else if (right_width > target_width) {
-                    break :blk c.LLVMBuildTrunc(self.builder, right, i32_type, "right_trunc");
-                } else {
-                    break :blk right; // Already i32
-                }
-            } else {
-                break :blk right; // Not an integer, use as-is
-            }
-        };
+        const fits_in_i32_min = c.LLVMBuildICmp(self.builder, c.LLVMIntSGE, result_i64, i32_min, "ge_min");
+        const fits_in_i32_max = c.LLVMBuildICmp(self.builder, c.LLVMIntSLE, result_i64, i32_max, "le_max");
+        const fits_in_i32 = c.LLVMBuildAnd(self.builder, fits_in_i32_min, fits_in_i32_max, "fits_in_i32");
         
-        // Call the overflow intrinsic
-        const args = [_]c.LLVMValueRef{ left_i32, right_i32 };
+        // Create basic blocks
+        const current_bb = c.LLVMGetInsertBlock(self.builder);
+        const current_func = c.LLVMGetBasicBlockParent(current_bb);
+        const no_overflow_bb = c.LLVMAppendBasicBlockInContext(self.context, current_func, "no_overflow");
+        const overflow_bb = c.LLVMAppendBasicBlockInContext(self.context, current_func, "overflow_promote");
+        const continue_bb = c.LLVMAppendBasicBlockInContext(self.context, current_func, "continue");
         
-        // Get the function type correctly
-        const intrinsic_func_type = c.LLVMGlobalGetValueType(intrinsic_func);
-        const result_struct = c.LLVMBuildCall2(self.builder, intrinsic_func_type, intrinsic_func, @constCast(@ptrCast(&args)), 2, "overflow_result");
+        // Branch based on whether result fits in i32
+        _ = c.LLVMBuildCondBr(self.builder, fits_in_i32, no_overflow_bb, overflow_bb);
         
-        // Extract the result value and overflow flag
-        const result_value = c.LLVMBuildExtractValue(self.builder, result_struct, 0, "result_val");
-        const overflow_flag = c.LLVMBuildExtractValue(self.builder, result_struct, 1, "overflow_flag");
-        
-        // Branch based on overflow flag
-        _ = c.LLVMBuildCondBr(self.builder, overflow_flag, overflow_bb, no_overflow_bb);
-        
-        // Handle overflow case - promote to float
-        c.LLVMPositionBuilderAtEnd(self.builder, overflow_bb);
-        const left_float = c.LLVMBuildSIToFP(self.builder, left_i32, c.LLVMDoubleTypeInContext(self.context), "left_float");
-        const right_float = c.LLVMBuildSIToFP(self.builder, right_i32, c.LLVMDoubleTypeInContext(self.context), "right_float");
-        
-        const float_result = if (std.mem.eql(u8, operation, "add"))
-            c.LLVMBuildFAdd(self.builder, left_float, right_float, "float_add")
-        else if (std.mem.eql(u8, operation, "sub"))
-            c.LLVMBuildFSub(self.builder, left_float, right_float, "float_sub")
-        else if (std.mem.eql(u8, operation, "mul"))
-            c.LLVMBuildFMul(self.builder, left_float, right_float, "float_mul")
-        else
-            unreachable;
-        
-        _ = c.LLVMBuildBr(self.builder, continue_bb);
-        
-        // Handle no overflow case - use integer result converted to float
+        // No overflow case - truncate back to i32 and convert to double for consistency
         c.LLVMPositionBuilderAtEnd(self.builder, no_overflow_bb);
-        const int_to_float = c.LLVMBuildSIToFP(self.builder, result_value, c.LLVMDoubleTypeInContext(self.context), "int_to_float");
+        const result_i32 = c.LLVMBuildTrunc(self.builder, result_i64, i32_type, "result_i32");
+        const no_overflow_double = c.LLVMBuildSIToFP(self.builder, result_i32, double_type, "no_overflow_double");
         _ = c.LLVMBuildBr(self.builder, continue_bb);
         
-        // Continue block - PHI node to select between float results
-        c.LLVMPositionBuilderAtEnd(self.builder, continue_bb);
+        // Overflow case - convert i64 result to double
+        c.LLVMPositionBuilderAtEnd(self.builder, overflow_bb);
+        const overflow_double = c.LLVMBuildSIToFP(self.builder, result_i64, double_type, "overflow_double");
+        _ = c.LLVMBuildBr(self.builder, continue_bb);
         
-        // Create PHI node for double results
-        const phi = c.LLVMBuildPhi(self.builder, c.LLVMDoubleTypeInContext(self.context), "result_phi");
+        // Continue block - PHI node to select result
+        c.LLVMPositionBuilderAtEnd(self.builder, continue_bb);
+        const phi = c.LLVMBuildPhi(self.builder, double_type, "result_phi");
         
         // Add incoming values to PHI node
-        var overflow_values = [_]c.LLVMValueRef{float_result};
-        var overflow_blocks = [_]c.LLVMBasicBlockRef{overflow_bb};
-        var no_overflow_values = [_]c.LLVMValueRef{int_to_float};
+        var no_overflow_values = [_]c.LLVMValueRef{no_overflow_double};
         var no_overflow_blocks = [_]c.LLVMBasicBlockRef{no_overflow_bb};
+        var overflow_values = [_]c.LLVMValueRef{overflow_double};
+        var overflow_blocks = [_]c.LLVMBasicBlockRef{overflow_bb};
         
-        c.LLVMAddIncoming(phi, @ptrCast(&overflow_values), @ptrCast(&overflow_blocks), 1);
         c.LLVMAddIncoming(phi, @ptrCast(&no_overflow_values), @ptrCast(&no_overflow_blocks), 1);
+        c.LLVMAddIncoming(phi, @ptrCast(&overflow_values), @ptrCast(&overflow_blocks), 1);
+        
+        return phi;
+    }
+
+    /// Build unary negation with overflow checking for cases like -(-2147483648)
+    /// Matches interpreter behavior for unary negation overflow handling
+    fn buildUnaryNegationWithOverflowCheck(self: *LLVMIRPipeline, operand: c.LLVMValueRef) !c.LLVMValueRef {
+        const i32_type = c.LLVMInt32TypeInContext(self.context);
+        const i64_type = c.LLVMInt64TypeInContext(self.context);
+        const double_type = c.LLVMDoubleTypeInContext(self.context);
+        
+        // Extend operand to i64
+        const operand_i64 = c.LLVMBuildSExt(self.builder, operand, i64_type, "operand_i64");
+        
+        // Perform negation in 64-bit
+        const result_i64 = c.LLVMBuildNeg(self.builder, operand_i64, "neg_i64");
+        
+        // Check if result fits in i32 range (-2^31 to 2^31-1)
+        const i32_min = c.LLVMConstInt(i64_type, @as(u64, @bitCast(@as(i64, -2147483648))), 1); // -2^31
+        const i32_max = c.LLVMConstInt(i64_type, 2147483647, 0); // 2^31 - 1
+        
+        const fits_in_i32_min = c.LLVMBuildICmp(self.builder, c.LLVMIntSGE, result_i64, i32_min, "ge_min");
+        const fits_in_i32_max = c.LLVMBuildICmp(self.builder, c.LLVMIntSLE, result_i64, i32_max, "le_max");
+        const fits_in_i32 = c.LLVMBuildAnd(self.builder, fits_in_i32_min, fits_in_i32_max, "fits_in_i32");
+        
+        // Create basic blocks
+        const current_bb = c.LLVMGetInsertBlock(self.builder);
+        const current_func = c.LLVMGetBasicBlockParent(current_bb);
+        const no_overflow_bb = c.LLVMAppendBasicBlockInContext(self.context, current_func, "no_overflow");
+        const overflow_bb = c.LLVMAppendBasicBlockInContext(self.context, current_func, "overflow_promote");
+        const continue_bb = c.LLVMAppendBasicBlockInContext(self.context, current_func, "continue");
+        
+        // Branch based on whether result fits in i32
+        _ = c.LLVMBuildCondBr(self.builder, fits_in_i32, no_overflow_bb, overflow_bb);
+        
+        // No overflow case - truncate back to i32 and convert to double for consistency
+        c.LLVMPositionBuilderAtEnd(self.builder, no_overflow_bb);
+        const result_i32 = c.LLVMBuildTrunc(self.builder, result_i64, i32_type, "result_i32");
+        const no_overflow_double = c.LLVMBuildSIToFP(self.builder, result_i32, double_type, "no_overflow_double");
+        _ = c.LLVMBuildBr(self.builder, continue_bb);
+        
+        // Overflow case - convert i64 result to double
+        c.LLVMPositionBuilderAtEnd(self.builder, overflow_bb);
+        const overflow_double = c.LLVMBuildSIToFP(self.builder, result_i64, double_type, "overflow_double");
+        _ = c.LLVMBuildBr(self.builder, continue_bb);
+        
+        // Continue block - PHI node to select result
+        c.LLVMPositionBuilderAtEnd(self.builder, continue_bb);
+        const phi = c.LLVMBuildPhi(self.builder, double_type, "result_phi");
+        
+        // Add incoming values to PHI node
+        var no_overflow_values = [_]c.LLVMValueRef{no_overflow_double};
+        var no_overflow_blocks = [_]c.LLVMBasicBlockRef{no_overflow_bb};
+        var overflow_values = [_]c.LLVMValueRef{overflow_double};
+        var overflow_blocks = [_]c.LLVMBasicBlockRef{overflow_bb};
+        
+        c.LLVMAddIncoming(phi, @ptrCast(&no_overflow_values), @ptrCast(&no_overflow_blocks), 1);
+        c.LLVMAddIncoming(phi, @ptrCast(&overflow_values), @ptrCast(&overflow_blocks), 1);
         
         return phi;
     }
