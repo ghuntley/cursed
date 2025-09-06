@@ -480,6 +480,12 @@ pub const Lexer = struct {
             '"' => return self.stringLiteral(start_line, start_column),
             '\'' => return self.charLiteral(start_line, start_column),
 
+            '@' => {
+                // Reject legacy @ pointer syntax
+                std.debug.print("Error at line {}, column {}: Legacy '@' pointer syntax is not supported. Use 'ඞ' (Among Us character) instead.\n", .{ start_line, start_column });
+                return error.LegacySyntaxRejected;
+            },
+
             else => {
                 if (std.ascii.isDigit(c)) {
                     // Safe backup with underflow protection

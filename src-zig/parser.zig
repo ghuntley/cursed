@@ -661,7 +661,7 @@ pub const Parser = struct {
                 while (true) {
                     // FIXED: Better error handling for method arguments
                     const arg = self.parseExpression() catch |parse_err| {
-                        std.debug.print("DEBUG: Failed to parse method argument: {any}\n", .{parse_err});
+                        // std.debug.print("DEBUG: Failed to parse method argument: {any}\n", .{parse_err});
                         return parse_err;
                     };
                     const arg_ptr = self.arena_allocator.create(Expression) catch |alloc_err| {
@@ -1330,7 +1330,7 @@ pub const Parser = struct {
         
         // Struct declaration (squad)
         if (self.check(.Squad) or self.check(.Struct)) {
-            std.debug.print("DEBUG: Parsing struct statement\n", .{});
+            // std.debug.print("DEBUG: Parsing struct statement\n", .{});
             return try self.parseStructStatement();
         }
         

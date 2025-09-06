@@ -2,9 +2,11 @@ vibe main
 yeet "vibez"
 
 slay main_character() {
+    vibez.spill("Starting while test")
     sus i normie = 0
-    bestie (i < 3) {
-        vibez.spill("i =", i)
+    periodt (i < 3) {
+        vibez.spill(i)
         i = i + 1
     }
+    vibez.spill("While test complete")
 }
