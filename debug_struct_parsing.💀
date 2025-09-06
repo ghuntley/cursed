@@ -1,0 +1,13 @@
+vibe main
+yeet "vibez"
+
+be_like Node squad {
+    data normie
+    next ඞNode
+}
+
+slay main_character() {
+    vibez.spill("Creating struct literal...")
+    sus node ඞNode = ඞNode{data: 42, next: nah}
+    vibez.spill("Done")
+}

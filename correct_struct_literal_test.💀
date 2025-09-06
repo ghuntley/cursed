@@ -6,7 +6,7 @@ squad Node {
 }
 
 slay main_character() {
-    vibez.spill("Before creation")
+    vibez.spill("Before struct literal")
     sus node Node = Node{data: 42}
-    vibez.spill("After creation")
+    vibez.spill("After struct literal")
 }

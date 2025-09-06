@@ -6,7 +6,7 @@ fr fr Linked List Pointers Test
 fr fr Tests: Complex pointer usage with data structures
 fr fr Expected: Identical results in both modes
 
-be_like Node squad {
+squad Node {
     data normie
     next ඞNode
 }

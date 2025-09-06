@@ -1,0 +1,5 @@
+vibe main
+
+squad Node {
+    data normie
+}

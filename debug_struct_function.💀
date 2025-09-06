@@ -1,0 +1,18 @@
+vibe main
+yeet "vibez"
+
+squad Node {
+    data normie
+}
+
+slay create_node(value normie) Node {
+    vibez.spill("In create_node")
+    sus node Node = Node{data: value}
+    damn node
+}
+
+slay main_character() {
+    vibez.spill("Before function call")
+    sus first Node = create_node(1)
+    vibez.spill("After function call")
+}
