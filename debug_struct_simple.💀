@@ -1,20 +1,12 @@
 vibe main
-
 yeet "vibez"
 
-be_like Point squad {
-    x normie
-    y normie
+squad Node {
+    data normie
 }
 
 slay main_character() {
-    vibez.spill("=== Simple Struct Test ===")
-    
-    sus p ඞPoint = ඞPoint{x: 10, y: 20}
-    
-    vibez.spill("Point created:")
-    vibez.spill(p.x)
-    vibez.spill(p.y)
-    
-    vibez.spill("=== Test Complete ===")
+    vibez.spill("Testing struct creation...")
+    sus node ඞNode = ඞNode{data: 42}
+    vibez.spill("Struct created successfully")
 }

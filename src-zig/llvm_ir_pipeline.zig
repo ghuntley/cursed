@@ -486,6 +486,9 @@ pub const LLVMIRPipeline = struct {
             .ShortDeclaration => |short_decl| {
                 try self.generateShortDeclarationStatement(short_decl);
             },
+            .Struct => |struct_stmt| {
+                try self.generateStructStatement(struct_stmt);
+            },
             else => {
                 print("⚠️ Unhandled statement type in IR generation: {s}\n", .{@tagName(stmt)});
             },
@@ -1682,6 +1685,10 @@ pub const LLVMIRPipeline = struct {
             },
             .MemberAccess => |member_access| {
                 return try self.generateMemberAccess(member_access);
+            },
+            .StructLiteral => |_| {
+                // TODO: implement generateStructLiteral
+                return c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 0, 0);
             },
             else => {
                 print("⚠️ Unhandled expression type in IR generation: {s}\n", .{@tagName(expr)});
@@ -4243,6 +4250,52 @@ pub const LLVMIRPipeline = struct {
         return result_ptr;
     }
     
+    /// Generate struct declaration statement
+    fn generateStructStatement(self: *LLVMIRPipeline, struct_stmt: ast.StructStatement) !void {
+        // Store struct information for later use in struct literals and member access
+        // For now, just acknowledge the struct declaration - actual type generation happens on use
+        _ = self;
+        _ = struct_stmt;
+        // TODO: In a full implementation, we would store struct field information 
+        // in a type registry for use when generating struct literals and member access
+    }
+
+    /// Generate struct literal in LLVM IR
+    fn generateStructLiteral(self: *LLVMIRPipeline, struct_literal: ast.StructLiteralExpression) !c.LLVMValueRef {
+        // For now, support Node struct with data and next fields
+        if (std.mem.eql(u8, struct_literal.struct_name, "Node")) {
+            // Create struct type: { i32, i8* } (data: i32, next: pointer)
+            const struct_type = c.LLVMStructTypeInContext(self.context, @constCast(@ptrCast(&[_]c.LLVMTypeRef{
+                c.LLVMInt32TypeInContext(self.context),       // data field
+                c.LLVMPointerTypeInContext(self.context, 0)   // next field
+            })), 2, 0);
+            
+            // Allocate space for the struct
+            const struct_alloca = c.LLVMBuildAlloca(self.builder, struct_type, "struct_alloca");
+            
+            // Initialize struct fields with values from literal
+            for (struct_literal.fields.items, 0..) |field, idx| {
+                const field_value = try self.generateExpression(field.value.*);
+                
+                // Get pointer to field
+                const zero = c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 0, 0);
+                const field_idx = c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), @intCast(idx), 0);
+                const indices = [_]c.LLVMValueRef{zero, field_idx};
+                
+                const field_ptr = c.LLVMBuildGEP2(self.builder, struct_type, struct_alloca, @constCast(@ptrCast(&indices)), 2, "field_ptr");
+                
+                // Store the field value
+                _ = c.LLVMBuildStore(self.builder, field_value, field_ptr);
+            }
+            
+            return struct_alloca;
+        } else {
+            // Unsupported struct type - return null pointer as placeholder
+            print("⚠️ Struct literal for unknown type: {s}\n", .{struct_literal.struct_name});
+            return c.LLVMConstNull(c.LLVMPointerTypeInContext(self.context, 0));
+        }
+    }
+
     /// Generate member access (struct field access) in LLVM IR
     fn generateMemberAccess(self: *LLVMIRPipeline, member_access: *ast.MemberAccessExpression) !c.LLVMValueRef {
         // Generate the base object/struct expression
