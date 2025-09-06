@@ -1,0 +1,32 @@
+vibe main
+
+yeet "vibez"
+
+fr fr Nested Pointers Test
+fr fr Tests: Pointers to pointers (double indirection)
+fr fr Expected: Identical results in both modes
+
+slay main_character() {
+    vibez.spill("=== Nested Pointers Test ===")
+    
+    sus x normie = 42
+    sus ptr ඞnormie = ඞx
+    sus ptrptr ඞඞnormie = ඞptr
+    
+    vibez.spill("Value through double pointer:")
+    vibez.spill(**ptrptr)
+    
+    fr fr Modify through double pointer
+    **ptrptr = 777
+    
+    vibez.spill("Original value after double pointer modification:")
+    vibez.spill(x)
+    
+    vibez.spill("Value through single pointer:")
+    vibez.spill(*ptr)
+    
+    vibez.spill("Value through double pointer:")
+    vibez.spill(**ptrptr)
+    
+    vibez.spill("=== Test Complete ===")
+}

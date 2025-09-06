@@ -1,0 +1,49 @@
+vibe main
+
+yeet "vibez"
+
+fr fr Pointer Intensive Performance Test
+fr fr Tests: Heavy pointer usage for performance validation
+fr fr Expected: Identical results in both modes
+
+slay pointer_operations_loop() {
+    sus values []normie = []normie{0}
+    
+    fr fr Expand array to 10 elements
+    bestie i := 1; i < 10; i++ {
+        values = append(values, i * 10)
+    }
+    
+    fr fr Pointer manipulations
+    bestie i := 0; i < len(values); i++ {
+        sus ptr ඞnormie = ඞvalues[i]
+        *ptr = *ptr + 5
+    }
+    
+    sus total normie = 0
+    bestie i := 0; i < len(values); i++ {
+        total = total + values[i]
+    }
+    
+    damn total
+}
+
+slay main_character() {
+    vibez.spill("=== Pointer Performance Test ===")
+    
+    sus result normie = pointer_operations_loop()
+    vibez.spill("Total after pointer operations:")
+    vibez.spill(result)
+    
+    fr fr Chain pointer operations
+    sus x normie = 1
+    bestie i := 0; i < 5; i++ {
+        sus ptr ඞnormie = ඞx
+        *ptr = *ptr * 2
+    }
+    
+    vibez.spill("Final value after chain operations:")
+    vibez.spill(x)
+    
+    vibez.spill("=== Performance Test Complete ===")
+}

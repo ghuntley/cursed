@@ -1,0 +1,37 @@
+vibe main
+yeet "vibez"
+
+// Syntax validation test - ඞ vs @ (legacy)
+// This test validates the new Among Us syntax works
+
+slay test_new_syntax() {
+    vibez.spill("=== Testing New ඞ Syntax ===")
+    
+    sus value normie = 42
+    sus ptr ඞnormie = ඞvalue
+    
+    vibez.spill("Original value:", value)
+    vibez.spill("Via pointer:", *ptr)
+    
+    *ptr = 1337
+    vibez.spill("Modified via pointer:", value)
+    
+    // Nested pointers
+    sus ptrptr ඞඞnormie = ඞptr
+    vibez.spill("Via double pointer:", **ptrptr)
+    
+    **ptrptr = 9999
+    vibez.spill("Modified via double pointer:", value)
+}
+
+slay main_character() {
+    vibez.spill("🔍 CURSED Syntax Validation Test")
+    vibez.spill("Testing world's first ඞ pointer syntax")
+    vibez.spill("===================================")
+    
+    test_new_syntax()
+    
+    vibez.spill("===================================")
+    vibez.spill("✅ New syntax validation complete!")
+    vibez.spill("ඞ Among Us syntax is sus... but works!")
+}

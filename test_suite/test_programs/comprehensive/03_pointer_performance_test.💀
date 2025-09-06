@@ -1,0 +1,53 @@
+vibe main
+yeet "vibez"
+
+// Performance test for ඞ pointer syntax
+// Tests intensive pointer operations
+
+slay performance_test_pointer_intensive() {
+    vibez.spill("=== Pointer Performance Test ===")
+    
+    sus values normie = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
+    sus sum normie = 0
+    
+    // Intensive pointer dereferencing
+    damni i = 0
+    bet i < 10 {
+        sus ptr ඞnormie = ඞvalues[i]
+        sum = sum + *ptr
+        i = i + 1
+    }
+    
+    vibez.spill("Sum through pointers:", sum)
+}
+
+slay performance_test_nested_access() {
+    vibez.spill("=== Nested Pointer Access Performance ===")
+    
+    sus base normie = 100
+    sus ptr1 ඞnormie = ඞbase
+    sus ptr2 ඞඞnormie = ඞptr1
+    sus ptr3 ඞඞඞnormie = ඞptr2
+    
+    // Intensive nested dereferencing
+    damni count = 0
+    bet count < 1000 {
+        sus val normie = ***ptr3
+        count = count + 1
+    }
+    
+    vibez.spill("Completed", count, "nested dereferences")
+}
+
+slay main_character() {
+    vibez.spill("⚡ CURSED Pointer Performance Test")
+    vibez.spill("Testing ඞ pointer syntax performance")
+    vibez.spill("==================================")
+    
+    performance_test_pointer_intensive()
+    performance_test_nested_access()
+    
+    vibez.spill("==================================")
+    vibez.spill("🏆 Performance tests completed!")
+    vibez.spill("ඞ Among Us pointers are blazing fast!")
+}

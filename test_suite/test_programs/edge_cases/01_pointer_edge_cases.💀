@@ -1,0 +1,43 @@
+vibe main
+
+yeet "vibez"
+
+fr fr Pointer Edge Cases Test
+fr fr Tests: Edge cases and boundary conditions with pointers
+fr fr Expected: Identical results in both modes
+
+slay main_character() {
+    vibez.spill("=== Pointer Edge Cases ===")
+    
+    fr fr Chain of pointer assignments
+    sus x normie = 100
+    sus a ඞnormie = ඞx
+    sus b ඞnormie = a
+    sus c ඞnormie = b
+    
+    vibez.spill("Chain assignment result:")
+    vibez.spill(*c)
+    
+    fr fr Modify through chain
+    *c = 999
+    vibez.spill("Original value after chain modification:")
+    vibez.spill(x)
+    
+    fr fr Pointer comparison
+    ready (a == b) {
+        vibez.spill("Pointers are equal")
+    } otherwise {
+        vibez.spill("Pointers are not equal")
+    }
+    
+    fr fr Multiple dereferences
+    sus val normie = 50
+    sus p1 ඞnormie = ඞval
+    sus p2 ඞඞnormie = ඞp1
+    sus p3 ඞඞඞnormie = ඞp2
+    
+    vibez.spill("Triple pointer dereference:")
+    vibez.spill(***p3)
+    
+    vibez.spill("=== Test Complete ===")
+}

@@ -1,0 +1,37 @@
+vibe main
+
+yeet "vibez"
+
+fr fr Pointer Return Values Test
+fr fr Tests: Functions returning pointers
+fr fr Expected: Identical results in both modes
+
+slay get_larger(a ඞnormie, b ඞnormie) ඞnormie {
+    ready (*a > *b) {
+        damn a
+    }
+    damn b
+}
+
+slay create_value() ඞnormie {
+    sus x normie = 123
+    damn ඞx
+}
+
+slay main_character() {
+    vibez.spill("=== Pointer Return Values Test ===")
+    
+    sus x normie = 15
+    sus y normie = 25
+    
+    sus larger_ptr ඞnormie = get_larger(ඞx, ඞy)
+    
+    vibez.spill("Larger value:")
+    vibez.spill(*larger_ptr)
+    
+    sus new_ptr ඞnormie = create_value()
+    vibez.spill("Created value:")
+    vibez.spill(*new_ptr)
+    
+    vibez.spill("=== Test Complete ===")
+}

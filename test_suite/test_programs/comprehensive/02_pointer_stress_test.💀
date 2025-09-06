@@ -1,0 +1,93 @@
+vibe main
+yeet "vibez"
+
+// Comprehensive stress test for ඞ pointer syntax
+// Tests complex nested operations and edge cases
+
+slay stress_test_multiple_indirection() {
+    vibez.spill("=== Multiple Indirection Stress Test ===")
+    
+    sus base normie = 42
+    sus ptr1 ඞnormie = ඞbase
+    sus ptr2 ඞඞnormie = ඞptr1
+    sus ptr3 ඞඞඞnormie = ඞptr2
+    
+    vibez.spill("Base value:", base)
+    vibez.spill("Via ptr1:", *ptr1)
+    vibez.spill("Via ptr2:", **ptr2)
+    vibez.spill("Via ptr3:", ***ptr3)
+    
+    // Modify through deepest pointer
+    ***ptr3 = 999
+    vibez.spill("Modified via ptr3:", base)
+}
+
+slay stress_test_complex_expressions() {
+    vibez.spill("=== Complex Expression Stress Test ===")
+    
+    sus a normie = 100
+    sus b normie = 200
+    sus c normie = 300
+    
+    sus pa ඞnormie = ඞa
+    sus pb ඞnormie = ඞb
+    sus pc ඞnormie = ඞc
+    
+    // Complex pointer arithmetic expressions
+    sus result normie = (*pa + *pb) * (*pc / 100)
+    vibez.spill("Complex expr result:", result)
+    
+    // Nested dereferences in expressions
+    *pa = (*pb + *pc) / 2
+    vibez.spill("Modified a:", a)
+    
+    // Pointer comparisons
+    bet pa != pb && *pa < *pb {
+        vibez.spill("Pointer comparison works")
+    }
+}
+
+be_like StressNode {
+    data normie,
+    left ඞStressNode,
+    right ඞStressNode
+}
+
+slay create_stress_node(value normie) ඞStressNode {
+    sus node ඞStressNode = ඞStressNode{
+        data: value,
+        left: nah,
+        right: nah
+    }
+    
+    damn node
+}
+
+slay stress_test_recursive_structures() {
+    vibez.spill("=== Recursive Structure Stress Test ===")
+    
+    sus root ඞStressNode = create_stress_node(1)
+    sus left ඞStressNode = create_stress_node(2)
+    sus right ඞStressNode = create_stress_node(3)
+    
+    (*root).left = left
+    (*root).right = right
+    
+    vibez.spill("Root data:", (*root).data)
+    vibez.spill("Left data:", (*(*root).left).data)
+    vibez.spill("Right data:", (*(*root).right).data)
+}
+
+slay main_character() {
+    vibez.spill("🚀 CURSED Pointer Stress Test Suite")
+    vibez.spill("Using world's first Among Us pointer syntax ඞ")
+    vibez.spill("=====================================")
+    
+    stress_test_multiple_indirection()
+    stress_test_complex_expressions()
+    stress_test_recursive_structures()
+    
+    vibez.spill("=====================================")
+    vibez.spill("✨ All stress tests completed!")
+    vibez.spill("ඞ Among Us pointers are rock solid! ඞ")
+}

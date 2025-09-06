@@ -1,0 +1,16 @@
+vibe main
+
+yeet "vibez"
+
+fr fr Old Syntax Rejection Test
+fr fr Tests: Verify old @ syntax is properly rejected
+fr fr Expected: This should fail to compile
+
+slay main_character() {
+    vibez.spill("This should not compile with old @ syntax")
+    
+    sus x normie = 42
+    sus ptr @normie = @x  fr fr This should cause lexer error
+    
+    vibez.spill(*ptr)
+}
