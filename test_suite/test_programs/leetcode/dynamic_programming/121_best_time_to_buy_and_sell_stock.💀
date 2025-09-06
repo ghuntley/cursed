@@ -1,0 +1,24 @@
+vibe main
+
+yeet "vibez"
+yeet "mathz"
+
+fr fr LeetCode #121: Best Time to Buy and Sell Stock
+fr fr Difficulty: Easy
+fr fr Category: Dynamic_Programming
+fr fr TODO: Implement solution using CURSED ඞ pointers!
+
+slay solve_best_time_to_buy_and_sell_stock() {
+    fr fr TODO: Implement the actual algorithm here
+    vibez.spill("=== LeetCode #121: Best Time to Buy and Sell Stock ===")
+    vibez.spill("TODO: Implementation needed")
+    vibez.spill("=== Test Complete ===")
+}
+
+slay test_best_time_to_buy_and_sell_stock() {
+    solve_best_time_to_buy_and_sell_stock()
+}
+
+slay main_character() {
+    test_best_time_to_buy_and_sell_stock()
+}

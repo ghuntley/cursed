@@ -1,0 +1,85 @@
+vibe main
+
+yeet "vibez"
+
+fr fr LeetCode #617: Merge Two Binary Trees
+fr fr Merge trees by adding overlapping nodes using ඞ pointers
+
+be_like TreeNode squad {
+    val normie
+    left ඞTreeNode
+    right ඞTreeNode
+}
+
+slay create_node(val normie) ඞTreeNode {
+    sus node ඞTreeNode = ඞTreeNode{
+        val: val,
+        left: nah,
+        right: nah
+    }
+    damn node
+}
+
+slay merge_trees(root1 ඞTreeNode, root2 ඞTreeNode) ඞTreeNode {
+    ready (root1 == nah) {
+        damn root2
+    }
+    
+    ready (root2 == nah) {
+        damn root1
+    }
+    
+    sus merged ඞTreeNode = create_node(root1.val + root2.val)
+    merged.left = merge_trees(root1.left, root2.left)
+    merged.right = merge_trees(root1.right, root2.right)
+    
+    damn merged
+}
+
+slay print_tree_preorder(root ඞTreeNode) {
+    ready (root == nah) {
+        vibez.spill("null")
+        damn
+    }
+    
+    vibez.spill(root.val)
+    print_tree_preorder(root.left)
+    print_tree_preorder(root.right)
+}
+
+slay test_merge_two_binary_trees() {
+    vibez.spill("=== LeetCode #617: Merge Two Binary Trees (ඞ) ===")
+    
+    fr fr Test case 1: Merge [1,3,2,5] and [2,1,3,null,4,null,7]
+    sus tree1 ඞTreeNode = create_node(1)
+    tree1.left = create_node(3)
+    tree1.right = create_node(2)
+    tree1.left.left = create_node(5)
+    
+    sus tree2 ඞTreeNode = create_node(2)
+    tree2.left = create_node(1)
+    tree2.right = create_node(3)
+    tree2.left.right = create_node(4)
+    tree2.right.right = create_node(7)
+    
+    sus merged ඞTreeNode = merge_trees(tree1, tree2)
+    
+    vibez.spill("Test 1 - Merged tree (preorder):")
+    print_tree_preorder(merged)
+    
+    fr fr Test case 2: Merge [1] and [1,2]
+    sus tree3 ඞTreeNode = create_node(1)
+    sus tree4 ඞTreeNode = create_node(1)
+    tree4.left = create_node(2)
+    
+    sus merged2 ඞTreeNode = merge_trees(tree3, tree4)
+    
+    vibez.spill("Test 2 - Merged [1] and [1,2] (preorder):")
+    print_tree_preorder(merged2)
+    
+    vibez.spill("=== Merge Trees Complete (ඞ Tree Fusion!) ===")
+}
+
+slay main_character() {
+    test_merge_two_binary_trees()
+}

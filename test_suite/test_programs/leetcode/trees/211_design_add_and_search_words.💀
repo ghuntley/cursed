@@ -1,0 +1,22 @@
+vibe main
+
+yeet "vibez"
+
+fr fr LeetCode #211: Design Add and Search Words
+fr fr Category: Trees
+fr fr Implementation uses CURSED syntax with ඞ pointers!
+
+slay solve_design_add_and_search_words() {
+    vibez.spill("=== LeetCode #211: Design Add and Search Words ===")
+    
+    fr fr TODO: Implement actual algorithm
+    sus result normie = 42
+    vibez.spill("Demo result:")
+    vibez.spill(result)
+    
+    vibez.spill("=== Design Add and Search Words Complete ===")
+}
+
+slay main_character() {
+    solve_design_add_and_search_words()
+}

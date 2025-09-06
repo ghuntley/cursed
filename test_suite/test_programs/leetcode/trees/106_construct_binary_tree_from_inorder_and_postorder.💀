@@ -1,0 +1,24 @@
+vibe main
+
+yeet "vibez"
+yeet "mathz"
+
+fr fr LeetCode #106: Construct Binary Tree from Inorder and Postorder
+fr fr Difficulty: Medium
+fr fr Category: Trees
+fr fr TODO: Implement solution using CURSED ඞ pointers!
+
+slay solve_construct_binary_tree_from_inorder_and_postorder() {
+    fr fr TODO: Implement the actual algorithm here
+    vibez.spill("=== LeetCode #106: Construct Binary Tree from Inorder and Postorder ===")
+    vibez.spill("TODO: Implementation needed")
+    vibez.spill("=== Test Complete ===")
+}
+
+slay test_construct_binary_tree_from_inorder_and_postorder() {
+    solve_construct_binary_tree_from_inorder_and_postorder()
+}
+
+slay main_character() {
+    test_construct_binary_tree_from_inorder_and_postorder()
+}

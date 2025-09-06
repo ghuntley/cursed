@@ -1,0 +1,73 @@
+vibe main
+
+yeet "vibez"
+yeet "mathz"
+
+fr fr LeetCode #128: Longest Consecutive Sequence
+fr fr O(n) solution using hash set
+
+slay longest_consecutive(nums []normie) normie {
+    ready (len(nums) == 0) {
+        damn 0
+    }
+    
+    sus num_set map[normie]lit = map[normie]lit{}
+    
+    fr fr Add all numbers to set
+    bestie i := 0; i < len(nums); i++ {
+        num_set[nums[i]] = based
+    }
+    
+    sus longest_streak normie = 0
+    
+    bestie num := flex num_set {
+        fr fr Only start sequence from the beginning
+        ready (!num_set[num - 1]) {
+            sus current_num normie = num
+            sus current_streak normie = 1
+            
+            periodt (num_set[current_num + 1]) {
+                current_num++
+                current_streak++
+            }
+            
+            longest_streak = mathz.max(longest_streak, current_streak)
+        }
+    }
+    
+    damn longest_streak
+}
+
+slay test_longest_consecutive() {
+    vibez.spill("=== LeetCode #128: Longest Consecutive Sequence ===")
+    
+    fr fr Test case 1: [100,4,200,1,3,2] -> 4
+    sus nums1 []normie = []normie{100, 4, 200, 1, 3, 2}
+    sus result1 normie = longest_consecutive(nums1)
+    vibez.spill("Test 1 - Expected: 4 (sequence 1,2,3,4)")
+    vibez.spill(result1)
+    
+    fr fr Test case 2: [0,3,7,2,5,8,4,6,0,1] -> 9
+    sus nums2 []normie = []normie{0, 3, 7, 2, 5, 8, 4, 6, 0, 1}
+    sus result2 normie = longest_consecutive(nums2)
+    vibez.spill("Test 2 - Expected: 9")
+    vibez.spill(result2)
+    
+    fr fr Test case 3: [1,2,0,1] -> 3
+    sus nums3 []normie = []normie{1, 2, 0, 1}
+    sus result3 normie = longest_consecutive(nums3)
+    vibez.spill("Test 3 - Expected: 3 (sequence 0,1,2)")
+    vibez.spill(result3)
+    
+    fr fr Test case 4: [] -> 0
+    sus nums4 []normie = []normie{}
+    sus result4 normie = longest_consecutive(nums4)
+    vibez.spill("Test 4 - Empty array, Expected: 0")
+    vibez.spill(result4)
+    
+    vibez.spill("=== Longest Consecutive Complete ===")
+}
+
+slay main_character() {
+    test_longest_consecutive()
+}

@@ -1,0 +1,22 @@
+vibe main
+
+yeet "vibez"
+
+fr fr LeetCode #665: Non-decreasing Array
+fr fr Category: Arrays
+fr fr Implementation uses CURSED syntax with ඞ pointers!
+
+slay solve_non_decreasing_array() {
+    vibez.spill("=== LeetCode #665: Non-decreasing Array ===")
+    
+    fr fr TODO: Implement actual algorithm
+    sus result normie = 42
+    vibez.spill("Demo result:")
+    vibez.spill(result)
+    
+    vibez.spill("=== Non-decreasing Array Complete ===")
+}
+
+slay main_character() {
+    solve_non_decreasing_array()
+}

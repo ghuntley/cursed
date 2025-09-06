@@ -1,0 +1,22 @@
+vibe main
+
+yeet "vibez"
+
+fr fr LeetCode #143: Reorder List
+fr fr Category: Linked_Lists
+fr fr Implementation uses CURSED syntax with ඞ pointers!
+
+slay solve_reorder_list() {
+    vibez.spill("=== LeetCode #143: Reorder List ===")
+    
+    fr fr TODO: Implement actual algorithm
+    sus result normie = 42
+    vibez.spill("Demo result:")
+    vibez.spill(result)
+    
+    vibez.spill("=== Reorder List Complete ===")
+}
+
+slay main_character() {
+    solve_reorder_list()
+}

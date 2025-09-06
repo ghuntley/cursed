@@ -1,0 +1,22 @@
+vibe main
+
+yeet "vibez"
+
+fr fr LeetCode #989: Add to Array Form of Integer
+fr fr Category: Arrays
+fr fr Implementation uses CURSED syntax with ඞ pointers!
+
+slay solve_add_to_array_form_of_integer() {
+    vibez.spill("=== LeetCode #989: Add to Array Form of Integer ===")
+    
+    fr fr TODO: Implement actual algorithm
+    sus result normie = 42
+    vibez.spill("Demo result:")
+    vibez.spill(result)
+    
+    vibez.spill("=== Add to Array Form of Integer Complete ===")
+}
+
+slay main_character() {
+    solve_add_to_array_form_of_integer()
+}

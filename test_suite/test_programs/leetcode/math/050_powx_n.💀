@@ -1,0 +1,24 @@
+vibe main
+
+yeet "vibez"
+yeet "mathz"
+
+fr fr LeetCode #50: Pow(x, n)
+fr fr Difficulty: Medium
+fr fr Category: Math
+fr fr TODO: Implement solution using CURSED ඞ pointers!
+
+slay solve_powx_n() {
+    fr fr TODO: Implement the actual algorithm here
+    vibez.spill("=== LeetCode #50: Pow(x, n) ===")
+    vibez.spill("TODO: Implementation needed")
+    vibez.spill("=== Test Complete ===")
+}
+
+slay test_powx_n() {
+    solve_powx_n()
+}
+
+slay main_character() {
+    test_powx_n()
+}

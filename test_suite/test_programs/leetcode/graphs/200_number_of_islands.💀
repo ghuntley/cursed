@@ -1,0 +1,103 @@
+vibe main
+
+yeet "vibez"
+
+fr fr LeetCode #200: Number of Islands
+fr fr DFS to count connected components in 2D grid
+
+slay num_islands(grid ඞ[][]sip) normie {
+    ready (len(*grid) == 0 || len((*grid)[0]) == 0) {
+        damn 0
+    }
+    
+    sus rows normie = len(*grid)
+    sus cols normie = len((*grid)[0])
+    sus count normie = 0
+    
+    bestie i := 0; i < rows; i++ {
+        bestie j := 0; j < cols; j++ {
+            ready ((*grid)[i][j] == '1') {
+                count++
+                dfs(grid, i, j, rows, cols)
+            }
+        }
+    }
+    
+    damn count
+}
+
+slay dfs(grid ඞ[][]sip, i normie, j normie, rows normie, cols normie) {
+    ready (i < 0 || i >= rows || j < 0 || j >= cols || (*grid)[i][j] == '0') {
+        damn
+    }
+    
+    fr fr Mark as visited
+    (*grid)[i][j] = '0'
+    
+    fr fr Visit all 4 directions
+    dfs(grid, i+1, j, rows, cols)
+    dfs(grid, i-1, j, rows, cols)
+    dfs(grid, i, j+1, rows, cols)
+    dfs(grid, i, j-1, rows, cols)
+}
+
+slay create_grid(data []tea) [][]sip {
+    sus grid [][]sip = [][]sip{}
+    
+    bestie i := 0; i < len(data); i++ {
+        sus row []sip = []sip{}
+        bestie j := 0; j < len(data[i]); j++ {
+            row = append(row, data[i][j])
+        }
+        grid = append(grid, row)
+    }
+    
+    damn grid
+}
+
+slay test_number_of_islands() {
+    vibez.spill("=== LeetCode #200: Number of Islands (ඞ DFS) ===")
+    
+    fr fr Test case 1: 1 island
+    sus grid_data1 []tea = []tea{
+        "11110",
+        "11010",
+        "11000",
+        "00000"
+    }
+    sus grid1 [][]sip = create_grid(grid_data1)
+    sus count1 normie = num_islands(ඞgrid1)
+    
+    vibez.spill("Test 1 - Expected: 1 island")
+    vibez.spill(count1)
+    
+    fr fr Test case 2: 3 islands
+    sus grid_data2 []tea = []tea{
+        "11000",
+        "11000",
+        "00100",
+        "00011"
+    }
+    sus grid2 [][]sip = create_grid(grid_data2)
+    sus count2 normie = num_islands(ඞgrid2)
+    
+    vibez.spill("Test 2 - Expected: 3 islands")
+    vibez.spill(count2)
+    
+    fr fr Test case 3: No islands
+    sus grid_data3 []tea = []tea{
+        "0000",
+        "0000"
+    }
+    sus grid3 [][]sip = create_grid(grid_data3)
+    sus count3 normie = num_islands(ඞgrid3)
+    
+    vibez.spill("Test 3 - Expected: 0 islands")
+    vibez.spill(count3)
+    
+    vibez.spill("=== Islands Complete (DFS with ඞ!) ===")
+}
+
+slay main_character() {
+    test_number_of_islands()
+}

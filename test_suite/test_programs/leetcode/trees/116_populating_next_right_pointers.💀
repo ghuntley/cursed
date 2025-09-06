@@ -1,0 +1,24 @@
+vibe main
+
+yeet "vibez"
+yeet "mathz"
+
+fr fr LeetCode #116: Populating Next Right Pointers
+fr fr Difficulty: Medium
+fr fr Category: Trees
+fr fr TODO: Implement solution using CURSED ඞ pointers!
+
+slay solve_populating_next_right_pointers() {
+    fr fr TODO: Implement the actual algorithm here
+    vibez.spill("=== LeetCode #116: Populating Next Right Pointers ===")
+    vibez.spill("TODO: Implementation needed")
+    vibez.spill("=== Test Complete ===")
+}
+
+slay test_populating_next_right_pointers() {
+    solve_populating_next_right_pointers()
+}
+
+slay main_character() {
+    test_populating_next_right_pointers()
+}

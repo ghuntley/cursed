@@ -1,0 +1,24 @@
+vibe main
+
+yeet "vibez"
+yeet "mathz"
+
+fr fr LeetCode #98: Validate Binary Search Tree
+fr fr Difficulty: Medium
+fr fr Category: Trees
+fr fr TODO: Implement solution using CURSED ඞ pointers!
+
+slay solve_validate_binary_search_tree() {
+    fr fr TODO: Implement the actual algorithm here
+    vibez.spill("=== LeetCode #98: Validate Binary Search Tree ===")
+    vibez.spill("TODO: Implementation needed")
+    vibez.spill("=== Test Complete ===")
+}
+
+slay test_validate_binary_search_tree() {
+    solve_validate_binary_search_tree()
+}
+
+slay main_character() {
+    test_validate_binary_search_tree()
+}

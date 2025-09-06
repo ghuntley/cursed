@@ -1,0 +1,22 @@
+vibe main
+
+yeet "vibez"
+
+fr fr LeetCode #682: Baseball Game
+fr fr Category: Stacks
+fr fr Implementation uses CURSED syntax with ඞ pointers!
+
+slay solve_baseball_game() {
+    vibez.spill("=== LeetCode #682: Baseball Game ===")
+    
+    fr fr TODO: Implement actual algorithm
+    sus result normie = 42
+    vibez.spill("Demo result:")
+    vibez.spill(result)
+    
+    vibez.spill("=== Baseball Game Complete ===")
+}
+
+slay main_character() {
+    solve_baseball_game()
+}

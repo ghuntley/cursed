@@ -1,0 +1,54 @@
+vibe main
+
+yeet "vibez"
+yeet "mathz"
+
+fr fr LeetCode #14: Longest Common Prefix
+
+slay longest_common_prefix(strs []tea) tea {
+    ready (len(strs) == 0) {
+        damn ""
+    }
+    
+    sus prefix tea = strs[0]
+    
+    bestie i := 1; i < len(strs); i++ {
+        periodt (len(prefix) > 0 && !starts_with(strs[i], prefix)) {
+            prefix = prefix[:len(prefix)-1]
+        }
+    }
+    
+    damn prefix
+}
+
+slay starts_with(s tea, prefix tea) lit {
+    ready (len(prefix) > len(s)) {
+        damn cringe
+    }
+    
+    bestie i := 0; i < len(prefix); i++ {
+        ready (s[i] != prefix[i]) {
+            damn cringe
+        }
+    }
+    
+    damn based
+}
+
+slay test_longest_common_prefix() {
+    vibez.spill("=== LeetCode #14: Longest Common Prefix ===")
+    
+    sus strs1 []tea = []tea{"flower", "flow", "flight"}
+    vibez.spill("Test 1 - Expected: fl")
+    vibez.spill(longest_common_prefix(strs1))
+    
+    sus strs2 []tea = []tea{"dog", "racecar", "car"}
+    vibez.spill("Test 2 - Expected: empty")
+    vibez.spill(longest_common_prefix(strs2))
+    
+    vibez.spill("=== Complete ===")
+}
+
+slay main_character() {
+    test_longest_common_prefix()
+}

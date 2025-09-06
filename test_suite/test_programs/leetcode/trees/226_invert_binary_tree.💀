@@ -1,0 +1,92 @@
+vibe main
+
+yeet "vibez"
+
+fr fr LeetCode #226: Invert Binary Tree
+fr fr The famous problem that sparked "Google: 90% of our engineers use the software you wrote (Homebrew), but you can't invert a binary tree on a whiteboard so f*** off."
+
+be_like TreeNode squad {
+    val normie
+    left ඞTreeNode
+    right ඞTreeNode
+}
+
+slay create_node(val normie) ඞTreeNode {
+    sus node ඞTreeNode = ඞTreeNode{
+        val: val,
+        left: nah,
+        right: nah
+    }
+    damn node
+}
+
+slay invert_tree(root ඞTreeNode) ඞTreeNode {
+    ready (root == nah) {
+        damn nah
+    }
+    
+    fr fr Swap left and right children
+    sus temp ඞTreeNode = root.left
+    root.left = root.right
+    root.right = temp
+    
+    fr fr Recursively invert subtrees
+    invert_tree(root.left)
+    invert_tree(root.right)
+    
+    damn root
+}
+
+slay print_tree_inorder(root ඞTreeNode) {
+    ready (root == nah) {
+        damn
+    }
+    
+    print_tree_inorder(root.left)
+    vibez.spill(root.val)
+    print_tree_inorder(root.right)
+}
+
+slay test_invert_binary_tree() {
+    vibez.spill("=== LeetCode #226: Invert Binary Tree (The Famous One!) ===")
+    
+    fr fr Test case 1: [4,2,7,1,3,6,9] -> [4,7,2,9,6,3,1]
+    sus root1 ඞTreeNode = create_node(4)
+    root1.left = create_node(2)
+    root1.right = create_node(7)
+    root1.left.left = create_node(1)
+    root1.left.right = create_node(3)
+    root1.right.left = create_node(6)
+    root1.right.right = create_node(9)
+    
+    vibez.spill("Before inversion (inorder):")
+    print_tree_inorder(root1)
+    
+    sus inverted1 ඞTreeNode = invert_tree(root1)
+    
+    vibez.spill("After inversion (inorder):")
+    print_tree_inorder(inverted1)
+    
+    fr fr Test case 2: [2,1,3] -> [2,3,1]
+    sus root2 ඞTreeNode = create_node(2)
+    root2.left = create_node(1)
+    root2.right = create_node(3)
+    
+    vibez.spill("Test 2 - Before inversion:")
+    print_tree_inorder(root2)
+    
+    sus inverted2 ඞTreeNode = invert_tree(root2)
+    
+    vibez.spill("Test 2 - After inversion:")
+    print_tree_inorder(inverted2)
+    
+    fr fr Test case 3: [] -> []
+    sus inverted3 ඞTreeNode = invert_tree(nah)
+    vibez.spill("Test 3 - Empty tree stays empty")
+    
+    vibez.spill("=== Invert Tree Complete (ඞ Trees are Sus but Work!) ===")
+}
+
+slay main_character() {
+    test_invert_binary_tree()
+}

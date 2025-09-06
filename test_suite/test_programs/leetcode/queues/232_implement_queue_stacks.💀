@@ -1,0 +1,80 @@
+vibe main
+
+yeet "vibez"
+
+fr fr LeetCode #232: Implement Queue using Stacks
+fr fr Queue implementation using two stacks
+
+be_like MyQueue squad {
+    input_stack []normie
+    output_stack []normie
+}
+
+slay create_queue() ඞMyQueue {
+    sus queue ඞMyQueue = ඞMyQueue{
+        input_stack: []normie{},
+        output_stack: []normie{}
+    }
+    damn queue
+}
+
+slay (self ඞMyQueue) push(x normie) {
+    self.input_stack = append(self.input_stack, x)
+}
+
+slay (self ඞMyQueue) pop() normie {
+    sus result normie = self.peek()
+    self.output_stack = self.output_stack[:len(self.output_stack)-1]
+    damn result
+}
+
+slay (self ඞMyQueue) peek() normie {
+    ready (len(self.output_stack) == 0) {
+        periodt (len(self.input_stack) > 0) {
+            sus val normie = self.input_stack[len(self.input_stack)-1]
+            self.input_stack = self.input_stack[:len(self.input_stack)-1]
+            self.output_stack = append(self.output_stack, val)
+        }
+    }
+    
+    damn self.output_stack[len(self.output_stack)-1]
+}
+
+slay (self ඞMyQueue) empty() lit {
+    damn len(self.input_stack) == 0 && len(self.output_stack) == 0
+}
+
+slay test_queue_using_stacks() {
+    vibez.spill("=== LeetCode #232: Queue Using Stacks (ඞ) ===")
+    
+    sus queue ඞMyQueue = create_queue()
+    
+    vibez.spill("Testing queue operations:")
+    
+    queue.push(1)
+    vibez.spill("Pushed 1")
+    
+    queue.push(2)
+    vibez.spill("Pushed 2")
+    
+    vibez.spill("Peek (should be 1):")
+    vibez.spill(queue.peek())
+    
+    vibez.spill("Pop (should be 1):")
+    vibez.spill(queue.pop())
+    
+    vibez.spill("Empty? (should be cringe):")
+    vibez.spill(queue.empty())
+    
+    vibez.spill("Pop (should be 2):")
+    vibez.spill(queue.pop())
+    
+    vibez.spill("Empty? (should be based):")
+    vibez.spill(queue.empty())
+    
+    vibez.spill("=== Queue Using Stacks Complete ===")
+}
+
+slay main_character() {
+    test_queue_using_stacks()
+}

@@ -1,0 +1,22 @@
+vibe main
+
+yeet "vibez"
+
+fr fr LeetCode #204: Count Primes
+fr fr Category: Math
+fr fr Implementation uses CURSED syntax with ඞ pointers!
+
+slay solve_count_primes() {
+    vibez.spill("=== LeetCode #204: Count Primes ===")
+    
+    fr fr TODO: Implement actual algorithm
+    sus result normie = 42
+    vibez.spill("Demo result:")
+    vibez.spill(result)
+    
+    vibez.spill("=== Count Primes Complete ===")
+}
+
+slay main_character() {
+    solve_count_primes()
+}

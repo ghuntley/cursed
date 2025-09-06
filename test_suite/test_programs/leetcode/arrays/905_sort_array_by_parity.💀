@@ -1,0 +1,22 @@
+vibe main
+
+yeet "vibez"
+
+fr fr LeetCode #905: Sort Array By Parity
+fr fr Category: Arrays
+fr fr Implementation uses CURSED syntax with ඞ pointers!
+
+slay solve_sort_array_by_parity() {
+    vibez.spill("=== LeetCode #905: Sort Array By Parity ===")
+    
+    fr fr TODO: Implement actual algorithm
+    sus result normie = 42
+    vibez.spill("Demo result:")
+    vibez.spill(result)
+    
+    vibez.spill("=== Sort Array By Parity Complete ===")
+}
+
+slay main_character() {
+    solve_sort_array_by_parity()
+}

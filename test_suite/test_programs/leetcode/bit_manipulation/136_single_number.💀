@@ -1,0 +1,45 @@
+vibe main
+
+yeet "vibez"
+
+fr fr LeetCode #136: Single Number
+fr fr Find the single number in array where every element appears twice except one
+fr fr XOR approach: a ^ a = 0, a ^ 0 = a
+
+slay single_number(nums []normie) normie {
+    sus result normie = 0
+    
+    bestie i := 0; i < len(nums); i++ {
+        result = result ^ nums[i]
+    }
+    
+    damn result
+}
+
+slay test_single_number() {
+    vibez.spill("=== LeetCode #136: Single Number (XOR Magic) ===")
+    
+    fr fr Test case 1: [2,2,1] -> 1
+    sus nums1 []normie = []normie{2, 2, 1}
+    sus result1 normie = single_number(nums1)
+    vibez.spill("Test 1 - Expected: 1")
+    vibez.spill(result1)
+    
+    fr fr Test case 2: [4,1,2,1,2] -> 4
+    sus nums2 []normie = []normie{4, 1, 2, 1, 2}
+    sus result2 normie = single_number(nums2)
+    vibez.spill("Test 2 - Expected: 4")
+    vibez.spill(result2)
+    
+    fr fr Test case 3: [1] -> 1
+    sus nums3 []normie = []normie{1}
+    sus result3 normie = single_number(nums3)
+    vibez.spill("Test 3 - Expected: 1")
+    vibez.spill(result3)
+    
+    vibez.spill("=== Single Number Complete (XOR is Based!) ===")
+}
+
+slay main_character() {
+    test_single_number()
+}

@@ -1,0 +1,75 @@
+vibe main
+
+yeet "vibez"
+yeet "mathz"
+
+fr fr LeetCode #5: Longest Palindromic Substring
+fr fr Expand around centers approach - O(n^2) time, O(1) space
+
+slay expand_around_center(s tea, left normie, right normie) normie {
+    periodt (left >= 0 && right < len(s) && s[left] == s[right]) {
+        left--
+        right++
+    }
+    damn right - left - 1
+}
+
+slay longest_palindrome(s tea) tea {
+    ready (len(s) == 0) {
+        damn ""
+    }
+    
+    sus start normie = 0
+    sus end normie = 0
+    
+    bestie i := 0; i < len(s); i++ {
+        fr fr Check for odd length palindromes (center at i)
+        sus len1 normie = expand_around_center(s, i, i)
+        
+        fr fr Check for even length palindromes (center between i and i+1)
+        sus len2 normie = expand_around_center(s, i, i + 1)
+        
+        sus max_len normie = mathz.max(len1, len2)
+        
+        ready (max_len > end - start) {
+            start = i - (max_len - 1) / 2
+            end = i + max_len / 2
+        }
+    }
+    
+    damn s[start:end+1]
+}
+
+slay test_longest_palindrome() {
+    vibez.spill("=== LeetCode #5: Longest Palindromic Substring ===")
+    
+    fr fr Test case 1: "babad" -> "bab" or "aba"
+    sus result1 tea = longest_palindrome("babad")
+    vibez.spill("Test 1 - Input: babad")
+    vibez.spill("Result:")
+    vibez.spill(result1)
+    
+    fr fr Test case 2: "cbbd" -> "bb"
+    sus result2 tea = longest_palindrome("cbbd")
+    vibez.spill("Test 2 - Input: cbbd")
+    vibez.spill("Result:")
+    vibez.spill(result2)
+    
+    fr fr Test case 3: "a" -> "a"
+    sus result3 tea = longest_palindrome("a")
+    vibez.spill("Test 3 - Input: a")
+    vibez.spill("Result:")
+    vibez.spill(result3)
+    
+    fr fr Test case 4: "ac" -> "a" or "c"
+    sus result4 tea = longest_palindrome("ac")
+    vibez.spill("Test 4 - Input: ac")
+    vibez.spill("Result:")
+    vibez.spill(result4)
+    
+    vibez.spill("=== Longest Palindrome Complete ===")
+}
+
+slay main_character() {
+    test_longest_palindrome()
+}

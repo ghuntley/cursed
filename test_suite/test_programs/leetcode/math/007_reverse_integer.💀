@@ -1,0 +1,60 @@
+vibe main
+
+yeet "vibez"
+
+fr fr LeetCode #7: Reverse Integer
+fr fr Reverse digits of 32-bit signed integer
+
+slay reverse(x normie) normie {
+    sus result normie = 0
+    sus sign normie = 1
+    
+    ready (x < 0) {
+        sign = -1
+        x = -x
+    }
+    
+    periodt (x != 0) {
+        sus digit normie = x % 10
+        x = x / 10
+        
+        fr fr Check for overflow before multiplying
+        ready (result > (2147483647 - digit) / 10) {
+            damn 0
+        }
+        
+        result = result * 10 + digit
+    }
+    
+    damn result * sign
+}
+
+slay test_reverse_integer() {
+    vibez.spill("=== LeetCode #7: Reverse Integer ===")
+    
+    fr fr Test case 1: 123 -> 321
+    sus result1 normie = reverse(123)
+    vibez.spill("Test 1 - Expected: 321")
+    vibez.spill(result1)
+    
+    fr fr Test case 2: -123 -> -321
+    sus result2 normie = reverse(-123)
+    vibez.spill("Test 2 - Expected: -321")
+    vibez.spill(result2)
+    
+    fr fr Test case 3: 120 -> 21
+    sus result3 normie = reverse(120)
+    vibez.spill("Test 3 - Expected: 21")
+    vibez.spill(result3)
+    
+    fr fr Test case 4: 0 -> 0
+    sus result4 normie = reverse(0)
+    vibez.spill("Test 4 - Expected: 0")
+    vibez.spill(result4)
+    
+    vibez.spill("=== Reverse Integer Complete ===")
+}
+
+slay main_character() {
+    test_reverse_integer()
+}

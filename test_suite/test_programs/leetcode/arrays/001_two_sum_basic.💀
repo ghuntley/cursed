@@ -1,0 +1,39 @@
+vibe main
+
+yeet "vibez"
+
+fr fr LeetCode #1: Two Sum (Basic CURSED implementation)
+fr fr Simple brute force that works with current parser
+
+slay test_two_sum() {
+    vibez.spill("=== LeetCode #1: Two Sum (Basic) ===")
+    
+    fr fr Hardcoded test for current parser capabilities
+    sus num1 normie = 2
+    sus num2 normie = 7
+    sus num3 normie = 11
+    sus num4 normie = 15
+    sus target normie = 9
+    
+    vibez.spill("Array: [2, 7, 11, 15], Target: 9")
+    
+    fr fr Check all pairs manually
+    ready (num1 + num2 == target) {
+        vibez.spill("Found indices: 0, 1")
+        vibez.spill("Values: " + num1 + ", " + num2)
+    }
+    
+    ready (num1 + num3 == target) {
+        vibez.spill("Found indices: 0, 2")
+    }
+    
+    ready (num2 + num3 == target) {
+        vibez.spill("Found indices: 1, 2")
+    }
+    
+    vibez.spill("=== Two Sum Complete ===")
+}
+
+slay main_character() {
+    test_two_sum()
+}

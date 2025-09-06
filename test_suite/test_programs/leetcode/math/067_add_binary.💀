@@ -1,0 +1,24 @@
+vibe main
+
+yeet "vibez"
+yeet "mathz"
+
+fr fr LeetCode #67: Add Binary
+fr fr Difficulty: Easy
+fr fr Category: Math
+fr fr TODO: Implement solution using CURSED ඞ pointers!
+
+slay solve_add_binary() {
+    fr fr TODO: Implement the actual algorithm here
+    vibez.spill("=== LeetCode #67: Add Binary ===")
+    vibez.spill("TODO: Implementation needed")
+    vibez.spill("=== Test Complete ===")
+}
+
+slay test_add_binary() {
+    solve_add_binary()
+}
+
+slay main_character() {
+    test_add_binary()
+}

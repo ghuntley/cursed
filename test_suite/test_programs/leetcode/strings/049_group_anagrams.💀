@@ -1,0 +1,90 @@
+vibe main
+
+yeet "vibez"
+
+fr fr LeetCode #49: Group Anagrams  
+fr fr Group strings that are anagrams of each other
+
+slay sort_string(s tea) tea {
+    fr fr Convert string to character array, sort it, then back to string
+    sus chars []sip = []sip{}
+    
+    bestie i := 0; i < len(s); i++ {
+        chars = append(chars, s[i])
+    }
+    
+    fr fr Simple bubble sort for characters
+    bestie i := 0; i < len(chars); i++ {
+        bestie j := 0; j < len(chars)-1-i; j++ {
+            ready (chars[j] > chars[j+1]) {
+                sus temp sip = chars[j]
+                chars[j] = chars[j+1]
+                chars[j+1] = temp
+            }
+        }
+    }
+    
+    fr fr Convert back to string
+    sus result tea = ""
+    bestie i := 0; i < len(chars); i++ {
+        result = result + string(chars[i])
+    }
+    
+    damn result
+}
+
+slay group_anagrams(strs []tea) [][]tea {
+    sus groups map[tea][]tea = map[tea][]tea{}
+    
+    bestie i := 0; i < len(strs); i++ {
+        sus key tea = sort_string(strs[i])
+        groups[key] = append(groups[key], strs[i])
+    }
+    
+    sus result [][]tea = [][]tea{}
+    bestie key, group := flex groups {
+        result = append(result, group)
+    }
+    
+    damn result
+}
+
+slay print_groups(groups [][]tea) {
+    bestie i := 0; i < len(groups); i++ {
+        vibez.spill("Group:")
+        bestie j := 0; j < len(groups[i]); j++ {
+            vibez.spill(groups[i][j])
+        }
+    }
+}
+
+slay test_group_anagrams() {
+    vibez.spill("=== LeetCode #49: Group Anagrams ===")
+    
+    fr fr Test case 1: ["eat","tea","tan","ate","nat","bat"]
+    sus strs1 []tea = []tea{"eat", "tea", "tan", "ate", "nat", "bat"}
+    sus groups1 [][]tea = group_anagrams(strs1)
+    
+    vibez.spill("Test 1 - Input: [eat,tea,tan,ate,nat,bat]")
+    print_groups(groups1)
+    
+    fr fr Test case 2: [""]
+    sus strs2 []tea = []tea{""}
+    sus groups2 [][]tea = group_anagrams(strs2)
+    
+    vibez.spill("Test 2 - Empty string:")
+    print_groups(groups2)
+    
+    fr fr Test case 3: ["a"]
+    sus strs3 []tea = []tea{"a"}
+    sus groups3 [][]tea = group_anagrams(strs3)
+    
+    vibez.spill("Test 3 - Single character:")
+    print_groups(groups3)
+    
+    vibez.spill("=== Group Anagrams Complete ===")
+}
+
+slay main_character() {
+    test_group_anagrams()
+}

@@ -1,0 +1,43 @@
+vibe main
+yeet "vibez"
+
+// LeetCode #238: Product of Array Except Self 🎯
+// Return array where output[i] = product of all elements except nums[i]
+// Time: O(n), Space: O(1) - excluding output array
+
+slay product_except_self(nums normie[]) normie[] {
+    sus n normie = len(nums)
+    sus result normie[] = make_array(n, 1)
+    
+    // First pass: left products
+    bestie i := 1; i < n; i++ {
+        result[i] = result[i-1] * nums[i-1]
+    }
+    
+    // Second pass: multiply by right products  
+    sus right normie = 1
+    bestie i := n - 1; i >= 0; i-- {
+        result[i] = result[i] * right
+        right = right * nums[i]
+    }
+    
+    damn result
+}
+
+slay test_product_except_self() {
+    vibez.spill("=== 🎯 LeetCode #238: Product Except Self ===")
+    
+    sus nums1 normie[] = [1, 2, 3, 4]
+    sus result1 normie[] = product_except_self(nums1)
+    vibez.spill("Input: [1,2,3,4], Output:", result1)
+    
+    sus nums2 normie[] = [-1, 1, 0, -3, 3]
+    sus result2 normie[] = product_except_self(nums2)
+    vibez.spill("Input: [-1,1,0,-3,3], Output:", result2)
+    
+    vibez.spill("=== Product Except Self Complete! No cap 🔥 ===")
+}
+
+slay main_character() {
+    test_product_except_self()
+}

@@ -1,0 +1,72 @@
+vibe main
+
+yeet "vibez"
+
+fr fr LeetCode #242: Valid Anagram
+fr fr Check if two strings are anagrams using character frequency
+
+slay is_anagram(s tea, t tea) lit {
+    ready (len(s) != len(t)) {
+        damn cringe
+    }
+    
+    fr fr Count character frequencies
+    sus char_count map[sip]normie = map[sip]normie{}
+    
+    fr fr Count characters in first string
+    bestie i := 0; i < len(s); i++ {
+        char_count[s[i]]++
+    }
+    
+    fr fr Subtract characters from second string
+    bestie i := 0; i < len(t); i++ {
+        char_count[t[i]]--
+        ready (char_count[t[i]] < 0) {
+            damn cringe
+        }
+    }
+    
+    fr fr Check if all counts are zero
+    bestie char, count := flex char_count {
+        ready (count != 0) {
+            damn cringe
+        }
+    }
+    
+    damn based
+}
+
+slay test_valid_anagram() {
+    vibez.spill("=== LeetCode #242: Valid Anagram ===")
+    
+    fr fr Test case 1: "anagram", "nagaram" -> true
+    sus result1 lit = is_anagram("anagram", "nagaram")
+    vibez.spill("Test 1 - anagram vs nagaram, Expected: based")
+    vibez.spill(result1)
+    
+    fr fr Test case 2: "rat", "car" -> false
+    sus result2 lit = is_anagram("rat", "car")
+    vibez.spill("Test 2 - rat vs car, Expected: cringe")
+    vibez.spill(result2)
+    
+    fr fr Test case 3: "listen", "silent" -> true
+    sus result3 lit = is_anagram("listen", "silent")
+    vibez.spill("Test 3 - listen vs silent, Expected: based")
+    vibez.spill(result3)
+    
+    fr fr Test case 4: "a", "ab" -> false
+    sus result4 lit = is_anagram("a", "ab")
+    vibez.spill("Test 4 - different lengths, Expected: cringe")
+    vibez.spill(result4)
+    
+    fr fr Test case 5: "", "" -> true
+    sus result5 lit = is_anagram("", "")
+    vibez.spill("Test 5 - empty strings, Expected: based")
+    vibez.spill(result5)
+    
+    vibez.spill("=== Valid Anagram Complete ===")
+}
+
+slay main_character() {
+    test_valid_anagram()
+}

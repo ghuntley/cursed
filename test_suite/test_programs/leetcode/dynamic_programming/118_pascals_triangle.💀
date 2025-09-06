@@ -1,0 +1,62 @@
+vibe main
+
+yeet "vibez"
+
+fr fr LeetCode #118: Pascal's Triangle
+fr fr Generate first numRows of Pascal's triangle
+
+slay generate(num_rows normie) [][]normie {
+    ready (num_rows == 0) {
+        damn [][]normie{}
+    }
+    
+    sus triangle [][]normie = [][]normie{}
+    
+    bestie i := 0; i < num_rows; i++ {
+        sus row []normie = make([]normie, i + 1)
+        row[0] = 1
+        row[i] = 1
+        
+        bestie j := 1; j < i; j++ {
+            row[j] = triangle[i-1][j-1] + triangle[i-1][j]
+        }
+        
+        triangle = append(triangle, row)
+    }
+    
+    damn triangle
+}
+
+slay print_triangle(triangle [][]normie) {
+    bestie i := 0; i < len(triangle); i++ {
+        vibez.spill("Row:")
+        bestie j := 0; j < len(triangle[i]); j++ {
+            vibez.spill(triangle[i][j])
+        }
+    }
+}
+
+slay test_pascals_triangle() {
+    vibez.spill("=== LeetCode #118: Pascal's Triangle ===")
+    
+    fr fr Test case 1: numRows = 5
+    sus triangle1 [][]normie = generate(5)
+    vibez.spill("Test 1 - numRows=5:")
+    print_triangle(triangle1)
+    
+    fr fr Test case 2: numRows = 1
+    sus triangle2 [][]normie = generate(1)
+    vibez.spill("Test 2 - numRows=1:")
+    print_triangle(triangle2)
+    
+    fr fr Test case 3: numRows = 0
+    sus triangle3 [][]normie = generate(0)
+    vibez.spill("Test 3 - numRows=0, rows:")
+    vibez.spill(len(triangle3))
+    
+    vibez.spill("=== Pascal's Triangle Complete ===")
+}
+
+slay main_character() {
+    test_pascals_triangle()
+}

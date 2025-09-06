@@ -1,0 +1,82 @@
+vibe main
+
+yeet "vibez"
+yeet "mathz"
+
+fr fr LeetCode #155: Min Stack
+fr fr Stack that supports push, pop, top, and retrieving minimum element in O(1)
+
+be_like MinStack squad {
+    stack []normie
+    min_stack []normie
+}
+
+slay create_min_stack() ඞMinStack {
+    sus stack ඞMinStack = ඞMinStack{
+        stack: []normie{},
+        min_stack: []normie{}
+    }
+    damn stack
+}
+
+slay (self ඞMinStack) push(val normie) {
+    self.stack = append(self.stack, val)
+    
+    ready (len(self.min_stack) == 0 || val <= self.min_stack[len(self.min_stack)-1]) {
+        self.min_stack = append(self.min_stack, val)
+    }
+}
+
+slay (self ඞMinStack) pop() {
+    ready (len(self.stack) == 0) {
+        damn
+    }
+    
+    sus popped normie = self.stack[len(self.stack)-1]
+    self.stack = self.stack[:len(self.stack)-1]
+    
+    ready (popped == self.min_stack[len(self.min_stack)-1]) {
+        self.min_stack = self.min_stack[:len(self.min_stack)-1]
+    }
+}
+
+slay (self ඞMinStack) top() normie {
+    damn self.stack[len(self.stack)-1]
+}
+
+slay (self ඞMinStack) get_min() normie {
+    damn self.min_stack[len(self.min_stack)-1]
+}
+
+slay test_min_stack() {
+    vibez.spill("=== LeetCode #155: Min Stack (ඞ Stack) ===")
+    
+    sus stack ඞMinStack = create_min_stack()
+    
+    fr fr Test operations
+    vibez.spill("Pushing: -2, 0, -3")
+    stack.push(-2)
+    stack.push(0)
+    stack.push(-3)
+    
+    vibez.spill("Min should be -3:")
+    vibez.spill(stack.get_min())
+    
+    vibez.spill("Pop and check top:")
+    stack.pop()
+    vibez.spill(stack.top())
+    
+    vibez.spill("Min should be -2:")
+    vibez.spill(stack.get_min())
+    
+    fr fr Test edge cases
+    stack.push(-5)
+    vibez.spill("After pushing -5, min:")
+    vibez.spill(stack.get_min())
+    
+    vibez.spill("=== Min Stack Complete (Sus Stack is Based!) ===")
+}
+
+slay main_character() {
+    test_min_stack()
+}

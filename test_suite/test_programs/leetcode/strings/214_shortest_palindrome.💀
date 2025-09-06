@@ -1,0 +1,22 @@
+vibe main
+
+yeet "vibez"
+
+fr fr LeetCode #214: Shortest Palindrome
+fr fr Category: Strings
+fr fr Implementation uses CURSED syntax with ඞ pointers!
+
+slay solve_shortest_palindrome() {
+    vibez.spill("=== LeetCode #214: Shortest Palindrome ===")
+    
+    fr fr TODO: Implement actual algorithm
+    sus result normie = 42
+    vibez.spill("Demo result:")
+    vibez.spill(result)
+    
+    vibez.spill("=== Shortest Palindrome Complete ===")
+}
+
+slay main_character() {
+    solve_shortest_palindrome()
+}

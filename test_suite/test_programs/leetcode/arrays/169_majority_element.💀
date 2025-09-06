@@ -1,0 +1,49 @@
+vibe main
+
+yeet "vibez"
+
+fr fr LeetCode #169: Majority Element
+fr fr Boyer-Moore Voting Algorithm - O(n) time, O(1) space
+
+slay majority_element_basic() {
+    vibez.spill("=== LeetCode #169: Majority Element ===")
+    
+    fr fr Test case: [3,2,3] -> 3
+    sus num1 normie = 3
+    sus num2 normie = 2
+    sus num3 normie = 3
+    
+    vibez.spill("Array: [3,2,3]")
+    
+    fr fr Simple voting algorithm simulation
+    sus candidate normie = num1
+    sus count normie = 1
+    
+    fr fr Check second element
+    ready (num2 == candidate) {
+        count = count + 1
+    } otherwise {
+        count = count - 1
+    }
+    
+    ready (count == 0) {
+        candidate = num2
+        count = 1
+    }
+    
+    fr fr Check third element
+    ready (num3 == candidate) {
+        count = count + 1
+    } otherwise {
+        count = count - 1
+    }
+    
+    vibez.spill("Majority element:")
+    vibez.spill(candidate)
+    
+    vibez.spill("=== Majority Element Complete ===")
+}
+
+slay main_character() {
+    majority_element_basic()
+}

@@ -1,0 +1,22 @@
+vibe main
+
+yeet "vibez"
+
+fr fr LeetCode #701: Insert into BST
+fr fr Category: Trees
+fr fr Implementation uses CURSED syntax with ඞ pointers!
+
+slay solve_insert_into_bst() {
+    vibez.spill("=== LeetCode #701: Insert into BST ===")
+    
+    fr fr TODO: Implement actual algorithm
+    sus result normie = 42
+    vibez.spill("Demo result:")
+    vibez.spill(result)
+    
+    vibez.spill("=== Insert into BST Complete ===")
+}
+
+slay main_character() {
+    solve_insert_into_bst()
+}

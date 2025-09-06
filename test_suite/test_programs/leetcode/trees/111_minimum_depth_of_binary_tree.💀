@@ -1,0 +1,24 @@
+vibe main
+
+yeet "vibez"
+yeet "mathz"
+
+fr fr LeetCode #111: Minimum Depth of Binary Tree
+fr fr Difficulty: Easy
+fr fr Category: Trees
+fr fr TODO: Implement solution using CURSED ඞ pointers!
+
+slay solve_minimum_depth_of_binary_tree() {
+    fr fr TODO: Implement the actual algorithm here
+    vibez.spill("=== LeetCode #111: Minimum Depth of Binary Tree ===")
+    vibez.spill("TODO: Implementation needed")
+    vibez.spill("=== Test Complete ===")
+}
+
+slay test_minimum_depth_of_binary_tree() {
+    solve_minimum_depth_of_binary_tree()
+}
+
+slay main_character() {
+    test_minimum_depth_of_binary_tree()
+}

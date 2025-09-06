@@ -1,0 +1,66 @@
+vibe main
+
+yeet "vibez"
+yeet "mathz"
+
+fr fr LeetCode #4: Median of Two Sorted Arrays (HARD)
+fr fr Binary search solution for O(log(min(m,n))) time complexity
+
+slay find_median_sorted_arrays(nums1 []normie, nums2 []normie) meal {
+    ready (len(nums1) > len(nums2)) {
+        damn find_median_sorted_arrays(nums2, nums1)
+    }
+    
+    sus m normie = len(nums1)
+    sus n normie = len(nums2)
+    sus low normie = 0
+    sus high normie = m
+    
+    periodt (low <= high) {
+        sus cut1 normie = (low + high) / 2
+        sus cut2 normie = (m + n + 1) / 2 - cut1
+        
+        sus left1 normie = cut1 == 0 ? -2147483648 : nums1[cut1 - 1]
+        sus left2 normie = cut2 == 0 ? -2147483648 : nums2[cut2 - 1]
+        sus right1 normie = cut1 == m ? 2147483647 : nums1[cut1]
+        sus right2 normie = cut2 == n ? 2147483647 : nums2[cut2]
+        
+        ready (left1 <= right2 && left2 <= right1) {
+            ready ((m + n) % 2 == 1) {
+                damn meal(mathz.max(left1, left2))
+            } otherwise {
+                damn meal(mathz.max(left1, left2) + mathz.min(right1, right2)) / 2.0
+            }
+        } otherwise ready (left1 > right2) {
+            high = cut1 - 1
+        } otherwise {
+            low = cut1 + 1
+        }
+    }
+    
+    damn 1.0
+}
+
+slay test_median_two_arrays() {
+    vibez.spill("=== LeetCode #4: Median of Two Sorted Arrays (HARD) ===")
+    
+    fr fr Test case 1: [1,3], [2] -> 2.0
+    sus nums1 []normie = []normie{1, 3}
+    sus nums2 []normie = []normie{2}
+    sus result1 meal = find_median_sorted_arrays(nums1, nums2)
+    vibez.spill("Test 1 - Expected: 2.0")
+    vibez.spill(result1)
+    
+    fr fr Test case 2: [1,2], [3,4] -> 2.5
+    sus nums3 []normie = []normie{1, 2}
+    sus nums4 []normie = []normie{3, 4}
+    sus result2 meal = find_median_sorted_arrays(nums3, nums4)
+    vibez.spill("Test 2 - Expected: 2.5")
+    vibez.spill(result2)
+    
+    vibez.spill("=== Median Two Arrays Complete (HARD Problem!) ===")
+}
+
+slay main_character() {
+    test_median_two_arrays()
+}

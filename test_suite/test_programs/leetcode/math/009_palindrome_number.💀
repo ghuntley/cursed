@@ -1,0 +1,66 @@
+vibe main
+
+yeet "vibez"
+
+fr fr LeetCode #9: Palindrome Number
+fr fr Check if integer is palindrome without converting to string
+
+slay is_palindrome(x normie) lit {
+    fr fr Negative numbers are not palindromes
+    ready (x < 0) {
+        damn cringe
+    }
+    
+    fr fr Single digit numbers are palindromes
+    ready (x < 10) {
+        damn based
+    }
+    
+    fr fr Reverse second half and compare
+    sus original normie = x
+    sus reversed normie = 0
+    
+    periodt (x > reversed) {
+        reversed = reversed * 10 + x % 10
+        x = x / 10
+    }
+    
+    fr fr For even length: x == reversed
+    fr fr For odd length: x == reversed / 10
+    damn x == reversed || x == reversed / 10
+}
+
+slay test_palindrome_number() {
+    vibez.spill("=== LeetCode #9: Palindrome Number ===")
+    
+    fr fr Test case 1: 121 -> true
+    sus result1 lit = is_palindrome(121)
+    vibez.spill("Test 1 - Input: 121, Expected: based")
+    vibez.spill(result1)
+    
+    fr fr Test case 2: -121 -> false
+    sus result2 lit = is_palindrome(-121)
+    vibez.spill("Test 2 - Input: -121, Expected: cringe")
+    vibez.spill(result2)
+    
+    fr fr Test case 3: 10 -> false
+    sus result3 lit = is_palindrome(10)
+    vibez.spill("Test 3 - Input: 10, Expected: cringe")
+    vibez.spill(result3)
+    
+    fr fr Test case 4: 0 -> true
+    sus result4 lit = is_palindrome(0)
+    vibez.spill("Test 4 - Input: 0, Expected: based")
+    vibez.spill(result4)
+    
+    fr fr Test case 5: 1221 -> true
+    sus result5 lit = is_palindrome(1221)
+    vibez.spill("Test 5 - Input: 1221, Expected: based")
+    vibez.spill(result5)
+    
+    vibez.spill("=== Palindrome Number Complete ===")
+}
+
+slay main_character() {
+    test_palindrome_number()
+}

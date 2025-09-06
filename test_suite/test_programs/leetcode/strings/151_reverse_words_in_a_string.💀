@@ -1,0 +1,22 @@
+vibe main
+
+yeet "vibez"
+
+fr fr LeetCode #151: Reverse Words in a String
+fr fr Category: Strings
+fr fr Implementation uses CURSED syntax with ඞ pointers!
+
+slay solve_reverse_words_in_a_string() {
+    vibez.spill("=== LeetCode #151: Reverse Words in a String ===")
+    
+    fr fr TODO: Implement actual algorithm
+    sus result normie = 42
+    vibez.spill("Demo result:")
+    vibez.spill(result)
+    
+    vibez.spill("=== Reverse Words in a String Complete ===")
+}
+
+slay main_character() {
+    solve_reverse_words_in_a_string()
+}

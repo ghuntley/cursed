@@ -1,0 +1,24 @@
+vibe main
+
+yeet "vibez"
+yeet "mathz"
+
+fr fr LeetCode #119: Pascal's Triangle II
+fr fr Difficulty: Easy
+fr fr Category: Dynamic_Programming
+fr fr TODO: Implement solution using CURSED ඞ pointers!
+
+slay solve_pascals_triangle_ii() {
+    fr fr TODO: Implement the actual algorithm here
+    vibez.spill("=== LeetCode #119: Pascal's Triangle II ===")
+    vibez.spill("TODO: Implementation needed")
+    vibez.spill("=== Test Complete ===")
+}
+
+slay test_pascals_triangle_ii() {
+    solve_pascals_triangle_ii()
+}
+
+slay main_character() {
+    test_pascals_triangle_ii()
+}

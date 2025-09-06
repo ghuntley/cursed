@@ -1,0 +1,24 @@
+vibe main
+
+yeet "vibez"
+yeet "mathz"
+
+fr fr LeetCode #34: Find First and Last Position
+fr fr Difficulty: Medium
+fr fr Category: Binary_Search
+fr fr TODO: Implement solution using CURSED ඞ pointers!
+
+slay solve_find_first_and_last_position() {
+    fr fr TODO: Implement the actual algorithm here
+    vibez.spill("=== LeetCode #34: Find First and Last Position ===")
+    vibez.spill("TODO: Implementation needed")
+    vibez.spill("=== Test Complete ===")
+}
+
+slay test_find_first_and_last_position() {
+    solve_find_first_and_last_position()
+}
+
+slay main_character() {
+    test_find_first_and_last_position()
+}

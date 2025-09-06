@@ -1,0 +1,22 @@
+vibe main
+
+yeet "vibez"
+
+fr fr LeetCode #278: First Bad Version
+fr fr Category: Binary_Search
+fr fr Implementation uses CURSED syntax with ඞ pointers!
+
+slay solve_first_bad_version() {
+    vibez.spill("=== LeetCode #278: First Bad Version ===")
+    
+    fr fr TODO: Implement actual algorithm
+    sus result normie = 42
+    vibez.spill("Demo result:")
+    vibez.spill(result)
+    
+    vibez.spill("=== First Bad Version Complete ===")
+}
+
+slay main_character() {
+    solve_first_bad_version()
+}

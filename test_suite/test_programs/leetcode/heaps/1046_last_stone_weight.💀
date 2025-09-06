@@ -1,0 +1,22 @@
+vibe main
+
+yeet "vibez"
+
+fr fr LeetCode #1046: Last Stone Weight
+fr fr Category: Heaps
+fr fr Implementation uses CURSED syntax with ඞ pointers!
+
+slay solve_last_stone_weight() {
+    vibez.spill("=== LeetCode #1046: Last Stone Weight ===")
+    
+    fr fr TODO: Implement actual algorithm
+    sus result normie = 42
+    vibez.spill("Demo result:")
+    vibez.spill(result)
+    
+    vibez.spill("=== Last Stone Weight Complete ===")
+}
+
+slay main_character() {
+    solve_last_stone_weight()
+}

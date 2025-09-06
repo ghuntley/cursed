@@ -1,0 +1,22 @@
+vibe main
+
+yeet "vibez"
+
+fr fr LeetCode #1038: BST to Greater Sum Tree
+fr fr Category: Trees
+fr fr Implementation uses CURSED syntax with ඞ pointers!
+
+slay solve_bst_to_greater_sum_tree() {
+    vibez.spill("=== LeetCode #1038: BST to Greater Sum Tree ===")
+    
+    fr fr TODO: Implement actual algorithm
+    sus result normie = 42
+    vibez.spill("Demo result:")
+    vibez.spill(result)
+    
+    vibez.spill("=== BST to Greater Sum Tree Complete ===")
+}
+
+slay main_character() {
+    solve_bst_to_greater_sum_tree()
+}

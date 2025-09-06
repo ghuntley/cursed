@@ -1,0 +1,24 @@
+vibe main
+
+yeet "vibez"
+yeet "mathz"
+
+fr fr LeetCode #62: Unique Paths
+fr fr Difficulty: Medium
+fr fr Category: Dynamic_Programming
+fr fr TODO: Implement solution using CURSED ඞ pointers!
+
+slay solve_unique_paths() {
+    fr fr TODO: Implement the actual algorithm here
+    vibez.spill("=== LeetCode #62: Unique Paths ===")
+    vibez.spill("TODO: Implementation needed")
+    vibez.spill("=== Test Complete ===")
+}
+
+slay test_unique_paths() {
+    solve_unique_paths()
+}
+
+slay main_character() {
+    test_unique_paths()
+}

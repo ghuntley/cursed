@@ -1,0 +1,22 @@
+vibe main
+
+yeet "vibez"
+
+fr fr LeetCode #392: Is Subsequence
+fr fr Category: Strings
+fr fr Implementation uses CURSED syntax with ඞ pointers!
+
+slay solve_is_subsequence() {
+    vibez.spill("=== LeetCode #392: Is Subsequence ===")
+    
+    fr fr TODO: Implement actual algorithm
+    sus result normie = 42
+    vibez.spill("Demo result:")
+    vibez.spill(result)
+    
+    vibez.spill("=== Is Subsequence Complete ===")
+}
+
+slay main_character() {
+    solve_is_subsequence()
+}

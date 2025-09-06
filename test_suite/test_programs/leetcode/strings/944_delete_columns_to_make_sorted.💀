@@ -1,0 +1,22 @@
+vibe main
+
+yeet "vibez"
+
+fr fr LeetCode #944: Delete Columns to Make Sorted
+fr fr Category: Strings
+fr fr Implementation uses CURSED syntax with ඞ pointers!
+
+slay solve_delete_columns_to_make_sorted() {
+    vibez.spill("=== LeetCode #944: Delete Columns to Make Sorted ===")
+    
+    fr fr TODO: Implement actual algorithm
+    sus result normie = 42
+    vibez.spill("Demo result:")
+    vibez.spill(result)
+    
+    vibez.spill("=== Delete Columns to Make Sorted Complete ===")
+}
+
+slay main_character() {
+    solve_delete_columns_to_make_sorted()
+}

@@ -1,0 +1,22 @@
+vibe main
+
+yeet "vibez"
+
+fr fr LeetCode #496: Next Greater Element I
+fr fr Category: Stacks
+fr fr Implementation uses CURSED syntax with ඞ pointers!
+
+slay solve_next_greater_element_i() {
+    vibez.spill("=== LeetCode #496: Next Greater Element I ===")
+    
+    fr fr TODO: Implement actual algorithm
+    sus result normie = 42
+    vibez.spill("Demo result:")
+    vibez.spill(result)
+    
+    vibez.spill("=== Next Greater Element I Complete ===")
+}
+
+slay main_character() {
+    solve_next_greater_element_i()
+}

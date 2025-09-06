@@ -1,0 +1,22 @@
+vibe main
+
+yeet "vibez"
+
+fr fr LeetCode #148: Sort List
+fr fr Category: Linked_Lists
+fr fr Implementation uses CURSED syntax with ඞ pointers!
+
+slay solve_sort_list() {
+    vibez.spill("=== LeetCode #148: Sort List ===")
+    
+    fr fr TODO: Implement actual algorithm
+    sus result normie = 42
+    vibez.spill("Demo result:")
+    vibez.spill(result)
+    
+    vibez.spill("=== Sort List Complete ===")
+}
+
+slay main_character() {
+    solve_sort_list()
+}

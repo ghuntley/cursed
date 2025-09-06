@@ -1,0 +1,101 @@
+vibe main
+yeet "vibez"
+yeet "collections"
+
+// LeetCode #94: Binary Tree Inorder Traversal 🌲
+// Classic tree traversal using Among Us ඞ pointers! 
+// Time: O(n), Space: O(h) where h is height
+
+struct TreeNode {
+    sus val normie
+    sus left ඞTreeNode   // Among Us left child pointer ඞ
+    sus right ඞTreeNode  // Among Us right child pointer ඞ  
+}
+
+slay inorder_traversal(root ඞTreeNode) normie[] {
+    sus result normie[] = []normie{}
+    inorder_helper(root, &result)
+    damn result
+}
+
+slay inorder_helper(node ඞTreeNode, result ඞ[]normie) {
+    ready (node == null) {
+        damn
+    }
+    
+    // Left -> Root -> Right (that's the inorder vibe)
+    inorder_helper(node.left, result)
+    collections.append(*result, node.val)
+    inorder_helper(node.right, result)
+}
+
+slay inorder_iterative(root ඞTreeNode) normie[] {
+    // Iterative approach using stack - this hits different! 🚀
+    sus result normie[] = []normie{}
+    sus stack ඞTreeNode[] = []ඞTreeNode{}  // Stack of node pointers
+    sus current ඞTreeNode = root
+    
+    bestie (current != null || collections.len(stack) > 0) {
+        // Go to leftmost node
+        bestie (current != null) {
+            collections.append(stack, current)
+            current = current.left
+        }
+        
+        // Current is null, pop from stack
+        current = stack[collections.len(stack) - 1]
+        collections.remove_last(stack)
+        collections.append(result, current.val)
+        
+        // Go to right subtree
+        current = current.right
+    }
+    
+    damn result
+}
+
+slay create_tree() ඞTreeNode {
+    // Create test tree: [1,null,2,3]
+    //       1
+    //        \
+    //         2
+    //        /
+    //       3
+    
+    sus root ඞTreeNode = &TreeNode{val: 1, left: null, right: null}
+    root.right = &TreeNode{val: 2, left: null, right: null}
+    root.right.left = &TreeNode{val: 3, left: null, right: null}
+    
+    damn root
+}
+
+slay test_inorder_traversal() {
+    vibez.spill("=== 🌲 LeetCode #94: Binary Tree Inorder Traversal ===")
+    
+    // Test case 1: [1,null,2,3]
+    sus root1 ඞTreeNode = create_tree()
+    sus result1 normie[] = inorder_traversal(root1)
+    vibez.spill("Test 1 - Tree: [1,null,2,3]")
+    vibez.spill("Inorder (recursive):", result1)
+    
+    sus result1_iter normie[] = inorder_iterative(root1)
+    vibez.spill("Inorder (iterative):", result1_iter)
+    
+    // Test case 2: []
+    sus root2 ඞTreeNode = null
+    sus result2 normie[] = inorder_traversal(root2)
+    vibez.spill("Test 2 - Empty tree:")
+    vibez.spill("Inorder:", result2)
+    
+    // Test case 3: [1]
+    sus root3 ඞTreeNode = &TreeNode{val: 1, left: null, right: null}
+    sus result3 normie[] = inorder_traversal(root3)
+    vibez.spill("Test 3 - Single node [1]:")
+    vibez.spill("Inorder:", result3)
+    
+    vibez.spill("=== Inorder Traversal Complete! Trees are sus but in a good way ඞ🌲 ===")
+}
+
+slay main_character() {
+    test_inorder_traversal()
+}

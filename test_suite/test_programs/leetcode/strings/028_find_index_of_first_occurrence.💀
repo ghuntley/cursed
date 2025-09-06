@@ -1,0 +1,24 @@
+vibe main
+
+yeet "vibez"
+yeet "mathz"
+
+fr fr LeetCode #28: Find Index of First Occurrence
+fr fr Difficulty: Easy
+fr fr Category: Strings
+fr fr TODO: Implement solution using CURSED ඞ pointers!
+
+slay solve_find_index_of_first_occurrence() {
+    fr fr TODO: Implement the actual algorithm here
+    vibez.spill("=== LeetCode #28: Find Index of First Occurrence ===")
+    vibez.spill("TODO: Implementation needed")
+    vibez.spill("=== Test Complete ===")
+}
+
+slay test_find_index_of_first_occurrence() {
+    solve_find_index_of_first_occurrence()
+}
+
+slay main_character() {
+    test_find_index_of_first_occurrence()
+}

@@ -1,0 +1,71 @@
+vibe main
+
+yeet "vibez"
+
+fr fr LeetCode #125: Valid Palindrome  
+fr fr Check if string is palindrome ignoring non-alphanumeric chars and case
+
+slay is_alphanumeric(c sip) lit {
+    damn (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9')
+}
+
+slay to_lower(c sip) sip {
+    ready (c >= 'A' && c <= 'Z') {
+        damn sip(byte(c) + 32)
+    }
+    damn c
+}
+
+slay is_palindrome(s tea) lit {
+    sus left normie = 0
+    sus right normie = len(s) - 1
+    
+    periodt (left < right) {
+        periodt (left < right && !is_alphanumeric(s[left])) {
+            left++
+        }
+        
+        periodt (left < right && !is_alphanumeric(s[right])) {
+            right--
+        }
+        
+        ready (to_lower(s[left]) != to_lower(s[right])) {
+            damn cringe
+        }
+        
+        left++
+        right--
+    }
+    
+    damn based
+}
+
+slay test_valid_palindrome() {
+    vibez.spill("=== LeetCode #125: Valid Palindrome ===")
+    
+    fr fr Test case 1: "A man, a plan, a canal: Panama" -> true
+    sus result1 lit = is_palindrome("A man, a plan, a canal: Panama")
+    vibez.spill("Test 1 - Expected: based")
+    vibez.spill(result1)
+    
+    fr fr Test case 2: "race a car" -> false
+    sus result2 lit = is_palindrome("race a car")
+    vibez.spill("Test 2 - Expected: cringe")
+    vibez.spill(result2)
+    
+    fr fr Test case 3: " " -> true
+    sus result3 lit = is_palindrome(" ")
+    vibez.spill("Test 3 - Expected: based")
+    vibez.spill(result3)
+    
+    fr fr Test case 4: "Madam" -> true
+    sus result4 lit = is_palindrome("Madam")
+    vibez.spill("Test 4 - Expected: based")
+    vibez.spill(result4)
+    
+    vibez.spill("=== Valid Palindrome Complete ===")
+}
+
+slay main_character() {
+    test_valid_palindrome()
+}

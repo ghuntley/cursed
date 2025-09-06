@@ -1,0 +1,24 @@
+vibe main
+
+yeet "vibez"
+yeet "mathz"
+
+fr fr LeetCode #107: Binary Tree Level Order Traversal II
+fr fr Difficulty: Medium
+fr fr Category: Trees
+fr fr TODO: Implement solution using CURSED ඞ pointers!
+
+slay solve_binary_tree_level_order_traversal_ii() {
+    fr fr TODO: Implement the actual algorithm here
+    vibez.spill("=== LeetCode #107: Binary Tree Level Order Traversal II ===")
+    vibez.spill("TODO: Implementation needed")
+    vibez.spill("=== Test Complete ===")
+}
+
+slay test_binary_tree_level_order_traversal_ii() {
+    solve_binary_tree_level_order_traversal_ii()
+}
+
+slay main_character() {
+    test_binary_tree_level_order_traversal_ii()
+}

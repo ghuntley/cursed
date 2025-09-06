@@ -1,0 +1,22 @@
+vibe main
+
+yeet "vibez"
+
+fr fr LeetCode #896: Monotonic Array
+fr fr Category: Arrays
+fr fr Implementation uses CURSED syntax with ඞ pointers!
+
+slay solve_monotonic_array() {
+    vibez.spill("=== LeetCode #896: Monotonic Array ===")
+    
+    fr fr TODO: Implement actual algorithm
+    sus result normie = 42
+    vibez.spill("Demo result:")
+    vibez.spill(result)
+    
+    vibez.spill("=== Monotonic Array Complete ===")
+}
+
+slay main_character() {
+    solve_monotonic_array()
+}

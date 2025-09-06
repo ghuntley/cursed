@@ -1,0 +1,24 @@
+vibe main
+
+yeet "vibez"
+yeet "mathz"
+
+fr fr LeetCode #72: Edit Distance
+fr fr Difficulty: Hard
+fr fr Category: Dynamic_Programming
+fr fr TODO: Implement solution using CURSED ඞ pointers!
+
+slay solve_edit_distance() {
+    fr fr TODO: Implement the actual algorithm here
+    vibez.spill("=== LeetCode #72: Edit Distance ===")
+    vibez.spill("TODO: Implementation needed")
+    vibez.spill("=== Test Complete ===")
+}
+
+slay test_edit_distance() {
+    solve_edit_distance()
+}
+
+slay main_character() {
+    test_edit_distance()
+}

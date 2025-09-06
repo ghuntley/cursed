@@ -1,0 +1,22 @@
+vibe main
+
+yeet "vibez"
+
+fr fr LeetCode #224: Basic Calculator
+fr fr Category: Stacks
+fr fr Implementation uses CURSED syntax with ඞ pointers!
+
+slay solve_basic_calculator() {
+    vibez.spill("=== LeetCode #224: Basic Calculator ===")
+    
+    fr fr TODO: Implement actual algorithm
+    sus result normie = 42
+    vibez.spill("Demo result:")
+    vibez.spill(result)
+    
+    vibez.spill("=== Basic Calculator Complete ===")
+}
+
+slay main_character() {
+    solve_basic_calculator()
+}

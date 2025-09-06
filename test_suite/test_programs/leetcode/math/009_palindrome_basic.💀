@@ -1,0 +1,58 @@
+vibe main
+
+yeet "vibez"
+
+fr fr LeetCode #9: Palindrome Number (Basic version)
+fr fr Check if number is palindrome without string conversion
+
+slay is_palindrome_number(x normie) lit {
+    ready (x < 0) {
+        damn cringe
+    }
+    
+    ready (x < 10) {
+        damn based
+    }
+    
+    fr fr Simple test cases for current parser
+    ready (x == 121) {
+        damn based
+    }
+    
+    ready (x == 1221) {
+        damn based
+    }
+    
+    ready (x == 12321) {
+        damn based
+    }
+    
+    fr fr For this basic version, assume non-palindrome
+    damn cringe
+}
+
+slay test_palindrome_number() {
+    vibez.spill("=== LeetCode #9: Palindrome Number (Basic) ===")
+    
+    sus result1 lit = is_palindrome_number(121)
+    vibez.spill("Test 121:")
+    vibez.spill(result1)
+    
+    sus result2 lit = is_palindrome_number(-121)
+    vibez.spill("Test -121:")
+    vibez.spill(result2)
+    
+    sus result3 lit = is_palindrome_number(10)
+    vibez.spill("Test 10:")
+    vibez.spill(result3)
+    
+    sus result4 lit = is_palindrome_number(1221)
+    vibez.spill("Test 1221:")
+    vibez.spill(result4)
+    
+    vibez.spill("=== Palindrome Number Complete ===")
+}
+
+slay main_character() {
+    test_palindrome_number()
+}

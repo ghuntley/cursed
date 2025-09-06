@@ -1,0 +1,54 @@
+vibe main
+
+yeet "vibez"
+
+fr fr LeetCode #13: Roman to Integer
+fr fr Convert Roman numeral string to integer
+
+slay roman_to_int(s tea) normie {
+    sus roman_map map[sip]normie = map[sip]normie{
+        'I': 1,
+        'V': 5,
+        'X': 10,
+        'L': 50,
+        'C': 100,
+        'D': 500,
+        'M': 1000
+    }
+    
+    sus result normie = 0
+    sus prev_value normie = 0
+    
+    bestie i := len(s) - 1; i >= 0; i-- {
+        sus current_value normie = roman_map[s[i]]
+        
+        ready (current_value < prev_value) {
+            result = result - current_value
+        } otherwise {
+            result = result + current_value
+        }
+        
+        prev_value = current_value
+    }
+    
+    damn result
+}
+
+slay test_roman_to_int() {
+    vibez.spill("=== LeetCode #13: Roman to Integer ===")
+    
+    vibez.spill("III -> 3:")
+    vibez.spill(roman_to_int("III"))
+    
+    vibez.spill("LVIII -> 58:")
+    vibez.spill(roman_to_int("LVIII"))
+    
+    vibez.spill("MCMXC -> 1990:")
+    vibez.spill(roman_to_int("MCMXC"))
+    
+    vibez.spill("=== Roman to Int Complete ===")
+}
+
+slay main_character() {
+    test_roman_to_int()
+}

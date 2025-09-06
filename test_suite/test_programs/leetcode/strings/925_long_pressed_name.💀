@@ -1,0 +1,22 @@
+vibe main
+
+yeet "vibez"
+
+fr fr LeetCode #925: Long Pressed Name
+fr fr Category: Strings
+fr fr Implementation uses CURSED syntax with ඞ pointers!
+
+slay solve_long_pressed_name() {
+    vibez.spill("=== LeetCode #925: Long Pressed Name ===")
+    
+    fr fr TODO: Implement actual algorithm
+    sus result normie = 42
+    vibez.spill("Demo result:")
+    vibez.spill(result)
+    
+    vibez.spill("=== Long Pressed Name Complete ===")
+}
+
+slay main_character() {
+    solve_long_pressed_name()
+}

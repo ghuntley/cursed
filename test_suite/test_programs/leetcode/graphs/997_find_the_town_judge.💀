@@ -1,0 +1,22 @@
+vibe main
+
+yeet "vibez"
+
+fr fr LeetCode #997: Find the Town Judge
+fr fr Category: Graphs
+fr fr Implementation uses CURSED syntax with ඞ pointers!
+
+slay solve_find_the_town_judge() {
+    vibez.spill("=== LeetCode #997: Find the Town Judge ===")
+    
+    fr fr TODO: Implement actual algorithm
+    sus result normie = 42
+    vibez.spill("Demo result:")
+    vibez.spill(result)
+    
+    vibez.spill("=== Find the Town Judge Complete ===")
+}
+
+slay main_character() {
+    solve_find_the_town_judge()
+}

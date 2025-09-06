@@ -1,0 +1,74 @@
+vibe main
+
+yeet "vibez"
+
+fr fr LeetCode #88: Merge Sorted Array
+fr fr Merge two sorted arrays in-place using ඞ pointers
+
+slay merge(nums1 ඞ[]normie, m normie, nums2 []normie, n normie) {
+    sus i normie = m - 1
+    sus j normie = n - 1
+    sus k normie = m + n - 1
+    
+    periodt (i >= 0 && j >= 0) {
+        ready ((*nums1)[i] > nums2[j]) {
+            (*nums1)[k] = (*nums1)[i]
+            i--
+        } otherwise {
+            (*nums1)[k] = nums2[j]
+            j--
+        }
+        k--
+    }
+    
+    fr fr Copy remaining elements from nums2
+    periodt (j >= 0) {
+        (*nums1)[k] = nums2[j]
+        j--
+        k--
+    }
+}
+
+slay print_array(arr []normie, size normie) {
+    bestie i := 0; i < size; i++ {
+        vibez.spill(arr[i])
+    }
+}
+
+slay test_merge_sorted_array() {
+    vibez.spill("=== LeetCode #88: Merge Sorted Array (ඞ Pointers) ===")
+    
+    fr fr Test case 1: nums1=[1,2,3,0,0,0], m=3, nums2=[2,5,6], n=3
+    fr fr Expected: [1,2,2,3,5,6]
+    sus nums1 []normie = []normie{1, 2, 3, 0, 0, 0}
+    sus nums2 []normie = []normie{2, 5, 6}
+    
+    merge(ඞnums1, 3, nums2, 3)
+    
+    vibez.spill("Test 1 - Expected: [1,2,2,3,5,6]")
+    print_array(nums1, 6)
+    
+    fr fr Test case 2: nums1=[1], m=1, nums2=[], n=0
+    sus nums3 []normie = []normie{1}
+    sus nums4 []normie = []normie{}
+    
+    merge(ඞnums3, 1, nums4, 0)
+    
+    vibez.spill("Test 2 - Expected: [1]")
+    print_array(nums3, 1)
+    
+    fr fr Test case 3: nums1=[0], m=0, nums2=[1], n=1
+    sus nums5 []normie = []normie{0}
+    sus nums6 []normie = []normie{1}
+    
+    merge(ඞnums5, 0, nums6, 1)
+    
+    vibez.spill("Test 3 - Expected: [1]")
+    print_array(nums5, 1)
+    
+    vibez.spill("=== Merge Array Complete ===")
+}
+
+slay main_character() {
+    test_merge_sorted_array()
+}

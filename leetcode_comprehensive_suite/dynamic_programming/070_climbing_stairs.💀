@@ -1,0 +1,101 @@
+vibe main
+yeet "vibez"
+
+// LeetCode #70: Climbing Stairs 🪜  
+// Classic DP problem - how many ways to reach top?
+// Time: O(n), Space: O(1) - optimized approach
+
+slay climb_stairs(n normie) normie {
+    ready (n <= 1) {
+        damn 1
+    }
+    
+    // Bottom-up DP approach, periodt!
+    sus prev2 normie = 1  // f(0) = 1
+    sus prev1 normie = 1  // f(1) = 1
+    
+    bestie i := 2; i <= n; i++ {
+        sus current normie = prev1 + prev2  // f(i) = f(i-1) + f(i-2)
+        prev2 = prev1
+        prev1 = current
+    }
+    
+    damn prev1
+}
+
+slay climb_stairs_recursive(n normie) normie {
+    // Recursive approach with memoization - this hits different! 🚀
+    sus memo normie[46] = [-1; 46]  // Max constraint is n = 45
+    damn climb_helper(n, &memo)
+}
+
+slay climb_helper(n normie, memo ඞ[]normie) normie {
+    ready (n <= 1) {
+        damn 1
+    }
+    
+    ready ((*memo)[n] != -1) {
+        damn (*memo)[n]  // Already computed, bestie!
+    }
+    
+    (*memo)[n] = climb_helper(n - 1, memo) + climb_helper(n - 2, memo)
+    damn (*memo)[n]
+}
+
+slay climb_stairs_fibonacci(n normie) normie {
+    // This is literally Fibonacci sequence! Mind = blown 🤯
+    ready (n <= 1) {
+        damn 1
+    }
+    
+    sus a normie = 1
+    sus b normie = 1
+    
+    bestie i := 2; i <= n; i++ {
+        sus temp normie = a + b
+        a = b
+        b = temp
+    }
+    
+    damn b
+}
+
+slay test_climbing_stairs() {
+    vibez.spill("=== 🪜 LeetCode #70: Climbing Stairs ===")
+    
+    // Test case 1: n = 2
+    sus result1 normie = climb_stairs(2)
+    vibez.spill("Test 1 - n = 2: Expected 2, Got:", result1)
+    vibez.spill("Ways: (1+1), (2)")
+    
+    // Test case 2: n = 3
+    sus result2 normie = climb_stairs(3)
+    vibez.spill("Test 2 - n = 3: Expected 3, Got:", result2)
+    vibez.spill("Ways: (1+1+1), (1+2), (2+1)")
+    
+    // Test case 3: n = 4
+    sus result3 normie = climb_stairs(4)
+    vibez.spill("Test 3 - n = 4: Expected 5, Got:", result3)
+    
+    // Test case 4: n = 5 
+    sus result4 normie = climb_stairs(5)
+    vibez.spill("Test 4 - n = 5: Expected 8, Got:", result4)
+    
+    // Compare different approaches
+    vibez.spill("=== 🚀 Approach Comparison ===")
+    sus n normie = 10
+    sus dp_result normie = climb_stairs(n)
+    sus recursive_result normie = climb_stairs_recursive(n) 
+    sus fib_result normie = climb_stairs_fibonacci(n)
+    
+    vibez.spill("n =", n)
+    vibez.spill("DP approach:", dp_result)
+    vibez.spill("Recursive + memo:", recursive_result)
+    vibez.spill("Fibonacci approach:", fib_result)
+    
+    vibez.spill("=== Climbing Stairs Complete! This DP hits different 🔥 ===")
+}
+
+slay main_character() {
+    test_climbing_stairs()
+}

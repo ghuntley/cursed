@@ -1,0 +1,44 @@
+vibe main
+
+yeet "vibez"
+
+fr fr LeetCode Style: Basic Arithmetic Working Version
+
+slay main_character() {
+    vibez.spill("=== CURSED LeetCode Arithmetic Demo ===")
+    
+    fr fr Addition test
+    sus a normie = 10
+    sus b normie = 20
+    sus sum normie = a + b
+    vibez.spill("Addition: 10 + 20 =")
+    vibez.spill(sum)
+    
+    fr fr Multiplication test
+    sus x normie = 6
+    sus y normie = 7
+    sus product normie = x * y
+    vibez.spill("Multiplication: 6 * 7 =")
+    vibez.spill(product)
+    
+    fr fr FizzBuzz logic test
+    sus num normie = 15
+    vibez.spill("FizzBuzz test for 15:")
+    ready (num % 3 == 0 && num % 5 == 0) {
+        vibez.spill("FizzBuzz")
+    }
+    
+    fr fr Pointer test with ඞ
+    sus value normie = 42
+    sus ptr ඞnormie = ඞvalue
+    vibez.spill("Pointer test - original:")
+    vibez.spill(value)
+    vibez.spill("Through ඞ pointer:")
+    vibez.spill(*ptr)
+    
+    *ptr = 999
+    vibez.spill("After modifying through ඞ pointer:")
+    vibez.spill(value)
+    
+    vibez.spill("=== CURSED LeetCode Demo Complete ===")
+}

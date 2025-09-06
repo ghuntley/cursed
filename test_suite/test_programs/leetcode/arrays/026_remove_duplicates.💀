@@ -1,0 +1,55 @@
+vibe main
+
+yeet "vibez"
+
+fr fr LeetCode #26: Remove Duplicates from Sorted Array
+fr fr Two-pointer technique with in-place modification using ඞ pointer
+
+slay remove_duplicates(nums ඞ[]normie) normie {
+    ready (len(*nums) <= 1) {
+        damn len(*nums)
+    }
+    
+    sus write_index normie = 1
+    
+    bestie i := 1; i < len(*nums); i++ {
+        ready ((*nums)[i] != (*nums)[i-1]) {
+            (*nums)[write_index] = (*nums)[i]
+            write_index++
+        }
+    }
+    
+    damn write_index
+}
+
+slay test_remove_duplicates() {
+    vibez.spill("=== LeetCode #26: Remove Duplicates (ඞ In-Place) ===")
+    
+    fr fr Test case 1: [1,1,2] -> 2, array becomes [1,2,_]
+    sus nums1 []normie = []normie{1, 1, 2}
+    sus len1 normie = remove_duplicates(ඞnums1)
+    
+    vibez.spill("Test 1 - Length: 2")
+    vibez.spill(len1)
+    vibez.spill("Unique elements:")
+    bestie i := 0; i < len1; i++ {
+        vibez.spill(nums1[i])
+    }
+    
+    fr fr Test case 2: [0,0,1,1,1,2,2,3,3,4] -> 5
+    sus nums2 []normie = []normie{0, 0, 1, 1, 1, 2, 2, 3, 3, 4}
+    sus len2 normie = remove_duplicates(ඞnums2)
+    
+    vibez.spill("Test 2 - Length: 5")
+    vibez.spill(len2)
+    vibez.spill("Unique elements:")
+    bestie i := 0; i < len2; i++ {
+        vibez.spill(nums2[i])
+    }
+    
+    vibez.spill("=== Remove Duplicates Complete ===")
+}
+
+slay main_character() {
+    test_remove_duplicates()
+}

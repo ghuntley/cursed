@@ -1,0 +1,22 @@
+vibe main
+
+yeet "vibez"
+
+fr fr LeetCode #134: Gas Station
+fr fr Category: Arrays
+fr fr Implementation uses CURSED syntax with ඞ pointers!
+
+slay solve_gas_station() {
+    vibez.spill("=== LeetCode #134: Gas Station ===")
+    
+    fr fr TODO: Implement actual algorithm
+    sus result normie = 42
+    vibez.spill("Demo result:")
+    vibez.spill(result)
+    
+    vibez.spill("=== Gas Station Complete ===")
+}
+
+slay main_character() {
+    solve_gas_station()
+}

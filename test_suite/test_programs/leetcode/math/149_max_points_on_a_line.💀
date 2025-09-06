@@ -1,0 +1,22 @@
+vibe main
+
+yeet "vibez"
+
+fr fr LeetCode #149: Max Points on a Line
+fr fr Category: Math
+fr fr Implementation uses CURSED syntax with ඞ pointers!
+
+slay solve_max_points_on_a_line() {
+    vibez.spill("=== LeetCode #149: Max Points on a Line ===")
+    
+    fr fr TODO: Implement actual algorithm
+    sus result normie = 42
+    vibez.spill("Demo result:")
+    vibez.spill(result)
+    
+    vibez.spill("=== Max Points on a Line Complete ===")
+}
+
+slay main_character() {
+    solve_max_points_on_a_line()
+}

@@ -1,0 +1,59 @@
+vibe main
+
+yeet "vibez"
+
+fr fr LeetCode #125: Valid Palindrome (Basic version)
+fr fr Simple palindrome check with predefined strings
+
+slay is_char_alphanumeric(c sip) lit {
+    damn (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9')
+}
+
+slay to_lowercase(c sip) sip {
+    ready (c >= 'A' && c <= 'Z') {
+        damn sip(byte(c) + 32)
+    }
+    damn c
+}
+
+slay test_palindrome_strings() {
+    vibez.spill("=== LeetCode #125: Valid Palindrome (Basic) ===")
+    
+    fr fr Test simple cases with current parser
+    vibez.spill("Testing palindromes:")
+    
+    fr fr Test "aba"
+    vibez.spill("aba - should be based:")
+    ready ('a' == 'a' && 'b' == 'b') {
+        vibez.spill(based)
+    }
+    
+    fr fr Test "abc"
+    vibez.spill("abc - should be cringe:")
+    ready ('a' != 'c') {
+        vibez.spill(cringe)
+    }
+    
+    fr fr Test character operations
+    sus char_a sip = 'a'
+    sus char_A sip = 'A'
+    
+    vibez.spill("Character case test:")
+    sus lower_A sip = to_lowercase(char_A)
+    ready (lower_A == char_a) {
+        vibez.spill("Case conversion works: based")
+    }
+    
+    fr fr Test alphanumeric check
+    vibez.spill("Alphanumeric tests:")
+    vibez.spill(is_char_alphanumeric('a'))
+    vibez.spill(is_char_alphanumeric('Z'))
+    vibez.spill(is_char_alphanumeric('5'))
+    vibez.spill(is_char_alphanumeric('@'))
+    
+    vibez.spill("=== Valid Palindrome Complete ===")
+}
+
+slay main_character() {
+    test_palindrome_strings()
+}

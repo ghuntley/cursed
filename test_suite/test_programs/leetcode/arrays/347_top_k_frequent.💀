@@ -1,0 +1,61 @@
+vibe main
+
+yeet "vibez"
+
+fr fr LeetCode #347: Top K Frequent Elements
+fr fr Bucket sort approach for O(n) solution
+
+slay top_k_frequent(nums []normie, k normie) []normie {
+    fr fr Count frequencies
+    sus freq_map map[normie]normie = map[normie]normie{}
+    
+    bestie i := 0; i < len(nums); i++ {
+        freq_map[nums[i]]++
+    }
+    
+    fr fr Create buckets for each frequency
+    sus buckets [][]normie = make([][]normie, len(nums) + 1)
+    
+    bestie num, freq := flex freq_map {
+        buckets[freq] = append(buckets[freq], num)
+    }
+    
+    fr fr Collect top k from highest frequency buckets
+    sus result []normie = []normie{}
+    
+    bestie i := len(buckets) - 1; i >= 0 && len(result) < k; i-- {
+        bestie j := 0; j < len(buckets[i]) && len(result) < k; j++ {
+            result = append(result, buckets[i][j])
+        }
+    }
+    
+    damn result
+}
+
+slay test_top_k_frequent() {
+    vibez.spill("=== LeetCode #347: Top K Frequent Elements ===")
+    
+    fr fr Test case 1: [1,1,1,2,2,3], k=2 -> [1,2]
+    sus nums1 []normie = []normie{1, 1, 1, 2, 2, 3}
+    sus result1 []normie = top_k_frequent(nums1, 2)
+    
+    vibez.spill("Test 1 - k=2, Expected: [1,2]")
+    bestie i := 0; i < len(result1); i++ {
+        vibez.spill(result1[i])
+    }
+    
+    fr fr Test case 2: [1], k=1 -> [1]
+    sus nums2 []normie = []normie{1}
+    sus result2 []normie = top_k_frequent(nums2, 1)
+    
+    vibez.spill("Test 2 - k=1, Expected: [1]")
+    bestie i := 0; i < len(result2); i++ {
+        vibez.spill(result2[i])
+    }
+    
+    vibez.spill("=== Top K Frequent Complete ===")
+}
+
+slay main_character() {
+    test_top_k_frequent()
+}

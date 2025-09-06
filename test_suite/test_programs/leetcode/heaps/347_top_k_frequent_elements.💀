@@ -1,0 +1,22 @@
+vibe main
+
+yeet "vibez"
+
+fr fr LeetCode #347: Top K Frequent Elements
+fr fr Category: Heaps
+fr fr Implementation uses CURSED syntax with ඞ pointers!
+
+slay solve_top_k_frequent_elements() {
+    vibez.spill("=== LeetCode #347: Top K Frequent Elements ===")
+    
+    fr fr TODO: Implement actual algorithm
+    sus result normie = 42
+    vibez.spill("Demo result:")
+    vibez.spill(result)
+    
+    vibez.spill("=== Top K Frequent Elements Complete ===")
+}
+
+slay main_character() {
+    solve_top_k_frequent_elements()
+}

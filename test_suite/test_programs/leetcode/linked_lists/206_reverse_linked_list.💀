@@ -1,0 +1,110 @@
+vibe main
+
+yeet "vibez"
+
+fr fr LeetCode #206: Reverse Linked List
+fr fr Classic pointer manipulation using ඞ Among Us pointers!
+
+be_like ListNode squad {
+    val normie
+    next ඞListNode
+}
+
+slay create_node(val normie) ඞListNode {
+    sus node ඞListNode = ඞListNode{val: val, next: nah}
+    damn node
+}
+
+slay reverse_list(head ඞListNode) ඞListNode {
+    sus prev ඞListNode = nah
+    sus current ඞListNode = head
+    
+    periodt (current != nah) {
+        sus next_temp ඞListNode = current.next
+        current.next = prev
+        prev = current
+        current = next_temp
+    }
+    
+    damn prev
+}
+
+slay reverse_list_recursive(head ඞListNode) ඞListNode {
+    ready (head == nah || head.next == nah) {
+        damn head
+    }
+    
+    sus reversed_head ඞListNode = reverse_list_recursive(head.next)
+    head.next.next = head
+    head.next = nah
+    
+    damn reversed_head
+}
+
+slay create_list_from_array(arr []normie) ඞListNode {
+    ready (len(arr) == 0) {
+        damn nah
+    }
+    
+    sus head ඞListNode = create_node(arr[0])
+    sus current ඞListNode = head
+    
+    bestie i := 1; i < len(arr); i++ {
+        current.next = create_node(arr[i])
+        current = current.next
+    }
+    
+    damn head
+}
+
+slay print_list(head ඞListNode) {
+    sus current ඞListNode = head
+    periodt (current != nah) {
+        vibez.spill(current.val)
+        current = current.next
+    }
+}
+
+slay test_reverse_linked_list() {
+    vibez.spill("=== LeetCode #206: Reverse Linked List (ඞ Pointers) ===")
+    
+    fr fr Test case 1: [1,2,3,4,5] -> [5,4,3,2,1]
+    sus list1 ඞListNode = create_list_from_array([]normie{1, 2, 3, 4, 5})
+    
+    vibez.spill("Original list:")
+    print_list(list1)
+    
+    sus reversed1 ඞListNode = reverse_list(list1)
+    
+    vibez.spill("Reversed list (iterative):")
+    print_list(reversed1)
+    
+    fr fr Test case 2: [1,2] -> [2,1] (recursive)
+    sus list2 ඞListNode = create_list_from_array([]normie{1, 2})
+    sus reversed2 ඞListNode = reverse_list_recursive(list2)
+    
+    vibez.spill("Test 2 - Recursive reverse [1,2]:")
+    print_list(reversed2)
+    
+    fr fr Test case 3: [] -> []
+    sus empty ඞListNode = nah
+    sus reversed_empty ඞListNode = reverse_list(empty)
+    
+    vibez.spill("Test 3 - Empty list:")
+    ready (reversed_empty == nah) {
+        vibez.spill("Still empty (null)")
+    }
+    
+    fr fr Test case 4: [1] -> [1]
+    sus single ඞListNode = create_node(42)
+    sus reversed_single ඞListNode = reverse_list(single)
+    
+    vibez.spill("Test 4 - Single node:")
+    print_list(reversed_single)
+    
+    vibez.spill("=== Reverse List Complete (ඞ Pointers are Based!) ===")
+}
+
+slay main_character() {
+    test_reverse_linked_list()
+}
