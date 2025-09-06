@@ -1,0 +1,18 @@
+vibe main
+yeet "vibez"
+
+slay main_character() {
+    vibez.spill("Testing moderate overflow...")
+    
+    // Test values near overflow boundaries
+    sus big1 drip = 2147483647;  // Max i32
+    sus big2 drip = 2147483647;  
+    sus result drip = big1 + big2;
+    vibez.spill("Large addition result computed")
+    
+    // Test multiplication
+    sus mult_result drip = big1 * 2;
+    vibez.spill("Large multiplication result computed")
+    
+    vibez.spill("Moderate overflow tests completed!")
+}

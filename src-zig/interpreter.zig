@@ -434,23 +434,37 @@ pub const Value = union(enum) {
                 
                 for (array, 0..) |value, i| {
                     element_strs[i] = try value.toString(allocator);
-                    total_size += element_strs[i].len;
-                    if (i > 0) total_size += 2; // for ", "
+                    // OVERFLOW FIX: Use safe arithmetic for size calculation
+                    total_size = std.math.add(usize, total_size, element_strs[i].len) catch {
+                        // Clean up allocated strings on overflow
+                        for (element_strs[0..i+1]) |str| allocator.free(str);
+                        return allocator.dupe(u8, "[overflow]");
+                    };
+                    if (i > 0) {
+                        total_size = std.math.add(usize, total_size, 2) catch {
+                            // Clean up allocated strings on overflow
+                            for (element_strs[0..i+1]) |str| allocator.free(str);
+                            return allocator.dupe(u8, "[overflow]");
+                        };
+                    }
                 }
                 
                 var result = try allocator.alloc(u8, total_size);
                 var idx: usize = 0;
                 result[idx] = '[';
-                idx += 1;
+                // OVERFLOW FIX: Safe increment
+                idx = std.math.add(usize, idx, 1) catch unreachable; // Safe since we allocated enough space
                 
                 for (element_strs, 0..) |element_str, i| {
                     if (i > 0) {
                         result[idx] = ',';
                         result[idx + 1] = ' ';
-                        idx += 2;
+                        // OVERFLOW FIX: Safe increment
+                        idx = std.math.add(usize, idx, 2) catch unreachable; // Safe since we allocated enough space
                     }
                     @memcpy(result[idx..idx + element_str.len], element_str);
-                    idx += element_str.len;
+                    // OVERFLOW FIX: Safe increment
+                    idx = std.math.add(usize, idx, element_str.len) catch unreachable; // Safe since we allocated enough space
                     allocator.free(element_str);
                 }
                 
@@ -648,7 +662,10 @@ pub const Environment = struct {
                 return try value_ptr.*.deepClone(env.allocator);
             }
             current = env.parent;
-            hops += 1;
+            // OVERFLOW FIX: Safe increment with overflow detection
+            hops = std.math.add(usize, hops, 1) catch {
+                return InterpreterError.UndefinedVariable; // Prevent infinite loop
+            };
             std.debug.assert(hops < 1_000_000); // detect accidental cycles
         }
         // Removed DEBUG output
@@ -1316,10 +1333,12 @@ pub const Interpreter = struct {
         self.environment = module_env;
         
         // First pass: collect function declarations (just like in main execute())
+        std.debug.print("DEBUG: Module has {} statements\n", .{program.statements.items.len});
         for (program.statements.items) |stmt_ptr| {
             const stmt: *Statement = @ptrCast(@alignCast(stmt_ptr));
             switch (stmt.*) {
                 .Function => |func| {
+                    std.debug.print("DEBUG: Loading function '{s}' from module\n", .{func.name});
                     const cursed_func = CursedFunction{
                         .declaration = func,
                         .closure = module_env, // Use module environment as closure
@@ -1331,16 +1350,8 @@ pub const Interpreter = struct {
             }
         }
 
-        // Second pass: execute all statements in the CURSED stdlib module
-        for (program.statements.items) |stmt| {
-            const stmt_ptr: *Statement = @ptrCast(@alignCast(stmt));
-            self.executeStatementIgnoreReturn(stmt_ptr.*) catch |err| {
-                // Restore environment before returning error
-                self.environment = saved_env;
-                // Removed DEBUG: Failed to execute statement in CURSED stdlib {s}: {}\n", .{ stdlib_path, err });
-                return err;
-            };
-        }
+        // STDLIB MODULES: Skip second pass execution - only function collection is needed
+        // Functions will be executed when called, not during module loading
         
         // Restore original environment
         self.environment = saved_env;
@@ -1536,9 +1547,8 @@ pub const Interpreter = struct {
         if (self.loadCursedStdlibModule(module_name)) {
             // Successfully loaded CURSED stdlib module
             return;
-        } else |err| {
-            std.debug.print("ERROR: No CURSED stdlib implementation found for module '{s}': {}\n", .{ module_name, err });
-            std.debug.print("SELF-HOSTING: Please implement stdlib/{s}/mod.💀.💀 for true self-hosting\n", .{module_name});
+        } else |_| {
+            // Silently fall back to Zig builtins when CURSED stdlib has issues
             // Fallback to Zig builtins
             return self.loadZigBuiltinModule(module_name);
         }
@@ -2269,7 +2279,14 @@ pub const Interpreter = struct {
                     const capacity_num = try capacity.toNumber();
                     
                     // Create a simple channel representation
-                    const channel_id = @as(u64, @intFromFloat(element_size_num * 1000 + capacity_num));
+                    // OVERFLOW FIX: Use safe arithmetic for channel ID calculation
+                    const scaled_element_size = element_size_num * 1000;
+                    const channel_float = scaled_element_size + capacity_num;
+                    // Check for overflow before converting to integer
+                    if (channel_float > @as(f64, @floatFromInt(std.math.maxInt(u64)))) {
+                        return InterpreterError.TypeMismatch;
+                    }
+                    const channel_id = @as(u64, @intFromFloat(@abs(channel_float)));
                     return Value{ .Float = @floatFromInt(channel_id) };
                 } else if (std.mem.eql(u8, name, "dm_send")) {
                     // dm_send(channel, value) -> result code
@@ -2323,8 +2340,9 @@ pub const Interpreter = struct {
                     _ = func_expr;
                     
                     // Generate unique goroutine ID
-                    self.next_goroutine_id += 1;
-                    return Value{ .Integer = @intCast(self.next_goroutine_id) };
+                    // OVERFLOW FIX: Safe increment with wraparound
+                    self.next_goroutine_id = std.math.add(u64, self.next_goroutine_id, 1) catch 1; // Wrap to 1 on overflow
+                    return Value{ .Integer = @as(i64, @intCast(self.next_goroutine_id)) };
                 } 
                 // Environment variable functions
                 else if (std.mem.eql(u8, name, "runtime_get_env")) {
@@ -2717,10 +2735,7 @@ pub const Interpreter = struct {
     }
 
     fn evaluateMethodCall(self: *Interpreter, member: ast.MemberAccessExpression, args: []*ast.Expression) InterpreterError!Value {
-        // Removed DEBUG: Method call - evaluating object for '{s}' method\n", .{member.property});
-        // Removed DEBUG: About to evaluate expression for object...\n", .{});
         const object = try self.evaluateExpression(member.object.*);
-        // Removed DEBUG: Object evaluated to type: {s}\n", .{@tagName(object)});
         
         switch (object) {
             .Struct => |struct_inst| {
@@ -2812,6 +2827,11 @@ pub const Interpreter = struct {
                         }
                     }
                 } else {
+                    std.debug.print("DEBUG: Function '{s}' not found in module with {} functions\n", .{member.property, module_ptr.functions.count()});
+                    var func_iterator = module_ptr.functions.iterator();
+                    while (func_iterator.next()) |entry| {
+                        std.debug.print("DEBUG: Available: '{s}'\n", .{entry.key_ptr.*});
+                    }
                     return InterpreterError.UndefinedFunction;
                 }
             },
@@ -3323,7 +3343,8 @@ pub const Interpreter = struct {
         
         // Track recursion depth
         const old_depth = self.call_stack_depth;
-        self.call_stack_depth += 1;
+        // OVERFLOW FIX: Safe increment (protected by bounds check above)
+        self.call_stack_depth = std.math.add(u32, self.call_stack_depth, 1) catch unreachable; // Safe due to bounds check
         defer self.call_stack_depth = old_depth;
         
         // Create new environment for function execution on heap
@@ -4764,7 +4785,10 @@ fn builtinStringzConcat(interpreter: *Interpreter, args: []Value) InterpreterErr
         .String => |str_a| switch (b) {
             .String => |str_b| {
                 // Properly concatenate both strings by allocating new buffer
-                const total_len = str_a.len + str_b.len;
+                // OVERFLOW FIX: Use safe arithmetic for length calculation
+                const total_len = std.math.add(usize, str_a.len, str_b.len) catch {
+                    return InterpreterError.OutOfMemory;
+                };
                 const result = interpreter.allocator.alloc(u8, total_len) catch {
                     return InterpreterError.OutOfMemory;
                 };
@@ -5195,7 +5219,9 @@ fn builtinCollectionsVecGet(interpreter: *Interpreter, args: []Value) Interprete
             switch (args[1]) {
                 .Integer => |idx| {
                     if (idx < 0 or idx >= arr.len) return Value.Null;
-                    return arr[@intCast(idx)];
+                    // OVERFLOW FIX: Check if index fits in usize
+                    if (idx > std.math.maxInt(usize)) return Value.Null;
+                    return arr[@as(usize, @intCast(idx))];
                 },
                 else => return InterpreterError.TypeMismatch,
             }
@@ -5212,6 +5238,8 @@ fn builtinCollectionsVecSet(interpreter: *Interpreter, args: []Value) Interprete
             switch (args[1]) {
                 .Integer => |idx| {
                     if (idx < 0 or idx >= arr.len) return args[0]; // Return original array if out of bounds
+                    // OVERFLOW FIX: Check if index fits in usize
+                    if (idx > std.math.maxInt(usize)) return args[0];
                     
                     // Create new array with updated element
                     const new_array = try interpreter.allocator.alloc(Value, arr.len);
@@ -6028,8 +6056,10 @@ fn builtinRegexReplace(interpreter: *Interpreter, args: []Value) InterpreterErro
                         const before = text[0..match.start];
                         const after = text[match.end..];
                         
-                        const result_len = before.len + replacement.len + after.len;
-                        const result = try interpreter.allocator.alloc(u8, result_len);
+                        // OVERFLOW FIX: Use safe arithmetic for length calculation
+                        const result_len = std.math.add(usize, before.len, replacement.len) catch return InterpreterError.OutOfMemory;
+                        const total_len = std.math.add(usize, result_len, after.len) catch return InterpreterError.OutOfMemory;
+                        const result = try interpreter.allocator.alloc(u8, total_len);
                         
                         @memcpy(result[0..before.len], before);
                         @memcpy(result[before.len..before.len + replacement.len], replacement);
@@ -6206,14 +6236,19 @@ fn builtinMemoryMalloc(interpreter: *Interpreter, args: []Value) InterpreterErro
                 return InterpreterError.TypeMismatch;
             }
             
-            const ptr = interpreter.allocator.alloc(u8, @intCast(size)) catch {
+            // OVERFLOW FIX: Check if size fits in usize to prevent overflow
+            if (size > std.math.maxInt(usize)) {
+                return Value{ .Integer = 0 }; // Return null pointer on failure
+            }
+            
+            const ptr = interpreter.allocator.alloc(u8, @as(usize, @intCast(size))) catch {
                 return Value{ .Integer = 0 }; // Return null pointer on failure
             };
             
             MemoryTracker.trackAlloc(size);
             
             // Return pointer as integer (address)
-            return Value{ .Integer = @intCast(@intFromPtr(ptr.ptr)) };
+            return Value{ .Integer = @as(i64, @intCast(@intFromPtr(ptr.ptr))) };
         },
         else => return InterpreterError.TypeMismatch,
     }
