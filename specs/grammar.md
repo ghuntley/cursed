@@ -96,6 +96,10 @@ Example:
 ```
 sus name tea = "World"
 sus age, height = 25, 180.5
+
+fr fr Pointer variable declarations
+sus ptr ඞnormie        // Uninitialized pointer
+sus ptr2 ඞnormie = ඞage  // Pointer to age variable
 ```
 
 ### Types
@@ -103,14 +107,33 @@ sus age, height = 25, 180.5
 ```
 TypeDecl         = "be_like" ( TypeSpec | "(" { TypeSpec ";" } ")" ) .
 TypeSpec         = TypeName Type .
+Type             = BasicType | PointerType | ArrayType | SliceType | MapType | 
+                   StructType | InterfaceType | FunctionType | ChannelType .
+BasicType        = "normie" | "tea" | "lit" | "smol" | "mid" | "thicc" | 
+                   "snack" | "meal" | "byte" | "rune" | "sip" | "extra" | 
+                   "cap" | "yikes" | identifier .
+PointerType      = "ඞ" Type .
+ArrayType        = Type "[" Expression "]" .
+SliceType        = Type "[" "value" "]" | Type "[" "]" .
+MapType          = "map" "[" Type "]" Type .
+StructType       = "squad" "{" { FieldDecl ";" } "}" .
+InterfaceType    = "collab" "{" { MethodSpec ";" } "}" .
+FunctionType     = "slay" "(" [ ParameterList ] ")" [ Type ] .
+ChannelType      = "dm" "<" Type ">" [ "[" Expression "]" ] .
 ```
 
-Example:
+Examples:
 
 ```
 be_like Person squad {
     name tea
     age normie
+    address ඞAddress    // Pointer to Address
+}
+
+be_like Node squad {
+    data normie
+    next ඞNode         // Pointer to next node
 }
 ```
 
@@ -308,6 +331,7 @@ RelationalExpr   = AdditiveExpr { ( "<" | "<=" | ">" | ">=" ) AdditiveExpr } .
 AdditiveExpr     = MultiplicativeExpr { ( "+" | "-" ) MultiplicativeExpr } .
 MultiplicativeExpr = UnaryExpr { ( "*" | "/" | "%" ) UnaryExpr } .
 UnaryExpr        = PrimaryExpr | unary_op UnaryExpr .
+unary_op         = "!" | "-" | "+" | "*" | "ඞ" .
 PrimaryExpr      = Operand | Conversion | PrimaryExpr Selector | PrimaryExpr Index | PrimaryExpr Slice | PrimaryExpr TypeAssertion | PrimaryExpr Arguments .
 ```
 
@@ -316,7 +340,7 @@ PrimaryExpr      = Operand | Conversion | PrimaryExpr Selector | PrimaryExpr Ind
 CURSED follows standard operator precedence (highest to lowest):
 
 1. **Primary expressions**: `()`, `[]`, `.`, function calls
-2. **Unary operators**: `!`, `-`, `+`, `*` (dereference), `&` (address-of)
+2. **Unary operators**: `!`, `-`, `+`, `*` (dereference), `ඞ` (address-of)
 3. **Multiplicative**: `*`, `/`, `%`
 4. **Additive**: `+`, `-`
 5. **Relational**: `<`, `<=`, `>`, `>=`
@@ -327,6 +351,50 @@ CURSED follows standard operator precedence (highest to lowest):
 
 **CRITICAL**: Parsers MUST implement precedence climbing to ensure correct evaluation order.
 Example: `2 + 3 * 4` must parse as `2 + (3 * 4)`, not `(2 + 3) * 4`.
+
+### Pointer Operations
+
+The CURSED language uses the Among Us character `ඞ` (U+0D9E) for pointer operations:
+
+- **Address-of operator** (`ඞ`): Gets the memory address of a variable
+- **Dereference operator** (`*`): Accesses the value stored at a pointer address
+
+**Examples:**
+
+```cursed
+vibe main
+yeet "vibez"
+
+slay demonstrate_pointers() {
+    // Basic pointer operations
+    sus x normie = 42
+    sus ptr ඞnormie = ඞx        // Get address of x
+    sus value normie = *ptr     // Dereference pointer
+    
+    // Pointer arithmetic and operations
+    sus data normie[5] = {1, 2, 3, 4, 5}
+    sus arr_ptr ඞnormie = ඞdata[0]  // Pointer to first element
+    
+    // Multiple levels of indirection
+    sus ptr_to_ptr ඞඞnormie = ඞptr
+    sus original_value normie = **ptr_to_ptr
+    
+    vibez.spill("Original value: " + stringz.from_int(original_value))
+}
+```
+
+**Syntax Evolution:**
+
+CURSED previously used the `@` symbol for address-of operations but evolved to use the Among Us character `ඞ` to better reflect modern internet culture:
+
+- **Legacy (deprecated):** `sus ptr @normie = @x`
+- **Current:** `sus ptr ඞnormie = ඞx`
+
+**Parser Requirements:**
+
+- The `ඞ` character (U+0D9E) MUST be recognized as a valid unary operator
+- Pointer type declarations use `ඞType` syntax
+- Multiple levels of pointer indirection are supported: `ඞඞnormie`, `ඞඞඞnormie`, etc.
 
 ### Primary Expressions
 
@@ -369,6 +437,11 @@ Examples:
 vibez.spill("Hello, world!")
 add(1, 2)
 math.pow(2, 3)
+
+fr fr Pointer operations
+sus x normie = 42
+sus ptr ඞnormie = ඞx    // Get address of x
+sus value normie = *ptr  // Dereference pointer
 ```
 
 ## Goroutines and Channels
