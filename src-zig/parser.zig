@@ -1491,7 +1491,6 @@ pub const Parser = struct {
 
     fn parseFunctionStatement(self: *Parser) ParserError!FunctionStatement {
         _ = try self.consume(.Slay, "Expected 'slay'");
-        
         if (!self.check(.Identifier) and !self.check(.Spill) and !self.check(.MainCharacter)) {
             _ = self.reportErrorWithContext("Expected function name after 'slay'", "parseFunctionStatement") catch {};
             return ParserError.UnexpectedToken;
@@ -1877,6 +1876,12 @@ pub const Parser = struct {
                 },
                 else => {}
             }
+        }
+        
+        // Handle error-returning function syntax: type yikes
+        if (self.match(.Yikes)) {
+            // Return the base type since the error capability is implicit
+            return result_type;
         }
         
         return result_type;
@@ -5052,6 +5057,11 @@ pub const Parser = struct {
     fn parseComplexType(self: *Parser) ParserError!ast.Type {
         // Parse union types: Type1 | Type2 | Type3
         const base_type = try self.parseBasicType();
+        // Check for error-returning function syntax: normie yikes, tea yikes, etc.
+        if (self.match(.Yikes)) {
+            // Return the base type since the error capability is implicit
+            return base_type;
+        }
         
         if (self.match(.Pipe)) {
             var union_types = std.ArrayList(u8){};

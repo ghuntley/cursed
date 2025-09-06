@@ -1684,11 +1684,10 @@ pub const LLVMIRPipeline = struct {
                 return c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 0, 0);
             },
             .MemberAccess => |member_access| {
-                return try self.generateMemberAccess(member_access);
+                return try self.generateMemberAccessRobust(member_access);
             },
-            .StructLiteral => |_| {
-                // TODO: implement generateStructLiteral
-                return c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 0, 0);
+            .StructLiteral => |struct_literal| {
+                return try self.generateStructLiteral(struct_literal);
             },
             else => {
                 print("⚠️ Unhandled expression type in IR generation: {s}\n", .{@tagName(expr)});
@@ -4262,16 +4261,20 @@ pub const LLVMIRPipeline = struct {
 
     /// Generate struct literal in LLVM IR
     fn generateStructLiteral(self: *LLVMIRPipeline, struct_literal: ast.StructLiteralExpression) !c.LLVMValueRef {
-        // For now, support Node struct with data and next fields
-        if (std.mem.eql(u8, struct_literal.struct_name, "Node")) {
+        // Support Node and ඞNode struct with data and next fields
+        if (std.mem.eql(u8, struct_literal.struct_name, "Node") or 
+           std.mem.eql(u8, struct_literal.struct_name, "ඞNode") or
+           std.mem.eql(u8, struct_literal.struct_name, "PtrNode")) {
             // Create struct type: { i32, i8* } (data: i32, next: pointer)
             const struct_type = c.LLVMStructTypeInContext(self.context, @constCast(@ptrCast(&[_]c.LLVMTypeRef{
                 c.LLVMInt32TypeInContext(self.context),       // data field
                 c.LLVMPointerTypeInContext(self.context, 0)   // next field
             })), 2, 0);
             
-            // Allocate space for the struct
-            const struct_alloca = c.LLVMBuildAlloca(self.builder, struct_type, "struct_alloca");
+            // Allocate space for the struct on the heap using malloc
+            const size_of_struct = c.LLVMSizeOf(struct_type);
+            const malloc_call = try self.generateMalloc(size_of_struct);
+            const struct_ptr = c.LLVMBuildBitCast(self.builder, malloc_call, c.LLVMPointerTypeInContext(self.context, 0), "struct_ptr");
             
             // Initialize struct fields with values from literal
             for (struct_literal.fields.items, 0..) |field, idx| {
@@ -4282,18 +4285,90 @@ pub const LLVMIRPipeline = struct {
                 const field_idx = c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), @intCast(idx), 0);
                 const indices = [_]c.LLVMValueRef{zero, field_idx};
                 
-                const field_ptr = c.LLVMBuildGEP2(self.builder, struct_type, struct_alloca, @constCast(@ptrCast(&indices)), 2, "field_ptr");
+                const field_ptr = c.LLVMBuildGEP2(self.builder, struct_type, struct_ptr, @constCast(@ptrCast(&indices)), 2, "field_ptr");
                 
                 // Store the field value
                 _ = c.LLVMBuildStore(self.builder, field_value, field_ptr);
             }
             
-            return struct_alloca;
+            return struct_ptr;
         } else {
             // Unsupported struct type - return null pointer as placeholder
             print("⚠️ Struct literal for unknown type: {s}\n", .{struct_literal.struct_name});
             return c.LLVMConstNull(c.LLVMPointerTypeInContext(self.context, 0));
         }
+    }
+
+    /// Generate robust member access (struct field access) in LLVM IR
+    fn generateMemberAccessRobust(self: *LLVMIRPipeline, member_access: *ast.MemberAccessExpression) !c.LLVMValueRef {
+        // Generate the base object/struct expression  
+        const object_val = try self.generateExpression(member_access.object.*);
+        const object_type = c.LLVMTypeOf(object_val);
+        const field_name = member_access.property;
+        
+        // Define consistent Node struct type
+        const node_struct_type = c.LLVMStructTypeInContext(self.context, @constCast(@ptrCast(&[_]c.LLVMTypeRef{
+            c.LLVMInt32TypeInContext(self.context),        // data field (index 0)
+            c.LLVMPointerTypeInContext(self.context, 0)    // next field (index 1)
+        })), 2, 0);
+        
+        // Determine base pointer and struct type
+        var base_ptr: c.LLVMValueRef = undefined;
+        
+        switch (c.LLVMGetTypeKind(object_type)) {
+            c.LLVMPointerTypeKind => {
+                // Normal case: already struct*
+                base_ptr = object_val;
+            },
+            c.LLVMStructTypeKind => {
+                // We have a by-value struct → spill to get an address
+                const spill_alloca = c.LLVMBuildAlloca(self.builder, object_type, "spill_struct");
+                _ = c.LLVMBuildStore(self.builder, object_val, spill_alloca);
+                base_ptr = spill_alloca;
+            },
+            else => {
+                print("⚠️ Invalid object type for member access: {s} (type kind: {})\n", .{field_name, c.LLVMGetTypeKind(object_type)});
+                return c.LLVMConstNull(c.LLVMInt32TypeInContext(self.context));
+            }
+        }
+        
+        // Get field index and type
+        var field_index: u32 = 0;
+        var field_type: c.LLVMTypeRef = c.LLVMInt32TypeInContext(self.context);
+        
+        if (std.mem.eql(u8, field_name, "data")) {
+            field_index = 0;
+            field_type = c.LLVMInt32TypeInContext(self.context);
+        } else if (std.mem.eql(u8, field_name, "next")) {
+            field_index = 1; 
+            field_type = c.LLVMPointerTypeInContext(self.context, 0);
+        } else {
+            print("⚠️ Unknown struct field: {s}\n", .{field_name});
+            return c.LLVMConstNull(field_type);
+        }
+        
+        // Use StructGEP to access field properly
+        const field_ptr = c.LLVMBuildStructGEP2(self.builder, node_struct_type, base_ptr, field_index, "field_ptr");
+        
+        // Load and return the field value
+        return c.LLVMBuildLoad2(self.builder, field_type, field_ptr, "field_val");
+    }
+    
+    /// Generate heap allocation using malloc
+    fn generateMalloc(self: *LLVMIRPipeline, size: c.LLVMValueRef) !c.LLVMValueRef {
+        // Get or declare malloc function
+        const malloc_func_type = c.LLVMFunctionType(
+            c.LLVMPointerTypeInContext(self.context, 0), // returns void*
+            @constCast(@ptrCast(&[_]c.LLVMTypeRef{c.LLVMInt64TypeInContext(self.context)})), // takes size_t
+            1, // 1 parameter
+            0  // not variadic
+        );
+        
+        const malloc_func = c.LLVMGetNamedFunction(self.module, "malloc") orelse 
+            c.LLVMAddFunction(self.module, "malloc", malloc_func_type);
+            
+        // Call malloc with the size
+        return c.LLVMBuildCall2(self.builder, malloc_func_type, malloc_func, @constCast(@ptrCast(&[_]c.LLVMValueRef{size})), 1, "malloc_call");
     }
 
     /// Generate member access (struct field access) in LLVM IR
