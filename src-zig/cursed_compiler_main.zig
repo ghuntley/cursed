@@ -147,7 +147,7 @@ fn compileToExecutable(allocator: Allocator, source: []const u8, filename: []con
     
     var tokens_list = lex.tokenize() catch |err| {
         print("❌ Lexer error in {s}: {any}\n", .{ filename, err });
-        return;
+        return err;
     };
     defer tokens_list.deinit(allocator);
     
@@ -165,7 +165,7 @@ fn compileToExecutable(allocator: Allocator, source: []const u8, filename: []con
             print("💡 Parser encountered errors during parsing\n", .{});
             cursed_parser.error_recovery_stats.reportStats();
         }
-        return;
+        return err;
     };
 
     if (verbose) print("✅ Parsed AST with {d} statements\n", .{program.statements.items.len});
@@ -230,7 +230,7 @@ fn interpretSource(allocator: Allocator, source: []const u8, filename: []const u
     
     var tokens_list = lex.tokenize() catch |err| {
         print("❌ Lexer error in {s}: {any}\n", .{ filename, err });
-        return;
+        return err;
     };
     defer tokens_list.deinit(allocator);
     
@@ -247,7 +247,7 @@ fn interpretSource(allocator: Allocator, source: []const u8, filename: []const u
             print("💡 Parser encountered errors during parsing\n", .{});
             cursed_parser.error_recovery_stats.reportStats();
         }
-        return;
+        return err;
     };
     
     if (verbose) print("🎯 Parsed {d} statements\n", .{program.statements.items.len});

@@ -1,0 +1,11 @@
+vibe test
+
+slay main_character() {
+    sus text tea = "CURSED Language"
+    sus search tea = "CURSED"
+    
+    ready text == "CURSED Language" && search == "CURSED" { 
+        damn based 
+    }
+    damn cringe
+}
