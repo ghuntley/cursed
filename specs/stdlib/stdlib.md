@@ -221,7 +221,7 @@ The `web_vibez` package provides HTTP client and server functionality.
 yeet "web_vibez"
 
 slay main() {
-    web_vibez.HandleFunc("/", slay(w web_vibez.ResponseWriter, r @web_vibez.Request) {
+    web_vibez.HandleFunc("/", slay(w web_vibez.ResponseWriter, r ඞweb_vibez.Request) {
         vibez.Fprintf(w, "Hello, %s!", r.URL.Path[1:])
     })
     

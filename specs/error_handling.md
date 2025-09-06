@@ -308,7 +308,7 @@ be_like circuit_state smol {
     half_open = 2  // Testing recovery
 }
 
-slay (cb @circuit_breaker) call(operation slay() yikes) yikes {
+slay (cb ඞcircuit_breaker) call(operation slay() yikes) yikes {
     vibe_check cb.state {
         mood open:
             vibe_check time.since(cb.last_failure_time) > cb.timeout {
