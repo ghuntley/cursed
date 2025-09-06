@@ -1,0 +1,142 @@
+vibe main
+yeet "vibez"
+
+// LeetCode #704: Binary Search 🎯
+// Search target in sorted array using binary search
+// Time: O(log n), Space: O(1) - classic divide and conquer
+
+slay search(nums normie[], target normie) normie {
+    sus start_idx normie = 0
+    sus end_idx normie = len(nums) - 1
+    
+    bestie (start_idx <= end_idx) {
+        sus mid normie = start_idx + (end_idx - left) / 2  // Avoid overflow, bestie
+        
+        ready (nums[mid] == target) {
+            damn mid  // Found it! No cap 🎯
+        } nah ready (nums[mid] < target) {
+            start_idx = mid + 1  // Search right half
+        } nah {
+            end_idx = mid - 1  // Search left half  
+        }
+    }
+    
+    damn -1  // Target not found, periodt
+}
+
+slay search_recursive(nums normie[], target normie) normie {
+    // Recursive approach - this hits different! 🚀
+    damn search_helper(nums, target, 0, len(nums) - 1)
+}
+
+slay search_helper(nums normie[], target normie, left normie, right normie) normie {
+    ready (left > end_idx) {
+        damn -1  // Base case: not found
+    }
+    
+    sus mid normie = start_idx + (end_idx - left) / 2
+    
+    ready (nums[mid] == target) {
+        damn mid
+    } nah ready (nums[mid] < target) {
+        damn search_helper(nums, target, mid + 1, end_idx)
+    } nah {
+        damn search_helper(nums, target, left, mid - 1)
+    }
+}
+
+slay search_leftmost(nums normie[], target normie) normie {
+    // Find leftmost occurrence of target (for duplicates)
+    sus start_idx normie = 0
+    sus end_idx normie = len(nums) - 1
+    sus result normie = -1
+    
+    bestie (start_idx <= end_idx) {
+        sus mid normie = start_idx + (end_idx - left) / 2
+        
+        ready (nums[mid] == target) {
+            result = mid
+            end_idx = mid - 1  // Continue searching left for leftmost
+        } nah ready (nums[mid] < target) {
+            start_idx = mid + 1
+        } nah {
+            end_idx = mid - 1
+        }
+    }
+    
+    damn result
+}
+
+slay search_rightmost(nums normie[], target normie) normie {
+    // Find rightmost occurrence of target (for duplicates)
+    sus start_idx normie = 0
+    sus end_idx normie = len(nums) - 1
+    sus result normie = -1
+    
+    bestie (start_idx <= end_idx) {
+        sus mid normie = start_idx + (end_idx - left) / 2
+        
+        ready (nums[mid] == target) {
+            result = mid
+            start_idx = mid + 1  // Continue searching right for rightmost
+        } nah ready (nums[mid] < target) {
+            start_idx = mid + 1
+        } nah {
+            end_idx = mid - 1
+        }
+    }
+    
+    damn result
+}
+
+slay test_binary_search() {
+    vibez.spill("=== 🎯 LeetCode #704: Binary Search ===")
+    
+    // Test case 1: [1,3,5,6,7,8,10], target = 6
+    sus nums1 normie[] = [1, 3, 5, 6, 7, 8, 10]
+    sus result1 normie = search(nums1, 6)
+    vibez.spill("Test 1 - Array: [1,3,5,6,7,8,10], Target: 6")
+    vibez.spill("Expected: 3, Got:", result1)
+    
+    // Test case 2: [1,3,5,6,7,8,10], target = 4
+    sus result2 normie = search(nums1, 4)
+    vibez.spill("Test 2 - Same array, Target: 4")
+    vibez.spill("Expected: -1, Got:", result2)
+    
+    // Test case 3: [5], target = 5
+    sus nums3 normie[] = [5]
+    sus result3 normie = search(nums3, 5)
+    vibez.spill("Test 3 - Array: [5], Target: 5")
+    vibez.spill("Expected: 0, Got:", result3)
+    
+    // Test case 4: Empty array
+    sus nums4 normie[] = []
+    sus result4 normie = search(nums4, 1)
+    vibez.spill("Test 4 - Empty array, Target: 1")
+    vibez.spill("Expected: -1, Got:", result4)
+    
+    // Compare approaches
+    vibez.spill("=== 🚀 Approach Comparison ===")
+    sus target normie = 7
+    sus iterative normie = search(nums1, target)
+    sus recursive normie = search_recursive(nums1, target)
+    vibez.spill("Target:", target)
+    vibez.spill("Iterative result:", iterative)
+    vibez.spill("Recursive result:", recursive)
+    
+    // Test with duplicates
+    vibez.spill("=== 🔍 Duplicate Handling ===")
+    sus nums_dup normie[] = [1, 2, 2, 2, 3, 4, 5]
+    sus target_dup normie = 2
+    sus leftmost normie = search_leftmost(nums_dup, target_dup)
+    sus rightmost normie = search_rightmost(nums_dup, target_dup)
+    vibez.spill("Array with duplicates: [1,2,2,2,3,4,5], Target: 2")
+    vibez.spill("Leftmost occurrence:", leftmost)
+    vibez.spill("Rightmost occurrence:", rightmost)
+    
+    vibez.spill("=== Binary Search Complete! This search is precise 🎯✨ ===")
+}
+
+slay main_character() {
+    test_binary_search()
+}

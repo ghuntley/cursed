@@ -1,0 +1,32 @@
+vibe main
+yeet "vibez"
+
+slay search(nums normie[], target normie) normie {
+    sus start_idx normie = 0
+    sus end_idx normie = len(nums) - 1
+
+    bestie (start_idx <= end_idx) {
+        sus mid normie = start_idx + (end_idx - start_idx) / 2
+
+        ready (nums[mid] == target) {
+            damn mid
+        } nah ready (nums[mid] < target) {
+            start_idx = mid + 1
+        } nah {
+            end_idx = mid - 1
+        }
+    }
+
+    damn -1
+}
+
+slay test_binary_search() {
+    vibez.spill("=== Binary Search Test ===")
+    sus nums1 normie[] = [1, 3, 5, 6, 7, 8, 10]
+    sus result1 normie = search(nums1, 6)
+    vibez.spill("Expected: 3, Got:", result1)
+}
+
+slay main_character() {
+    test_binary_search()
+}

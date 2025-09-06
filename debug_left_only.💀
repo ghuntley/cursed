@@ -1,0 +1,9 @@
+vibe main
+yeet "vibez"
+
+slay main_character() {
+    sus left normie = 0
+    sus other normie = 5
+    sus mid normie = left + (other - left) / 2
+    vibez.spill("mid =", mid)
+}

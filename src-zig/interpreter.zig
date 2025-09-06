@@ -823,6 +823,54 @@ pub const Interpreter = struct {
                 .func = builtinAppend 
             } 
         });
+        
+        // Register cap function as a global builtin
+        try self.globals.define("cap", Value{ 
+            .BuiltinFunction = .{ 
+                .name = "cap", 
+                .func = builtinCap 
+            } 
+        });
+        
+        // Register make function as a global builtin
+        try self.globals.define("make", Value{ 
+            .BuiltinFunction = .{ 
+                .name = "make", 
+                .func = builtinMake 
+            } 
+        });
+        
+        // Register copy function as a global builtin
+        try self.globals.define("copy", Value{ 
+            .BuiltinFunction = .{ 
+                .name = "copy", 
+                .func = builtinCopy 
+            } 
+        });
+        
+        // Register panic function as a global builtin
+        try self.globals.define("panic", Value{ 
+            .BuiltinFunction = .{ 
+                .name = "panic", 
+                .func = builtinPanic 
+            } 
+        });
+        
+        // Register print function as a global builtin (like Go)
+        try self.globals.define("print", Value{ 
+            .BuiltinFunction = .{ 
+                .name = "print", 
+                .func = builtinPrint 
+            } 
+        });
+        
+        // Register println function as a global builtin (like Go)
+        try self.globals.define("println", Value{ 
+            .BuiltinFunction = .{ 
+                .name = "println", 
+                .func = builtinPrintln 
+            } 
+        });
 
         // Register native bridge functions for CURSED stdlib modules
         try self.globals.define("string_concat_native", Value{ 
@@ -871,6 +919,7 @@ pub const Interpreter = struct {
                         .closure = self.environment,
                     };
                     // Function registered
+                    // std.debug.print("DEBUG: Registering function '{s}'\n", .{func.name});
                     try self.functions.put(func.name, cursed_func);
                 },
                 .Struct => |struct_decl| {
@@ -1874,15 +1923,9 @@ pub const Interpreter = struct {
 
         if (std.mem.eql(u8, bin.operator, "+")) {
             if (left == .Integer and right == .Integer) {
-                // Integer + Integer with overflow checking
-                const result = @addWithOverflow(left.Integer, right.Integer);
-                if (result[1] != 0) {
-                    // Overflow occurred, promote to float
-                    const left_float = @as(f64, @floatFromInt(left.Integer));
-                    const right_float = @as(f64, @floatFromInt(right.Integer));
-                    return Value{ .Float = left_float + right_float };
-                }
-                return Value{ .Integer = result[0] };
+                // Integer + Integer with wrap-around arithmetic (like Go)
+                const result = left.Integer +% right.Integer;
+                return Value{ .Integer = result };
             } else if (left.isNumber() and right.isNumber()) {
                 const left_num = try left.toNumber();
                 const right_num = try right.toNumber();
@@ -1904,15 +1947,9 @@ pub const Interpreter = struct {
             }
         } else if (std.mem.eql(u8, bin.operator, "-")) {
             if (left == .Integer and right == .Integer) {
-                // Integer - Integer with overflow checking
-                const result = @subWithOverflow(left.Integer, right.Integer);
-                if (result[1] != 0) {
-                    // Overflow occurred, promote to float
-                    const left_float = @as(f64, @floatFromInt(left.Integer));
-                    const right_float = @as(f64, @floatFromInt(right.Integer));
-                    return Value{ .Float = left_float - right_float };
-                }
-                return Value{ .Integer = result[0] };
+                // Integer - Integer with wrap-around arithmetic (like Go)
+                const result = left.Integer -% right.Integer;
+                return Value{ .Integer = result };
             } else if (left.isNumber() and right.isNumber()) {
                 const left_num = try left.toNumber();
                 const right_num = try right.toNumber();
@@ -1920,15 +1957,9 @@ pub const Interpreter = struct {
             }
         } else if (std.mem.eql(u8, bin.operator, "*")) {
             if (left == .Integer and right == .Integer) {
-                // Integer * Integer with overflow checking
-                const result = @mulWithOverflow(left.Integer, right.Integer);
-                if (result[1] != 0) {
-                    // Overflow occurred, promote to float
-                    const left_float = @as(f64, @floatFromInt(left.Integer));
-                    const right_float = @as(f64, @floatFromInt(right.Integer));
-                    return Value{ .Float = left_float * right_float };
-                }
-                return Value{ .Integer = result[0] };
+                // Integer * Integer with wrap-around arithmetic (like Go)
+                const result = left.Integer *% right.Integer;
+                return Value{ .Integer = result };
             } else if (left.isNumber() and right.isNumber()) {
                 const left_num = try left.toNumber();
                 const right_num = try right.toNumber();
@@ -2577,7 +2608,7 @@ pub const Interpreter = struct {
                         return result;
                     }
                     
-                    // Removed DEBUG: Function '{s}' not found\n", .{name});
+                    std.debug.print("DEBUG: Function '{s}' not found\n", .{name});
                     return InterpreterError.UndefinedFunction;
                 }
             },
@@ -4238,6 +4269,167 @@ fn builtinAppend(interpreter: *Interpreter, args: []Value) InterpreterError!Valu
             return InterpreterError.TypeMismatch;
         },
     }
+}
+
+fn builtinCap(interpreter: *Interpreter, args: []Value) InterpreterError!Value {
+    _ = interpreter;
+    
+    if (args.len != 1) {
+        return InterpreterError.InvalidArgumentCount;
+    }
+    
+    const value = args[0];
+    
+    switch (value) {
+        .Array => |array| {
+            // For arrays, capacity equals length in CURSED
+            if (array.len > std.math.maxInt(i64)) {
+                return InterpreterError.InvalidOperation;
+            }
+            const capacity = @as(i64, @intCast(array.len));
+            return Value{ .Integer = capacity };
+        },
+        .String => |str| {
+            // For strings, capacity equals length
+            if (str.len > std.math.maxInt(i64)) {
+                return InterpreterError.InvalidOperation;
+            }
+            const capacity = @as(i64, @intCast(str.len));
+            return Value{ .Integer = capacity };
+        },
+        else => {
+            return InterpreterError.TypeMismatch;
+        },
+    }
+}
+
+fn builtinMake(interpreter: *Interpreter, args: []Value) InterpreterError!Value {
+    if (args.len < 1 or args.len > 2) {
+        return InterpreterError.InvalidArgumentCount;
+    }
+    
+    // For CURSED: make(size) creates array of given size with zero values
+    const size_value = args[0];
+    
+    switch (size_value) {
+        .Integer => |size| {
+            if (size < 0 or size > std.math.maxInt(usize)) {
+                return InterpreterError.InvalidOperation;
+            }
+            
+            const array_size = @as(usize, @intCast(size));
+            const new_array = interpreter.allocator.alloc(Value, array_size) catch {
+                return InterpreterError.OutOfMemory;
+            };
+            
+            // Initialize with zero values (Integer 0)
+            for (new_array) |*elem| {
+                elem.* = Value{ .Integer = 0 };
+            }
+            
+            return Value{ .Array = new_array };
+        },
+        else => {
+            return InterpreterError.TypeMismatch;
+        },
+    }
+}
+
+fn builtinCopy(interpreter: *Interpreter, args: []Value) InterpreterError!Value {
+    _ = interpreter;
+    
+    if (args.len != 2) {
+        return InterpreterError.InvalidArgumentCount;
+    }
+    
+    const dest_value = args[0];
+    const src_value = args[1];
+    
+    switch (dest_value) {
+        .Array => |dest_array| {
+            switch (src_value) {
+                .Array => |src_array| {
+                    // Copy elements from src to dest, limited by dest capacity
+                    const copy_count = @min(dest_array.len, src_array.len);
+                    
+                    for (0..copy_count) |i| {
+                        dest_array[i] = src_array[i];
+                    }
+                    
+                    // Return number of elements copied
+                    return Value{ .Integer = @as(i64, @intCast(copy_count)) };
+                },
+                else => return InterpreterError.TypeMismatch,
+            }
+        },
+        else => return InterpreterError.TypeMismatch,
+    }
+}
+
+fn builtinPanic(interpreter: *Interpreter, args: []Value) InterpreterError!Value {
+    _ = interpreter;
+    
+    if (args.len > 1) {
+        return InterpreterError.InvalidArgumentCount;
+    }
+    
+    if (args.len == 1) {
+        const msg_value = args[0];
+        switch (msg_value) {
+            .String => |msg| {
+                std.debug.panic("CURSED runtime panic: {s}", .{msg});
+            },
+            .Integer => |code| {
+                std.debug.panic("CURSED runtime panic: code {}", .{code});
+            },
+            else => {
+                std.debug.panic("CURSED runtime panic: {any}", .{msg_value});
+            },
+        }
+    } else {
+        std.debug.panic("CURSED runtime panic", .{});
+    }
+    
+    unreachable;
+}
+
+fn builtinPrint(interpreter: *Interpreter, args: []Value) InterpreterError!Value {
+    _ = interpreter;
+    
+    // Print all arguments without spaces or newlines (like Go's print)
+    for (args) |arg| {
+        switch (arg) {
+            .String => |str| std.debug.print("{s}", .{str}),
+            .Integer => |int| std.debug.print("{}", .{int}),
+            .Float => |float| std.debug.print("{d}", .{float}),
+            .Boolean => |bool_val| std.debug.print("{s}", .{if (bool_val) "based" else "cringe"}),
+            .Array => |array| std.debug.print("[array len={}]", .{array.len}),
+            else => std.debug.print("{any}", .{arg}),
+        }
+    }
+    
+    return Value{ .Integer = 0 };
+}
+
+fn builtinPrintln(interpreter: *Interpreter, args: []Value) InterpreterError!Value {
+    _ = interpreter;
+    
+    // Print all arguments separated by spaces with newline (like Go's println)
+    for (args, 0..) |arg, i| {
+        if (i > 0) std.debug.print(" ", .{});
+        
+        switch (arg) {
+            .String => |str| std.debug.print("{s}", .{str}),
+            .Integer => |int| std.debug.print("{}", .{int}),
+            .Float => |float| std.debug.print("{d}", .{float}),
+            .Boolean => |bool_val| std.debug.print("{s}", .{if (bool_val) "based" else "cringe"}),
+            .Array => |array| std.debug.print("[array len={}]", .{array.len}),
+            else => std.debug.print("{any}", .{arg}),
+        }
+    }
+    
+    std.debug.print("\n", .{});
+    return Value{ .Integer = 0 };
 }
 
 fn builtinVibezSpill(interpreter: *Interpreter, args: []Value) InterpreterError!Value {

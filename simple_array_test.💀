@@ -1,0 +1,8 @@
+vibe main
+yeet "vibez"
+
+slay main_character() {
+    sus arr normie[] = [1, 2, 3]
+    vibez.spill("First element:", arr[0])
+    vibez.spill("Length:", len(arr))
+}

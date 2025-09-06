@@ -810,7 +810,9 @@ pub const Parser = struct {
             }
 
             // Parse regular statements with enhanced error handling and recovery
+            // std.debug.print("DEBUG: About to parse statement at token: {any}\n", .{if (self.current < self.tokens.len) self.tokens[self.current].kind else .Eof});
             if (self.parseStatement()) |stmt| {
+                // std.debug.print("DEBUG: Successfully parsed statement: {any}\n", .{stmt});
                 // CRITICAL MEMORY SAFETY FIX: Add bounds checking and validation
                 const stmt_ptr = self.arena_allocator.create(Statement) catch |alloc_err| {
                     std.debug.print("MEMORY ERROR: Failed to allocate statement in parseProgram: {any}\n", .{alloc_err});
@@ -831,6 +833,7 @@ pub const Parser = struct {
                 };
             } else |err| {
                 const error_token = if (self.current < self.tokens.len) self.tokens[self.current] else self.tokens[self.tokens.len - 1];
+                // std.debug.print("DEBUG: Parse statement error: {any} at token: {any}\n", .{err, error_token.kind});
                 _ = self.reportErrorAtToken(error_token, "Failed to parse statement") catch {};
                 
                 // Use enhanced error recovery strategy
@@ -1527,7 +1530,9 @@ pub const Parser = struct {
             if (self.check(.RightBrace)) break;
             
             // DEBUG: Function body statement parsing - logging removed
+            // std.debug.print("DEBUG: Parsing function body statement at token: {any}\n", .{if (self.current < self.tokens.len) self.tokens[self.current].kind else .Eof});
             const stmt = try self.parseStatement();
+            // std.debug.print("DEBUG: Successfully parsed function body statement\n", .{});
             const stmt_ptr = try self.arena_allocator.create(Statement); 
 
             stmt_ptr.* = stmt;
@@ -1575,6 +1580,7 @@ pub const Parser = struct {
         
         // Parse initializer
         if (self.match(.Equal) or self.match(.ColonEqual)) {
+            // std.debug.print("DEBUG: About to parse initializer expression for variable: {s}\n", .{name});
             const init_expr = try self.parseExpression();
             const init_ptr = try self.arena_allocator.create(Expression);
     

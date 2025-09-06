@@ -1,0 +1,10 @@
+vibe main
+
+slay test_len(arr normie[]) normie {
+    sus left normie = 0
+    sus right normie = len(arr) - 1
+    damn left
+}
+
+slay main_character() {
+}

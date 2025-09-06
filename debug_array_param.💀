@@ -1,0 +1,10 @@
+vibe main
+yeet "vibez"
+
+slay test_func(nums normie[], target normie) {
+    vibez.spill("In test func with array param")
+}
+
+slay main_character() {
+    vibez.spill("In main")
+}

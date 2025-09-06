@@ -1,0 +1,111 @@
+vibe main
+yeet "vibez"
+
+// LeetCode #206: Reverse Linked List 🔄
+// Classic linked list problem using Among Us ඞ pointers!
+// Time: O(n), Space: O(1) - iterative approach
+
+struct ListNode {
+    sus val normie
+    sus next ඞListNode  // Among Us pointer, bestie!
+}
+
+slay reverse_list(head ඞListNode) ඞListNode {
+    sus prev ඞListNode = null
+    sus current ඞListNode = head
+    
+    bestie (current != null) {
+        sus next_temp ඞListNode = current.next
+        current.next = prev
+        prev = current  
+        current = next_temp
+    }
+    
+    damn prev  // New head of reversed list, periodt
+}
+
+slay reverse_list_recursive(head ඞListNode) ඞListNode {
+    // Recursive approach - this hits different! 🚀
+    ready (head == null || head.next == null) {
+        damn head
+    }
+    
+    sus new_head ඞListNode = reverse_list_recursive(head.next)
+    head.next.next = head
+    head.next = null
+    
+    damn new_head
+}
+
+slay create_list(vals normie[]) ඞListNode {
+    ready (len(vals) == 0) {
+        damn null
+    }
+    
+    sus head ඞListNode = &ListNode{val: vals[0], next: null}
+    sus current ඞListNode = head
+    
+    bestie i := 1; i < len(vals); i++ {
+        current.next = &ListNode{val: vals[i], next: null}
+        current = current.next
+    }
+    
+    damn head
+}
+
+slay print_list(head ඞListNode) {
+    sus current ඞListNode = head
+    sus output tea = ""
+    
+    bestie (current != null) {
+        ready (output != "") {
+            output = output + " -> "
+        }
+        output = output + str(current.val)
+        current = current.next
+    }
+    
+    ready (output == "") {
+        vibez.spill("null")
+    } otherwise {
+        vibez.spill(output + " -> null")
+    }
+}
+
+slay test_reverse_linked_list() {
+    vibez.spill("=== 🔄 LeetCode #206: Reverse Linked List ===")
+    
+    // Test case 1: [1,2,3,4,5]
+    sus vals1 normie[] = [1, 2, 3, 4, 5]
+    sus head1 ඞListNode = create_list(vals1)
+    vibez.spill("Test 1 - Original list:")
+    print_list(head1)
+    
+    sus reversed1 ඞListNode = reverse_list(head1)
+    vibez.spill("Test 1 - Reversed list:")
+    print_list(reversed1)
+    
+    // Test case 2: [1,2] 
+    sus vals2 normie[] = [1, 2]
+    sus head2 ඞListNode = create_list(vals2)
+    vibez.spill("Test 2 - Original list:")
+    print_list(head2)
+    
+    sus reversed2 ඞListNode = reverse_list_recursive(head2)
+    vibez.spill("Test 2 - Reversed (recursive):")
+    print_list(reversed2)
+    
+    // Test case 3: []
+    sus head3 ඞListNode = null
+    vibez.spill("Test 3 - Empty list:")
+    print_list(head3)
+    sus reversed3 ඞListNode = reverse_list(head3)
+    vibez.spill("Test 3 - Reversed empty:")
+    print_list(reversed3)
+    
+    vibez.spill("=== Reverse Linked List Complete! This is sus in the best way ඞ ===")
+}
+
+slay main_character() {
+    test_reverse_linked_list()
+}
