@@ -1279,7 +1279,6 @@ pub const Interpreter = struct {
             if (err1 == error.FileNotFound) {
                 break :blk std.fs.cwd().openFile(parent_path, .{}) catch |err2| blk2: {
                     if (err2 == error.FileNotFound) {
-                        // Removed DEBUG: Trying layer1 path: {s}\n", .{layer1_path});
                         break :blk2 std.fs.cwd().openFile(layer1_path, .{}) catch {
                             return InterpreterError.ModuleNotFound;
                         };
@@ -1311,14 +1310,12 @@ pub const Interpreter = struct {
         // Parse the CURSED source code to AST using module arena
         var module_lexer = lexer.Lexer.init(module_allocator, source_code);
         var tokens = module_lexer.tokenize() catch {
-            // Removed DEBUG: Failed to tokenize CURSED stdlib {s}: {}\n", .{ stdlib_path, err });
             return InterpreterError.ParseError;
         };
         defer tokens.deinit(module_allocator);
         
         var ast_parser = parser.Parser.init(module_allocator, tokens.items);
         const program = ast_parser.parseProgram() catch {
-            // Removed DEBUG: Failed to parse CURSED stdlib {s}: {}\n", .{ stdlib_path, err });
             return InterpreterError.ParseError;
         };
         // AST now lives in module_arena and will stay alive with the module
@@ -1333,12 +1330,10 @@ pub const Interpreter = struct {
         self.environment = module_env;
         
         // First pass: collect function declarations (just like in main execute())
-        std.debug.print("DEBUG: Module has {} statements\n", .{program.statements.items.len});
         for (program.statements.items) |stmt_ptr| {
             const stmt: *Statement = @ptrCast(@alignCast(stmt_ptr));
             switch (stmt.*) {
                 .Function => |func| {
-                    std.debug.print("DEBUG: Loading function '{s}' from module\n", .{func.name});
                     const cursed_func = CursedFunction{
                         .declaration = func,
                         .closure = module_env, // Use module environment as closure
@@ -2827,11 +2822,6 @@ pub const Interpreter = struct {
                         }
                     }
                 } else {
-                    std.debug.print("DEBUG: Function '{s}' not found in module with {} functions\n", .{member.property, module_ptr.functions.count()});
-                    var func_iterator = module_ptr.functions.iterator();
-                    while (func_iterator.next()) |entry| {
-                        std.debug.print("DEBUG: Available: '{s}'\n", .{entry.key_ptr.*});
-                    }
                     return InterpreterError.UndefinedFunction;
                 }
             },
