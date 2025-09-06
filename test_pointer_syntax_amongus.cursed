@@ -1,0 +1,47 @@
+vibe main
+yeet "vibez"
+
+// Test the new Among Us pointer syntax ඞ
+slay test_basic_pointers() {
+    sus x drip = 42
+    sus ptr ඞi32 = ඞx  // Among Us pointer to x
+    
+    vibez.spill("Original value:", x)
+    vibez.spill("Pointer value:", ඞptr)
+    
+    ඞptr = 69  // Dereference and assign
+    vibez.spill("Modified value:", x)
+}
+
+// Test pointer arithmetic and operations
+slay test_pointer_operations() {
+    sus array drip = [1, 2, 3, 4, 5]
+    sus ptr ඞi32 = ඞarray[0]  // Point to first element
+    
+    vibez.spill("First element:", ඞptr)
+    
+    // Pointer arithmetic (if supported)
+    ptr = ptr + 1
+    vibez.spill("Second element:", ඞptr)
+}
+
+// Test nested pointers (pointer to pointer)
+slay test_nested_pointers() {
+    sus value drip = 1337
+    sus ptr1 ඞi32 = ඞvalue
+    sus ptr2 ඞඞi32 = ඞptr1  // Among Us pointer to pointer
+    
+    vibez.spill("Value:", value)
+    vibez.spill("Via ptr1:", ඞptr1)
+    vibez.spill("Via ptr2:", ඞඞptr2)
+}
+
+slay main_character() {
+    vibez.spill("=== Testing Among Us Pointer Syntax ඞ ===")
+    
+    test_basic_pointers()
+    test_pointer_operations() 
+    test_nested_pointers()
+    
+    vibez.spill("=== All pointer tests complete! ===")
+}

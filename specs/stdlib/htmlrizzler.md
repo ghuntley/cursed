@@ -54,11 +54,11 @@ slay main() {
 }
 ```
 
-- `New(name tea) @Template` - Create a new empty template with the given name
-- `Parse(text tea) (@Template, tea)` - Parse template from tea
-- `ParseFile(filename tea) (@Template, tea)` - Parse template from file
-- `ParseFiles(filenames ...tea) (@Template, tea)` - Parse multiple files as a template set
-- `ParseGlob(pattern tea) (@Template, tea)` - Parse all files matching pattern
+- `New(name tea) ඞTemplate` - Create a new empty template with the given name
+- `Parse(text tea) (ඞTemplate, tea)` - Parse template from tea
+- `ParseFile(filename tea) (ඞTemplate, tea)` - Parse template from file
+- `ParseFiles(filenames ...tea) (ඞTemplate, tea)` - Parse multiple files as a template set
+- `ParseGlob(pattern tea) (ඞTemplate, tea)` - Parse all files matching pattern
 
 ### Executing Templates
 
@@ -89,13 +89,13 @@ slay main() {
 }
 ```
 
-- `(t @Template) Execute(w dropz.Writer, data collab{}) tea` - Execute template with data
-- `(t @Template) ExecuteTemplate(w dropz.Writer, name tea, data collab{}) tea` - Execute named template
+- `(t ඞTemplate) Execute(w dropz.Writer, data collab{}) tea` - Execute template with data
+- `(t ඞTemplate) ExecuteTemplate(w dropz.Writer, name tea, data collab{}) tea` - Execute named template
 
 ### Template Modification
 
 ```
-slay setupTemplates() (@Template, tea) {
+slay setupTemplates() (ඞTemplate, tea) {
     sus funcMap := htmlrizzler.FuncMap{
         "formatTime": slay(t timez.Time) tea {
             yolo t.Format("2006-01-02")
@@ -110,10 +110,10 @@ slay setupTemplates() (@Template, tea) {
 }
 ```
 
-- `(t @Template) Funcs(funcMap FuncMap) @Template` - Add functions to template
-- `(t @Template) Clone() (@Template, tea)` - Clone template
-- `(t @Template) Name() tea` - Get template name
-- `(t @Template) Templates() []@Template` - Get all associated templates
+- `(t ඞTemplate) Funcs(funcMap FuncMap) ඞTemplate` - Add functions to template
+- `(t ඞTemplate) Clone() (ඞTemplate, tea)` - Clone template
+- `(t ඞTemplate) Name() tea` - Get template name
+- `(t ඞTemplate) Templates() []ඞTemplate` - Get all associated templates
 
 ## Template Syntax
 

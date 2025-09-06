@@ -1722,6 +1722,9 @@ pub const Parser = struct {
         else if (self.check(.LeftBracket))
             // ERROR: Old syntax []type is no longer supported
             return self.reportOldArraySyntaxError()
+        else if (self.check(.At))
+            // Pointer type: ඞT
+            try self.parsePointerType()
         else
             return ParserError.InvalidType;
         
@@ -1934,6 +1937,19 @@ pub const Parser = struct {
             .parameters = param_types,
             .return_type = func_return_type,
             .ref_counted = ast.RefCounted.init(self.allocator),
+        }};
+    }
+
+    fn parsePointerType(self: *Parser) ParserError!ast.Type {
+        _ = try self.consume(.At, "Expected 'ඞ' for pointer type");
+        
+        // Parse the target type
+        const target_type_ptr = try self.arena_allocator.create(ast.Type);
+        target_type_ptr.* = try self.parseType();
+        
+        return ast.Type{ .Pointer = ast.PointerType{
+            .ref_counted = ast.RefCounted.init(self.allocator),
+            .target_type = ast.RefPtr(ast.Type).init(target_type_ptr),
         }};
     }
 

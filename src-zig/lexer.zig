@@ -155,7 +155,7 @@ pub const TokenKind = enum {
     Question, // ?
 
     // Special
-    At, // @ (for pointer types)
+    At, // ඞ (for pointer types)
     Hash, // # (for comments, directives, or operators)
     Newline,
     Eof,
@@ -354,6 +354,15 @@ pub const Lexer = struct {
             return Token.init(.Eof, "", self.line, self.column);
         }
 
+        // Check for ඞ (Among Us character) used for pointer types
+        const utf8_codepoint = self.peekUtf8();
+        if (utf8_codepoint == 0x0D9E) { // ඞ Unicode codepoint
+            _ = self.advanceUtf8(); // Consume the ඞ character
+            const start_line = self.line;
+            const start_column = self.column - 1;
+            return self.makeToken(.At, start_line, start_column);
+        }
+
         const c = self.advance();
         const start_line = self.line;
         const start_column = self.column - 1;
@@ -369,7 +378,7 @@ pub const Lexer = struct {
             ']' => return self.makeToken(.RightBracket, start_line, start_column),
             ',' => return self.makeToken(.Comma, start_line, start_column),
             ';' => return self.makeToken(.Semicolon, start_line, start_column),
-            '@' => return self.makeToken(.At, start_line, start_column),
+
             '#' => {
                 // Hash character - check if it's a line comment
                 if (self.peek() == ' ' or self.peek() == '\t' or std.ascii.isAlphabetic(self.peek())) {

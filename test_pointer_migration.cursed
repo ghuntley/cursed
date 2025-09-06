@@ -1,0 +1,42 @@
+vibe main
+yeet "vibez"
+
+// Demonstration showing the old @ syntax vs new ඞ syntax
+// This file shows what the migration looks like
+
+slay demonstrate_old_vs_new() {
+    vibez.spill("=== Pointer Syntax Migration Demo ===")
+    
+    // OLD WAY (no longer supported):
+    // sus ptr @i32 = @variable
+    // @ptr = 123
+    
+    // NEW WAY (Among Us style):
+    sus value drip = 42
+    sus ptr ඞi32 = ඞvalue  // ඞ for pointer type declaration
+    
+    vibez.spill("Original value:", value)
+    vibez.spill("Pointer points to:", ඞptr)  // ඞ for dereferencing
+    
+    ඞptr = 1337  // ඞ for dereferencing in assignment
+    vibez.spill("Modified value:", value)
+    
+    vibez.spill("✨ Among Us pointers are way more sus! ✨")
+}
+
+slay test_function_pointers() {
+    // Test pointers to functions (if supported)
+    vibez.spill("=== Function Pointer Test ===")
+    
+    // sus func_ptr ඞslay() = ඞdemonstrate_old_vs_new
+    // func_ptr()  // Call through pointer
+    
+    vibez.spill("Function pointers with ඞ are next level!")
+}
+
+slay main_character() {
+    demonstrate_old_vs_new()
+    test_function_pointers()
+    
+    vibez.spill("Migration from @ to ඞ complete! 🚀")
+}

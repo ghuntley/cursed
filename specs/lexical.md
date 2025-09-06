@@ -19,7 +19,7 @@ CURSED code consists of the following token categories:
 - `bool_lit` - Boolean literals (`based`, `cringe`)
 - `nil_lit` - Nil literal (`nah`)
 - `char_lit` - Character literals
-- `@` - At symbol for pointer types
+- `ඞ` - Among Us symbol for pointer types
 - `COMMENT` - Comments (ignored by parser)
 
 Whitespace characters (spaces, tabs, newlines) separate tokens but are otherwise ignored.

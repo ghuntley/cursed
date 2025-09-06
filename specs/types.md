@@ -45,7 +45,7 @@ CURSED provides several ways to construct types from existing types:
 | Map         | `map[K]V` | Map from keys of type K to values of type V |
 | Struct      | `squad`  | Collection of fields |
 | Interface   | `collab` | Set of method signatures |
-| Pointer     | `@T`     | Pointer to a value of type T |
+| Pointer     | `ඞT`     | Pointer to a value of type T |
 | Function    | `slay`   | Function with parameters and return values |
 | Channel     | `dm<T>`  | Channel of type T for goroutine communication |
 | Error       | `Error`  | Built-in error interface type |
@@ -167,12 +167,12 @@ be_like Stack[T] squad {
     size normie
 }
 
-slay push[T](s @Stack[T], item T) {
+slay push[T](s ඞStack[T], item T) {
     s.items = append(s.items, item)
     s.size++
 }
 
-slay pop[T](s @Stack[T]) T {
+slay pop[T](s ඞStack[T]) T {
     s.size--
     damn s.items[s.size]
 }
