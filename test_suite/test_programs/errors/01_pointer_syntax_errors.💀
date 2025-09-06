@@ -1,0 +1,27 @@
+vibe main
+
+yeet "vibez"
+
+fr fr Pointer Syntax Error Test
+fr fr Tests: Proper error handling for pointer syntax
+fr fr Expected: Should compile successfully with new ඞ syntax
+
+slay main_character() {
+    vibez.spill("=== Pointer Syntax Validation ===")
+    
+    fr fr Test that new syntax works
+    sus x normie = 42
+    sus ptr ඞnormie = ඞx
+    
+    vibez.spill("New ඞ syntax works:")
+    vibez.spill(*ptr)
+    
+    fr fr Test various type combinations
+    sus arr []normie = []normie{1, 2, 3}
+    sus arr_ptr ඞ[]normie = ඞarr
+    
+    vibez.spill("Array pointer works:")
+    vibez.spill((*arr_ptr)[0])
+    
+    vibez.spill("=== Syntax Test Complete ===")
+}

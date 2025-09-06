@@ -1,0 +1,37 @@
+vibe main
+
+yeet "vibez"
+
+fr fr Pointer Type Validation Test
+fr fr Tests: Type safety with pointers
+fr fr Expected: Identical results in both modes
+
+slay main_character() {
+    vibez.spill("=== Pointer Type Validation ===")
+    
+    fr fr Different pointer types
+    sus int_val normie = 42
+    sus float_val meal = 3.14
+    sus str_val tea = "hello"
+    
+    sus int_ptr ඞnormie = ඞint_val
+    sus float_ptr ඞmeal = ඞfloat_val
+    sus str_ptr ඞtea = ඞstr_val
+    
+    vibez.spill("Integer through pointer:")
+    vibez.spill(*int_ptr)
+    
+    vibez.spill("Float through pointer:")
+    vibez.spill(*float_ptr)
+    
+    vibez.spill("String through pointer:")
+    vibez.spill(*str_ptr)
+    
+    fr fr Null pointer test
+    sus null_ptr ඞnormie = nah
+    ready (null_ptr == nah) {
+        vibez.spill("Null pointer detected correctly")
+    }
+    
+    vibez.spill("=== Test Complete ===")
+}

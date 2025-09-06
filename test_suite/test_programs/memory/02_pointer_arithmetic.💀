@@ -1,0 +1,29 @@
+vibe main
+
+yeet "vibez"
+
+fr fr Pointer Arithmetic Test
+fr fr Tests: Basic pointer arithmetic and array access
+fr fr Expected: Identical results in both modes
+
+slay main_character() {
+    vibez.spill("=== Pointer Arithmetic Test ===")
+    
+    sus arr []normie = []normie{10, 20, 30, 40, 50}
+    sus ptr ඞnormie = ඞarr[0]
+    
+    vibez.spill("Array access through pointer:")
+    vibez.spill(*ptr)
+    
+    fr fr Access second element
+    ptr = ඞarr[1]
+    vibez.spill("Second element:")
+    vibez.spill(*ptr)
+    
+    fr fr Modify through pointer
+    *ptr = 999
+    vibez.spill("Modified second element:")
+    vibez.spill(arr[1])
+    
+    vibez.spill("=== Test Complete ===")
+}

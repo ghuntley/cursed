@@ -1,0 +1,13 @@
+vibe main
+yeet "vibez"
+
+// This file should fail to parse with legacy @ syntax
+// Expected behavior: Parser should reject this
+
+slay main_character() {
+    // This should fail - legacy syntax
+    sus value normie = 42
+    sus ptr @normie = @value  // OLD SYNTAX - should be rejected
+    
+    vibez.spill("This should not compile!")
+}

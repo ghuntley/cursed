@@ -1,0 +1,31 @@
+vibe main
+
+yeet "vibez"
+
+fr fr Basic Pointer Operations Test
+fr fr Tests: Basic pointer declaration, assignment, and dereferencing  
+fr fr Expected: Identical results in both modes
+
+slay main_character() {
+    vibez.spill("=== Basic Pointer Operations ===")
+    
+    sus x normie = 42
+    sus ptr ඞnormie = ඞx
+    
+    vibez.spill("Original value:")
+    vibez.spill(x)
+    
+    vibez.spill("Value through pointer:")
+    vibez.spill(*ptr)
+    
+    fr fr Modify through pointer
+    *ptr = 100
+    
+    vibez.spill("Modified original value:")
+    vibez.spill(x)
+    
+    vibez.spill("Value through pointer after modification:")
+    vibez.spill(*ptr)
+    
+    vibez.spill("=== Test Complete ===")
+}

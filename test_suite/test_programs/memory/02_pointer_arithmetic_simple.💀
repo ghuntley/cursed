@@ -1,0 +1,37 @@
+vibe main
+
+yeet "vibez"
+
+fr fr Simple Pointer Array Test
+fr fr Tests: Basic array pointer access
+fr fr Expected: Identical results in both modes
+
+slay main_character() {
+    vibez.spill("=== Simple Pointer Array Test ===")
+    
+    fr fr Create simple array
+    sus val1 normie = 10
+    sus val2 normie = 20
+    sus val3 normie = 30
+    
+    fr fr Use pointers to access values
+    sus ptr1 ඞnormie = ඞval1
+    sus ptr2 ඞnormie = ඞval2
+    sus ptr3 ඞnormie = ඞval3
+    
+    vibez.spill("First value through pointer:")
+    vibez.spill(*ptr1)
+    
+    vibez.spill("Second value through pointer:")
+    vibez.spill(*ptr2)
+    
+    vibez.spill("Third value through pointer:")
+    vibez.spill(*ptr3)
+    
+    fr fr Modify through pointers
+    *ptr2 = 999
+    vibez.spill("Modified second value:")
+    vibez.spill(val2)
+    
+    vibez.spill("=== Test Complete ===")
+}

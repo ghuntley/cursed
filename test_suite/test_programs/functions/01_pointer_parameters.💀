@@ -1,0 +1,41 @@
+vibe main
+
+yeet "vibez"
+
+fr fr Pointer Parameters Test
+fr fr Tests: Passing pointers to functions
+fr fr Expected: Identical results in both modes
+
+slay modify_value(ptr ඞnormie) {
+    *ptr = *ptr * 2
+}
+
+slay swap_values(a ඞnormie, b ඞnormie) {
+    sus temp normie = *a
+    *a = *b
+    *b = temp
+}
+
+slay main_character() {
+    vibez.spill("=== Pointer Parameters Test ===")
+    
+    sus x normie = 10
+    sus y normie = 20
+    
+    vibez.spill("Before modification:")
+    vibez.spill(x)
+    vibez.spill(y)
+    
+    modify_value(ඞx)
+    
+    vibez.spill("After doubling x:")
+    vibez.spill(x)
+    
+    swap_values(ඞx, ඞy)
+    
+    vibez.spill("After swapping:")
+    vibez.spill(x)
+    vibez.spill(y)
+    
+    vibez.spill("=== Test Complete ===")
+}

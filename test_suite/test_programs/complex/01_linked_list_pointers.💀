@@ -1,0 +1,43 @@
+vibe main
+
+yeet "vibez"
+
+fr fr Linked List Pointers Test
+fr fr Tests: Complex pointer usage with data structures
+fr fr Expected: Identical results in both modes
+
+be_like Node squad {
+    data normie
+    next ඞNode
+}
+
+slay create_node(value normie) ඞNode {
+    sus node ඞNode = ඞNode{data: value, next: nah}
+    damn node
+}
+
+slay print_list(head ඞNode) {
+    sus current ඞNode = head
+    periodt (current != nah) {
+        vibez.spill(current.data)
+        current = current.next
+    }
+}
+
+slay main_character() {
+    vibez.spill("=== Linked List Pointers Test ===")
+    
+    fr fr Create nodes
+    sus first ඞNode = create_node(1)
+    sus second ඞNode = create_node(2)
+    sus third ඞNode = create_node(3)
+    
+    fr fr Link nodes
+    first.next = second
+    second.next = third
+    
+    vibez.spill("Linked list values:")
+    print_list(first)
+    
+    vibez.spill("=== Test Complete ===")
+}

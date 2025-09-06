@@ -1,0 +1,83 @@
+vibe main
+
+yeet "vibez"
+
+fr fr Comprehensive Pointer Test
+fr fr Tests: All major pointer operations and scenarios
+fr fr Expected: Identical results in both modes
+
+be_like Person squad {
+    name tea
+    age normie
+    friend ඞPerson
+}
+
+slay create_person(name tea, age normie) ඞPerson {
+    sus person ඞPerson = ඞPerson{
+        name: name, 
+        age: age, 
+        friend: nah
+    }
+    damn person
+}
+
+slay print_person(p ඞPerson) {
+    vibez.spill(p.name)
+    vibez.spill(p.age)
+}
+
+slay main_character() {
+    vibez.spill("=== Comprehensive Pointer Test ===")
+    
+    fr fr 1. Basic pointer operations
+    vibez.spill("1. Basic Operations:")
+    sus x normie = 10
+    sus ptr ඞnormie = ඞx
+    *ptr = 20
+    vibez.spill(x)
+    
+    fr fr 2. Array pointers
+    vibez.spill("2. Array Pointers:")
+    sus numbers []normie = []normie{1, 2, 3, 4, 5}
+    sus num_ptr ඞnormie = ඞnumbers[2]
+    *num_ptr = 99
+    vibez.spill(numbers[2])
+    
+    fr fr 3. Struct pointers
+    vibez.spill("3. Struct Pointers:")
+    sus alice ඞPerson = create_person("Alice", 25)
+    sus bob ඞPerson = create_person("Bob", 30)
+    alice.friend = bob
+    
+    print_person(alice)
+    ready (alice.friend != nah) {
+        vibez.spill("Alice's friend:")
+        print_person(alice.friend)
+    }
+    
+    fr fr 4. Pointer chains
+    vibez.spill("4. Pointer Chains:")
+    sus val normie = 42
+    sus p1 ඞnormie = ඞval
+    sus p2 ඞඞnormie = ඞp1
+    sus p3 ඞඞඞnormie = ඞp2
+    
+    ***p3 = 777
+    vibez.spill(val)
+    
+    fr fr 5. Function pointer parameters
+    vibez.spill("5. Function Parameters:")
+    sus a normie = 100
+    sus b normie = 200
+    swap_values(ඞa, ඞb)
+    vibez.spill(a)
+    vibez.spill(b)
+    
+    vibez.spill("=== Comprehensive Test Complete ===")
+}
+
+slay swap_values(x ඞnormie, y ඞnormie) {
+    sus temp normie = *x
+    *x = *y
+    *y = temp
+}

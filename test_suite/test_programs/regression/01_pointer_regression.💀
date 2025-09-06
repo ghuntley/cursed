@@ -1,0 +1,55 @@
+vibe main
+
+yeet "vibez"
+yeet "mathz"
+
+fr fr Pointer Regression Test
+fr fr Tests: Ensure pointer functionality doesn't break other features
+fr fr Expected: Identical results in both modes
+
+slay math_with_pointers() {
+    sus a normie = mathz.abs(-42)
+    sus b normie = mathz.max(10, 20)
+    
+    sus ptr_a ඞnormie = ඞa
+    sus ptr_b ඞnormie = ඞb
+    
+    sus result normie = *ptr_a + *ptr_b
+    damn result
+}
+
+slay array_operations_with_pointers() {
+    sus numbers []normie = []normie{1, 2, 3}
+    
+    fr fr Use pointers to modify array
+    bestie i := 0; i < len(numbers); i++ {
+        sus ptr ඞnormie = ඞnumbers[i]
+        *ptr = mathz.multiply(*ptr, 2)
+    }
+    
+    sus sum normie = 0
+    bestie i := 0; i < len(numbers); i++ {
+        sum = mathz.add(sum, numbers[i])
+    }
+    
+    damn sum
+}
+
+slay main_character() {
+    vibez.spill("=== Pointer Regression Test ===")
+    
+    vibez.spill("Math with pointers:")
+    sus result1 normie = math_with_pointers()
+    vibez.spill(result1)
+    
+    vibez.spill("Array operations with pointers:")
+    sus result2 normie = array_operations_with_pointers()
+    vibez.spill(result2)
+    
+    fr fr Test that regular operations still work
+    sus normal_var normie = mathz.add(5, 3)
+    vibez.spill("Normal operations still work:")
+    vibez.spill(normal_var)
+    
+    vibez.spill("=== Regression Test Complete ===")
+}
