@@ -1,0 +1,19 @@
+vibe main
+
+yeet "vibez"
+
+slay function_one() normie {
+    damn 42
+}
+
+slay function_two() normie {
+    damn 24
+}
+
+slay main_character() {
+    vibez.spill("Testing functions")
+    sus result1 normie = function_one()
+    vibez.spill(result1)
+    sus result2 normie = function_two()
+    vibez.spill(result2)
+}

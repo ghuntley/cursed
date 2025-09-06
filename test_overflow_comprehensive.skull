@@ -1,0 +1,33 @@
+vibe main
+yeet "vibez"
+
+slay main_character() {
+    vibez.spill("Testing comprehensive overflow scenarios...")
+    
+    // Test unary minus overflow
+    sus min_val drip = -9223372036854775808
+    sus neg_min drip = -min_val
+    vibez.spill("Negated minimum i64: ")
+    vibez.spill(neg_min)
+    
+    // Test large subtraction that underflows
+    sus small_num drip = -9223372036854775807
+    sus underflow drip = small_num - 2
+    vibez.spill("Underflow result: ")
+    vibez.spill(underflow)
+    
+    // Test mixed operations
+    sus big1 drip = 4611686018427387903
+    sus big2 drip = 4611686018427387904
+    sus mixed drip = big1 + big2
+    vibez.spill("Large addition result: ")
+    vibez.spill(mixed)
+    
+    // Test decrement at minimum
+    sus min_test drip = -9223372036854775808
+    min_test--
+    vibez.spill("Min value after decrement: ")
+    vibez.spill(min_test)
+    
+    vibez.spill("All overflow tests completed successfully!")
+}

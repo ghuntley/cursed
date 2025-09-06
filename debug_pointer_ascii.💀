@@ -1,0 +1,18 @@
+vibe main
+
+yeet "vibez"
+yeet "mathz"
+
+slay math_with_pointers() {
+    sus a normie = mathz.abs(-42)
+    sus b normie = mathz.max(10, 20)
+    sus result normie = a + b
+    damn result
+}
+
+slay main_character() {
+    vibez.spill("=== Pointer Regression Test ===")
+    vibez.spill("Math with pointers:")
+    sus result1 normie = math_with_pointers()
+    vibez.spill(result1)
+}

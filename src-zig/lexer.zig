@@ -357,6 +357,7 @@ pub const Lexer = struct {
         // Check for ඞ (Among Us character) used for pointer types
         const utf8_codepoint = self.peekUtf8();
         if (utf8_codepoint == 0x0D9E) { // ඞ Unicode codepoint
+            // std.debug.print("DEBUG: Found ඞ Unicode character, tokenizing as .At\n", .{});
             _ = self.advanceUtf8(); // Consume the ඞ character
             const start_line = self.line;
             const start_column = self.column - 1;
