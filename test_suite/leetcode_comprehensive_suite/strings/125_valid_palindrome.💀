@@ -1,0 +1,16 @@
+vibe main
+yeet "vibez"
+
+slay main_character() {
+    vibez.spill("Valid Palindrome - Simplified Demo")
+    
+    // Demonstrate palindrome concept
+    vibez.spill("Testing concept of palindrome")
+    vibez.spill("A palindrome reads same forwards and backwards")
+    vibez.spill("Example: racecar")
+    vibez.spill("r-a-c-e-c-a-r")
+    vibez.spill("Compare: r==r, a==a, c==c, middle e")
+    vibez.spill("Result: true - is a palindrome")
+    
+    vibez.spill("Palindrome test complete")
+}

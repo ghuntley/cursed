@@ -1,0 +1,11 @@
+vibe main
+
+slay test_expression(arr normie[]) normie {
+    sus left normie = 0
+    sus right normie = len(arr) - 1
+    sus mid normie = left + (right - left) / 2
+    damn mid
+}
+
+slay main_character() {
+}

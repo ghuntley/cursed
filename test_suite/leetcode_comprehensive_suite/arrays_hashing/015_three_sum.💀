@@ -1,0 +1,72 @@
+vibe main
+yeet "vibez" 
+// LeetCode #15: 3Sum 🎯
+// Find all unique triplets in array that sum to zero
+// Time: O(n²), Space: O(1) - excluding output space
+
+slay three_sum(nums normie[]) normie[][] {
+    ready (len(nums) < 3) {
+        damn [][]normie{}
+    }
+    
+    // Sort array first - this is sus but necessary
+    sus sorted_nums normie[] = quick_sort(nums)
+    sus result normie[][] = [][]normie{}
+    
+    bestie i := 0; i < len(sorted_nums) - 2; i++ {
+        // Skip duplicates for first element, no cap
+        ready (i > 0 && sorted_nums[i] == sorted_nums[i-1]) {
+            periodt
+        }
+        
+        sus left normie = i + 1
+        sus right normie = len(sorted_nums) - 1
+        
+        bestie (left < right) {
+            sus sum normie = sorted_nums[i] + sorted_nums[left] + sorted_nums[right]
+            
+            ready (sum == 0) {
+                // Found a valid triplet, bestie!
+                append(result, [sorted_nums[i], sorted_nums[left], sorted_nums[right]])
+                
+                // Skip duplicates
+                bestie (left < right && sorted_nums[left] == sorted_nums[left + 1]) {
+                    left = left + 1
+                }
+                bestie (left < right && sorted_nums[right] == sorted_nums[right - 1]) {
+                    right = right - 1
+                }
+                
+                left = left + 1
+                right = right - 1
+            } otherwise ready (sum < 0) {
+                left = left + 1
+            } otherwise {
+                right = right - 1
+            }
+        }
+    }
+    
+    damn result
+}
+
+slay test_three_sum() {
+    vibez.spill("=== 🎯 LeetCode #15: 3Sum ===")
+    
+    // Test case 1: [-1,0,1,2,-1,-4]
+    sus nums1 normie[] = [-1, 0, 1, 2, -1, -4]
+    sus result1 normie[][] = three_sum(nums1)
+    vibez.spill("Test 1 - Input: [-1,0,1,2,-1,-4]")
+    vibez.spill("Found", len(result1), "triplets that sum to 0")
+    
+    // Test case 2: [0,1,1] 
+    sus nums2 normie[] = [0, 1, 1]
+    sus result2 normie[][] = three_sum(nums2)
+    vibez.spill("Test 2 - Input: [0,1,1], Found:", len(result2), "triplets")
+    
+    vibez.spill("=== 3Sum Tests Complete! No cap 🔥 ===")
+}
+
+slay main_character() {
+    test_three_sum()
+}

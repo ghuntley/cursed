@@ -1,0 +1,14 @@
+vibe main
+yeet "vibez"
+
+slay test_len() {
+    vibez.spill("Testing len function")
+    sus arr normie[] = [1, 2, 3, 4, 5]
+    vibez.spill("Array created")
+    sus length normie = len(arr)
+    vibez.spill("Length:", length)
+}
+
+slay main_character() {
+    test_len()
+}

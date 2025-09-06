@@ -2088,6 +2088,46 @@ pub const LLVMIRPipeline = struct {
             return try self.generateLenCall(call.arguments.items[0].*);
         }
         
+        if (std.mem.eql(u8, function_name, "cap")) {
+            if (call.arguments.items.len != 1) {
+                return error.InvalidArgumentCount;
+            }
+            return try self.generateCapCall(call.arguments.items[0].*);
+        }
+        
+        if (std.mem.eql(u8, function_name, "make")) {
+            if (call.arguments.items.len != 1) {
+                return error.InvalidArgumentCount;
+            }
+            return try self.generateMakeCall(call.arguments.items[0].*);
+        }
+        
+        if (std.mem.eql(u8, function_name, "copy")) {
+            if (call.arguments.items.len != 2) {
+                return error.InvalidArgumentCount;
+            }
+            return try self.generateCopyCall(call.arguments.items[0].*, call.arguments.items[1].*);
+        }
+        
+        if (std.mem.eql(u8, function_name, "panic")) {
+            if (call.arguments.items.len > 1) {
+                return error.InvalidArgumentCount;
+            }
+            if (call.arguments.items.len == 1) {
+                return try self.generatePanicWithMessageCall(call.arguments.items[0].*);
+            } else {
+                return try self.generatePanicCall();
+            }
+        }
+        
+        if (std.mem.eql(u8, function_name, "print")) {
+            return try self.generateUniversePrintCall(call.arguments.items, false);
+        }
+        
+        if (std.mem.eql(u8, function_name, "println")) {
+            return try self.generateUniversePrintCall(call.arguments.items, true);
+        }
+        
         // Look up user-defined function
         // First try exact name, then try with current module prefix for same-module calls
         const function = self.functions.get(function_name) orelse blk: {
@@ -3103,33 +3143,47 @@ pub const LLVMIRPipeline = struct {
                 return c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), tracked_length, 0);
             }
             
-            // For string variables/parameters, call runtime strlen
-            // Get the variable value and call strlen on it
+            // Get the variable value and check its type
             const var_value = try self.generateExpression(expr);
+            const var_type = c.LLVMTypeOf(var_value);
+            const type_kind = c.LLVMGetTypeKind(var_type);
             
-            // Call strlen on the string variable
-            const strlen_func = blk: {
-                if (self.functions.get("strlen")) |existing| {
-                    break :blk existing;
-                } else {
-                    const char_ptr_type = c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0);
-                    const strlen_type = c.LLVMFunctionType(
-                        c.LLVMInt64TypeInContext(self.context),
-                        @constCast(@ptrCast(&char_ptr_type)),
-                        1,
-                        0
-                    );
-                    const func = c.LLVMAddFunction(self.module, "strlen", strlen_type);
-                    try self.functions.put("strlen", func);
-                    break :blk func;
-                }
-            };
-            
-            const strlen_result = c.LLVMBuildCall2(self.builder, c.LLVMGlobalGetValueType(strlen_func), strlen_func, @constCast(@ptrCast(&[_]c.LLVMValueRef{var_value})), 1, "strlen_result");
-            
-            // Convert i64 strlen result to i32 for CURSED compatibility
-            const length_i32 = c.LLVMBuildTrunc(self.builder, strlen_result, c.LLVMInt32TypeInContext(self.context), "length_i32");
-            return length_i32;
+            // Check if it's an array type
+            if (type_kind == c.LLVMArrayTypeKind) {
+                // Get array length from type
+                const array_length = c.LLVMGetArrayLength(var_type);
+                return c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), array_length, 0);
+            } else if (type_kind == c.LLVMPointerTypeKind) {
+                // For pointer types, we need to check if it's a string or an array pointer
+                // For now, assume it's a string and use strlen
+                const strlen_func = blk: {
+                    if (self.functions.get("strlen")) |existing| {
+                        break :blk existing;
+                    } else {
+                        const char_ptr_type = c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0);
+                        const strlen_type = c.LLVMFunctionType(
+                            c.LLVMInt64TypeInContext(self.context),
+                            @constCast(@ptrCast(&char_ptr_type)),
+                            1,
+                            0
+                        );
+                        const func = c.LLVMAddFunction(self.module, "strlen", strlen_type);
+                        try self.functions.put("strlen", func);
+                        break :blk func;
+                    }
+                };
+                
+                // Cast to char* if needed
+                const char_ptr = c.LLVMBuildPointerCast(self.builder, var_value, c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0), "char_ptr");
+                const strlen_result = c.LLVMBuildCall2(self.builder, c.LLVMGlobalGetValueType(strlen_func), strlen_func, @constCast(@ptrCast(&[_]c.LLVMValueRef{char_ptr})), 1, "strlen_result");
+                
+                // Convert i64 strlen result to i32 for CURSED compatibility
+                const length_i32 = c.LLVMBuildTrunc(self.builder, strlen_result, c.LLVMInt32TypeInContext(self.context), "length_i32");
+                return length_i32;
+            } else {
+                // For non-array, non-pointer types, return 0
+                return c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 0, 0);
+            }
         }
         
         // For other expressions, evaluate them and try to determine length
@@ -3577,6 +3631,207 @@ pub const LLVMIRPipeline = struct {
         c.LLVMDumpModule(self.module);
     }
     
+    /// Generate cap function call for arrays and strings
+    fn generateCapCall(self: *LLVMIRPipeline, expr: ast.Expression) !c.LLVMValueRef {
+        // For CURSED, capacity equals length for arrays and strings
+        return try self.generateLenCall(expr);
+    }
+    
+    /// Generate make function call to create arrays
+    fn generateMakeCall(self: *LLVMIRPipeline, size_expr: ast.Expression) !c.LLVMValueRef {
+        // Generate the size argument
+        const size_value = try self.generateExpression(size_expr);
+        
+        // Create array type - for now, create array of i32 elements
+        const element_type = c.LLVMInt32TypeInContext(self.context);
+        const ptr_type = c.LLVMPointerType(element_type, 0);
+        
+        // Call malloc to allocate memory for the array
+        const malloc_func = self.functions.get("malloc") orelse blk: {
+            const size_type = c.LLVMInt64TypeInContext(self.context);
+            const malloc_type = c.LLVMFunctionType(
+                c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0),
+                @constCast(@ptrCast(&size_type)),
+                1,
+                0
+            );
+            const func = c.LLVMAddFunction(self.module, "malloc", malloc_type);
+            try self.functions.put("malloc", func);
+            break :blk func;
+        };
+        
+        // Calculate total bytes needed: size * sizeof(element_type)
+        const element_size = c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 4, 0); // i32 = 4 bytes
+        const size_64 = c.LLVMBuildZExt(self.builder, size_value, c.LLVMInt64TypeInContext(self.context), "size_64");
+        const total_bytes = c.LLVMBuildMul(self.builder, size_64, c.LLVMBuildZExt(self.builder, element_size, c.LLVMInt64TypeInContext(self.context), "elem_size_64"), "total_bytes");
+        
+        // Call malloc
+        const malloc_result = c.LLVMBuildCall2(self.builder, c.LLVMGlobalGetValueType(malloc_func), malloc_func, @constCast(@ptrCast(&[_]c.LLVMValueRef{total_bytes})), 1, "malloc_result");
+        
+        // Cast malloc result to proper type
+        const array_ptr = c.LLVMBuildPointerCast(self.builder, malloc_result, ptr_type, "array_ptr");
+        
+        // Zero-initialize the array
+        const memset_func = self.functions.get("memset") orelse blk: {
+            const ptr_type_arg = c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0);
+            const memset_params = [_]c.LLVMTypeRef{ptr_type_arg, c.LLVMInt32TypeInContext(self.context), c.LLVMInt64TypeInContext(self.context)};
+            const memset_type = c.LLVMFunctionType(
+                c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0),
+                @constCast(@ptrCast(&memset_params)),
+                3,
+                0
+            );
+            const func = c.LLVMAddFunction(self.module, "memset", memset_type);
+            try self.functions.put("memset", func);
+            break :blk func;
+        };
+        
+        const zero = c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 0, 0);
+        const memset_args = [_]c.LLVMValueRef{malloc_result, zero, total_bytes};
+        _ = c.LLVMBuildCall2(self.builder, c.LLVMGlobalGetValueType(memset_func), memset_func, @constCast(@ptrCast(&memset_args)), 3, "");
+        
+        return array_ptr;
+    }
+    
+    /// Generate copy function call to copy between arrays
+    fn generateCopyCall(self: *LLVMIRPipeline, dest_expr: ast.Expression, src_expr: ast.Expression) !c.LLVMValueRef {
+        const dest_value = try self.generateExpression(dest_expr);
+        const src_value = try self.generateExpression(src_expr);
+        
+        // Use memcpy to copy data - for now assume both are same sized arrays
+        const memcpy_func = self.functions.get("memcpy") orelse blk: {
+            const ptr_type = c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0);
+            const memcpy_params = [_]c.LLVMTypeRef{ptr_type, ptr_type, c.LLVMInt64TypeInContext(self.context)};
+            const memcpy_type = c.LLVMFunctionType(
+                ptr_type,
+                @constCast(@ptrCast(&memcpy_params)),
+                3,
+                0
+            );
+            const func = c.LLVMAddFunction(self.module, "memcpy", memcpy_type);
+            try self.functions.put("memcpy", func);
+            break :blk func;
+        };
+        
+        // For now, copy a fixed size - in a full implementation this would be dynamic
+        const copy_size = c.LLVMConstInt(c.LLVMInt64TypeInContext(self.context), 64, 0); // 16 i32 elements = 64 bytes
+        
+        const dest_ptr = c.LLVMBuildPointerCast(self.builder, dest_value, c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0), "dest_ptr");
+        const src_ptr = c.LLVMBuildPointerCast(self.builder, src_value, c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0), "src_ptr");
+        
+        const memcpy_args = [_]c.LLVMValueRef{dest_ptr, src_ptr, copy_size};
+        _ = c.LLVMBuildCall2(self.builder, c.LLVMGlobalGetValueType(memcpy_func), memcpy_func, @constCast(@ptrCast(&memcpy_args)), 3, "");
+        
+        // Return number of elements copied (for now, return fixed value)
+        return c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 16, 0);
+    }
+    
+    /// Generate panic function call without message
+    fn generatePanicCall(self: *LLVMIRPipeline) !c.LLVMValueRef {
+        // Generate call to exit with panic code
+        const exit_func = self.functions.get("exit") orelse blk: {
+            const exit_type = c.LLVMFunctionType(
+                c.LLVMVoidTypeInContext(self.context),
+                @constCast(@ptrCast(&[_]c.LLVMTypeRef{c.LLVMInt32TypeInContext(self.context)})),
+                1,
+                0
+            );
+            const func = c.LLVMAddFunction(self.module, "exit", exit_type);
+            try self.functions.put("exit", func);
+            break :blk func;
+        };
+        
+        // Print panic message before exit
+        const printf_func = self.functions.get("printf") orelse {
+            return error.UndefinedFunction;
+        };
+        
+        const panic_msg = try self.generateStringLiteral("CURSED runtime panic\n");
+        _ = c.LLVMBuildCall2(self.builder, c.LLVMGlobalGetValueType(printf_func), printf_func, @constCast(@ptrCast(&[_]c.LLVMValueRef{panic_msg})), 1, "");
+        
+        // Exit with code 1
+        const exit_code = c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 1, 0);
+        _ = c.LLVMBuildCall2(self.builder, c.LLVMGlobalGetValueType(exit_func), exit_func, @constCast(@ptrCast(&[_]c.LLVMValueRef{exit_code})), 1, "");
+        
+        // This is unreachable but return a dummy value
+        return c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 0, 0);
+    }
+    
+    /// Generate panic function call with message
+    fn generatePanicWithMessageCall(self: *LLVMIRPipeline, msg_expr: ast.Expression) !c.LLVMValueRef {
+        const printf_func = self.functions.get("printf") orelse {
+            return error.UndefinedFunction;
+        };
+        
+        // Generate the message
+        const msg_value = try self.generateExpression(msg_expr);
+        
+        // Print panic message
+        const panic_prefix = try self.generateStringLiteral("CURSED runtime panic: %s\n");
+        const printf_args = [_]c.LLVMValueRef{panic_prefix, msg_value};
+        _ = c.LLVMBuildCall2(self.builder, c.LLVMGlobalGetValueType(printf_func), printf_func, @constCast(@ptrCast(&printf_args)), 2, "");
+        
+        // Exit with code 1
+        const exit_func = self.functions.get("exit") orelse blk: {
+            const exit_type = c.LLVMFunctionType(
+                c.LLVMVoidTypeInContext(self.context),
+                @constCast(@ptrCast(&[_]c.LLVMTypeRef{c.LLVMInt32TypeInContext(self.context)})),
+                1,
+                0
+            );
+            const func = c.LLVMAddFunction(self.module, "exit", exit_type);
+            try self.functions.put("exit", func);
+            break :blk func;
+        };
+        
+        const exit_code = c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 1, 0);
+        _ = c.LLVMBuildCall2(self.builder, c.LLVMGlobalGetValueType(exit_func), exit_func, @constCast(@ptrCast(&[_]c.LLVMValueRef{exit_code})), 1, "");
+        
+        // This is unreachable but return a dummy value
+        return c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 0, 0);
+    }
+    
+    /// Generate universe-scope print/println function call (like Go)
+    fn generateUniversePrintCall(self: *LLVMIRPipeline, args: []*ast.Expression, add_newline: bool) !c.LLVMValueRef {
+        const printf_func = self.functions.get("printf") orelse {
+            return error.UndefinedFunction;
+        };
+        
+        // For each argument, print it
+        for (args, 0..) |arg_ptr, i| {
+            const arg = arg_ptr.*;
+            
+            if (i > 0 and add_newline) {
+                // Add space between arguments for println
+                const space_str = try self.generateStringLiteral(" ");
+                _ = c.LLVMBuildCall2(self.builder, c.LLVMGlobalGetValueType(printf_func), printf_func, @constCast(@ptrCast(&[_]c.LLVMValueRef{space_str})), 1, "");
+            }
+            
+            // Generate the argument value and print it based on type
+            const arg_value = try self.generateExpression(arg);
+            
+            // For now, assume string arguments - in full implementation would check type
+            if (arg == .String) {
+                const format_str = try self.generateStringLiteral("%s");
+                const printf_args = [_]c.LLVMValueRef{format_str, arg_value};
+                _ = c.LLVMBuildCall2(self.builder, c.LLVMGlobalGetValueType(printf_func), printf_func, @constCast(@ptrCast(&printf_args)), 2, "");
+            } else {
+                // Assume integer for other types
+                const format_str = try self.generateStringLiteral("%d");
+                const printf_args = [_]c.LLVMValueRef{format_str, arg_value};
+                _ = c.LLVMBuildCall2(self.builder, c.LLVMGlobalGetValueType(printf_func), printf_func, @constCast(@ptrCast(&printf_args)), 2, "");
+            }
+        }
+        
+        if (add_newline) {
+            // Add newline for println
+            const newline_str = try self.generateStringLiteral("\n");
+            _ = c.LLVMBuildCall2(self.builder, c.LLVMGlobalGetValueType(printf_func), printf_func, @constCast(@ptrCast(&[_]c.LLVMValueRef{newline_str})), 1, "");
+        }
+        
+        return c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 0, 0);
+    }
+
     /// Generate division by zero panic following CURSED error handling specification
     fn generateDivisionByZeroPanic(self: *LLVMIRPipeline) !void {
         // Generate call to printf to print the panic message

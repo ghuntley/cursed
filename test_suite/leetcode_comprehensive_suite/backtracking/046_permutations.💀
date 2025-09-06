@@ -1,0 +1,173 @@
+vibe main
+yeet "vibez"
+yeet "collections"
+
+// LeetCode #46: Permutations 🔄
+// Generate all possible permutations of array
+// Time: O(n! * n), Space: O(n) - backtracking approach
+
+slay permute(nums normie[]) normie[][] {
+    sus result normie[][] = [][]normie{}
+    sus current normie[] = []normie{}
+    sus used lit[] = make_bool_array(len(nums), false)
+    
+    backtrack(&result, &current, nums, &used)
+    damn result
+}
+
+slay backtrack(result ඞ[][]normie, current ඞ[]normie, nums normie[], used ඞ[]lit) {
+    // Base case: if current permutation is complete
+    ready (len(*current) == len(nums)) {
+        sus temp normie[] = copy_array(*current)
+        append(*result, temp)
+        damn
+    }
+    
+    // Try each unused number
+    bestie i := 0; i < len(nums); i++ {
+        ready ((*used)[i]) {
+            periodt  // Skip if already used
+        }
+        
+        // Choose
+        append(*current, nums[i])
+        (*used)[i] = true
+        
+        // Explore
+        backtrack(result, current, nums, used)
+        
+        // Unchoose (backtrack)
+        collections.remove_last(*current)
+        (*used)[i] = false
+    }
+}
+
+slay make_bool_array(size normie, value lit) lit[] {
+    sus arr lit[] = []lit{}
+    bestie i := 0; i < size; i++ {
+        append(arr, value)
+    }
+    damn arr
+}
+
+slay copy_array(arr normie[]) normie[] {
+    sus copy normie[] = []normie{}
+    bestie i := 0; i < len(arr); i++ {
+        append(copy, arr[i])
+    }
+    damn copy
+}
+
+slay permute_iterative(nums normie[]) normie[][] {
+    // Iterative approach using next permutation - this hits different! 🚀
+    sus result normie[][] = [][]normie{}
+    sus current normie[] = copy_array(nums)
+    
+    // Sort to start with lexicographically smallest
+    quick_sort(&current)
+    
+    loop {
+        sus temp normie[] = copy_array(current)
+        append(result, temp)
+        
+        ready (!next_permutation(&current)) {
+            break  // No more permutations
+        }
+    }
+    
+    damn result
+}
+
+slay next_permutation(arr ඞ[]normie) lit {
+    sus n normie = len(*arr)
+    ready (n <= 1) {
+        damn false
+    }
+    
+    // Find largest index k such that arr[k] < arr[k + 1]
+    sus k normie = -1
+    bestie i := n - 2; i >= 0; i-- {
+        ready ((*arr)[i] < (*arr)[i + 1]) {
+            k = i
+            break
+        }
+    }
+    
+    ready (k == -1) {
+        damn false  // No next permutation
+    }
+    
+    // Find largest index l such that arr[k] < arr[l]
+    sus l normie = -1
+    bestie i := n - 1; i > k; i-- {
+        ready ((*arr)[k] < (*arr)[i]) {
+            l = i
+            break
+        }
+    }
+    
+    // Swap arr[k] and arr[l]
+    swap(arr, k, l)
+    
+    // Reverse arr[k + 1:]
+    reverse_range(arr, k + 1, n - 1)
+    
+    damn true
+}
+
+slay swap(arr ඞ[]normie, i normie, j normie) {
+    sus temp normie = (*arr)[i]
+    (*arr)[i] = (*arr)[j]
+    (*arr)[j] = temp
+}
+
+slay reverse_range(arr ඞ[]normie, start normie, end normie) {
+    bestie (start < end) {
+        swap(arr, start, end)
+        start = start + 1
+        end = end - 1
+    }
+}
+
+slay test_permutations() {
+    vibez.spill("=== 🔄 LeetCode #46: Permutations ===")
+    
+    // Test case 1: [1,2,3]
+    sus nums1 normie[] = [1, 2, 3]
+    sus result1 normie[][] = permute(nums1)
+    vibez.spill("Test 1 - Input: [1,2,3]")
+    vibez.spill("Expected 6 permutations, Got:", len(result1))
+    bestie i := 0; i < len(result1); i++ {
+        vibez.spill("  ", result1[i])
+    }
+    
+    // Test case 2: [0,1]
+    sus nums2 normie[] = [0, 1]
+    sus result2 normie[][] = permute(nums2)
+    vibez.spill("Test 2 - Input: [0,1]")
+    vibez.spill("Expected 2 permutations, Got:", len(result2))
+    bestie i := 0; i < len(result2); i++ {
+        vibez.spill("  ", result2[i])
+    }
+    
+    // Test case 3: [1]
+    sus nums3 normie[] = [1]
+    sus result3 normie[][] = permute(nums3)
+    vibez.spill("Test 3 - Input: [1]")
+    vibez.spill("Expected 1 permutation, Got:", len(result3))
+    
+    // Compare approaches
+    vibez.spill("=== 🚀 Approach Comparison ===")
+    sus test_nums normie[] = [1, 2, 3, 4]
+    sus recursive_result normie[][] = permute(test_nums)
+    sus iterative_result normie[][] = permute_iterative(test_nums)
+    vibez.spill("Test array: [1,2,3,4]")
+    vibez.spill("Recursive backtrack:", len(recursive_result), "permutations")
+    vibez.spill("Iterative next_perm:", len(iterative_result), "permutations")
+    
+    vibez.spill("=== Permutations Complete! Backtracking is sus but powerful ඞ🔄 ===")
+}
+
+slay main_character() {
+    test_permutations()
+}

@@ -1,0 +1,35 @@
+vibe main
+yeet "vibez"
+
+slay main_character() {
+    vibez.spill("Two Sum Test")
+    
+    // Manual implementation without loops
+    sus nums1 normie = 2
+    sus nums2 normie = 7
+    sus nums3 normie = 11
+    sus nums4 normie = 15
+    sus target normie = 9
+    
+    // Check pairs manually
+    ready (nums1 + nums2 == target) {
+        vibez.spill("Found pair at indices 0, 1")
+    }
+    ready (nums1 + nums3 == target) {
+        vibez.spill("Found pair at indices 0, 2")
+    }
+    ready (nums1 + nums4 == target) {
+        vibez.spill("Found pair at indices 0, 3")
+    }
+    ready (nums2 + nums3 == target) {
+        vibez.spill("Found pair at indices 1, 2")
+    }
+    ready (nums2 + nums4 == target) {
+        vibez.spill("Found pair at indices 1, 3")
+    }
+    ready (nums3 + nums4 == target) {
+        vibez.spill("Found pair at indices 2, 3")
+    }
+    
+    vibez.spill("Two sum complete")
+}

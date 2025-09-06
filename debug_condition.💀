@@ -1,0 +1,11 @@
+vibe main
+yeet "vibez"
+
+slay main_character() {
+    sus left normie = 0
+    sus right normie = 5
+    bestie (left <= right) {
+        vibez.spill("In loop")
+        left = left + 1
+    }
+}

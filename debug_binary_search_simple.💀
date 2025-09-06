@@ -1,0 +1,16 @@
+vibe main
+
+slay search(nums normie[], target normie) normie {
+    sus left normie = 0
+    sus right normie = len(nums) - 1
+
+    bestie (left <= right) {
+        sus mid normie = left + (right - left) / 2
+        damn mid
+    }
+
+    damn -1
+}
+
+slay main_character() {
+}

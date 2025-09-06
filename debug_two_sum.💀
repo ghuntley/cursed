@@ -1,0 +1,18 @@
+vibe main
+yeet "vibez"
+
+slay test_append() {
+    vibez.spill("Testing append function")
+    sus arr normie[] = []
+    vibez.spill("Initial array length:", len(arr))
+    
+    append(arr, 1)
+    vibez.spill("After append(arr, 1), length:", len(arr))
+    ready (len(arr) > 0) {
+        vibez.spill("arr[0] =", arr[0])
+    }
+}
+
+slay main_character() {
+    test_append()
+}

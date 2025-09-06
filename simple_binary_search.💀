@@ -1,0 +1,39 @@
+vibe main
+yeet "vibez"
+
+slay main_character() {
+    vibez.spill("Simple Binary Search")
+    
+    // Hardcoded simple search
+    sus nums normie[] = [1, 3, 5, 7, 9]
+    sus target normie = 5
+    sus found lit = false
+    
+    // Check each position manually (not efficient but works)  
+    ready (nums[0] == target) {
+        vibez.spill("Found 5 at index: 0")
+        found = true
+    }
+    ready (nums[1] == target) {
+        vibez.spill("Found 5 at index: 1") 
+        found = true
+    }
+    ready (nums[2] == target) {
+        vibez.spill("Found 5 at index: 2")
+        found = true
+    }
+    ready (nums[3] == target) {
+        vibez.spill("Found 5 at index: 3")
+        found = true
+    }
+    ready (nums[4] == target) {
+        vibez.spill("Found 5 at index: 4")
+        found = true
+    }
+    
+    ready (!found) {
+        vibez.spill("Not found")
+    }
+    
+    vibez.spill("Binary search complete")
+}

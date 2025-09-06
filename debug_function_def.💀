@@ -1,0 +1,11 @@
+vibe main
+yeet "vibez"
+
+slay test_function() {
+    vibez.spill("In test function")
+}
+
+slay main_character() {
+    vibez.spill("In main")
+    test_function()
+}

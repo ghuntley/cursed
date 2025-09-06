@@ -1,0 +1,32 @@
+vibe main
+yeet "vibez"
+
+slay search(nums normie[], target normie) normie {
+    sus start_idx normie = 0
+    sus end_idx normie = len(nums) - 1
+
+    bestie (start_idx <= end_idx) {
+        sus diff normie = end_idx - start_idx
+        sus half normie = diff / 2
+        sus mid normie = start_idx + half
+        
+        ready (nums[mid] == target) {
+            damn mid
+        }
+        
+        start_idx = start_idx + 1
+    }
+
+    damn -1
+}
+
+slay test_function() {
+    vibez.spill("Testing binary search")
+    sus nums normie[] = [1, 3, 5, 7, 9]
+    sus result normie = search(nums, 5)
+    vibez.spill("Result:", result)
+}
+
+slay main_character() {
+    test_function()
+}
