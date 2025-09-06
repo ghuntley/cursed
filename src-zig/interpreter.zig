@@ -919,7 +919,7 @@ pub const Interpreter = struct {
                         .closure = self.environment,
                     };
                     // Function registered
-                    std.debug.print("DEBUG: Registering function '{s}'\n", .{func.name});
+                    // std.debug.print("DEBUG: Registering function '{s}'\n", .{func.name});
                     try self.functions.put(func.name, cursed_func);
                 },
                 .Struct => |struct_decl| {

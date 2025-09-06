@@ -339,7 +339,7 @@ pub const Parser = struct {
             .LeftParen => parsePrattGrouping,
             .LeftBracket => parsePrattArrayOrComposite,
             .LeftBrace => parsePrattMapOrComposite,
-            .Bang, .Minus, .Star, .Amp => parsePrattUnary,
+            .Bang, .Minus, .Star, .Amp, .At => parsePrattUnary,
             .PlusPlus, .MinusMinus => parsePrattPrefixIncrement,
             .Normie, .Tea, .Txt, .Sip, .Smol, .Mid, .Thicc, .Snack, .Meal, .Byte, .Rune, .Extra, .Lit, .Cap, .Yikes => parsePrattTypeForComposite,
             else => null,
@@ -2267,7 +2267,7 @@ pub const Parser = struct {
     }
 
     fn parseUnary(self: *Parser) ParserError!Expression {
-        if (self.match(.Bang) or self.match(.Minus) or self.match(.Star) or self.match(.Amp)) {
+        if (self.match(.Bang) or self.match(.Minus) or self.match(.Star) or self.match(.Amp) or self.match(.At)) {
             const operator = self.previous().lexeme;
             const right = try self.parseUnary();
             
@@ -3876,17 +3876,34 @@ pub const Parser = struct {
         }
         const name = self.advance().lexeme;
         
-        // Expect '='
-        _ = try self.consume(.Equal, "Expected '=' after type alias name");
-        
-        // Parse target type
-        const target_type = try self.parseType();
-        
-        return Statement{ .TypeAlias = ast.TypeAliasStatement{
-            .name = name,
-            .target_type = target_type,
-            .visibility = .Public,
-        }};
+        // Check for two syntax variants:
+        // 1. be_like Name = Type (type alias with =)
+        // 2. be_like Name squad { ... } (struct type definition)
+        if (self.match(.Equal)) {
+            // Variant 1: Type alias with =
+            const target_type = try self.parseType();
+            
+            return Statement{ .TypeAlias = ast.TypeAliasStatement{
+                .name = name,
+                .target_type = target_type,
+                .visibility = .Public,
+            }};
+        } else if (self.check(.Squad) or self.check(.Struct)) {
+            // Variant 2: Struct type definition - delegate to parseStructStatement but override name
+            // Save current position and name, then reset to parse as normal struct
+            const saved_name = name;
+            
+            // Parse the struct part normally
+            const struct_stmt = try self.parseStructStatement();
+            
+            // Override the name with the be_like name
+            var modified_struct = struct_stmt.Struct;
+            modified_struct.name = saved_name;
+            
+            return Statement{ .Struct = modified_struct };
+        } else {
+            return ParserError.UnexpectedToken;
+        }
     }
 
     fn parseStanStatement(self: *Parser) ParserError!Statement {

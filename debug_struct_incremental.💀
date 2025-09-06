@@ -1,0 +1,12 @@
+vibe main
+
+yeet "vibez"
+
+be_like Point squad {
+    x normie
+    y normie
+}
+
+slay main_character() {
+    vibez.spill("Hello after struct")
+}

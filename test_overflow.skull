@@ -1,0 +1,23 @@
+vibe main
+yeet "vibez"
+
+slay main_character() {
+    // Test large integer operations that could cause overflow
+    sus big_num drip = 9223372036854775806
+    sus result drip = big_num + 2
+    vibez.spill("Result should overflow: ")
+    vibez.spill(result)
+    
+    // Test multiplication overflow
+    sus mult_result drip = big_num * 2
+    vibez.spill("Multiplication result: ")
+    vibez.spill(mult_result)
+    
+    // Test increment/decrement
+    sus max_val drip = 9223372036854775807
+    vibez.spill("Max value before increment: ")
+    vibez.spill(max_val)
+    max_val++
+    vibez.spill("Max value after increment: ")
+    vibez.spill(max_val)
+}
