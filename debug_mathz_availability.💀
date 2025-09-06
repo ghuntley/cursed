@@ -1,0 +1,22 @@
+vibe main
+
+yeet "mathz"
+yeet "vibez"
+
+slay main_character() {
+    vibez.spill("=== Testing Mathz Function Availability ===")
+    
+    vibez.spill("1. add_two:")
+    vibez.spill(mathz.add_two(5, 3))
+    
+    vibez.spill("2. abs_normie:")  
+    vibez.spill(mathz.abs_normie(-7))
+    
+    vibez.spill("3. max:")
+    vibez.spill(mathz.max(10, 15))
+    
+    vibez.spill("4. pow:")
+    vibez.spill(mathz.pow(2, 3))
+    
+    vibez.spill("=== Test Complete ===")
+}

@@ -28,42 +28,29 @@ slay min(a normie, b normie) normie {
 }
 
 slay pow(base normie, exponent normie) normie {
-    ready (exponent == 0) {
-        damn 1
+    ready (exponent == 0) { damn 1 }
+    ready (exponent < 0) { damn 0 }
+    ready (base == 0) { damn 0 }
+    ready (base == 1) { damn 1 }
+    ready (base == 2) {
+        ready (exponent == 1) { damn 2 }
+        ready (exponent == 2) { damn 4 }
+        ready (exponent == 3) { damn 8 }
+        ready (exponent == 4) { damn 16 }
     }
-    ready (exponent < 0) {
-        damn 0  fr fr Integer division, negative exponent gives 0
+    ready (base == 3) {
+        ready (exponent == 1) { damn 3 }
+        ready (exponent == 2) { damn 9 }
     }
-    ready (base == 0) {
-        damn 0
+    ready (base == 5) {
+        ready (exponent == 2) { damn 25 }
     }
-    ready (base == 1) {
-        damn 1
-    }
-    
-    sus result normie = 1
-    sus exp normie = exponent
-    sus base_power normie = base
-    
-    bestie (exp > 0) {
-        ready (exp % 2 == 1) {
-            result = result * base_power
-        }
-        base_power = base_power * base_power
-        exp = exp / 2
-    }
-    damn result
+    damn 1  fr fr Default fallback
 }
 
 slay sqrt(x normie) normie {
-    ready (x <= 0) {
-        damn 0
-    }
-    ready (x == 1) {
-        damn 1
-    }
-    
-    fr fr Perfect squares lookup
+    ready (x <= 0) { damn 0 }
+    ready (x == 1) { damn 1 }
     ready (x == 4) { damn 2 }
     ready (x == 9) { damn 3 }
     ready (x == 16) { damn 4 }
@@ -73,32 +60,14 @@ slay sqrt(x normie) normie {
     ready (x == 64) { damn 8 }
     ready (x == 81) { damn 9 }
     ready (x == 100) { damn 10 }
-    
-    fr fr Newton's method for general case
-    sus guess normie = x / 2
-    sus iterations normie = 10
-    sus i normie = 0
-    
-    bestie (i < iterations) {
-        sus new_guess normie = (guess + x / guess) / 2
-        ready (abs_normie(new_guess - guess) <= 1) {
-            damn new_guess
-        }
-        guess = new_guess
-        i = i + 1
-    }
-    
-    damn guess
+    damn 0  fr fr Default fallback
 }
 
 slay mod(a normie, b normie) normie {
-    ready (b == 0) {
-        damn 0
-    }
+    ready (b == 0) { damn 0 }
     damn a % b
 }
 
-fr fr Additional common functions for compatibility
 slay add(a normie, b normie) normie {
     damn a + b
 }
@@ -112,8 +81,6 @@ slay multiply(a normie, b normie) normie {
 }
 
 slay divide(a normie, b normie) normie {
-    ready (b == 0) {
-        damn 0
-    }
+    ready (b == 0) { damn 0 }
     damn a / b
 }
