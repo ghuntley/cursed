@@ -2825,6 +2825,27 @@ pub const Interpreter = struct {
                     return InterpreterError.UndefinedFunction;
                 }
             },
+            .CursedError => |error_obj| {
+                // Handle method calls on CursedError objects
+                if (std.mem.eql(u8, member.property, "message")) {
+                    return Value{ .String = error_obj.message };
+                } else if (std.mem.eql(u8, member.property, "code")) {
+                    return Value{ .Integer = error_obj.code };
+                } else if (std.mem.eql(u8, member.property, "details")) {
+                    if (error_obj.context) |ctx| {
+                        if (ctx.len > 0) {
+                            const details_buf = try self.allocator.alloc(u8, ctx[0].key.len + ctx[0].value.len + 2);
+                            @memcpy(details_buf[0..ctx[0].key.len], ctx[0].key);
+                            @memcpy(details_buf[ctx[0].key.len..ctx[0].key.len + 2], ": ");
+                            @memcpy(details_buf[ctx[0].key.len + 2..], ctx[0].value);
+                            return Value{ .OwnedString = details_buf };
+                        }
+                    }
+                    return Value{ .String = "No details available" };
+                } else {
+                    return InterpreterError.UndefinedMethod;
+                }
+            },
             else => {
                 return InterpreterError.TypeMismatch;
             }

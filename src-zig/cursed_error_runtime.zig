@@ -357,7 +357,10 @@ export fn cursed_create_error(message: [*:0]const u8, error_type: u32, code: i64
 }
 
 export fn cursed_is_error(value: ?*anyopaque) callconv(.c) bool {
-    return value != null;
+    if (value == null) return false;
+    
+    // Use the existing cursed_check_error implementation for safety
+    return cursed_check_error(value);
 }
 
 export fn cursed_propagate_error(error_obj: ?*CursedError) callconv(.c) void {
