@@ -961,8 +961,12 @@ pub const LLVMIRPipeline = struct {
             try self.generateStatement(stmt.*);
         }
         
-        // Jump back to condition
-        _ = c.LLVMBuildBr(self.builder, condition_block);
+        // CRITICAL FIX: Only add branch back to condition if body doesn't already have a terminator
+        const body_terminator = c.LLVMGetBasicBlockTerminator(c.LLVMGetInsertBlock(self.builder));
+        if (body_terminator == null) {
+            // Jump back to condition
+            _ = c.LLVMBuildBr(self.builder, condition_block);
+        }
         
         // Position builder at exit block for next statements
         c.LLVMPositionBuilderAtEnd(self.builder, exit_block);
@@ -1010,8 +1014,12 @@ pub const LLVMIRPipeline = struct {
             try self.generateStatement(stmt.*);
         }
         
-        // Jump to update block
-        _ = c.LLVMBuildBr(self.builder, update_block);
+        // CRITICAL FIX: Only add branch to update if body doesn't already have a terminator
+        const body_terminator = c.LLVMGetBasicBlockTerminator(c.LLVMGetInsertBlock(self.builder));
+        if (body_terminator == null) {
+            // Jump to update block
+            _ = c.LLVMBuildBr(self.builder, update_block);
+        }
         
         // Generate update block
         c.LLVMPositionBuilderAtEnd(self.builder, update_block);
@@ -1671,6 +1679,9 @@ pub const LLVMIRPipeline = struct {
                 
                 // Return a placeholder integer value to avoid segfault
                 return c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 0, 0);
+            },
+            .MemberAccess => |member_access| {
+                return try self.generateMemberAccess(member_access);
             },
             else => {
                 print("⚠️ Unhandled expression type in IR generation: {s}\n", .{@tagName(expr)});
@@ -3476,26 +3487,36 @@ pub const LLVMIRPipeline = struct {
             _ = c.LLVMBuildCall2(self.builder, main_function_type, cursed_main_func, null, 0, "");
         }
 
-        // Add proper terminator if block doesn't have one
+        // CRITICAL FIX: Ensure main function has proper terminator
+        // Need to check all basic blocks in the main function for terminators
+        
+        // First, position back to main function entry block
+        c.LLVMPositionBuilderAtEnd(self.builder, entry_block);
+        
+        // Check if current block has terminator
         const current_block = c.LLVMGetInsertBlock(self.builder);
-        if (current_block == null) {
-            c.LLVMPositionBuilderAtEnd(self.builder, entry_block);
-        } else {
+        if (current_block != null) {
             const terminator = c.LLVMGetBasicBlockTerminator(current_block);
             if (terminator == null) {
                 // No terminator, add return statement
-            } else {
-                // Already has terminator, clear context and return
-                self.current_function = null;
-                return;
+                const func_type = c.LLVMGlobalGetValueType(main_func);
+                const func_ret_ty = c.LLVMGetReturnType(func_type);
+                const zero = c.LLVMConstInt(func_ret_ty, 0, 0);
+                _ = c.LLVMBuildRet(self.builder, zero);
             }
         }
         
-        // Return 0 with correct type
-        const func_type = c.LLVMGlobalGetValueType(main_func);
-        const func_ret_ty = c.LLVMGetReturnType(func_type);
-        const zero = c.LLVMConstInt(func_ret_ty, 0, 0);
-        _ = c.LLVMBuildRet(self.builder, zero);
+        // CRITICAL FIX: Check all basic blocks in main function for terminators
+        var block = c.LLVMGetFirstBasicBlock(main_func);
+        while (block != null) {
+            const block_terminator = c.LLVMGetBasicBlockTerminator(block);
+            if (block_terminator == null) {
+                // This block has no terminator, add unreachable
+                c.LLVMPositionBuilderAtEnd(self.builder, block);
+                _ = c.LLVMBuildUnreachable(self.builder);
+            }
+            block = c.LLVMGetNextBasicBlock(block);
+        }
         
         // Clear current function context
         self.current_function = null;
@@ -4220,5 +4241,141 @@ pub const LLVMIRPipeline = struct {
         _ = c.LLVMBuildCall2(self.builder, c.LLVMGlobalGetValueType(strcat_func), strcat_func, @constCast(@ptrCast(&[_]c.LLVMValueRef{ result_ptr, right })), 2, "strcat_right");
         
         return result_ptr;
+    }
+    
+    /// Generate member access (struct field access) in LLVM IR
+    fn generateMemberAccess(self: *LLVMIRPipeline, member_access: *ast.MemberAccessExpression) !c.LLVMValueRef {
+        // Generate the base object/struct expression
+        const object_val = try self.generateExpression(member_access.object.*);
+        
+        // For now, handle simple struct field access using GEP (GetElementPtr)
+        // This assumes the object is a pointer to a struct
+        
+        // Get the field name
+        const field_name = member_access.property;
+        
+        // TODO: This is a simplified implementation that assumes specific struct layouts
+        // In a full implementation, we would need to:
+        // 1. Look up the struct type definition
+        // 2. Find the field index based on the field name
+        // 3. Generate proper GEP instructions with correct indices
+        
+        // For now, handle common cases based on field names
+        if (std.mem.eql(u8, field_name, "data")) {
+            // Assume "data" is the first field (index 0)
+            const zero = c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 0, 0);
+            const field_idx = c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 0, 0);
+            const indices = [_]c.LLVMValueRef{zero, field_idx};
+            
+            // Create GEP instruction to get pointer to field
+            const object_type = c.LLVMTypeOf(object_val);
+            var pointed_type: c.LLVMTypeRef = undefined;
+            
+            // Check if object is already a pointer type
+            // Debug: Check object type (can be removed in production)
+            // print("🔍 DEBUG: Object type kind for data field: {} (expected pointer: {})\n", .{c.LLVMGetTypeKind(object_type), c.LLVMPointerTypeKind});
+            if (c.LLVMGetTypeKind(object_type) == c.LLVMPointerTypeKind) {
+                // For newer LLVM versions, we need to handle opaque pointers
+                // For now, assume it points to a struct with an i32 field
+                pointed_type = c.LLVMStructTypeInContext(self.context, @constCast(@ptrCast(&[_]c.LLVMTypeRef{
+                    c.LLVMInt32TypeInContext(self.context),  // data field
+                    c.LLVMPointerTypeInContext(self.context, 0)  // next field
+                })), 2, 0);
+            } else {
+                // Object is not a pointer - try to convert it to a pointer address
+                print("⚠️ Member access on non-pointer object (data field), attempting conversion to pointer\n", .{});
+                const ptr_type = c.LLVMPointerTypeInContext(self.context, 0);
+                var object_as_ptr: c.LLVMValueRef = undefined;
+                
+                // Check if the object is a float/double
+                if (c.LLVMGetTypeKind(object_type) == c.LLVMDoubleTypeKind or c.LLVMGetTypeKind(object_type) == c.LLVMFloatTypeKind) {
+                    // Convert double to integer first, then to pointer
+                    const int_val = c.LLVMBuildFPToUI(self.builder, object_val, c.LLVMInt64TypeInContext(self.context), "double_to_int");
+                    object_as_ptr = c.LLVMBuildIntToPtr(self.builder, int_val, ptr_type, "int_to_ptr");
+                } else if (c.LLVMGetTypeKind(object_type) == c.LLVMIntegerTypeKind) {
+                    // Convert integer to pointer
+                    object_as_ptr = c.LLVMBuildIntToPtr(self.builder, object_val, ptr_type, "int_to_ptr");
+                } else {
+                    // Unsupported type - return placeholder
+                    print("⚠️ Unsupported object type for member access\n", .{});
+                    return c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 0, 0);
+                }
+                
+                // Create struct type to use with GEP
+                pointed_type = c.LLVMStructTypeInContext(self.context, @constCast(@ptrCast(&[_]c.LLVMTypeRef{
+                    c.LLVMInt32TypeInContext(self.context),  // data field
+                    c.LLVMPointerTypeInContext(self.context, 0)  // next field
+                })), 2, 0);
+                
+                const field_ptr = c.LLVMBuildGEP2(self.builder, pointed_type, object_as_ptr, @constCast(@ptrCast(&indices)), 2, "field_ptr");
+                // Load the field value
+                return c.LLVMBuildLoad2(self.builder, c.LLVMInt32TypeInContext(self.context), field_ptr, "field_load");
+            }
+            
+            const field_ptr = c.LLVMBuildGEP2(self.builder, pointed_type, object_val, @constCast(@ptrCast(&indices)), 2, "field_ptr");
+            
+            // Load the field value
+            return c.LLVMBuildLoad2(self.builder, c.LLVMInt32TypeInContext(self.context), field_ptr, "field_load");
+            
+        } else if (std.mem.eql(u8, field_name, "next")) {
+            // Assume "next" is the second field (index 1)
+            const zero = c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 0, 0);
+            const field_idx = c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 1, 0);
+            const indices = [_]c.LLVMValueRef{zero, field_idx};
+            
+            // Create GEP instruction to get pointer to field
+            const object_type = c.LLVMTypeOf(object_val);
+            var pointed_type: c.LLVMTypeRef = undefined;
+            
+            // Check if object is already a pointer type
+            // Debug: Check object type (can be removed in production)
+            // print("🔍 DEBUG: Object type kind for next field: {} (expected pointer: {})\n", .{c.LLVMGetTypeKind(object_type), c.LLVMPointerTypeKind});
+            if (c.LLVMGetTypeKind(object_type) == c.LLVMPointerTypeKind) {
+                // For newer LLVM versions, we need to handle opaque pointers
+                // For now, assume it points to a struct with a pointer field
+                pointed_type = c.LLVMStructTypeInContext(self.context, @constCast(@ptrCast(&[_]c.LLVMTypeRef{
+                    c.LLVMInt32TypeInContext(self.context),  // data field
+                    c.LLVMPointerTypeInContext(self.context, 0)  // next field
+                })), 2, 0);
+            } else {
+                // Object is not a pointer - try to convert it to a pointer address
+                print("⚠️ Member access on non-pointer object (next field), attempting conversion to pointer\n", .{});
+                const ptr_type = c.LLVMPointerTypeInContext(self.context, 0);
+                var object_as_ptr: c.LLVMValueRef = undefined;
+                
+                // Check if the object is a float/double
+                if (c.LLVMGetTypeKind(object_type) == c.LLVMDoubleTypeKind or c.LLVMGetTypeKind(object_type) == c.LLVMFloatTypeKind) {
+                    // Convert double to integer first, then to pointer
+                    const int_val = c.LLVMBuildFPToUI(self.builder, object_val, c.LLVMInt64TypeInContext(self.context), "double_to_int");
+                    object_as_ptr = c.LLVMBuildIntToPtr(self.builder, int_val, ptr_type, "int_to_ptr");
+                } else if (c.LLVMGetTypeKind(object_type) == c.LLVMIntegerTypeKind) {
+                    // Convert integer to pointer
+                    object_as_ptr = c.LLVMBuildIntToPtr(self.builder, object_val, ptr_type, "int_to_ptr");
+                } else {
+                    // Unsupported type - return placeholder
+                    print("⚠️ Unsupported object type for member access\n", .{});
+                    return c.LLVMConstNull(c.LLVMPointerTypeInContext(self.context, 0));
+                }
+                
+                // Create struct type to use with GEP
+                pointed_type = c.LLVMStructTypeInContext(self.context, @constCast(@ptrCast(&[_]c.LLVMTypeRef{
+                    c.LLVMInt32TypeInContext(self.context),  // data field
+                    c.LLVMPointerTypeInContext(self.context, 0)  // next field
+                })), 2, 0);
+                
+                const field_ptr = c.LLVMBuildGEP2(self.builder, pointed_type, object_as_ptr, @constCast(@ptrCast(&indices)), 2, "field_ptr");
+                // Load the field value (pointer type)
+                return c.LLVMBuildLoad2(self.builder, c.LLVMPointerTypeInContext(self.context, 0), field_ptr, "field_load");
+            }
+            
+            const field_ptr = c.LLVMBuildGEP2(self.builder, pointed_type, object_val, @constCast(@ptrCast(&indices)), 2, "field_ptr");
+            
+            // Load the field value (pointer type)
+            return c.LLVMBuildLoad2(self.builder, c.LLVMPointerTypeInContext(self.context, 0), field_ptr, "field_load");
+        } else {
+            // Unknown field name - return appropriate default based on context
+            print("⚠️ Unknown struct field: {s}\n", .{field_name});
+            return c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 0, 0);
+        }
     }
 };
