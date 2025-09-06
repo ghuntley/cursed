@@ -3,10 +3,12 @@ yeet "vibez"
 
 squad Node {
     data normie
+    next Node
 }
 
 slay main_character() {
     vibez.spill("Before creation")
-    sus node Node = Node{data: 42}
+    sus first Node = Node{data: 1, next: nah}
+    sus second Node = Node{data: 2, next: nah}
     vibez.spill("After creation")
 }

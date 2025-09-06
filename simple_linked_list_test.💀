@@ -1,0 +1,21 @@
+vibe main
+yeet "vibez"
+
+squad Node {
+    data normie
+    next Node
+}
+
+slay create_node(value normie) Node {
+    sus node Node = Node{data: value, next: nah}
+    damn node
+}
+
+slay main_character() {
+    vibez.spill("=== Linked List Test ===")
+    sus first Node = create_node(1)
+    sus second Node = create_node(2)
+    first.next = second
+    vibez.spill("Linked list created successfully")
+    vibez.spill("=== Test Complete ===")
+}

@@ -321,7 +321,7 @@ pub const Parser = struct {
             .Plus, .Minus => .Term,
             .Star, .Slash, .Percent => .Factor,
             .PlusPlus, .MinusMinus => .Unary,
-            .LeftParen, .LeftBracket => .Call,
+            .LeftParen, .LeftBracket, .LeftBrace => .Call,
             .Dot => .Access,
             else => .None,
         };
@@ -358,6 +358,7 @@ pub const Parser = struct {
             .LeftParen => parsePrattCall,
             .Dot => parsePrattMemberAccess,
             .LeftBracket => parsePrattArrayAccess,
+            .LeftBrace => parsePrattStructLiteral,
             .PlusPlus, .MinusMinus => parsePrattPostfixIncrement,
             else => null,
         };
@@ -751,6 +752,48 @@ pub const Parser = struct {
         return Expression{ .Unary = try self.allocateUnaryExpression(ast.UnaryExpression{
             .operator = operator,
             .operand = try self.allocateExpression(left),
+        })};
+    }
+
+    fn parsePrattStructLiteral(self: *Parser, left: Expression) ParserError!Expression {
+        // left should be an identifier representing the struct name
+        const struct_name = switch (left) {
+            .Identifier => |name| name,
+            else => return ParserError.UnexpectedToken,
+        };
+
+        _ = self.advance(); // consume '{'
+
+        var fields = ArrayList(ast.FieldInitializer){};
+
+        if (!self.check(.RightBrace)) {
+            while (true) {
+                if (!self.check(.Identifier)) {
+                    return ParserError.UnexpectedToken;
+                }
+
+                const field_name = self.advance().lexeme;
+                _ = try self.consume(.Colon, "Expected ':' after field name");
+                const value = try self.parseExpression();
+
+                const value_ptr = try self.arena_allocator.create(Expression);
+                value_ptr.* = value;
+
+                try fields.append(self.allocator, ast.FieldInitializer{
+                    .field_name = field_name,
+                    .value = value_ptr,
+                });
+
+                if (!self.match(.Comma)) break;
+            }
+        }
+
+        _ = try self.consume(.RightBrace, "Expected '}'");
+
+        // Return the new StructExpression type
+        return Expression{ .Struct = try self.allocateStructExpression(ast.StructExpression{
+            .struct_name = struct_name,
+            .fields = fields,
         })};
     }
 
@@ -2866,25 +2909,32 @@ pub const Parser = struct {
             // CRITICAL: Check for struct literal Name{field: value, ...} with proper brace handling
             // This distinguishes between struct literals and erroneous complex expressions
             if (self.check(.LeftBrace)) {
+                std.debug.print("DEBUG: Found brace after identifier '{s}'\n", .{name});
                 // Additional validation: ensure this is actually a struct literal context
                 // and not a misplaced brace from a complex expression
                 if (self.isValidStructLiteralContext()) {
+                    std.debug.print("DEBUG: Valid struct literal context detected\n", .{});
                     return try self.parseStructLiteral(name);
                 } else {
+                    std.debug.print("DEBUG: Invalid struct literal context, treating as identifier\n", .{});
                     // This might be part of a complex expression that was incorrectly parsed
                     // Return the identifier and let the caller handle the brace
                     // The brace will be handled by parseBlockStatement in parseStatement
+                    std.debug.print("DEBUG: Returning identifier due to invalid struct context: '{s}'\n", .{name});
                     return Expression{ .Identifier = name };
                 }
             }
             
+            // std.debug.print("DEBUG: Returning final identifier: '{s}'\n", .{name});
             return Expression{ .Identifier = name };
         }
         
+        // std.debug.print("DEBUG: parsePrimary unexpected token: {any}\n", .{self.peek().kind});
         return ParserError.UnexpectedToken;
     }
 
     fn parseStructLiteral(self: *Parser, struct_name: []const u8) ParserError!Expression {
+        std.debug.print("DEBUG: Parsing struct literal for '{s}'\n", .{struct_name});
         _ = try self.consume(.LeftBrace, "Expected '{'");
         
         // Support both StructFieldAssignment (legacy) and FieldInitializer (new)
@@ -2893,10 +2943,12 @@ pub const Parser = struct {
         if (!self.check(.RightBrace)) {
             while (true) {
                 if (!self.check(.Identifier)) {
+                    std.debug.print("DEBUG: Expected identifier for field name, got: {any}\n", .{self.peek().kind});
                     return ParserError.UnexpectedToken;
                 }
                 
                 const field_name = self.advance().lexeme;
+                std.debug.print("DEBUG: Parsing field '{s}'\n", .{field_name});
         _ = try self.consume(.Colon, "Expected ':' after field name");
                 const value = try self.parseExpression();
                 
@@ -4615,6 +4667,7 @@ pub const Parser = struct {
     // CRITICAL FIX: Helper function to validate struct literal context
     // This prevents misidentification of complex expressions as struct literals
     fn isValidStructLiteralContext(self: *Parser) bool {
+        // DEBUG: Checking if valid struct literal context
         // Look ahead to see if the brace contains field assignments (field: value)
         var pos = self.current + 1; // Skip the '{'
         var brace_depth: usize = 1;
