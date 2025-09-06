@@ -5,51 +5,51 @@ This directory contains comprehensive tests for the new `ඞ` (Among Us) pointer
 ## Test Categories
 
 ### Memory Tests (`test_programs/memory/`)
-- **01_basic_pointers.cursed**: Basic pointer declaration, assignment, and dereferencing
-- **02_pointer_arithmetic_simple.cursed**: Simplified array pointer access
-- **03_nested_pointers.cursed**: Double and triple pointer indirection
+- **01_basic_pointers.💀**: Basic pointer declaration, assignment, and dereferencing
+- **02_pointer_arithmetic_simple.💀**: Simplified array pointer access
+- **03_nested_pointers.💀**: Double and triple pointer indirection
 
 ### Function Tests (`test_programs/functions/`)
-- **01_pointer_parameters.cursed**: Passing pointers to functions as parameters
-- **02_pointer_return_values.cursed**: Functions that return pointers
+- **01_pointer_parameters.💀**: Passing pointers to functions as parameters
+- **02_pointer_return_values.💀**: Functions that return pointers
 
 ### Complex Tests (`test_programs/complex/`)  
-- **01_linked_list_pointers.cursed**: Advanced data structure usage with pointers
+- **01_linked_list_pointers.💀**: Advanced data structure usage with pointers
 
 ### Validation Tests (`test_programs/validation/`)
-- **01_pointer_type_validation.cursed**: Type safety and null pointer handling
+- **01_pointer_type_validation.💀**: Type safety and null pointer handling
 
 ### Comprehensive Tests (`test_programs/comprehensive/`)
-- **01_comprehensive_pointers.cursed**: All major pointer operations in one test
+- **01_comprehensive_pointers.💀**: All major pointer operations in one test
 
 ### Edge Cases (`test_programs/edge_cases/`)
-- **01_pointer_edge_cases.cursed**: Boundary conditions and edge cases
+- **01_pointer_edge_cases.💀**: Boundary conditions and edge cases
 
 ### Error Tests (`test_programs/errors/`)
-- **01_pointer_syntax_errors.cursed**: Validates new `ඞ` syntax works
-- **02_old_syntax_rejection.cursed**: Ensures old `@` syntax is properly rejected
+- **01_pointer_syntax_errors.💀**: Validates new `ඞ` syntax works
+- **02_old_syntax_rejection.💀**: Ensures old `@` syntax is properly rejected
 
 ### Performance Tests (`test_programs/performance/`)
-- **01_pointer_intensive.cursed**: Heavy pointer usage scenarios
+- **01_pointer_intensive.💀**: Heavy pointer usage scenarios
 
 ### Regression Tests (`test_programs/regression/`)
-- **01_pointer_regression.cursed**: Ensures pointers don't break existing features
+- **01_pointer_regression.💀**: Ensures pointers don't break existing features
 
 ## Running Tests
 
 ### Quick Test Suite
 ```bash
 cd test_suite
-./test_pointer_syntax_fixed.sh
+./test_pointer_syntax_final.sh
 ```
 
 ### Individual Test
 ```bash
 # Interpreter mode
-./zig-out/bin/cursed-compiler --interpret test_suite/test_programs/memory/01_basic_pointers.cursed
+./zig-out/bin/cursed-compiler --interpret test_suite/test_programs/memory/01_basic_pointers.💀
 
 # Compiled mode  
-./zig-out/bin/cursed-compiler --compile test_suite/test_programs/memory/01_basic_pointers.cursed -o test
+./zig-out/bin/cursed-compiler --compile test_suite/test_programs/memory/01_basic_pointers.💀 -o test
 ./test
 ```
 

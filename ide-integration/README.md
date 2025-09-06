@@ -361,7 +361,7 @@ Ctrl+Shift+P → "CURSED: Run Tests"
    ```
 
 2. **Syntax Highlighting Issues**:
-   - Ensure file extension is `.💀` or `.cursed`
+   - Ensure file extension is `.💀` (skull emoji is the proper CURSED file extension)
    - Restart editor after installation
    - Check language association in editor settings
 

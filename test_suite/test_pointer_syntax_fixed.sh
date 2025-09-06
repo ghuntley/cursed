@@ -26,7 +26,7 @@ TOTAL=0
 
 test_file() {
     local file="$1"
-    local test_name=$(basename "$file" .cursed)
+    local test_name=$(basename "$file" .💀)
     
     echo -n "Testing $test_name... "
     TOTAL=$((TOTAL + 1))
@@ -61,13 +61,13 @@ echo "Testing basic pointer functionality..."
 echo "====================================="
 
 # Test just the basic working tests for now
-for file in test_programs/memory/01_basic_pointers.cursed \
-            test_programs/memory/03_nested_pointers.cursed \
-            test_programs/functions/01_pointer_parameters.cursed \
-            test_programs/functions/02_pointer_return_values.cursed \
-            test_programs/validation/01_pointer_type_validation.cursed \
-            test_programs/comprehensive/01_comprehensive_pointers.cursed \
-            test_programs/edge_cases/01_pointer_edge_cases.cursed; do
+for file in test_programs/memory/01_basic_pointers.💀 \
+            test_programs/memory/03_nested_pointers.💀 \
+            test_programs/functions/01_pointer_parameters.💀 \
+            test_programs/functions/02_pointer_return_values.💀 \
+            test_programs/validation/01_pointer_type_validation.💀 \
+            test_programs/comprehensive/01_comprehensive_pointers.💀 \
+            test_programs/edge_cases/01_pointer_edge_cases.💀; do
     if [ -f "$file" ]; then
         test_file "$file"
     fi
@@ -78,7 +78,7 @@ echo
 echo "Testing syntax validation..."
 echo "============================="
 echo -n "Testing old syntax rejection... "
-if $COMPILER --interpret test_programs/errors/02_old_syntax_rejection.cursed 2>&1 | grep -q "UnexpectedCharacter"; then
+if $COMPILER --interpret test_programs/errors/02_old_syntax_rejection.💀 2>&1 | grep -q "UnexpectedCharacter"; then
     echo -e "${GREEN}PASS${RESET} (old syntax properly rejected)"
     PASSED=$((PASSED + 1))
 else
@@ -89,7 +89,7 @@ TOTAL=$((TOTAL + 1))
 
 # Test new syntax works
 echo -n "Testing new syntax acceptance... "
-if $COMPILER --interpret test_programs/errors/01_pointer_syntax_errors.cursed > /dev/null 2>&1; then
+if $COMPILER --interpret test_programs/errors/01_pointer_syntax_errors.💀 > /dev/null 2>&1; then
     echo -e "${GREEN}PASS${RESET}"
     PASSED=$((PASSED + 1))
 else
