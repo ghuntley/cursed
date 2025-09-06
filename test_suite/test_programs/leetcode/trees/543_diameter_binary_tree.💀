@@ -1,0 +1,69 @@
+vibe main
+
+yeet "vibez"
+yeet "mathz"
+
+fr fr LeetCode #543: Diameter of Binary Tree
+fr fr Longest path between any two nodes (may not pass through root)
+
+be_like TreeNode squad {
+    val normie
+    left ඞTreeNode
+    right ඞTreeNode
+}
+
+slay create_node(val normie) ඞTreeNode {
+    sus node ඞTreeNode = ඞTreeNode{val: val, left: nah, right: nah}
+    damn node
+}
+
+sus global_diameter normie = 0
+
+slay depth(root ඞTreeNode) normie {
+    ready (root == nah) {
+        damn 0
+    }
+    
+    sus left_depth normie = depth(root.left)
+    sus right_depth normie = depth(root.right)
+    
+    fr fr Update global diameter
+    global_diameter = mathz.max(global_diameter, left_depth + right_depth)
+    
+    damn 1 + mathz.max(left_depth, right_depth)
+}
+
+slay diameter_of_binary_tree(root ඞTreeNode) normie {
+    global_diameter = 0
+    depth(root)
+    damn global_diameter
+}
+
+slay test_diameter_binary_tree() {
+    vibez.spill("=== LeetCode #543: Diameter of Binary Tree (ඞ) ===")
+    
+    fr fr Test case 1: [1,2,3,4,5] -> 3
+    sus root1 ඞTreeNode = create_node(1)
+    root1.left = create_node(2)
+    root1.right = create_node(3)
+    root1.left.left = create_node(4)
+    root1.left.right = create_node(5)
+    
+    sus diameter1 normie = diameter_of_binary_tree(root1)
+    vibez.spill("Test 1 - Expected: 3")
+    vibez.spill(diameter1)
+    
+    fr fr Test case 2: [1,2] -> 1
+    sus root2 ඞTreeNode = create_node(1)
+    root2.left = create_node(2)
+    
+    sus diameter2 normie = diameter_of_binary_tree(root2)
+    vibez.spill("Test 2 - Expected: 1")
+    vibez.spill(diameter2)
+    
+    vibez.spill("=== Diameter Complete (ඞ Tree Paths!) ===")
+}
+
+slay main_character() {
+    test_diameter_binary_tree()
+}

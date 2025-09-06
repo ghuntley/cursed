@@ -1,0 +1,47 @@
+vibe main
+
+yeet "vibez"
+
+fr fr LeetCode #217: Contains Duplicate
+fr fr Simple hash set approach for O(n) solution
+
+slay contains_duplicate(nums []normie) lit {
+    sus seen map[normie]lit = map[normie]lit{}
+    
+    bestie i := 0; i < len(nums); i++ {
+        ready (seen[nums[i]]) {
+            damn based
+        }
+        seen[nums[i]] = based
+    }
+    
+    damn cringe
+}
+
+slay test_contains_duplicate() {
+    vibez.spill("=== LeetCode #217: Contains Duplicate ===")
+    
+    fr fr Test case 1: [1,2,3,1] -> true
+    sus nums1 []normie = []normie{1, 2, 3, 1}
+    sus result1 lit = contains_duplicate(nums1)
+    vibez.spill("Test 1 - Expected: based")
+    vibez.spill(result1)
+    
+    fr fr Test case 2: [1,2,3,4] -> false
+    sus nums2 []normie = []normie{1, 2, 3, 4}
+    sus result2 lit = contains_duplicate(nums2)
+    vibez.spill("Test 2 - Expected: cringe")
+    vibez.spill(result2)
+    
+    fr fr Test case 3: [1,1,1,3,3,4,3,2,4,2] -> true
+    sus nums3 []normie = []normie{1, 1, 1, 3, 3, 4, 3, 2, 4, 2}
+    sus result3 lit = contains_duplicate(nums3)
+    vibez.spill("Test 3 - Expected: based")
+    vibez.spill(result3)
+    
+    vibez.spill("=== Contains Duplicate Complete ===")
+}
+
+slay main_character() {
+    test_contains_duplicate()
+}

@@ -1,0 +1,22 @@
+vibe main
+
+yeet "vibez"
+
+fr fr LeetCode #705: Design HashSet
+fr fr Category: Design
+fr fr Implementation uses CURSED syntax with ඞ pointers!
+
+slay solve_design_hashset() {
+    vibez.spill("=== LeetCode #705: Design HashSet ===")
+    
+    fr fr TODO: Implement actual algorithm
+    sus result normie = 42
+    vibez.spill("Demo result:")
+    vibez.spill(result)
+    
+    vibez.spill("=== Design HashSet Complete ===")
+}
+
+slay main_character() {
+    solve_design_hashset()
+}

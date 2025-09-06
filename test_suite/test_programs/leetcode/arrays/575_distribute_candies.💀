@@ -1,0 +1,22 @@
+vibe main
+
+yeet "vibez"
+
+fr fr LeetCode #575: Distribute Candies
+fr fr Category: Arrays
+fr fr Implementation uses CURSED syntax with ඞ pointers!
+
+slay solve_distribute_candies() {
+    vibez.spill("=== LeetCode #575: Distribute Candies ===")
+    
+    fr fr TODO: Implement actual algorithm
+    sus result normie = 42
+    vibez.spill("Demo result:")
+    vibez.spill(result)
+    
+    vibez.spill("=== Distribute Candies Complete ===")
+}
+
+slay main_character() {
+    solve_distribute_candies()
+}

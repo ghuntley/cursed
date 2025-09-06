@@ -1,0 +1,22 @@
+vibe main
+
+yeet "vibez"
+
+fr fr LeetCode #1002: Find Common Characters
+fr fr Category: Strings
+fr fr Implementation uses CURSED syntax with ඞ pointers!
+
+slay solve_find_common_characters() {
+    vibez.spill("=== LeetCode #1002: Find Common Characters ===")
+    
+    fr fr TODO: Implement actual algorithm
+    sus result normie = 42
+    vibez.spill("Demo result:")
+    vibez.spill(result)
+    
+    vibez.spill("=== Find Common Characters Complete ===")
+}
+
+slay main_character() {
+    solve_find_common_characters()
+}

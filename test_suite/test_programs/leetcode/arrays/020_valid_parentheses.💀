@@ -1,0 +1,65 @@
+vibe main
+
+yeet "vibez"
+
+fr fr LeetCode #20: Valid Parentheses
+fr fr Stack-based solution using CURSED arrays as stack
+
+slay is_valid(s tea) lit {
+    sus stack []sip = []sip{}
+    
+    bestie i := 0; i < len(s); i++ {
+        sus char sip = s[i]
+        
+        vibe_check char {
+            mood '(':
+                stack = append(stack, ')')
+            mood '[':
+                stack = append(stack, ']')
+            mood '{':
+                stack = append(stack, '}')
+            basic:
+                ready (len(stack) == 0 || stack[len(stack)-1] != char) {
+                    damn cringe
+                }
+                stack = stack[:len(stack)-1]  fr fr Pop from stack
+        }
+    }
+    
+    damn len(stack) == 0
+}
+
+slay test_valid_parentheses() {
+    vibez.spill("=== LeetCode #20: Valid Parentheses ===")
+    
+    fr fr Test case 1: "()" -> true
+    sus result1 lit = is_valid("()")
+    vibez.spill("Test 1 - Input: (), Expected: based")
+    vibez.spill(result1)
+    
+    fr fr Test case 2: "()[]{}" -> true
+    sus result2 lit = is_valid("()[]{}")
+    vibez.spill("Test 2 - Input: ()[]{}, Expected: based")
+    vibez.spill(result2)
+    
+    fr fr Test case 3: "(]" -> false
+    sus result3 lit = is_valid("(]")
+    vibez.spill("Test 3 - Input: (], Expected: cringe")
+    vibez.spill(result3)
+    
+    fr fr Test case 4: "([)]" -> false
+    sus result4 lit = is_valid("([)]")
+    vibez.spill("Test 4 - Input: ([)], Expected: cringe")
+    vibez.spill(result4)
+    
+    fr fr Test case 5: "{[]}" -> true
+    sus result5 lit = is_valid("{[]}")
+    vibez.spill("Test 5 - Input: {[]}, Expected: based")
+    vibez.spill(result5)
+    
+    vibez.spill("=== Valid Parentheses Complete ===")
+}
+
+slay main_character() {
+    test_valid_parentheses()
+}

@@ -1,0 +1,22 @@
+vibe main
+
+yeet "vibez"
+
+fr fr LeetCode #371: Sum of Two Integers
+fr fr Category: Bit_Manipulation
+fr fr Implementation uses CURSED syntax with ඞ pointers!
+
+slay solve_sum_of_two_integers() {
+    vibez.spill("=== LeetCode #371: Sum of Two Integers ===")
+    
+    fr fr TODO: Implement actual algorithm
+    sus result normie = 42
+    vibez.spill("Demo result:")
+    vibez.spill(result)
+    
+    vibez.spill("=== Sum of Two Integers Complete ===")
+}
+
+slay main_character() {
+    solve_sum_of_two_integers()
+}

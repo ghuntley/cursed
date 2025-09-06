@@ -1,0 +1,22 @@
+vibe main
+
+yeet "vibez"
+
+fr fr LeetCode #566: Reshape the Matrix
+fr fr Category: Arrays
+fr fr Implementation uses CURSED syntax with ඞ pointers!
+
+slay solve_reshape_the_matrix() {
+    vibez.spill("=== LeetCode #566: Reshape the Matrix ===")
+    
+    fr fr TODO: Implement actual algorithm
+    sus result normie = 42
+    vibez.spill("Demo result:")
+    vibez.spill(result)
+    
+    vibez.spill("=== Reshape the Matrix Complete ===")
+}
+
+slay main_character() {
+    solve_reshape_the_matrix()
+}

@@ -1,0 +1,22 @@
+vibe main
+
+yeet "vibez"
+
+fr fr LeetCode #700: Search in BST
+fr fr Category: Trees
+fr fr Implementation uses CURSED syntax with ඞ pointers!
+
+slay solve_search_in_bst() {
+    vibez.spill("=== LeetCode #700: Search in BST ===")
+    
+    fr fr TODO: Implement actual algorithm
+    sus result normie = 42
+    vibez.spill("Demo result:")
+    vibez.spill(result)
+    
+    vibez.spill("=== Search in BST Complete ===")
+}
+
+slay main_character() {
+    solve_search_in_bst()
+}

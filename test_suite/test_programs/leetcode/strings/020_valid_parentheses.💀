@@ -1,0 +1,24 @@
+vibe main
+
+yeet "vibez"
+yeet "mathz"
+
+fr fr LeetCode #20: Valid Parentheses
+fr fr Difficulty: Easy
+fr fr Category: Strings
+fr fr TODO: Implement solution using CURSED ඞ pointers!
+
+slay solve_valid_parentheses() {
+    fr fr TODO: Implement the actual algorithm here
+    vibez.spill("=== LeetCode #20: Valid Parentheses ===")
+    vibez.spill("TODO: Implementation needed")
+    vibez.spill("=== Test Complete ===")
+}
+
+slay test_valid_parentheses() {
+    solve_valid_parentheses()
+}
+
+slay main_character() {
+    test_valid_parentheses()
+}

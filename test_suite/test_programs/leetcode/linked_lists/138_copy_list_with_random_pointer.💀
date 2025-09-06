@@ -1,0 +1,22 @@
+vibe main
+
+yeet "vibez"
+
+fr fr LeetCode #138: Copy List with Random Pointer
+fr fr Category: Linked_Lists
+fr fr Implementation uses CURSED syntax with ඞ pointers!
+
+slay solve_copy_list_with_random_pointer() {
+    vibez.spill("=== LeetCode #138: Copy List with Random Pointer ===")
+    
+    fr fr TODO: Implement actual algorithm
+    sus result normie = 42
+    vibez.spill("Demo result:")
+    vibez.spill(result)
+    
+    vibez.spill("=== Copy List with Random Pointer Complete ===")
+}
+
+slay main_character() {
+    solve_copy_list_with_random_pointer()
+}

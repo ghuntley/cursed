@@ -1,0 +1,52 @@
+vibe main
+
+yeet "vibez"
+
+fr fr LeetCode #704: Binary Search
+fr fr Classic binary search implementation
+
+slay search(nums []normie, target normie) normie {
+    sus left normie = 0
+    sus right normie = len(nums) - 1
+    
+    periodt (left <= right) {
+        sus mid normie = left + (right - left) / 2
+        
+        ready (nums[mid] == target) {
+            damn mid
+        } otherwise ready (nums[mid] < target) {
+            left = mid + 1
+        } otherwise {
+            right = mid - 1
+        }
+    }
+    
+    damn -1
+}
+
+slay test_binary_search() {
+    vibez.spill("=== LeetCode #704: Binary Search ===")
+    
+    fr fr Test case 1: [-1,0,3,5,9,12], target = 9 -> 4
+    sus nums1 []normie = []normie{-1, 0, 3, 5, 9, 12}
+    sus result1 normie = search(nums1, 9)
+    vibez.spill("Test 1 - Expected: 4")
+    vibez.spill(result1)
+    
+    fr fr Test case 2: [-1,0,3,5,9,12], target = 2 -> -1
+    sus result2 normie = search(nums1, 2)
+    vibez.spill("Test 2 - Expected: -1")
+    vibez.spill(result2)
+    
+    fr fr Test case 3: [5], target = 5 -> 0
+    sus nums3 []normie = []normie{5}
+    sus result3 normie = search(nums3, 5)
+    vibez.spill("Test 3 - Expected: 0")
+    vibez.spill(result3)
+    
+    vibez.spill("=== Binary Search Complete ===")
+}
+
+slay main_character() {
+    test_binary_search()
+}

@@ -1,0 +1,93 @@
+vibe main
+
+yeet "vibez"
+
+fr fr LeetCode #100: Same Tree
+fr fr Check if two binary trees are identical using ඞ pointers
+
+be_like TreeNode squad {
+    val normie
+    left ඞTreeNode
+    right ඞTreeNode
+}
+
+slay create_node(val normie) ඞTreeNode {
+    sus node ඞTreeNode = ඞTreeNode{
+        val: val,
+        left: nah,
+        right: nah
+    }
+    damn node
+}
+
+slay is_same_tree(p ඞTreeNode, q ඞTreeNode) lit {
+    fr fr Both null
+    ready (p == nah && q == nah) {
+        damn based
+    }
+    
+    fr fr One null, other not
+    ready (p == nah || q == nah) {
+        damn cringe
+    }
+    
+    fr fr Different values
+    ready (p.val != q.val) {
+        damn cringe
+    }
+    
+    fr fr Recursively check left and right subtrees
+    damn is_same_tree(p.left, q.left) && is_same_tree(p.right, q.right)
+}
+
+slay test_same_tree() {
+    vibez.spill("=== LeetCode #100: Same Tree (ඞ Tree Pointers) ===")
+    
+    fr fr Test case 1: [1,2,3] vs [1,2,3] -> true
+    sus tree1 ඞTreeNode = create_node(1)
+    tree1.left = create_node(2)
+    tree1.right = create_node(3)
+    
+    sus tree2 ඞTreeNode = create_node(1)
+    tree2.left = create_node(2)
+    tree2.right = create_node(3)
+    
+    sus result1 lit = is_same_tree(tree1, tree2)
+    vibez.spill("Test 1 - Identical trees, Expected: based")
+    vibez.spill(result1)
+    
+    fr fr Test case 2: [1,2] vs [1,null,2] -> false
+    sus tree3 ඞTreeNode = create_node(1)
+    tree3.left = create_node(2)
+    
+    sus tree4 ඞTreeNode = create_node(1)
+    tree4.right = create_node(2)
+    
+    sus result2 lit = is_same_tree(tree3, tree4)
+    vibez.spill("Test 2 - Different structure, Expected: cringe")
+    vibez.spill(result2)
+    
+    fr fr Test case 3: [1,2,1] vs [1,1,2] -> false
+    sus tree5 ඞTreeNode = create_node(1)
+    tree5.left = create_node(2)
+    tree5.right = create_node(1)
+    
+    sus tree6 ඞTreeNode = create_node(1)
+    tree6.left = create_node(1)
+    tree6.right = create_node(2)
+    
+    sus result3 lit = is_same_tree(tree5, tree6)
+    vibez.spill("Test 3 - Different values, Expected: cringe")
+    vibez.spill(result3)
+    
+    fr fr Test case 4: null vs null -> true
+    sus result4 lit = is_same_tree(nah, nah)
+    vibez.spill("Test 4 - Both null, Expected: based")
+    vibez.spill(result4)
+    
+    vibez.spill("=== Same Tree Complete ===")
+}
+
+slay main_character() {
+    test_same_tree()
+}

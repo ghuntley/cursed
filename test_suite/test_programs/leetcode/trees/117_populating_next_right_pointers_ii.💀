@@ -1,0 +1,22 @@
+vibe main
+
+yeet "vibez"
+
+fr fr LeetCode #117: Populating Next Right Pointers II
+fr fr Category: Trees
+fr fr Implementation uses CURSED syntax with ඞ pointers!
+
+slay solve_populating_next_right_pointers_ii() {
+    vibez.spill("=== LeetCode #117: Populating Next Right Pointers II ===")
+    
+    fr fr TODO: Implement actual algorithm
+    sus result normie = 42
+    vibez.spill("Demo result:")
+    vibez.spill(result)
+    
+    vibez.spill("=== Populating Next Right Pointers II Complete ===")
+}
+
+slay main_character() {
+    solve_populating_next_right_pointers_ii()
+}

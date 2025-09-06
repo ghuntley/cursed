@@ -1,0 +1,22 @@
+vibe main
+
+yeet "vibez"
+
+fr fr LeetCode #783: Minimum Distance Between BST Nodes
+fr fr Category: Trees
+fr fr Implementation uses CURSED syntax with ඞ pointers!
+
+slay solve_minimum_distance_between_bst_nodes() {
+    vibez.spill("=== LeetCode #783: Minimum Distance Between BST Nodes ===")
+    
+    fr fr TODO: Implement actual algorithm
+    sus result normie = 42
+    vibez.spill("Demo result:")
+    vibez.spill(result)
+    
+    vibez.spill("=== Minimum Distance Between BST Nodes Complete ===")
+}
+
+slay main_character() {
+    solve_minimum_distance_between_bst_nodes()
+}

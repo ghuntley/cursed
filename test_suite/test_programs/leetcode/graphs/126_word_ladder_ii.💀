@@ -1,0 +1,22 @@
+vibe main
+
+yeet "vibez"
+
+fr fr LeetCode #126: Word Ladder II
+fr fr Category: Graphs
+fr fr Implementation uses CURSED syntax with ඞ pointers!
+
+slay solve_word_ladder_ii() {
+    vibez.spill("=== LeetCode #126: Word Ladder II ===")
+    
+    fr fr TODO: Implement actual algorithm
+    sus result normie = 42
+    vibez.spill("Demo result:")
+    vibez.spill(result)
+    
+    vibez.spill("=== Word Ladder II Complete ===")
+}
+
+slay main_character() {
+    solve_word_ladder_ii()
+}

@@ -1,0 +1,36 @@
+vibe main
+
+yeet "vibez"
+
+fr fr LeetCode #387: First Unique Character in String
+fr fr Find first non-repeating character
+
+slay first_unique_char_demo() {
+    vibez.spill("=== LeetCode #387: First Unique Character ===")
+    
+    fr fr Demo with "leetcode" -> index 0 ('l')
+    sus char1 sip = 'l'
+    sus char2 sip = 'e'
+    sus char3 sip = 'e'
+    sus char4 sip = 't'
+    
+    vibez.spill("String: leetcode")
+    vibez.spill("First char l appears once at start")
+    vibez.spill("Index of first unique: 0")
+    
+    fr fr Demo with "loveleetcode" -> index 2 ('v')
+    vibez.spill("String: loveleetcode")
+    vibez.spill("First unique char: v at index 2")
+    vibez.spill(2)
+    
+    fr fr Demo with "aabb" -> -1 (no unique)
+    vibez.spill("String: aabb")
+    vibez.spill("No unique characters: -1")
+    vibez.spill(-1)
+    
+    vibez.spill("=== First Unique Complete ===")
+}
+
+slay main_character() {
+    first_unique_char_demo()
+}

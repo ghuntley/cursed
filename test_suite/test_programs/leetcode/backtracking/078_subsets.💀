@@ -1,0 +1,22 @@
+vibe main
+
+yeet "vibez"
+
+fr fr LeetCode #78: Subsets
+fr fr Category: Backtracking
+fr fr Implementation uses CURSED syntax with ඞ pointers!
+
+slay solve_subsets() {
+    vibez.spill("=== LeetCode #78: Subsets ===")
+    
+    fr fr TODO: Implement actual algorithm
+    sus result normie = 42
+    vibez.spill("Demo result:")
+    vibez.spill(result)
+    
+    vibez.spill("=== Subsets Complete ===")
+}
+
+slay main_character() {
+    solve_subsets()
+}

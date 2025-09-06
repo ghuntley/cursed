@@ -1,0 +1,120 @@
+vibe main
+yeet "vibez"
+
+// LeetCode #141: Linked List Cycle 🔄
+// Detect if linked list has a cycle using Floyd's algorithm (ඞ pointers!)
+// Time: O(n), Space: O(1) - two pointer approach
+
+struct ListNode {
+    sus val normie
+    sus next ඞListNode
+}
+
+slay has_cycle(head ඞListNode) lit {
+    ready (head == null || head.next == null) {
+        damn false  // Can't have cycle with 0 or 1 nodes
+    }
+    
+    // Floyd's Cycle Detection (Tortoise and Hare) - this hits different! 🚀
+    sus slow ඞListNode = head     // Tortoise moves 1 step
+    sus fast ඞListNode = head     // Hare moves 2 steps
+    
+    bestie (fast != null && fast.next != null) {
+        slow = slow.next
+        fast = fast.next.next
+        
+        ready (slow == fast) {
+            damn true  // Cycle detected! Sus ඞ
+        }
+    }
+    
+    damn false  // No cycle found
+}
+
+slay has_cycle_hashset(head ඞListNode) lit {
+    // Alternative: use hash set to track visited nodes
+    sus visited ඞListNode[] = []ඞListNode{}
+    sus current ඞListNode = head
+    
+    bestie (current != null) {
+        // Check if we've seen this node before
+        bestie i := 0; i < len(visited); i++ {
+            ready (visited[i] == current) {
+                damn true  // Cycle detected!
+            }
+        }
+        
+        // Add current node to visited set
+        append(visited, current)
+        current = current.next
+    }
+    
+    damn false
+}
+
+slay create_cycle_list() ඞListNode {
+    // Create list with cycle: 3 -> 2 -> 0 -> -4 -> (back to 2)
+    sus node1 ඞListNode = &ListNode{val: 3, next: null}
+    sus node2 ඞListNode = &ListNode{val: 2, next: null}  
+    sus node3 ඞListNode = &ListNode{val: 0, next: null}
+    sus node4 ඞListNode = &ListNode{val: -4, next: null}
+    
+    node1.next = node2
+    node2.next = node3
+    node3.next = node4
+    node4.next = node2  // Create cycle back to node2
+    
+    damn node1
+}
+
+slay create_no_cycle_list() ඞListNode {
+    // Create list without cycle: 1 -> 2 -> null
+    sus node1 ඞListNode = &ListNode{val: 1, next: null}
+    sus node2 ඞListNode = &ListNode{val: 2, next: null}
+    
+    node1.next = node2
+    // node2.next = null (no cycle)
+    
+    damn node1
+}
+
+slay test_linked_list_cycle() {
+    vibez.spill("=== 🔄 LeetCode #141: Linked List Cycle ===")
+    
+    // Test case 1: List with cycle
+    sus cycle_list ඞListNode = create_cycle_list()
+    sus has_cycle_1 lit = has_cycle(cycle_list)
+    sus has_cycle_1_hash lit = has_cycle_hashset(cycle_list)
+    vibez.spill("Test 1 - List with cycle [3,2,0,-4] -> back to 2:")
+    vibez.spill("Floyd's algorithm:", has_cycle_1)
+    vibez.spill("HashSet approach:", has_cycle_1_hash)
+    vibez.spill("Expected: true")
+    
+    // Test case 2: List without cycle
+    sus no_cycle_list ඞListNode = create_no_cycle_list()
+    sus has_cycle_2 lit = has_cycle(no_cycle_list)
+    vibez.spill("Test 2 - List without cycle [1,2]:")
+    vibez.spill("Floyd's algorithm:", has_cycle_2)
+    vibez.spill("Expected: false")
+    
+    // Test case 3: Empty list
+    sus empty_list ඞListNode = null
+    sus has_cycle_3 lit = has_cycle(empty_list)
+    vibez.spill("Test 3 - Empty list:")
+    vibez.spill("Result:", has_cycle_3)
+    vibez.spill("Expected: false")
+    
+    // Test case 4: Single node with self-cycle
+    sus single_cycle ඞListNode = &ListNode{val: 1, next: null}
+    single_cycle.next = single_cycle  // Point to itself
+    sus has_cycle_4 lit = has_cycle(single_cycle)
+    vibez.spill("Test 4 - Single node pointing to itself:")
+    vibez.spill("Result:", has_cycle_4)
+    vibez.spill("Expected: true")
+    
+    vibez.spill("=== Cycle Detection Complete! Floyd's algorithm is sus-piciously good ඞ🔄 ===")
+}
+
+slay main_character() {
+    test_linked_list_cycle()
+}

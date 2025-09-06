@@ -1,0 +1,50 @@
+vibe main
+
+yeet "vibez"
+
+fr fr LeetCode #1: Two Sum (Simplified for current CURSED parser)
+fr fr Brute force O(n^2) approach that works with current syntax
+
+slay two_sum_simple(nums []normie, target normie) []normie {
+    bestie i := 0; i < len(nums); i++ {
+        bestie j := i + 1; j < len(nums); j++ {
+            ready (nums[i] + nums[j] == target) {
+                sus result []normie = []normie{i, j}
+                damn result
+            }
+        }
+    }
+    
+    fr fr No solution (return empty array)
+    damn []normie{}
+}
+
+slay test_two_sum() {
+    vibez.spill("=== LeetCode #1: Two Sum (Simple) ===")
+    
+    fr fr Test case 1: [2,7,11,15], target = 9 -> [0,1]
+    sus nums []normie = []normie{2, 7, 11, 15}
+    sus result []normie = two_sum_simple(nums, 9)
+    
+    vibez.spill("Test 1 - Expected: [0,1]")
+    ready (len(result) >= 2) {
+        vibez.spill(result[0])
+        vibez.spill(result[1])
+    }
+    
+    fr fr Test case 2: [3,2,4], target = 6 -> [1,2]
+    sus nums2 []normie = []normie{3, 2, 4}
+    sus result2 []normie = two_sum_simple(nums2, 6)
+    
+    vibez.spill("Test 2 - Expected: [1,2]")
+    ready (len(result2) >= 2) {
+        vibez.spill(result2[0])
+        vibez.spill(result2[1])
+    }
+    
+    vibez.spill("=== Two Sum Complete ===")
+}
+
+slay main_character() {
+    test_two_sum()
+}

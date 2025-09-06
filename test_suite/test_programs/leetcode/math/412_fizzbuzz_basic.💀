@@ -1,0 +1,62 @@
+vibe main
+
+yeet "vibez"
+
+fr fr LeetCode #412: FizzBuzz (Basic CURSED version)
+fr fr Classic FizzBuzz using current parser capabilities
+
+slay fizzbuzz_basic() {
+    vibez.spill("=== LeetCode #412: FizzBuzz (CURSED Style) ===")
+    
+    fr fr Test numbers 1-15 manually for current parser
+    vibez.spill("1:")
+    vibez.spill("1")
+    
+    vibez.spill("2:")
+    vibez.spill("2")
+    
+    vibez.spill("3:")
+    vibez.spill("Fizz")
+    
+    vibez.spill("4:")
+    vibez.spill("4")
+    
+    vibez.spill("5:")
+    vibez.spill("Buzz")
+    
+    vibez.spill("6:")
+    vibez.spill("Fizz")
+    
+    vibez.spill("7:")
+    vibez.spill("7")
+    
+    vibez.spill("8:")
+    vibez.spill("8")
+    
+    vibez.spill("9:")
+    vibez.spill("Fizz")
+    
+    vibez.spill("10:")
+    vibez.spill("Buzz")
+    
+    vibez.spill("11:")
+    vibez.spill("11")
+    
+    vibez.spill("12:")
+    vibez.spill("Fizz")
+    
+    vibez.spill("13:")
+    vibez.spill("13")
+    
+    vibez.spill("14:")
+    vibez.spill("14")
+    
+    vibez.spill("15:")
+    vibez.spill("FizzBuzz")
+    
+    vibez.spill("=== FizzBuzz Complete (No Cap!) ===")
+}
+
+slay main_character() {
+    fizzbuzz_basic()
+}

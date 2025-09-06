@@ -1,0 +1,115 @@
+vibe main
+yeet "vibez"
+yeet "mathz"
+
+// LeetCode #11: Container With Most Water 🌊
+// Find two lines that form container holding the most water
+// Time: O(n), Space: O(1) - two pointer approach
+
+slay max_area(height normie[]) normie {
+    sus left normie = 0
+    sus right normie = len(height) - 1
+    sus max_water normie = 0
+    
+    bestie (left < right) {
+        // Calculate current area
+        sus width normie = right - left
+        sus min_height normie = mathz.min(height[left], height[right])
+        sus current_area normie = width * min_height
+        
+        max_water = mathz.max(max_water, current_area)
+        
+        // Move pointer with smaller height - this is the key insight! 🚀
+        ready (height[left] < height[right]) {
+            left = left + 1
+        } nah {
+            right = right - 1
+        }
+    }
+    
+    damn max_water
+}
+
+slay max_area_brute_force(height normie[]) normie {
+    // Brute force approach for comparison - O(n²)
+    sus max_water normie = 0
+    
+    bestie i := 0; i < len(height); i++ {
+        bestie j := i + 1; j < len(height); j++ {
+            sus width normie = j - i
+            sus min_height normie = mathz.min(height[i], height[j])
+            sus area normie = width * min_height
+            
+            max_water = mathz.max(max_water, area)
+        }
+    }
+    
+    damn max_water
+}
+
+slay visualize_container(height normie[], left normie, right normie) {
+    // Visual representation of container - this hits different! 🌊
+    vibez.spill("Container visualization:")
+    vibez.spill("Left wall (index", left, "): height =", height[left])
+    vibez.spill("Right wall (index", right, "): height =", height[right])
+    
+    sus width normie = right - left  
+    sus water_height normie = mathz.min(height[left], height[right])
+    sus area normie = width * water_height
+    
+    vibez.spill("Width:", width)
+    vibez.spill("Water height:", water_height)
+    vibez.spill("Total area:", area)
+    vibez.spill("🌊🌊🌊🌊🌊🌊🌊🌊")
+}
+
+slay test_container_most_water() {
+    vibez.spill("=== 🌊 LeetCode #11: Container With Most Water ===")
+    
+    // Test case 1: [1,8,6,2,5,4,8,3,7]
+    sus height1 normie[] = [1, 8, 6, 2, 5, 4, 8, 3, 7]
+    sus result1_opt normie = max_area(height1)
+    sus result1_brute normie = max_area_brute_force(height1)
+    vibez.spill("Test 1 - Heights: [1,8,6,2,5,4,8,3,7]")
+    vibez.spill("Expected: 49 (between index 1 and 8: min(8,7) * 7 = 49)")
+    vibez.spill("Two-pointer approach:", result1_opt)
+    vibez.spill("Brute force approach:", result1_brute)
+    
+    // Show optimal container for test case 1
+    visualize_container(height1, 1, 8)
+    
+    // Test case 2: [1,1]
+    sus height2 normie[] = [1, 1]
+    sus result2 normie = max_area(height2)
+    vibez.spill("Test 2 - Heights: [1,1]")
+    vibez.spill("Expected: 1 (1 * 1 = 1)")
+    vibez.spill("Result:", result2)
+    
+    // Test case 3: [4,3,2,1,4]  
+    sus height3 normie[] = [4, 3, 2, 1, 4]
+    sus result3 normie = max_area(height3)
+    vibez.spill("Test 3 - Heights: [4,3,2,1,4]")
+    vibez.spill("Expected: 16 (between index 0 and 4: min(4,4) * 4 = 16)")
+    vibez.spill("Result:", result3)
+    
+    // Test case 4: [1,2,1]
+    sus height4 normie[] = [1, 2, 1]
+    sus result4 normie = max_area(height4)
+    vibez.spill("Test 4 - Heights: [1,2,1]")
+    vibez.spill("Expected: 2 (between index 0 and 2: min(1,1) * 2 = 2)")
+    vibez.spill("Result:", result4)
+    
+    vibez.spill("=== 🎯 Algorithm Explanation ===")
+    vibez.spill("Two-pointer approach works because:")
+    vibez.spill("1. Start with maximum width (left=0, right=n-1)")
+    vibez.spill("2. Area is limited by shorter wall")
+    vibez.spill("3. Moving shorter wall might find taller wall")
+    vibez.spill("4. Moving taller wall definitely reduces area")
+    vibez.spill("5. This guarantees we explore all potential maxima!")
+    
+    vibez.spill("=== Container With Most Water Complete! Water physics in code 🌊✨ ===")
+}
+
+slay main_character() {
+    test_container_most_water()
+}

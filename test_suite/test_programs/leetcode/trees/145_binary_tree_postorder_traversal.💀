@@ -1,0 +1,24 @@
+vibe main
+
+yeet "vibez"
+yeet "mathz"
+
+fr fr LeetCode #145: Binary Tree Postorder Traversal
+fr fr Difficulty: Easy
+fr fr Category: Trees
+fr fr TODO: Implement solution using CURSED ඞ pointers!
+
+slay solve_binary_tree_postorder_traversal() {
+    fr fr TODO: Implement the actual algorithm here
+    vibez.spill("=== LeetCode #145: Binary Tree Postorder Traversal ===")
+    vibez.spill("TODO: Implementation needed")
+    vibez.spill("=== Test Complete ===")
+}
+
+slay test_binary_tree_postorder_traversal() {
+    solve_binary_tree_postorder_traversal()
+}
+
+slay main_character() {
+    test_binary_tree_postorder_traversal()
+}

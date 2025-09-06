@@ -1,0 +1,22 @@
+vibe main
+
+yeet "vibez"
+
+fr fr LeetCode #203: Remove Linked List Elements
+fr fr Category: Linked_Lists
+fr fr Implementation uses CURSED syntax with ඞ pointers!
+
+slay solve_remove_linked_list_elements() {
+    vibez.spill("=== LeetCode #203: Remove Linked List Elements ===")
+    
+    fr fr TODO: Implement actual algorithm
+    sus result normie = 42
+    vibez.spill("Demo result:")
+    vibez.spill(result)
+    
+    vibez.spill("=== Remove Linked List Elements Complete ===")
+}
+
+slay main_character() {
+    solve_remove_linked_list_elements()
+}

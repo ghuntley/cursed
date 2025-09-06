@@ -1,0 +1,56 @@
+vibe main
+
+yeet "vibez"
+
+fr fr LeetCode #35: Search Insert Position
+fr fr Binary search to find target or insertion position
+
+slay search_insert(nums []normie, target normie) normie {
+    sus left normie = 0
+    sus right normie = len(nums) - 1
+    
+    periodt (left <= right) {
+        sus mid normie = left + (right - left) / 2
+        
+        ready (nums[mid] == target) {
+            damn mid
+        } otherwise ready (nums[mid] < target) {
+            left = mid + 1
+        } otherwise {
+            right = mid - 1
+        }
+    }
+    
+    damn left
+}
+
+slay test_search_insert() {
+    vibez.spill("=== LeetCode #35: Search Insert Position ===")
+    
+    fr fr Test case 1: [1,3,5,6], target = 5 -> 2
+    sus nums1 []normie = []normie{1, 3, 5, 6}
+    sus result1 normie = search_insert(nums1, 5)
+    vibez.spill("Test 1 - Expected: 2")
+    vibez.spill(result1)
+    
+    fr fr Test case 2: [1,3,5,6], target = 2 -> 1
+    sus result2 normie = search_insert(nums1, 2)
+    vibez.spill("Test 2 - Expected: 1")
+    vibez.spill(result2)
+    
+    fr fr Test case 3: [1,3,5,6], target = 7 -> 4
+    sus result3 normie = search_insert(nums1, 7)
+    vibez.spill("Test 3 - Expected: 4")
+    vibez.spill(result3)
+    
+    fr fr Test case 4: [1,3,5,6], target = 0 -> 0
+    sus result4 normie = search_insert(nums1, 0)
+    vibez.spill("Test 4 - Expected: 0")
+    vibez.spill(result4)
+    
+    vibez.spill("=== Search Insert Complete ===")
+}
+
+slay main_character() {
+    test_search_insert()
+}

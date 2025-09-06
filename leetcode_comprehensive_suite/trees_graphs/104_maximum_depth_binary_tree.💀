@@ -1,0 +1,132 @@
+vibe main
+yeet "vibez"
+yeet "mathz"
+
+// LeetCode #104: Maximum Depth of Binary Tree 🌲
+// Find the maximum depth (height) of a binary tree using ඞ pointers
+// Time: O(n), Space: O(h) where h is height
+
+struct TreeNode {
+    sus val normie
+    sus left ඞTreeNode   
+    sus right ඞTreeNode  
+}
+
+slay max_depth(root ඞTreeNode) normie {
+    ready (root == null) {
+        damn 0  // Base case: empty tree has depth 0
+    }
+    
+    sus left_depth normie = max_depth(root.left)
+    sus right_depth normie = max_depth(root.right)
+    
+    // Return 1 + max of left and right subtree depths
+    damn 1 + mathz.max(left_depth, right_depth)
+}
+
+slay max_depth_iterative(root ඞTreeNode) normie {
+    // BFS approach using queue - this hits different! 🚀
+    ready (root == null) {
+        damn 0
+    }
+    
+    sus queue ඞTreeNode[] = []ඞTreeNode{}
+    sus levels normie[] = []normie{}
+    
+    collections.append(queue, root)
+    collections.append(levels, 1)
+    
+    sus max_level normie = 0
+    
+    bestie (collections.len(queue) > 0) {
+        sus node ඞTreeNode = queue[0]
+        sus level normie = levels[0]
+        
+        // Remove from front of queue
+        collections.remove_first(queue)
+        collections.remove_first(levels)
+        
+        max_level = mathz.max(max_level, level)
+        
+        ready (node.left != null) {
+            collections.append(queue, node.left)
+            collections.append(levels, level + 1)
+        }
+        
+        ready (node.right != null) {
+            collections.append(queue, node.right)
+            collections.append(levels, level + 1)
+        }
+    }
+    
+    damn max_level
+}
+
+slay create_test_tree() ඞTreeNode {
+    // Create tree: [3,9,20,null,null,15,7]
+    //       3
+    //      / \
+    //     9   20
+    //        /  \
+    //       15   7
+    
+    sus root ඞTreeNode = &TreeNode{val: 3, left: null, right: null}
+    root.left = &TreeNode{val: 9, left: null, right: null}
+    root.right = &TreeNode{val: 20, left: null, right: null}
+    root.right.left = &TreeNode{val: 15, left: null, right: null}
+    root.right.right = &TreeNode{val: 7, left: null, right: null}
+    
+    damn root
+}
+
+slay create_skewed_tree() ඞTreeNode {
+    // Create skewed tree for testing edge cases
+    //   1
+    //    \
+    //     2
+    //      \
+    //       3
+    
+    sus root ඞTreeNode = &TreeNode{val: 1, left: null, right: null}
+    root.right = &TreeNode{val: 2, left: null, right: null}
+    root.right.right = &TreeNode{val: 3, left: null, right: null}
+    
+    damn root
+}
+
+slay test_maximum_depth() {
+    vibez.spill("=== 🌲 LeetCode #104: Maximum Depth of Binary Tree ===")
+    
+    // Test case 1: Balanced tree [3,9,20,null,null,15,7]
+    sus root1 ඞTreeNode = create_test_tree()
+    sus depth1_rec normie = max_depth(root1)
+    sus depth1_iter normie = max_depth_iterative(root1)
+    vibez.spill("Test 1 - Balanced tree:")
+    vibez.spill("Expected depth: 3")
+    vibez.spill("Recursive result:", depth1_rec)
+    vibez.spill("Iterative result:", depth1_iter)
+    
+    // Test case 2: Empty tree
+    sus root2 ඞTreeNode = null
+    sus depth2 normie = max_depth(root2)
+    vibez.spill("Test 2 - Empty tree:")
+    vibez.spill("Expected depth: 0, Got:", depth2)
+    
+    // Test case 3: Single node [1]
+    sus root3 ඞTreeNode = &TreeNode{val: 1, left: null, right: null}
+    sus depth3 normie = max_depth(root3)
+    vibez.spill("Test 3 - Single node:")
+    vibez.spill("Expected depth: 1, Got:", depth3)
+    
+    // Test case 4: Skewed tree
+    sus root4 ඞTreeNode = create_skewed_tree()
+    sus depth4 normie = max_depth(root4)
+    vibez.spill("Test 4 - Skewed tree:")
+    vibez.spill("Expected depth: 3, Got:", depth4)
+    
+    vibez.spill("=== Maximum Depth Complete! Tree depth detection is sus-perfect ඞ🌲 ===")
+}
+
+slay main_character() {
+    test_maximum_depth()
+}

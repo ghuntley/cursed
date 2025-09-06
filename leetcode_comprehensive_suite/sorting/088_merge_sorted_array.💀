@@ -1,0 +1,87 @@
+vibe main
+yeet "vibez"
+
+// LeetCode #88: Merge Sorted Array 🔗
+// Merge nums2 into nums1 in-place, both sorted
+// Time: O(m+n), Space: O(1) - in-place merge
+
+slay merge(nums1 ඞ[]normie, m normie, nums2 normie[], n normie) {
+    // Start from the end and work backwards - this hits different! 🚀
+    sus i normie = m - 1      // Last element in nums1 (actual elements)
+    sus j normie = n - 1      // Last element in nums2  
+    sus k normie = m + n - 1  // Last position in nums1 (including extra space)
+    
+    // Merge from right to left
+    bestie (i >= 0 && j >= 0) {
+        ready ((*nums1)[i] > nums2[j]) {
+            (*nums1)[k] = (*nums1)[i]
+            i = i - 1
+        } nah {
+            (*nums1)[k] = nums2[j]
+            j = j - 1
+        }
+        k = k - 1
+    }
+    
+    // Copy remaining elements from nums2 if any
+    bestie (j >= 0) {
+        (*nums1)[k] = nums2[j]
+        j = j - 1
+        k = k - 1
+    }
+    
+    // Note: if i >= 0, elements are already in correct position in nums1
+}
+
+slay print_array(arr normie[]) {
+    vibez.spill("[", end="")
+    bestie i := 0; i < len(arr); i++ {
+        ready (i > 0) {
+            vibez.spill(",", end="")
+        }
+        vibez.spill(arr[i], end="")
+    }
+    vibez.spill("]")
+}
+
+slay test_merge_sorted_array() {
+    vibez.spill("=== 🔗 LeetCode #88: Merge Sorted Array ===")
+    
+    // Test case 1: nums1 = [1,2,3,0,0,0], m = 3, nums2 = [2,5,6], n = 3
+    sus nums1_1 normie[] = [1, 2, 3, 0, 0, 0]
+    sus nums2_1 normie[] = [2, 5, 6]
+    vibez.spill("Test 1 - Before merge:")
+    vibez.spill("nums1 (m=3):", end="")
+    print_array([1, 2, 3])
+    vibez.spill("nums2 (n=3):", end="")
+    print_array(nums2_1)
+    
+    merge(&nums1_1, 3, nums2_1, 3)
+    vibez.spill("After merge:", end="")
+    print_array(nums1_1)
+    vibez.spill("Expected: [1,2,2,3,5,6]")
+    
+    // Test case 2: nums1 = [1], m = 1, nums2 = [], n = 0
+    sus nums1_2 normie[] = [1]
+    sus nums2_2 normie[] = []
+    vibez.spill("Test 2 - nums1=[1], nums2=[]")
+    merge(&nums1_2, 1, nums2_2, 0)
+    vibez.spill("After merge:", end="")
+    print_array(nums1_2)
+    vibez.spill("Expected: [1]")
+    
+    // Test case 3: nums1 = [0], m = 0, nums2 = [1], n = 1
+    sus nums1_3 normie[] = [0]
+    sus nums2_3 normie[] = [1]
+    vibez.spill("Test 3 - nums1=[0] (m=0), nums2=[1]")
+    merge(&nums1_3, 0, nums2_3, 1)
+    vibez.spill("After merge:", end="")
+    print_array(nums1_3)
+    vibez.spill("Expected: [1]")
+    
+    vibez.spill("=== Merge Sorted Array Complete! In-place merging is sus-tainable ඞ ===")
+}
+
+slay main_character() {
+    test_merge_sorted_array()
+}

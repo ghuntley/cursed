@@ -1,0 +1,61 @@
+vibe main
+
+yeet "vibez"
+yeet "mathz"
+
+fr fr LeetCode #121: Best Time to Buy and Sell Stock
+fr fr One pass solution - track minimum price and maximum profit
+
+slay max_profit(prices []normie) normie {
+    ready (len(prices) <= 1) {
+        damn 0
+    }
+    
+    sus min_price normie = prices[0]
+    sus max_profit normie = 0
+    
+    bestie i := 1; i < len(prices); i++ {
+        fr fr Update minimum price
+        min_price = mathz.min(min_price, prices[i])
+        
+        fr fr Calculate profit if we sell today
+        sus current_profit normie = prices[i] - min_price
+        max_profit = mathz.max(max_profit, current_profit)
+    }
+    
+    damn max_profit
+}
+
+slay test_best_time_stock() {
+    vibez.spill("=== LeetCode #121: Best Time Buy/Sell Stock ===")
+    
+    fr fr Test case 1: [7,1,5,3,6,4] -> 5
+    sus prices1 []normie = []normie{7, 1, 5, 3, 6, 4}
+    sus profit1 normie = max_profit(prices1)
+    vibez.spill("Test 1 - Expected: 5 (buy at 1, sell at 6)")
+    vibez.spill(profit1)
+    
+    fr fr Test case 2: [7,6,4,3,1] -> 0
+    sus prices2 []normie = []normie{7, 6, 4, 3, 1}
+    sus profit2 normie = max_profit(prices2)
+    vibez.spill("Test 2 - Expected: 0 (no profit possible)")
+    vibez.spill(profit2)
+    
+    fr fr Test case 3: [1,2] -> 1
+    sus prices3 []normie = []normie{1, 2}
+    sus profit3 normie = max_profit(prices3)
+    vibez.spill("Test 3 - Expected: 1")
+    vibez.spill(profit3)
+    
+    fr fr Test case 4: [2,4,1] -> 2
+    sus prices4 []normie = []normie{2, 4, 1}
+    sus profit4 normie = max_profit(prices4)
+    vibez.spill("Test 4 - Expected: 2")
+    vibez.spill(profit4)
+    
+    vibez.spill("=== Stock Profit Complete ===")
+}
+
+slay main_character() {
+    test_best_time_stock()
+}

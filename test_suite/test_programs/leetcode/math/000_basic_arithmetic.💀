@@ -1,0 +1,63 @@
+vibe main
+
+yeet "vibez"
+
+fr fr LeetCode Style: Basic Arithmetic Demonstrations
+fr fr Working with current CURSED parser capabilities
+
+slay demonstrate_addition() {
+    vibez.spill("=== LeetCode Style: Addition ===")
+    sus a normie = 10
+    sus b normie = 20
+    sus result normie = a + b
+    vibez.spill("10 + 20 =")
+    vibez.spill(result)
+}
+
+slay demonstrate_multiplication() {
+    vibez.spill("=== LeetCode Style: Multiplication ===")
+    sus x normie = 6
+    sus y normie = 7
+    sus product normie = x * y
+    vibez.spill("6 * 7 =")
+    vibez.spill(product)
+}
+
+slay demonstrate_conditionals() {
+    vibez.spill("=== LeetCode Style: Conditionals ===")
+    sus num normie = 15
+    
+    ready (num % 3 == 0 && num % 5 == 0) {
+        vibez.spill("FizzBuzz")
+    } otherwise ready (num % 3 == 0) {
+        vibez.spill("Fizz") 
+    } otherwise ready (num % 5 == 0) {
+        vibez.spill("Buzz")
+    } otherwise {
+        vibez.spill(num)
+    }
+}
+
+slay demonstrate_pointers() {
+    vibez.spill("=== LeetCode Style: ඞ Pointers ===")
+    sus value normie = 42
+    sus ptr ඞnormie = ඞvalue
+    
+    vibez.spill("Original value:")
+    vibez.spill(value)
+    
+    vibez.spill("Value through ඞ pointer:")
+    vibez.spill(*ptr)
+    
+    *ptr = 100
+    vibez.spill("Modified through pointer:")
+    vibez.spill(value)
+}
+
+slay main_character() {
+    demonstrate_addition()
+    demonstrate_multiplication() 
+    demonstrate_conditionals()
+    demonstrate_pointers()
+    vibez.spill("=== All Demos Complete (CURSED is Based!) ===")
+}

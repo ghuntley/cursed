@@ -1,0 +1,24 @@
+vibe main
+
+yeet "vibez"
+yeet "mathz"
+
+fr fr LeetCode #12: Integer to Roman
+fr fr Difficulty: Medium
+fr fr Category: Math
+fr fr TODO: Implement solution using CURSED ඞ pointers!
+
+slay solve_integer_to_roman() {
+    fr fr TODO: Implement the actual algorithm here
+    vibez.spill("=== LeetCode #12: Integer to Roman ===")
+    vibez.spill("TODO: Implementation needed")
+    vibez.spill("=== Test Complete ===")
+}
+
+slay test_integer_to_roman() {
+    solve_integer_to_roman()
+}
+
+slay main_character() {
+    test_integer_to_roman()
+}

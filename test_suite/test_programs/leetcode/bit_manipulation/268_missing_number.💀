@@ -1,0 +1,22 @@
+vibe main
+
+yeet "vibez"
+
+fr fr LeetCode #268: Missing Number
+fr fr Category: Bit_Manipulation
+fr fr Implementation uses CURSED syntax with ඞ pointers!
+
+slay solve_missing_number() {
+    vibez.spill("=== LeetCode #268: Missing Number ===")
+    
+    fr fr TODO: Implement actual algorithm
+    sus result normie = 42
+    vibez.spill("Demo result:")
+    vibez.spill(result)
+    
+    vibez.spill("=== Missing Number Complete ===")
+}
+
+slay main_character() {
+    solve_missing_number()
+}

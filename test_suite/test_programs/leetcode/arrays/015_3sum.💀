@@ -1,0 +1,105 @@
+vibe main
+
+yeet "vibez"
+
+fr fr LeetCode #15: 3Sum
+fr fr Find all unique triplets that sum to zero
+
+slay three_sum(nums []normie) [][]normie {
+    ready (len(nums) < 3) {
+        damn [][]normie{}
+    }
+    
+    fr fr Sort the array first (simple bubble sort)
+    sus sorted_nums []normie = make([]normie, len(nums))
+    copy(sorted_nums, nums)
+    
+    bestie i := 0; i < len(sorted_nums); i++ {
+        bestie j := 0; j < len(sorted_nums)-1-i; j++ {
+            ready (sorted_nums[j] > sorted_nums[j+1]) {
+                sus temp normie = sorted_nums[j]
+                sorted_nums[j] = sorted_nums[j+1]
+                sorted_nums[j+1] = temp
+            }
+        }
+    }
+    
+    sus result [][]normie = [][]normie{}
+    
+    bestie i := 0; i < len(sorted_nums) - 2; i++ {
+        fr fr Skip duplicates for first number
+        ready (i > 0 && sorted_nums[i] == sorted_nums[i-1]) {
+            simp
+        }
+        
+        sus left normie = i + 1
+        sus right normie = len(sorted_nums) - 1
+        
+        periodt (left < right) {
+            sus sum normie = sorted_nums[i] + sorted_nums[left] + sorted_nums[right]
+            
+            ready (sum == 0) {
+                sus triplet []normie = []normie{sorted_nums[i], sorted_nums[left], sorted_nums[right]}
+                result = append(result, triplet)
+                
+                fr fr Skip duplicates
+                periodt (left < right && sorted_nums[left] == sorted_nums[left+1]) {
+                    left++
+                }
+                periodt (left < right && sorted_nums[right] == sorted_nums[right-1]) {
+                    right--
+                }
+                
+                left++
+                right--
+            } otherwise ready (sum < 0) {
+                left++
+            } otherwise {
+                right--
+            }
+        }
+    }
+    
+    damn result
+}
+
+slay print_triplets(triplets [][]normie) {
+    bestie i := 0; i < len(triplets); i++ {
+        vibez.spill("Triplet:")
+        bestie j := 0; j < 3; j++ {
+            vibez.spill(triplets[i][j])
+        }
+    }
+}
+
+slay test_three_sum() {
+    vibez.spill("=== LeetCode #15: 3Sum ===")
+    
+    fr fr Test case 1: [-1,0,1,2,-1,-4] -> [[-1,-1,2],[-1,0,1]]
+    sus nums1 []normie = []normie{-1, 0, 1, 2, -1, -4}
+    sus result1 [][]normie = three_sum(nums1)
+    
+    vibez.spill("Test 1 - Input: [-1,0,1,2,-1,-4]")
+    print_triplets(result1)
+    
+    fr fr Test case 2: [0,1,1] -> []
+    sus nums2 []normie = []normie{0, 1, 1}
+    sus result2 [][]normie = three_sum(nums2)
+    
+    vibez.spill("Test 2 - Input: [0,1,1], Expected: []")
+    vibez.spill("Found triplets:")
+    vibez.spill(len(result2))
+    
+    fr fr Test case 3: [0,0,0] -> [[0,0,0]]
+    sus nums3 []normie = []normie{0, 0, 0}
+    sus result3 [][]normie = three_sum(nums3)
+    
+    vibez.spill("Test 3 - Input: [0,0,0]")
+    print_triplets(result3)
+    
+    vibez.spill("=== 3Sum Complete ===")
+}
+
+slay main_character() {
+    test_three_sum()
+}

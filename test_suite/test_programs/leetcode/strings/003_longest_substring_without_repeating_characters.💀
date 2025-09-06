@@ -1,0 +1,24 @@
+vibe main
+
+yeet "vibez"
+yeet "mathz"
+
+fr fr LeetCode #3: Longest Substring Without Repeating Characters
+fr fr Difficulty: Medium
+fr fr Category: Strings
+fr fr TODO: Implement solution using CURSED ඞ pointers!
+
+slay solve_longest_substring_without_repeating_characters() {
+    fr fr TODO: Implement the actual algorithm here
+    vibez.spill("=== LeetCode #3: Longest Substring Without Repeating Characters ===")
+    vibez.spill("TODO: Implementation needed")
+    vibez.spill("=== Test Complete ===")
+}
+
+slay test_longest_substring_without_repeating_characters() {
+    solve_longest_substring_without_repeating_characters()
+}
+
+slay main_character() {
+    test_longest_substring_without_repeating_characters()
+}

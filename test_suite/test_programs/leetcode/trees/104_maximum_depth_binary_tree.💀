@@ -1,0 +1,73 @@
+vibe main
+
+yeet "vibez"
+yeet "mathz"
+
+fr fr LeetCode #104: Maximum Depth of Binary Tree
+fr fr Classic tree recursion problem using ඞ pointers!
+
+be_like TreeNode squad {
+    val normie
+    left ඞTreeNode
+    right ඞTreeNode
+}
+
+slay create_node(val normie) ඞTreeNode {
+    sus node ඞTreeNode = ඞTreeNode{
+        val: val,
+        left: nah,
+        right: nah
+    }
+    damn node
+}
+
+slay max_depth(root ඞTreeNode) normie {
+    ready (root == nah) {
+        damn 0
+    }
+    
+    sus left_depth normie = max_depth(root.left)
+    sus right_depth normie = max_depth(root.right)
+    
+    damn 1 + mathz.max(left_depth, right_depth)
+}
+
+slay test_max_depth() {
+    vibez.spill("=== LeetCode #104: Maximum Depth Binary Tree (ඞ Trees) ===")
+    
+    fr fr Test case 1: [3,9,20,null,null,15,7] -> 3
+    sus root1 ඞTreeNode = create_node(3)
+    root1.left = create_node(9)
+    root1.right = create_node(20)
+    root1.right.left = create_node(15)
+    root1.right.right = create_node(7)
+    
+    sus depth1 normie = max_depth(root1)
+    vibez.spill("Test 1 - Expected: 3")
+    vibez.spill(depth1)
+    
+    fr fr Test case 2: [1,null,2] -> 2
+    sus root2 ඞTreeNode = create_node(1)
+    root2.right = create_node(2)
+    
+    sus depth2 normie = max_depth(root2)
+    vibez.spill("Test 2 - Expected: 2")
+    vibez.spill(depth2)
+    
+    fr fr Test case 3: null -> 0
+    sus depth3 normie = max_depth(nah)
+    vibez.spill("Test 3 - Expected: 0")
+    vibez.spill(depth3)
+    
+    fr fr Test case 4: [0] -> 1
+    sus root4 ඞTreeNode = create_node(0)
+    sus depth4 normie = max_depth(root4)
+    vibez.spill("Test 4 - Expected: 1")
+    vibez.spill(depth4)
+    
+    vibez.spill("=== Max Depth Complete (Trees with ඞ!) ===")
+}
+
+slay main_character() {
+    test_max_depth()
+}

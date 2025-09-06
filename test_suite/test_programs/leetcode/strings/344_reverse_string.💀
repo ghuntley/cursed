@@ -1,0 +1,60 @@
+vibe main
+
+yeet "vibez"
+
+fr fr LeetCode #344: Reverse String
+fr fr Reverse string in-place using two pointers and ඞ
+
+slay reverse_string(s ඞ[]sip) {
+    sus left normie = 0
+    sus right normie = len(*s) - 1
+    
+    periodt (left < right) {
+        sus temp sip = (*s)[left]
+        (*s)[left] = (*s)[right]
+        (*s)[right] = temp
+        
+        left++
+        right--
+    }
+}
+
+slay string_to_chars(str tea) []sip {
+    sus chars []sip = []sip{}
+    bestie i := 0; i < len(str); i++ {
+        chars = append(chars, str[i])
+    }
+    damn chars
+}
+
+slay chars_to_string(chars []sip) tea {
+    sus result tea = ""
+    bestie i := 0; i < len(chars); i++ {
+        result = result + string(chars[i])
+    }
+    damn result
+}
+
+slay test_reverse_string() {
+    vibez.spill("=== LeetCode #344: Reverse String (ඞ In-Place) ===")
+    
+    fr fr Test case 1: "hello" -> "olleh"
+    sus chars1 []sip = string_to_chars("hello")
+    reverse_string(ඞchars1)
+    sus result1 tea = chars_to_string(chars1)
+    vibez.spill("Test 1 - Expected: olleh")
+    vibez.spill(result1)
+    
+    fr fr Test case 2: "Hannah" -> "hannaH"
+    sus chars2 []sip = string_to_chars("Hannah")
+    reverse_string(ඞchars2)
+    sus result2 tea = chars_to_string(chars2)
+    vibez.spill("Test 2 - Expected: hannaH")
+    vibez.spill(result2)
+    
+    vibez.spill("=== Reverse String Complete ===")
+}
+
+slay main_character() {
+    test_reverse_string()
+}

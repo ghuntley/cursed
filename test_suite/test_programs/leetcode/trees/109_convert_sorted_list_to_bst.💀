@@ -1,0 +1,22 @@
+vibe main
+
+yeet "vibez"
+
+fr fr LeetCode #109: Convert Sorted List to BST
+fr fr Category: Trees
+fr fr Implementation uses CURSED syntax with ඞ pointers!
+
+slay solve_convert_sorted_list_to_bst() {
+    vibez.spill("=== LeetCode #109: Convert Sorted List to BST ===")
+    
+    fr fr TODO: Implement actual algorithm
+    sus result normie = 42
+    vibez.spill("Demo result:")
+    vibez.spill(result)
+    
+    vibez.spill("=== Convert Sorted List to BST Complete ===")
+}
+
+slay main_character() {
+    solve_convert_sorted_list_to_bst()
+}

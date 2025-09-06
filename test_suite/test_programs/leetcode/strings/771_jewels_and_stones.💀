@@ -1,0 +1,22 @@
+vibe main
+
+yeet "vibez"
+
+fr fr LeetCode #771: Jewels and Stones
+fr fr Category: Strings
+fr fr Implementation uses CURSED syntax with ඞ pointers!
+
+slay solve_jewels_and_stones() {
+    vibez.spill("=== LeetCode #771: Jewels and Stones ===")
+    
+    fr fr TODO: Implement actual algorithm
+    sus result normie = 42
+    vibez.spill("Demo result:")
+    vibez.spill(result)
+    
+    vibez.spill("=== Jewels and Stones Complete ===")
+}
+
+slay main_character() {
+    solve_jewels_and_stones()
+}

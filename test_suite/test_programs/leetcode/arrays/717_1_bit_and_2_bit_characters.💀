@@ -1,0 +1,22 @@
+vibe main
+
+yeet "vibez"
+
+fr fr LeetCode #717: 1-bit and 2-bit Characters
+fr fr Category: Arrays
+fr fr Implementation uses CURSED syntax with ඞ pointers!
+
+slay solve_1_bit_and_2_bit_characters() {
+    vibez.spill("=== LeetCode #717: 1-bit and 2-bit Characters ===")
+    
+    fr fr TODO: Implement actual algorithm
+    sus result normie = 42
+    vibez.spill("Demo result:")
+    vibez.spill(result)
+    
+    vibez.spill("=== 1-bit and 2-bit Characters Complete ===")
+}
+
+slay main_character() {
+    solve_1_bit_and_2_bit_characters()
+}

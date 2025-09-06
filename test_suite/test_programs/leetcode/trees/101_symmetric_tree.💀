@@ -1,0 +1,88 @@
+vibe main
+
+yeet "vibez"
+
+fr fr LeetCode #101: Symmetric Tree
+fr fr Check if binary tree is symmetric around its center
+
+be_like TreeNode squad {
+    val normie
+    left ඞTreeNode
+    right ඞTreeNode
+}
+
+slay create_node(val normie) ඞTreeNode {
+    sus node ඞTreeNode = ඞTreeNode{
+        val: val,
+        left: nah,
+        right: nah
+    }
+    damn node
+}
+
+slay is_mirror(left ඞTreeNode, right ඞTreeNode) lit {
+    ready (left == nah && right == nah) {
+        damn based
+    }
+    
+    ready (left == nah || right == nah) {
+        damn cringe
+    }
+    
+    damn (left.val == right.val) && 
+         is_mirror(left.left, right.right) && 
+         is_mirror(left.right, right.left)
+}
+
+slay is_symmetric(root ඞTreeNode) lit {
+    ready (root == nah) {
+        damn based
+    }
+    
+    damn is_mirror(root.left, root.right)
+}
+
+slay test_symmetric_tree() {
+    vibez.spill("=== LeetCode #101: Symmetric Tree (ඞ Mirrors) ===")
+    
+    fr fr Test case 1: [1,2,2,3,4,4,3] -> true
+    sus root1 ඞTreeNode = create_node(1)
+    root1.left = create_node(2)
+    root1.right = create_node(2)
+    root1.left.left = create_node(3)
+    root1.left.right = create_node(4)
+    root1.right.left = create_node(4)
+    root1.right.right = create_node(3)
+    
+    sus result1 lit = is_symmetric(root1)
+    vibez.spill("Test 1 - Symmetric tree, Expected: based")
+    vibez.spill(result1)
+    
+    fr fr Test case 2: [1,2,2,null,3,null,3] -> false
+    sus root2 ඞTreeNode = create_node(1)
+    root2.left = create_node(2)
+    root2.right = create_node(2)
+    root2.left.right = create_node(3)
+    root2.right.right = create_node(3)
+    
+    sus result2 lit = is_symmetric(root2)
+    vibez.spill("Test 2 - Asymmetric tree, Expected: cringe")
+    vibez.spill(result2)
+    
+    fr fr Test case 3: [1] -> true
+    sus root3 ඞTreeNode = create_node(1)
+    sus result3 lit = is_symmetric(root3)
+    vibez.spill("Test 3 - Single node, Expected: based")
+    vibez.spill(result3)
+    
+    fr fr Test case 4: null -> true
+    sus result4 lit = is_symmetric(nah)
+    vibez.spill("Test 4 - Null tree, Expected: based")
+    vibez.spill(result4)
+    
+    vibez.spill("=== Symmetric Tree Complete (Mirror ඞ!) ===")
+}
+
+slay main_character() {
+    test_symmetric_tree()
+}

@@ -1,0 +1,54 @@
+vibe main
+
+yeet "vibez"
+
+fr fr LeetCode #238: Product of Array Except Self
+fr fr O(n) solution without using division
+
+slay product_except_self(nums []normie) []normie {
+    sus n normie = len(nums)
+    sus result []normie = make([]normie, n)
+    
+    fr fr First pass: calculate left products
+    result[0] = 1
+    bestie i := 1; i < n; i++ {
+        result[i] = result[i-1] * nums[i-1]
+    }
+    
+    fr fr Second pass: calculate right products and multiply
+    sus right_product normie = 1
+    bestie i := n - 1; i >= 0; i-- {
+        result[i] = result[i] * right_product
+        right_product = right_product * nums[i]
+    }
+    
+    damn result
+}
+
+slay test_product_except_self() {
+    vibez.spill("=== LeetCode #238: Product of Array Except Self ===")
+    
+    fr fr Test case 1: [1,2,3,4] -> [24,12,8,6]
+    sus nums1 []normie = []normie{1, 2, 3, 4}
+    sus result1 []normie = product_except_self(nums1)
+    
+    vibez.spill("Test 1 - Expected: [24,12,8,6]")
+    bestie i := 0; i < len(result1); i++ {
+        vibez.spill(result1[i])
+    }
+    
+    fr fr Test case 2: [-1,1,0,-3,3] -> [0,0,9,0,0]
+    sus nums2 []normie = []normie{-1, 1, 0, -3, 3}
+    sus result2 []normie = product_except_self(nums2)
+    
+    vibez.spill("Test 2 - Expected: [0,0,9,0,0]")
+    bestie i := 0; i < len(result2); i++ {
+        vibez.spill(result2[i])
+    }
+    
+    vibez.spill("=== Product Except Self Complete ===")
+}
+
+slay main_character() {
+    test_product_except_self()
+}

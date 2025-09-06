@@ -1,0 +1,24 @@
+vibe main
+
+yeet "vibez"
+yeet "mathz"
+
+fr fr LeetCode #25: Reverse Nodes in k-Group
+fr fr Difficulty: Hard
+fr fr Category: Linked_Lists
+fr fr TODO: Implement solution using CURSED ඞ pointers!
+
+slay solve_reverse_nodes_in_k-group() {
+    fr fr TODO: Implement the actual algorithm here
+    vibez.spill("=== LeetCode #25: Reverse Nodes in k-Group ===")
+    vibez.spill("TODO: Implementation needed")
+    vibez.spill("=== Test Complete ===")
+}
+
+slay test_reverse_nodes_in_k-group() {
+    solve_reverse_nodes_in_k-group()
+}
+
+slay main_character() {
+    test_reverse_nodes_in_k-group()
+}

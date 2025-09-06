@@ -1,0 +1,22 @@
+vibe main
+
+yeet "vibez"
+
+fr fr LeetCode #322: Coin Change
+fr fr Category: Dynamic_Programming
+fr fr Implementation uses CURSED syntax with ඞ pointers!
+
+slay solve_coin_change() {
+    vibez.spill("=== LeetCode #322: Coin Change ===")
+    
+    fr fr TODO: Implement actual algorithm
+    sus result normie = 42
+    vibez.spill("Demo result:")
+    vibez.spill(result)
+    
+    vibez.spill("=== Coin Change Complete ===")
+}
+
+slay main_character() {
+    solve_coin_change()
+}

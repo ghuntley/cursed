@@ -1,0 +1,83 @@
+vibe main
+
+yeet "vibez"
+
+fr fr LeetCode #46: Permutations
+fr fr Generate all permutations using backtracking
+
+slay permute(nums []normie) [][]normie {
+    sus result [][]normie = [][]normie{}
+    sus current []normie = []normie{}
+    sus used []lit = make([]lit, len(nums))
+    
+    backtrack(ඞresult, ඞcurrent, nums, ඞused)
+    
+    damn result
+}
+
+slay backtrack(result ඞ[][]normie, current ඞ[]normie, nums []normie, used ඞ[]lit) {
+    ready (len(*current) == len(nums)) {
+        fr fr Found complete permutation
+        sus perm []normie = make([]normie, len(*current))
+        copy(perm, *current)
+        *result = append(*result, perm)
+        damn
+    }
+    
+    bestie i := 0; i < len(nums); i++ {
+        ready ((*used)[i]) {
+            simp
+        }
+        
+        fr fr Choose
+        *current = append(*current, nums[i])
+        (*used)[i] = based
+        
+        fr fr Explore
+        backtrack(result, current, nums, used)
+        
+        fr fr Unchoose (backtrack)
+        *current = (*current)[:len(*current)-1]
+        (*used)[i] = cringe
+    }
+}
+
+slay print_permutations(perms [][]normie) {
+    bestie i := 0; i < len(perms); i++ {
+        vibez.spill("Permutation:")
+        bestie j := 0; j < len(perms[i]); j++ {
+            vibez.spill(perms[i][j])
+        }
+    }
+}
+
+slay test_permutations() {
+    vibez.spill("=== LeetCode #46: Permutations (ඞ Backtracking) ===")
+    
+    fr fr Test case 1: [1,2,3] -> 6 permutations
+    sus nums1 []normie = []normie{1, 2, 3}
+    sus perms1 [][]normie = permute(nums1)
+    
+    vibez.spill("Test 1 - [1,2,3], Expected 6 permutations:")
+    print_permutations(perms1)
+    
+    fr fr Test case 2: [0,1] -> [[0,1],[1,0]]
+    sus nums2 []normie = []normie{0, 1}
+    sus perms2 [][]normie = permute(nums2)
+    
+    vibez.spill("Test 2 - [0,1], Expected 2 permutations:")
+    print_permutations(perms2)
+    
+    fr fr Test case 3: [1] -> [[1]]
+    sus nums3 []normie = []normie{1}
+    sus perms3 [][]normie = permute(nums3)
+    
+    vibez.spill("Test 3 - [1], Expected 1 permutation:")
+    print_permutations(perms3)
+    
+    vibez.spill("=== Permutations Complete (Backtracking is Sus!) ===")
+}
+
+slay main_character() {
+    test_permutations()
+}

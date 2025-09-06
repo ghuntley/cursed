@@ -1,0 +1,55 @@
+vibe main
+yeet "vibez"
+yeet "stringz"
+
+// LeetCode #242: Valid Anagram 💯
+// Determine if string t is an anagram of string s
+// Time: O(n), Space: O(1) - using character frequency count
+
+slay is_anagram(s tea, t tea) lit {
+    ready (stringz.len(s) != stringz.len(t)) {
+        damn false
+    }
+    
+    // Count frequency of each character, periodt
+    sus freq normie[26] = [0; 26]  // 26 letters in alphabet, bestie
+    
+    bestie i := 0; i < stringz.len(s); i++ {
+        sus char_s normie = stringz.char_at(s, i) - 'a'
+        sus char_t normie = stringz.char_at(t, i) - 'a'
+        
+        freq[char_s] = freq[char_s] + 1
+        freq[char_t] = freq[char_t] - 1
+    }
+    
+    // Check if all frequencies are zero
+    bestie i := 0; i < 26; i++ {
+        ready (freq[i] != 0) {
+            damn false
+        }
+    }
+    
+    damn true
+}
+
+slay test_anagram() {
+    vibez.spill("=== 💯 LeetCode #242: Valid Anagram ===")
+    
+    // Test case 1: "anagram", "nagaram" 
+    sus result1 lit = is_anagram("anagram", "nagaram")
+    vibez.spill("Test 1: anagram vs nagaram - Expected: true, Got:", result1)
+    
+    // Test case 2: "rat", "car"
+    sus result2 lit = is_anagram("rat", "car") 
+    vibez.spill("Test 2: rat vs car - Expected: false, Got:", result2)
+    
+    // Test case 3: "listen", "silent"
+    sus result3 lit = is_anagram("listen", "silent")
+    vibez.spill("Test 3: listen vs silent - Expected: true, Got:", result3)
+    
+    vibez.spill("=== Anagram Tests Complete! This hits different 🎯 ===")
+}
+
+slay main_character() {
+    test_anagram()
+}

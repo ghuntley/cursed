@@ -1,0 +1,22 @@
+vibe main
+
+yeet "vibez"
+
+fr fr LeetCode #179: Largest Number
+fr fr Category: Sorting
+fr fr Implementation uses CURSED syntax with ඞ pointers!
+
+slay solve_largest_number() {
+    vibez.spill("=== LeetCode #179: Largest Number ===")
+    
+    fr fr TODO: Implement actual algorithm
+    sus result normie = 42
+    vibez.spill("Demo result:")
+    vibez.spill(result)
+    
+    vibez.spill("=== Largest Number Complete ===")
+}
+
+slay main_character() {
+    solve_largest_number()
+}

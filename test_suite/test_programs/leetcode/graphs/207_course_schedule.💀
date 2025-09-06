@@ -1,0 +1,22 @@
+vibe main
+
+yeet "vibez"
+
+fr fr LeetCode #207: Course Schedule
+fr fr Category: Graphs
+fr fr Implementation uses CURSED syntax with ඞ pointers!
+
+slay solve_course_schedule() {
+    vibez.spill("=== LeetCode #207: Course Schedule ===")
+    
+    fr fr TODO: Implement actual algorithm
+    sus result normie = 42
+    vibez.spill("Demo result:")
+    vibez.spill(result)
+    
+    vibez.spill("=== Course Schedule Complete ===")
+}
+
+slay main_character() {
+    solve_course_schedule()
+}

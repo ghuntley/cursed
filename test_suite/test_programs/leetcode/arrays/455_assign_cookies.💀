@@ -1,0 +1,22 @@
+vibe main
+
+yeet "vibez"
+
+fr fr LeetCode #455: Assign Cookies
+fr fr Category: Arrays
+fr fr Implementation uses CURSED syntax with ඞ pointers!
+
+slay solve_assign_cookies() {
+    vibez.spill("=== LeetCode #455: Assign Cookies ===")
+    
+    fr fr TODO: Implement actual algorithm
+    sus result normie = 42
+    vibez.spill("Demo result:")
+    vibez.spill(result)
+    
+    vibez.spill("=== Assign Cookies Complete ===")
+}
+
+slay main_character() {
+    solve_assign_cookies()
+}

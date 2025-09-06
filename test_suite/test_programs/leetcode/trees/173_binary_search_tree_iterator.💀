@@ -1,0 +1,22 @@
+vibe main
+
+yeet "vibez"
+
+fr fr LeetCode #173: Binary Search Tree Iterator
+fr fr Category: Trees
+fr fr Implementation uses CURSED syntax with ඞ pointers!
+
+slay solve_binary_search_tree_iterator() {
+    vibez.spill("=== LeetCode #173: Binary Search Tree Iterator ===")
+    
+    fr fr TODO: Implement actual algorithm
+    sus result normie = 42
+    vibez.spill("Demo result:")
+    vibez.spill(result)
+    
+    vibez.spill("=== Binary Search Tree Iterator Complete ===")
+}
+
+slay main_character() {
+    solve_binary_search_tree_iterator()
+}

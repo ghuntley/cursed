@@ -1,0 +1,106 @@
+vibe main
+
+yeet "vibez"
+
+fr fr LeetCode #2: Add Two Numbers
+fr fr Add two numbers represented as linked lists (digits stored in reverse order)
+fr fr Using ඞ pointers for linked list implementation!
+
+be_like ListNode squad {
+    val normie
+    next ඞListNode
+}
+
+slay create_node(val normie) ඞListNode {
+    sus node ඞListNode = ඞListNode{val: val, next: nah}
+    damn node
+}
+
+slay add_two_numbers(l1 ඞListNode, l2 ඞListNode) ඞListNode {
+    sus dummy ඞListNode = create_node(0)
+    sus current ඞListNode = dummy
+    sus carry normie = 0
+    
+    periodt (l1 != nah || l2 != nah || carry != 0) {
+        sus val1 normie = 0
+        sus val2 normie = 0
+        
+        ready (l1 != nah) {
+            val1 = l1.val
+            l1 = l1.next
+        }
+        
+        ready (l2 != nah) {
+            val2 = l2.val
+            l2 = l2.next
+        }
+        
+        sus sum normie = val1 + val2 + carry
+        carry = sum / 10
+        sus digit normie = sum % 10
+        
+        current.next = create_node(digit)
+        current = current.next
+    }
+    
+    damn dummy.next
+}
+
+slay create_list(digits []normie) ඞListNode {
+    ready (len(digits) == 0) {
+        damn nah
+    }
+    
+    sus head ඞListNode = create_node(digits[0])
+    sus current ඞListNode = head
+    
+    bestie i := 1; i < len(digits); i++ {
+        current.next = create_node(digits[i])
+        current = current.next
+    }
+    
+    damn head
+}
+
+slay print_list(head ඞListNode) {
+    sus current ඞListNode = head
+    periodt (current != nah) {
+        vibez.spill(current.val)
+        current = current.next
+    }
+}
+
+slay test_add_two_numbers() {
+    vibez.spill("=== LeetCode #2: Add Two Numbers (ඞ Pointers) ===")
+    
+    fr fr Test case 1: [2,4,3] + [5,6,4] = [7,0,8]
+    fr fr Represents: 342 + 465 = 807
+    sus l1 ඞListNode = create_list([]normie{2, 4, 3})
+    sus l2 ඞListNode = create_list([]normie{5, 6, 4})
+    sus result1 ඞListNode = add_two_numbers(l1, l2)
+    
+    vibez.spill("Test 1 - Expected: [7,0,8]")
+    print_list(result1)
+    
+    fr fr Test case 2: [0] + [0] = [0]
+    sus l3 ඞListNode = create_list([]normie{0})
+    sus l4 ඞListNode = create_list([]normie{0})
+    sus result2 ඞListNode = add_two_numbers(l3, l4)
+    
+    vibez.spill("Test 2 - Expected: [0]")
+    print_list(result2)
+    
+    fr fr Test case 3: [9,9,9,9,9,9,9] + [9,9,9,9] = [8,9,9,9,0,0,0,1]
+    sus l5 ඞListNode = create_list([]normie{9, 9, 9, 9, 9, 9, 9})
+    sus l6 ඞListNode = create_list([]normie{9, 9, 9, 9})
+    sus result3 ඞListNode = add_two_numbers(l5, l6)
+    
+    vibez.spill("Test 3 - Expected: [8,9,9,9,0,0,0,1]")
+    print_list(result3)
+    
+    vibez.spill("=== Add Two Numbers Complete (Sus Pointers Work!) ===")
+}
+
+slay main_character() {
+    test_add_two_numbers()
+}

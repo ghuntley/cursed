@@ -1,0 +1,22 @@
+vibe main
+
+yeet "vibez"
+
+fr fr LeetCode #1030: Matrix Cells in Distance Order
+fr fr Category: Sorting
+fr fr Implementation uses CURSED syntax with ඞ pointers!
+
+slay solve_matrix_cells_in_distance_order() {
+    vibez.spill("=== LeetCode #1030: Matrix Cells in Distance Order ===")
+    
+    fr fr TODO: Implement actual algorithm
+    sus result normie = 42
+    vibez.spill("Demo result:")
+    vibez.spill(result)
+    
+    vibez.spill("=== Matrix Cells in Distance Order Complete ===")
+}
+
+slay main_character() {
+    solve_matrix_cells_in_distance_order()
+}

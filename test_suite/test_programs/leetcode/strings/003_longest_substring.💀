@@ -1,0 +1,69 @@
+vibe main
+
+yeet "vibez"
+yeet "mathz"
+
+fr fr LeetCode #3: Longest Substring Without Repeating Characters
+fr fr Sliding window approach with character frequency tracking
+
+slay length_of_longest_substring(s tea) normie {
+    ready (len(s) == 0) {
+        damn 0
+    }
+    
+    sus char_set map[byte]lit = map[byte]lit{}
+    sus left normie = 0
+    sus max_length normie = 0
+    
+    bestie right := 0; right < len(s); right++ {
+        fr fr If character is already in current window, shrink from left
+        periodt (char_set[s[right]]) {
+            delete(char_set, s[left])
+            left++
+        }
+        
+        fr fr Add current character to set
+        char_set[s[right]] = based
+        
+        fr fr Update max length
+        sus current_length normie = right - left + 1
+        max_length = mathz.max(max_length, current_length)
+    }
+    
+    damn max_length
+}
+
+slay test_longest_substring() {
+    vibez.spill("=== LeetCode #3: Longest Substring Without Repeating ===")
+    
+    fr fr Test case 1: "abcabcbb" -> 3 ("abc")
+    sus result1 normie = length_of_longest_substring("abcabcbb")
+    vibez.spill("Test 1 - Input: abcabcbb, Expected: 3")
+    vibez.spill(result1)
+    
+    fr fr Test case 2: "bbbbb" -> 1 ("b")
+    sus result2 normie = length_of_longest_substring("bbbbb")
+    vibez.spill("Test 2 - Input: bbbbb, Expected: 1")
+    vibez.spill(result2)
+    
+    fr fr Test case 3: "pwwkew" -> 3 ("wke")
+    sus result3 normie = length_of_longest_substring("pwwkew")
+    vibez.spill("Test 3 - Input: pwwkew, Expected: 3")
+    vibez.spill(result3)
+    
+    fr fr Test case 4: "" -> 0
+    sus result4 normie = length_of_longest_substring("")
+    vibez.spill("Test 4 - Input: empty, Expected: 0")
+    vibez.spill(result4)
+    
+    fr fr Test case 5: "dvdf" -> 3 ("vdf")
+    sus result5 normie = length_of_longest_substring("dvdf")
+    vibez.spill("Test 5 - Input: dvdf, Expected: 3")
+    vibez.spill(result5)
+    
+    vibez.spill("=== Longest Substring Complete ===")
+}
+
+slay main_character() {
+    test_longest_substring()
+}

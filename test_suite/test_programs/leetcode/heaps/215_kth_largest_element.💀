@@ -1,0 +1,22 @@
+vibe main
+
+yeet "vibez"
+
+fr fr LeetCode #215: Kth Largest Element
+fr fr Category: Heaps
+fr fr Implementation uses CURSED syntax with ඞ pointers!
+
+slay solve_kth_largest_element() {
+    vibez.spill("=== LeetCode #215: Kth Largest Element ===")
+    
+    fr fr TODO: Implement actual algorithm
+    sus result normie = 42
+    vibez.spill("Demo result:")
+    vibez.spill(result)
+    
+    vibez.spill("=== Kth Largest Element Complete ===")
+}
+
+slay main_character() {
+    solve_kth_largest_element()
+}

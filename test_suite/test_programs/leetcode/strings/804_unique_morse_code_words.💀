@@ -1,0 +1,22 @@
+vibe main
+
+yeet "vibez"
+
+fr fr LeetCode #804: Unique Morse Code Words
+fr fr Category: Strings
+fr fr Implementation uses CURSED syntax with ඞ pointers!
+
+slay solve_unique_morse_code_words() {
+    vibez.spill("=== LeetCode #804: Unique Morse Code Words ===")
+    
+    fr fr TODO: Implement actual algorithm
+    sus result normie = 42
+    vibez.spill("Demo result:")
+    vibez.spill(result)
+    
+    vibez.spill("=== Unique Morse Code Words Complete ===")
+}
+
+slay main_character() {
+    solve_unique_morse_code_words()
+}

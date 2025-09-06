@@ -1,0 +1,22 @@
+vibe main
+
+yeet "vibez"
+
+fr fr LeetCode #976: Largest Perimeter Triangle
+fr fr Category: Math
+fr fr Implementation uses CURSED syntax with ඞ pointers!
+
+slay solve_largest_perimeter_triangle() {
+    vibez.spill("=== LeetCode #976: Largest Perimeter Triangle ===")
+    
+    fr fr TODO: Implement actual algorithm
+    sus result normie = 42
+    vibez.spill("Demo result:")
+    vibez.spill(result)
+    
+    vibez.spill("=== Largest Perimeter Triangle Complete ===")
+}
+
+slay main_character() {
+    solve_largest_perimeter_triangle()
+}

@@ -1,0 +1,22 @@
+vibe main
+
+yeet "vibez"
+
+fr fr LeetCode #154: Find Minimum in Rotated Sorted Array II
+fr fr Category: Binary_Search
+fr fr Implementation uses CURSED syntax with ඞ pointers!
+
+slay solve_find_minimum_in_rotated_sorted_array_ii() {
+    vibez.spill("=== LeetCode #154: Find Minimum in Rotated Sorted Array II ===")
+    
+    fr fr TODO: Implement actual algorithm
+    sus result normie = 42
+    vibez.spill("Demo result:")
+    vibez.spill(result)
+    
+    vibez.spill("=== Find Minimum in Rotated Sorted Array II Complete ===")
+}
+
+slay main_character() {
+    solve_find_minimum_in_rotated_sorted_array_ii()
+}

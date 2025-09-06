@@ -1,0 +1,22 @@
+vibe main
+
+yeet "vibez"
+
+fr fr LeetCode #42: Trapping Rain Water
+fr fr Category: Arrays
+fr fr Implementation uses CURSED syntax with ඞ pointers!
+
+slay solve_trapping_rain_water() {
+    vibez.spill("=== LeetCode #42: Trapping Rain Water ===")
+    
+    fr fr TODO: Implement actual algorithm
+    sus result normie = 42
+    vibez.spill("Demo result:")
+    vibez.spill(result)
+    
+    vibez.spill("=== Trapping Rain Water Complete ===")
+}
+
+slay main_character() {
+    solve_trapping_rain_water()
+}

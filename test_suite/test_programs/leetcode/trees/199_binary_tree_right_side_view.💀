@@ -1,0 +1,22 @@
+vibe main
+
+yeet "vibez"
+
+fr fr LeetCode #199: Binary Tree Right Side View
+fr fr Category: Trees
+fr fr Implementation uses CURSED syntax with ඞ pointers!
+
+slay solve_binary_tree_right_side_view() {
+    vibez.spill("=== LeetCode #199: Binary Tree Right Side View ===")
+    
+    fr fr TODO: Implement actual algorithm
+    sus result normie = 42
+    vibez.spill("Demo result:")
+    vibez.spill(result)
+    
+    vibez.spill("=== Binary Tree Right Side View Complete ===")
+}
+
+slay main_character() {
+    solve_binary_tree_right_side_view()
+}

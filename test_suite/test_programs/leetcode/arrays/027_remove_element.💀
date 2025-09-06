@@ -1,0 +1,24 @@
+vibe main
+
+yeet "vibez"
+yeet "mathz"
+
+fr fr LeetCode #27: Remove Element
+fr fr Difficulty: Easy
+fr fr Category: Arrays
+fr fr TODO: Implement solution using CURSED ඞ pointers!
+
+slay solve_remove_element() {
+    fr fr TODO: Implement the actual algorithm here
+    vibez.spill("=== LeetCode #27: Remove Element ===")
+    vibez.spill("TODO: Implementation needed")
+    vibez.spill("=== Test Complete ===")
+}
+
+slay test_remove_element() {
+    solve_remove_element()
+}
+
+slay main_character() {
+    test_remove_element()
+}

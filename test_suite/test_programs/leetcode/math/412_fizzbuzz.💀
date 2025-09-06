@@ -1,0 +1,55 @@
+vibe main
+
+yeet "vibez"
+
+fr fr LeetCode #412: FizzBuzz
+fr fr Classic problem - perfect for showcasing CURSED syntax!
+
+slay fizz_buzz(n normie) []tea {
+    sus result []tea = []tea{}
+    
+    bestie i := 1; i <= n; i++ {
+        ready (i % 15 == 0) {
+            result = append(result, "FizzBuzz")
+        } otherwise ready (i % 3 == 0) {
+            result = append(result, "Fizz")
+        } otherwise ready (i % 5 == 0) {
+            result = append(result, "Buzz")
+        } otherwise {
+            result = append(result, string(i))
+        }
+    }
+    
+    damn result
+}
+
+slay test_fizz_buzz() {
+    vibez.spill("=== LeetCode #412: FizzBuzz (CURSED Style) ===")
+    
+    fr fr Test case 1: n = 3
+    sus result1 []tea = fizz_buzz(3)
+    vibez.spill("Test 1 - n=3, Expected: [1, 2, Fizz]")
+    bestie i := 0; i < len(result1); i++ {
+        vibez.spill(result1[i])
+    }
+    
+    fr fr Test case 2: n = 5
+    sus result2 []tea = fizz_buzz(5)
+    vibez.spill("Test 2 - n=5, Expected: [1, 2, Fizz, 4, Buzz]")
+    bestie i := 0; i < len(result2); i++ {
+        vibez.spill(result2[i])
+    }
+    
+    fr fr Test case 3: n = 15 (shows FizzBuzz)
+    sus result3 []tea = fizz_buzz(15)
+    vibez.spill("Test 3 - n=15 (last 5 elements):")
+    bestie i := 10; i < len(result3); i++ {
+        vibez.spill(result3[i])
+    }
+    
+    vibez.spill("=== FizzBuzz Complete (No Cap!) ===")
+}
+
+slay main_character() {
+    test_fizz_buzz()
+}

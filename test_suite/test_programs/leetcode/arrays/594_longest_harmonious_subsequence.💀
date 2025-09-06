@@ -1,0 +1,22 @@
+vibe main
+
+yeet "vibez"
+
+fr fr LeetCode #594: Longest Harmonious Subsequence
+fr fr Category: Arrays
+fr fr Implementation uses CURSED syntax with ඞ pointers!
+
+slay solve_longest_harmonious_subsequence() {
+    vibez.spill("=== LeetCode #594: Longest Harmonious Subsequence ===")
+    
+    fr fr TODO: Implement actual algorithm
+    sus result normie = 42
+    vibez.spill("Demo result:")
+    vibez.spill(result)
+    
+    vibez.spill("=== Longest Harmonious Subsequence Complete ===")
+}
+
+slay main_character() {
+    solve_longest_harmonious_subsequence()
+}

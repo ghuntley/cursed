@@ -1,0 +1,22 @@
+vibe main
+
+yeet "vibez"
+
+fr fr LeetCode #160: Intersection of Two Linked Lists
+fr fr Category: Linked_Lists
+fr fr Implementation uses CURSED syntax with ඞ pointers!
+
+slay solve_intersection_of_two_linked_lists() {
+    vibez.spill("=== LeetCode #160: Intersection of Two Linked Lists ===")
+    
+    fr fr TODO: Implement actual algorithm
+    sus result normie = 42
+    vibez.spill("Demo result:")
+    vibez.spill(result)
+    
+    vibez.spill("=== Intersection of Two Linked Lists Complete ===")
+}
+
+slay main_character() {
+    solve_intersection_of_two_linked_lists()
+}

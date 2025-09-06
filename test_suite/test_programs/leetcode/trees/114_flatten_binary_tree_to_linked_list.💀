@@ -1,0 +1,24 @@
+vibe main
+
+yeet "vibez"
+yeet "mathz"
+
+fr fr LeetCode #114: Flatten Binary Tree to Linked List
+fr fr Difficulty: Medium
+fr fr Category: Trees
+fr fr TODO: Implement solution using CURSED ඞ pointers!
+
+slay solve_flatten_binary_tree_to_linked_list() {
+    fr fr TODO: Implement the actual algorithm here
+    vibez.spill("=== LeetCode #114: Flatten Binary Tree to Linked List ===")
+    vibez.spill("TODO: Implementation needed")
+    vibez.spill("=== Test Complete ===")
+}
+
+slay test_flatten_binary_tree_to_linked_list() {
+    solve_flatten_binary_tree_to_linked_list()
+}
+
+slay main_character() {
+    test_flatten_binary_tree_to_linked_list()
+}

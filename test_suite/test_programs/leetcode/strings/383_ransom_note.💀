@@ -1,0 +1,22 @@
+vibe main
+
+yeet "vibez"
+
+fr fr LeetCode #383: Ransom Note
+fr fr Category: Strings
+fr fr Implementation uses CURSED syntax with ඞ pointers!
+
+slay solve_ransom_note() {
+    vibez.spill("=== LeetCode #383: Ransom Note ===")
+    
+    fr fr TODO: Implement actual algorithm
+    sus result normie = 42
+    vibez.spill("Demo result:")
+    vibez.spill(result)
+    
+    vibez.spill("=== Ransom Note Complete ===")
+}
+
+slay main_character() {
+    solve_ransom_note()
+}

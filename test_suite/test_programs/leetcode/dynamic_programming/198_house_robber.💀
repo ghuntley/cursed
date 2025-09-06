@@ -1,0 +1,22 @@
+vibe main
+
+yeet "vibez"
+
+fr fr LeetCode #198: House Robber
+fr fr Category: Dynamic_Programming
+fr fr Implementation uses CURSED syntax with ඞ pointers!
+
+slay solve_house_robber() {
+    vibez.spill("=== LeetCode #198: House Robber ===")
+    
+    fr fr TODO: Implement actual algorithm
+    sus result normie = 42
+    vibez.spill("Demo result:")
+    vibez.spill(result)
+    
+    vibez.spill("=== House Robber Complete ===")
+}
+
+slay main_character() {
+    solve_house_robber()
+}

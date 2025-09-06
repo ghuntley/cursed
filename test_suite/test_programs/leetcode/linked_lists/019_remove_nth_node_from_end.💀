@@ -1,0 +1,24 @@
+vibe main
+
+yeet "vibez"
+yeet "mathz"
+
+fr fr LeetCode #19: Remove Nth Node From End
+fr fr Difficulty: Medium
+fr fr Category: Linked_Lists
+fr fr TODO: Implement solution using CURSED ඞ pointers!
+
+slay solve_remove_nth_node_from_end() {
+    fr fr TODO: Implement the actual algorithm here
+    vibez.spill("=== LeetCode #19: Remove Nth Node From End ===")
+    vibez.spill("TODO: Implementation needed")
+    vibez.spill("=== Test Complete ===")
+}
+
+slay test_remove_nth_node_from_end() {
+    solve_remove_nth_node_from_end()
+}
+
+slay main_character() {
+    test_remove_nth_node_from_end()
+}

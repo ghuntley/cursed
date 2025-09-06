@@ -1,0 +1,24 @@
+vibe main
+
+yeet "vibez"
+yeet "mathz"
+
+fr fr LeetCode #105: Construct Binary Tree from Preorder and Inorder
+fr fr Difficulty: Medium
+fr fr Category: Trees
+fr fr TODO: Implement solution using CURSED ඞ pointers!
+
+slay solve_construct_binary_tree_from_preorder_and_inorder() {
+    fr fr TODO: Implement the actual algorithm here
+    vibez.spill("=== LeetCode #105: Construct Binary Tree from Preorder and Inorder ===")
+    vibez.spill("TODO: Implementation needed")
+    vibez.spill("=== Test Complete ===")
+}
+
+slay test_construct_binary_tree_from_preorder_and_inorder() {
+    solve_construct_binary_tree_from_preorder_and_inorder()
+}
+
+slay main_character() {
+    test_construct_binary_tree_from_preorder_and_inorder()
+}

@@ -1,0 +1,24 @@
+vibe main
+
+yeet "vibez"
+yeet "mathz"
+
+fr fr LeetCode #96: Unique Binary Search Trees
+fr fr Difficulty: Medium
+fr fr Category: Trees
+fr fr TODO: Implement solution using CURSED ඞ pointers!
+
+slay solve_unique_binary_search_trees() {
+    fr fr TODO: Implement the actual algorithm here
+    vibez.spill("=== LeetCode #96: Unique Binary Search Trees ===")
+    vibez.spill("TODO: Implementation needed")
+    vibez.spill("=== Test Complete ===")
+}
+
+slay test_unique_binary_search_trees() {
+    solve_unique_binary_search_trees()
+}
+
+slay main_character() {
+    test_unique_binary_search_trees()
+}

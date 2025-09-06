@@ -1,0 +1,118 @@
+vibe main
+yeet "vibez"
+yeet "stringz"
+
+// LeetCode #125: Valid Palindrome 🪞
+// Check if string is palindrome ignoring non-alphanumeric chars
+// Time: O(n), Space: O(1) - two pointer approach
+
+slay is_palindrome(s tea) lit {
+    ready (stringz.len(s) == 0) {
+        damn true  // Empty string is palindrome, periodt
+    }
+    
+    sus left normie = 0
+    sus right normie = stringz.len(s) - 1
+    
+    bestie (left < right) {
+        // Skip non-alphanumeric from left
+        bestie (left < right && !is_alnum(stringz.char_at(s, left))) {
+            left = left + 1
+        }
+        
+        // Skip non-alphanumeric from right  
+        bestie (left < right && !is_alnum(stringz.char_at(s, right))) {
+            right = right - 1
+        }
+        
+        // Compare characters (case insensitive)
+        sus left_char normie = to_lower(stringz.char_at(s, left))
+        sus right_char normie = to_lower(stringz.char_at(s, right))
+        
+        ready (left_char != right_char) {
+            damn false  // Not a palindrome, bestie
+        }
+        
+        left = left + 1
+        right = right - 1
+    }
+    
+    damn true
+}
+
+slay is_alnum(c normie) lit {
+    // Check if character is alphanumeric
+    damn (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9')
+}
+
+slay to_lower(c normie) normie {
+    // Convert to lowercase if uppercase
+    ready (c >= 'A' && c <= 'Z') {
+        damn c + 32  // ASCII difference between A-a is 32
+    }
+    damn c
+}
+
+slay is_palindrome_clean(s tea) lit {
+    // Alternative: clean string first then check
+    sus cleaned tea = ""
+    
+    bestie i := 0; i < stringz.len(s); i++ {
+        sus c normie = stringz.char_at(s, i)
+        ready (is_alnum(c)) {
+            cleaned = stringz.concat(cleaned, stringz.from_char(to_lower(c)))
+        }
+    }
+    
+    sus len normie = stringz.len(cleaned)
+    bestie i := 0; i < len / 2; i++ {
+        ready (stringz.char_at(cleaned, i) != stringz.char_at(cleaned, len - 1 - i)) {
+            damn false
+        }
+    }
+    
+    damn true
+}
+
+slay test_valid_palindrome() {
+    vibez.spill("=== 🪞 LeetCode #125: Valid Palindrome ===")
+    
+    // Test case 1: "A man, a plan, a canal: Panama"
+    sus test1 tea = "A man, a plan, a canal: Panama"
+    sus result1 lit = is_palindrome(test1)
+    vibez.spill("Test 1:", test1)
+    vibez.spill("Expected: true, Got:", result1)
+    
+    // Test case 2: "race a car"
+    sus test2 tea = "race a car"
+    sus result2 lit = is_palindrome(test2)
+    vibez.spill("Test 2:", test2)
+    vibez.spill("Expected: false, Got:", result2)
+    
+    // Test case 3: " " (single space)
+    sus test3 tea = " "
+    sus result3 lit = is_palindrome(test3)
+    vibez.spill("Test 3: Single space")
+    vibez.spill("Expected: true, Got:", result3)
+    
+    // Test case 4: "Was it a car or a cat I saw?"
+    sus test4 tea = "Was it a car or a cat I saw?"
+    sus result4 lit = is_palindrome(test4)
+    vibez.spill("Test 4:", test4)
+    vibez.spill("Expected: true, Got:", result4)
+    
+    // Compare both approaches
+    vibez.spill("=== 🚀 Approach Comparison ===")
+    sus test_string tea = "Madam, I'm Adam"
+    sus two_pointer lit = is_palindrome(test_string)
+    sus clean_first lit = is_palindrome_clean(test_string)
+    vibez.spill("Test string:", test_string)
+    vibez.spill("Two-pointer approach:", two_pointer)
+    vibez.spill("Clean-first approach:", clean_first)
+    
+    vibez.spill("=== Valid Palindrome Complete! This reflection is perfect 🪞✨ ===")
+}
+
+slay main_character() {
+    test_valid_palindrome()
+}

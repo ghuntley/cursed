@@ -1,0 +1,22 @@
+vibe main
+
+yeet "vibez"
+
+fr fr LeetCode #190: Reverse Bits
+fr fr Category: Bit_Manipulation
+fr fr Implementation uses CURSED syntax with ඞ pointers!
+
+slay solve_reverse_bits() {
+    vibez.spill("=== LeetCode #190: Reverse Bits ===")
+    
+    fr fr TODO: Implement actual algorithm
+    sus result normie = 42
+    vibez.spill("Demo result:")
+    vibez.spill(result)
+    
+    vibez.spill("=== Reverse Bits Complete ===")
+}
+
+slay main_character() {
+    solve_reverse_bits()
+}

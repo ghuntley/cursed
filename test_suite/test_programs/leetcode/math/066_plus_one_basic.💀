@@ -1,0 +1,55 @@
+vibe main
+
+yeet "vibez"
+
+fr fr LeetCode #66: Plus One (Basic version)
+fr fr Add one to number represented as digits
+
+slay plus_one_basic() {
+    vibez.spill("=== LeetCode #66: Plus One (Basic) ===")
+    
+    fr fr Test case 1: [1,2,3] + 1 = [1,2,4]
+    vibez.spill("Input: [1,2,3]")
+    sus digit1 normie = 1
+    sus digit2 normie = 2
+    sus digit3 normie = 3
+    
+    fr fr Add one to last digit
+    digit3 = digit3 + 1
+    
+    vibez.spill("Output: [1,2,4]")
+    vibez.spill(digit1)
+    vibez.spill(digit2)
+    vibez.spill(digit3)
+    
+    fr fr Test case 2: [4,3,2,1] + 1 = [4,3,2,2]
+    vibez.spill("Input: [4,3,2,1]")
+    sus d1 normie = 4
+    sus d2 normie = 3
+    sus d3 normie = 2
+    sus d4 normie = 1
+    
+    d4 = d4 + 1
+    
+    vibez.spill("Output: [4,3,2,2]")
+    vibez.spill(d1)
+    vibez.spill(d2)
+    vibez.spill(d3)
+    vibez.spill(d4)
+    
+    fr fr Test case 3: [9] + 1 = [1,0] (carry case)
+    vibez.spill("Input: [9]")
+    sus nine normie = 9
+    
+    ready (nine == 9) {
+        vibez.spill("Carry needed: [1,0]")
+        vibez.spill(1)
+        vibez.spill(0)
+    }
+    
+    vibez.spill("=== Plus One Complete ===")
+}
+
+slay main_character() {
+    plus_one_basic()
+}

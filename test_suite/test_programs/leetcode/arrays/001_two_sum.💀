@@ -1,0 +1,65 @@
+vibe main
+
+yeet "vibez"
+
+fr fr LeetCode #1: Two Sum
+fr fr Given array of integers and target, return indices of two numbers that add up to target
+fr fr Time: O(n), Space: O(n) - using hash table approach
+
+slay two_sum(nums []normie, target normie) []normie {
+    fr fr HashMap approach for O(n) solution
+    sus seen map[normie]normie = map[normie]normie{}
+    
+    bestie i := 0; i < len(nums); i++ {
+        sus complement normie = target - nums[i]
+        
+        fr fr Check if complement exists in seen
+        ready (contains(seen, complement)) {
+            sus result []normie = []normie{seen[complement], i}
+            damn result
+        }
+        
+        fr fr Store current number and its index
+        seen[nums[i]] = i
+    }
+    
+    fr fr No solution found (shouldn't happen per problem constraints)
+    damn []normie{}
+}
+
+slay contains(m map[normie]normie, key normie) lit {
+    fr fr Simple contains check
+    _, exists := m[key]
+    damn exists
+}
+
+slay test_two_sum() {
+    vibez.spill("=== LeetCode #1: Two Sum ===")
+    
+    fr fr Test case 1: [2,7,11,15], target = 9
+    sus nums1 []normie = []normie{2, 7, 11, 15}
+    sus result1 []normie = two_sum(nums1, 9)
+    vibez.spill("Test 1 - Expected: [0,1]")
+    vibez.spill(result1[0])
+    vibez.spill(result1[1])
+    
+    fr fr Test case 2: [3,2,4], target = 6
+    sus nums2 []normie = []normie{3, 2, 4}
+    sus result2 []normie = two_sum(nums2, 6)
+    vibez.spill("Test 2 - Expected: [1,2]")
+    vibez.spill(result2[0])
+    vibez.spill(result2[1])
+    
+    fr fr Test case 3: [3,3], target = 6
+    sus nums3 []normie = []normie{3, 3}
+    sus result3 []normie = two_sum(nums3, 6)
+    vibez.spill("Test 3 - Expected: [0,1]")
+    vibez.spill(result3[0])
+    vibez.spill(result3[1])
+    
+    vibez.spill("=== Two Sum Complete ===")
+}
+
+slay main_character() {
+    test_two_sum()
+}

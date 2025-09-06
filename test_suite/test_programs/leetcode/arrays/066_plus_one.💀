@@ -1,0 +1,55 @@
+vibe main
+
+yeet "vibez"
+
+fr fr LeetCode #66: Plus One
+fr fr Add one to number represented as array of digits
+
+slay plus_one(digits []normie) []normie {
+    bestie i := len(digits) - 1; i >= 0; i-- {
+        ready (digits[i] < 9) {
+            digits[i]++
+            damn digits
+        }
+        digits[i] = 0
+    }
+    
+    fr fr All digits were 9, need to add leading 1
+    sus result []normie = make([]normie, len(digits) + 1)
+    result[0] = 1
+    damn result
+}
+
+slay test_plus_one() {
+    vibez.spill("=== LeetCode #66: Plus One ===")
+    
+    fr fr Test case 1: [1,2,3] -> [1,2,4]
+    sus digits1 []normie = []normie{1, 2, 3}
+    sus result1 []normie = plus_one(digits1)
+    vibez.spill("Test 1 - [1,2,3] -> [1,2,4]:")
+    bestie i := 0; i < len(result1); i++ {
+        vibez.spill(result1[i])
+    }
+    
+    fr fr Test case 2: [4,3,2,1] -> [4,3,2,2]
+    sus digits2 []normie = []normie{4, 3, 2, 1}
+    sus result2 []normie = plus_one(digits2)
+    vibez.spill("Test 2 - [4,3,2,1] -> [4,3,2,2]:")
+    bestie i := 0; i < len(result2); i++ {
+        vibez.spill(result2[i])
+    }
+    
+    fr fr Test case 3: [9] -> [1,0]
+    sus digits3 []normie = []normie{9}
+    sus result3 []normie = plus_one(digits3)
+    vibez.spill("Test 3 - [9] -> [1,0]:")
+    bestie i := 0; i < len(result3); i++ {
+        vibez.spill(result3[i])
+    }
+    
+    vibez.spill("=== Plus One Complete ===")
+}
+
+slay main_character() {
+    test_plus_one()
+}

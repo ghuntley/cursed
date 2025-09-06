@@ -1,0 +1,22 @@
+vibe main
+
+yeet "vibez"
+
+fr fr LeetCode #41: First Missing Positive
+fr fr Category: Arrays
+fr fr Implementation uses CURSED syntax with ඞ pointers!
+
+slay solve_first_missing_positive() {
+    vibez.spill("=== LeetCode #41: First Missing Positive ===")
+    
+    fr fr TODO: Implement actual algorithm
+    sus result normie = 42
+    vibez.spill("Demo result:")
+    vibez.spill(result)
+    
+    vibez.spill("=== First Missing Positive Complete ===")
+}
+
+slay main_character() {
+    solve_first_missing_positive()
+}

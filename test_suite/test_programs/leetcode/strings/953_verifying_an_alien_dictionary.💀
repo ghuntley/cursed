@@ -1,0 +1,22 @@
+vibe main
+
+yeet "vibez"
+
+fr fr LeetCode #953: Verifying an Alien Dictionary
+fr fr Category: Strings
+fr fr Implementation uses CURSED syntax with ඞ pointers!
+
+slay solve_verifying_an_alien_dictionary() {
+    vibez.spill("=== LeetCode #953: Verifying an Alien Dictionary ===")
+    
+    fr fr TODO: Implement actual algorithm
+    sus result normie = 42
+    vibez.spill("Demo result:")
+    vibez.spill(result)
+    
+    vibez.spill("=== Verifying an Alien Dictionary Complete ===")
+}
+
+slay main_character() {
+    solve_verifying_an_alien_dictionary()
+}

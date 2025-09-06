@@ -1,0 +1,47 @@
+vibe main
+
+yeet "vibez"
+
+fr fr LeetCode #283: Move Zeroes
+fr fr Move all zeros to end while maintaining order of non-zeros
+
+slay move_zeroes(nums ඞ[]normie) {
+    sus write_index normie = 0
+    
+    fr fr Move non-zero elements to front
+    bestie i := 0; i < len(*nums); i++ {
+        ready ((*nums)[i] != 0) {
+            (*nums)[write_index] = (*nums)[i]
+            write_index++
+        }
+    }
+    
+    fr fr Fill remaining positions with zeros
+    bestie i := write_index; i < len(*nums); i++ {
+        (*nums)[i] = 0
+    }
+}
+
+slay test_move_zeroes() {
+    vibez.spill("=== LeetCode #283: Move Zeroes (ඞ In-Place) ===")
+    
+    sus nums1 []normie = []normie{0, 1, 0, 3, 12}
+    move_zeroes(ඞnums1)
+    
+    vibez.spill("Test 1 - Expected: [1,3,12,0,0]")
+    bestie i := 0; i < len(nums1); i++ {
+        vibez.spill(nums1[i])
+    }
+    
+    sus nums2 []normie = []normie{0}
+    move_zeroes(ඞnums2)
+    
+    vibez.spill("Test 2 - Expected: [0]")
+    vibez.spill(nums2[0])
+    
+    vibez.spill("=== Move Zeroes Complete ===")
+}
+
+slay main_character() {
+    test_move_zeroes()
+}

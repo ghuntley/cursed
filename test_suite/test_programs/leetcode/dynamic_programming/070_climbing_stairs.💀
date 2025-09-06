@@ -1,0 +1,53 @@
+vibe main
+
+yeet "vibez"
+
+fr fr LeetCode #70: Climbing Stairs
+fr fr Classic Fibonacci DP problem
+
+slay climb_stairs(n normie) normie {
+    ready (n <= 2) {
+        damn n
+    }
+    
+    sus prev1 normie = 1  fr fr f(1)
+    sus prev2 normie = 2  fr fr f(2)
+    
+    bestie i := 3; i <= n; i++ {
+        sus current normie = prev1 + prev2
+        prev1 = prev2
+        prev2 = current
+    }
+    
+    damn prev2
+}
+
+slay test_climbing_stairs() {
+    vibez.spill("=== LeetCode #70: Climbing Stairs (DP) ===")
+    
+    fr fr Test case 1: n = 2 -> 2
+    sus result1 normie = climb_stairs(2)
+    vibez.spill("Test 1 - n=2, Expected: 2")
+    vibez.spill(result1)
+    
+    fr fr Test case 2: n = 3 -> 3
+    sus result2 normie = climb_stairs(3)
+    vibez.spill("Test 2 - n=3, Expected: 3")
+    vibez.spill(result2)
+    
+    fr fr Test case 3: n = 5 -> 8
+    sus result3 normie = climb_stairs(5)
+    vibez.spill("Test 3 - n=5, Expected: 8")
+    vibez.spill(result3)
+    
+    fr fr Test case 4: n = 10 -> 89
+    sus result4 normie = climb_stairs(10)
+    vibez.spill("Test 4 - n=10, Expected: 89")
+    vibez.spill(result4)
+    
+    vibez.spill("=== Climbing Stairs Complete ===")
+}
+
+slay main_character() {
+    test_climbing_stairs()
+}
