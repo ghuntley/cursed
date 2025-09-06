@@ -919,7 +919,7 @@ pub const Interpreter = struct {
                         .closure = self.environment,
                     };
                     // Function registered
-                    // std.debug.print("DEBUG: Registering function '{s}'\n", .{func.name});
+                    std.debug.print("DEBUG: Registering function '{s}'\n", .{func.name});
                     try self.functions.put(func.name, cursed_func);
                 },
                 .Struct => |struct_decl| {
@@ -1923,9 +1923,13 @@ pub const Interpreter = struct {
 
         if (std.mem.eql(u8, bin.operator, "+")) {
             if (left == .Integer and right == .Integer) {
-                // Integer + Integer with wrap-around arithmetic (like Go)
-                const result = left.Integer +% right.Integer;
-                return Value{ .Integer = result };
+                // Integer + Integer with overflow detection and promotion to float
+                const result = @addWithOverflow(left.Integer, right.Integer);
+                if (result[1] != 0) {
+                    // Overflow occurred, promote to float
+                    return Value{ .Float = @as(f64, @floatFromInt(left.Integer)) + @as(f64, @floatFromInt(right.Integer)) };
+                }
+                return Value{ .Integer = result[0] };
             } else if (left.isNumber() and right.isNumber()) {
                 const left_num = try left.toNumber();
                 const right_num = try right.toNumber();
@@ -1947,9 +1951,13 @@ pub const Interpreter = struct {
             }
         } else if (std.mem.eql(u8, bin.operator, "-")) {
             if (left == .Integer and right == .Integer) {
-                // Integer - Integer with wrap-around arithmetic (like Go)
-                const result = left.Integer -% right.Integer;
-                return Value{ .Integer = result };
+                // Integer - Integer with overflow detection and promotion to float
+                const result = @subWithOverflow(left.Integer, right.Integer);
+                if (result[1] != 0) {
+                    // Overflow occurred, promote to float
+                    return Value{ .Float = @as(f64, @floatFromInt(left.Integer)) - @as(f64, @floatFromInt(right.Integer)) };
+                }
+                return Value{ .Integer = result[0] };
             } else if (left.isNumber() and right.isNumber()) {
                 const left_num = try left.toNumber();
                 const right_num = try right.toNumber();
@@ -1957,9 +1965,13 @@ pub const Interpreter = struct {
             }
         } else if (std.mem.eql(u8, bin.operator, "*")) {
             if (left == .Integer and right == .Integer) {
-                // Integer * Integer with wrap-around arithmetic (like Go)
-                const result = left.Integer *% right.Integer;
-                return Value{ .Integer = result };
+                // Integer * Integer with overflow detection and promotion to float
+                const result = @mulWithOverflow(left.Integer, right.Integer);
+                if (result[1] != 0) {
+                    // Overflow occurred, promote to float
+                    return Value{ .Float = @as(f64, @floatFromInt(left.Integer)) * @as(f64, @floatFromInt(right.Integer)) };
+                }
+                return Value{ .Integer = result[0] };
             } else if (left.isNumber() and right.isNumber()) {
                 const left_num = try left.toNumber();
                 const right_num = try right.toNumber();
@@ -2056,14 +2068,13 @@ pub const Interpreter = struct {
         const operand = try self.evaluateExpression(unary.operand.*);
         
         if (std.mem.eql(u8, unary.operator, "-")) {
-            // Unary minus
+            // Unary minus with overflow detection
             if (operand == .Integer) {
                 // Check for overflow on integer negation
-                // For CURSED normie (32-bit), minimum value is -2^31 = -2147483648
-                // According to spec: promote normie -> thicc -> meal
-                if (operand.Integer == -2147483648) {
-                    // Result is 2147483648, which fits in i64 (thicc), so keep as integer
-                    return Value{ .Integer = 2147483648 };
+                // The only value that can overflow when negated is the minimum i64 value
+                if (operand.Integer == std.math.minInt(i64)) {
+                    // Negating minimum i64 would overflow, promote to float
+                    return Value{ .Float = -@as(f64, @floatFromInt(operand.Integer)) };
                 }
                 return Value{ .Integer = -operand.Integer };
             } else if (operand.isNumber()) {
@@ -2118,21 +2129,40 @@ pub const Interpreter = struct {
         // First get the current value
         const current_value = try self.evaluateExpression(operand_expr);
         
-        if (current_value != .Integer) {
+        if (current_value != .Integer and current_value != .Float) {
             return InterpreterError.TypeMismatch;
         }
         
         const is_increment = std.mem.eql(u8, operator, "++");
-        const new_value = if (is_increment) 
-            current_value.Integer + 1 
-        else 
-            current_value.Integer - 1;
+        
+        // Handle both integer and float values
+        const updated_value = switch (current_value) {
+            .Integer => |int_val| blk: {
+                const result = if (is_increment) 
+                    @addWithOverflow(int_val, 1) 
+                else 
+                    @subWithOverflow(int_val, 1);
+                    
+                if (result[1] != 0) {
+                    // Overflow occurred, promote to float
+                    const base_float = @as(f64, @floatFromInt(int_val));
+                    const float_val = if (is_increment) base_float + 1.0 else base_float - 1.0;
+                    break :blk Value{ .Float = float_val };
+                } else {
+                    break :blk Value{ .Integer = result[0] };
+                }
+            },
+            .Float => |float_val| blk: {
+                const new_float = if (is_increment) float_val + 1.0 else float_val - 1.0;
+                break :blk Value{ .Float = new_float };
+            },
+            else => unreachable,
+        };
         
         // Update the variable in the environment
         switch (operand_expr) {
             .Identifier => |identifier| {
                 // Store the new value back in the environment
-                const updated_value = Value{ .Integer = new_value };
                 try self.environment.set(identifier, updated_value);
                 return updated_value;
             },
@@ -2937,8 +2967,12 @@ pub const Interpreter = struct {
         switch (array_value) {
             .Array => |array| {
                 const index = index_value.Integer;
-                // Bounds checking
+                // Bounds checking with safer casting
                 if (index < 0 or index >= @as(i64, @intCast(array.len))) {
+                    return InterpreterError.IndexOutOfBounds;
+                }
+                // Additional check to ensure index fits in usize
+                if (index > std.math.maxInt(usize)) {
                     return InterpreterError.IndexOutOfBounds;
                 }
                 return array[@as(usize, @intCast(index))];
