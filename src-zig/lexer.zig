@@ -100,7 +100,7 @@ pub const TokenKind = enum {
     Recover, // recover function
 
     // Visibility modifiers
-    Spill, // pub (public)
+    // Spill removed - not a language keyword, used as method name in vibez.spill()
     Priv, // private
     Crew, // pkg (package)
 
@@ -974,7 +974,7 @@ pub const Lexer = struct {
         if (std.mem.eql(u8, text, "recover")) return .Recover;
 
         // Visibility
-        if (std.mem.eql(u8, text, "spill")) return .Spill;
+        // if (std.mem.eql(u8, text, "spill")) return .Spill; // Removed - not a keyword
         if (std.mem.eql(u8, text, "priv")) return .Priv;
         if (std.mem.eql(u8, text, "crew")) return .Crew;
 

@@ -175,7 +175,7 @@ pub const Parser = struct {
     /// Check if the current token is a keyword that can be used as a method name
     fn isKeywordAllowedAsMethodName(self: *Parser) bool {
         return switch (self.peek().kind) {
-            .Spill, .Tea, .Drip, .Lit, .Cap, .Normie, .Smol, .Mid, .Thicc, 
+            .Tea, .Drip, .Lit, .Cap, .Normie, .Smol, .Mid, .Thicc, 
             .Snack, .Meal, .Byte, .Rune, .Extra, .Txt, .Sip => true,
             else => false,
         };
@@ -1492,7 +1492,7 @@ pub const Parser = struct {
 
     fn parseFunctionStatement(self: *Parser) ParserError!FunctionStatement {
         _ = try self.consume(.Slay, "Expected 'slay'");
-        if (!self.check(.Identifier) and !self.check(.Spill) and !self.check(.MainCharacter)) {
+        if (!self.check(.Identifier) and !self.check(.MainCharacter)) {
             _ = self.reportErrorWithContext("Expected function name after 'slay'", "parseFunctionStatement") catch {};
             return ParserError.UnexpectedToken;
         }
@@ -1554,9 +1554,7 @@ pub const Parser = struct {
         
         // Parse return type
         if (!self.check(.LeftBrace)) {
-            std.debug.print("🔧 DEBUG: Parsing return type...\n", .{});
             func.return_type = try self.parseType();
-            std.debug.print("🔧 DEBUG: Return type parsed successfully\n", .{});
         }
         
         // Parse body
@@ -1592,7 +1590,6 @@ pub const Parser = struct {
         
         _ = try self.consume(.RightBrace, "Expected '}'");
         
-        std.debug.print("🔧 DEBUG: Function parsing completed: {s}\n", .{func.name});
         return func;
     }
 
@@ -3638,9 +3635,8 @@ pub const Parser = struct {
             
             // Parse visibility modifier for fields
             var visibility = ast.Visibility.Private;
-            if (self.match(.Spill)) {
-                visibility = .Public;
-            } else if (self.match(.Priv)) {
+            // Removed .Spill keyword - not used as visibility modifier
+            if (self.match(.Priv)) {
                 visibility = .Private;
             } else if (self.match(.Crew)) {
                 visibility = .Package;
