@@ -75,6 +75,7 @@ pub const LLVMIRPipeline = struct {
     captured_variables: std.ArrayListUnmanaged(IRVariable),
     captured_strings: std.ArrayListUnmanaged([]const u8),
     load_counter: u32, // Counter for unique load variable names
+    alloc_counter: u32, // Counter for unique variable allocations
     
     // Optimization settings
     optimization_level: u8,
@@ -103,6 +104,7 @@ pub const LLVMIRPipeline = struct {
             .captured_variables = std.ArrayListUnmanaged(IRVariable){},
             .captured_strings = std.ArrayListUnmanaged([]const u8){},
             .load_counter = 0,
+            .alloc_counter = 0,
             .optimization_level = 0,
             .debug_info = false,
         };
@@ -1021,9 +1023,9 @@ pub const LLVMIRPipeline = struct {
                     try ir_args.append(self.allocator, IRValue{ .Integer = int_val });
                     print("📝 Captured integer argument: {d}\n", .{int_val});
                 },
-                .Boolean => |bool_val| {
-                    try ir_args.append(self.allocator, IRValue{ .Boolean = bool_val });
-                    print("📝 Captured boolean argument: {s}\n", .{if (bool_val) "based" else "cringe"});
+                .Float => |float_val| {
+                    try ir_args.append(self.allocator, IRValue{ .Float = float_val });
+                    print("📝 Captured float argument: {d}\n", .{float_val});
                 },
                 .Boolean => |bool_val| {
                     try ir_args.append(self.allocator, IRValue{ .Boolean = bool_val });
@@ -1162,6 +1164,17 @@ pub const LLVMIRPipeline = struct {
         print("🔍 Generating dynamic LLVM IR from {d} captured calls and {d} variables\n", 
             .{self.captured_calls.items.len, self.captured_variables.items.len});
         
+        // Deduplicate variables by name to avoid multiple definitions
+        var unique_variables = std.HashMap([]const u8, IRVariable, std.hash_map.StringContext, 80).init(self.allocator);
+        defer unique_variables.deinit();
+        
+        for (self.captured_variables.items) |var_data| {
+            // Only keep the first occurrence of each variable name
+            if (!unique_variables.contains(var_data.name)) {
+                try unique_variables.put(var_data.name, var_data);
+            }
+        }
+        
         // Generate complete LLVM IR with CURSED runtime declarations
         try file.writeAll("; Generated LLVM IR from CURSED with REAL program data\n");
         try file.writeAll("target triple = \"x86_64-unknown-linux-gnu\"\n\n");
@@ -1177,8 +1190,10 @@ pub const LLVMIRPipeline = struct {
         try file.writeAll("define i32 @main() {\n");
         try file.writeAll("entry:\n");
         
-        // Generate variable allocations from captured data
-        for (self.captured_variables.items, 0..) |var_data, i| {
+        // Generate variable allocations from unique variables to avoid conflicts  
+        var var_iterator = unique_variables.valueIterator();
+        var string_index: u32 = 0; // Track string indices
+        while (var_iterator.next()) |var_data| {
             const comment = try std.fmt.allocPrint(self.allocator, "  ; Variable: {s}\n", .{var_data.name});
             defer self.allocator.free(comment);
             try file.writeAll(comment);
@@ -1198,7 +1213,8 @@ pub const LLVMIRPipeline = struct {
                     defer self.allocator.free(alloca_line);
                     try file.writeAll(alloca_line);
                     
-                    const store_line = try std.fmt.allocPrint(self.allocator, "  store ptr @.str.{d}, ptr %{s}, align 8\n", .{i, var_data.name});
+                    const store_line = try std.fmt.allocPrint(self.allocator, "  store ptr @.str.{d}, ptr %{s}, align 8\n", .{string_index, var_data.name});
+                    string_index += 1;
                     defer self.allocator.free(store_line);
                     try file.writeAll(store_line);
                 },
