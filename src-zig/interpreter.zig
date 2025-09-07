@@ -978,7 +978,6 @@ pub const Interpreter = struct {
                         .closure = self.environment,
                     };
                     // Function registered
-                    // std.debug.print("DEBUG: Registering function '{s}'\n", .{func.name});
                     try self.functions.put(func.name, cursed_func);
                 },
                 .Struct => |struct_decl| {
@@ -2153,8 +2152,8 @@ pub const Interpreter = struct {
                     return InterpreterError.TypeMismatch;
                 }
             }
-        } else if (std.mem.eql(u8, unary.operator, "&")) {
-            // Address-of operator - create a pointer to the operand
+        } else if (std.mem.eql(u8, unary.operator, "&") or std.mem.eql(u8, unary.operator, "ඞ")) {
+            // Address-of operator - create a pointer to the operand (both & and ඞ syntax)
             const pointee_ptr = try self.allocator.create(Value);
             pointee_ptr.* = operand;
             return Value{ .Pointer = PointerValue{

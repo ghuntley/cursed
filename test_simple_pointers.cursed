@@ -1,0 +1,18 @@
+vibe main
+yeet "vibez"
+
+slay main_character() {
+    vibez.spill("Testing simple pointers...")
+    
+    sus value drip = 42
+    sus ptr ඞnormie = ඞvalue
+    
+    vibez.spill("Original value:")
+    vibez.spill(value)
+    
+    vibez.spill("Pointer address:")  
+    vibez.spill(ptr)
+    
+    vibez.spill("Dereferenced value:")
+    vibez.spill(*ptr)
+}
