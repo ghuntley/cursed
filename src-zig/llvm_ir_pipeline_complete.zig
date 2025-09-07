@@ -605,13 +605,25 @@ pub const LLVMIRPipeline = struct {
                     };
                     try self.captured_variables.append(self.allocator, var_data);
                 },
-                .MethodCall => |_| {
-                    // Handle cases like result := mathz.add_two(5, 3)
-                    // For now, capture as variable reference
+                .MethodCall => |method_call| {
+                    // Evaluate method call at compile time and capture the result
+                    const result = self.evaluateMethodCallAtCompileTime(method_call) catch |err| {
+                        print("⚠️ Could not evaluate method call in short declaration: {any}\n", .{err});
+                        // Fallback to variable reference
+                        const owned_name = try self.allocator.dupe(u8, name);
+                        const var_data = IRVariable{
+                            .name = owned_name,
+                            .value = IRValue{ .Variable = owned_name },
+                        };
+                        try self.captured_variables.append(self.allocator, var_data);
+                        return;
+                    };
+                    
+                    // Store the computed result
                     const owned_name = try self.allocator.dupe(u8, name);
                     const var_data = IRVariable{
                         .name = owned_name,
-                        .value = IRValue{ .Variable = owned_name },
+                        .value = result,
                     };
                     try self.captured_variables.append(self.allocator, var_data);
                 },
@@ -923,6 +935,21 @@ pub const LLVMIRPipeline = struct {
                         }
                     }
                     break :blk IRValue{ .Integer = 0 }; // Default if not found
+                },
+                .Unary => |unary| blk: {
+                    if (std.mem.eql(u8, unary.operator, "-")) {
+                        switch (unary.operand.*) {
+                            .Integer => |int_val| break :blk IRValue{ .Integer = -int_val },
+                            .Float => |float_val| break :blk IRValue{ .Float = -float_val },
+                            else => {
+                                print("⚠️ Unsupported unary operand type in mathz\n", .{});
+                                break :blk IRValue{ .Integer = 0 };
+                            },
+                        }
+                    } else {
+                        print("⚠️ Unsupported unary operator in mathz: {s}\n", .{unary.operator});
+                        break :blk IRValue{ .Integer = 0 };
+                    }
                 },
                 else => blk: {
                     print("⚠️ Unsupported mathz argument type\n", .{});
@@ -1803,6 +1830,15 @@ pub const LLVMIRPipeline = struct {
                 const arg_value = switch (arg.*) {
                     .Integer => |int_val| IRValue{ .Integer = int_val },
                     .Float => |float_val| IRValue{ .Float = float_val },
+                    .Identifier, .Variable => |var_name| blk: {
+                        // Look up variable value from captured_variables
+                        for (self.captured_variables.items) |captured_var| {
+                            if (std.mem.eql(u8, captured_var.name, var_name)) {
+                                break :blk captured_var.value;
+                            }
+                        }
+                        break :blk IRValue{ .Integer = 0 }; // Default if not found
+                    },
                     .Unary => |unary| blk: {
                         if (std.mem.eql(u8, unary.operator, "-")) {
                             switch (unary.operand.*) {
@@ -1857,6 +1893,49 @@ pub const LLVMIRPipeline = struct {
                     },
                     else => break :blk IRValue{ .Integer = 0 },
                 }
+            } else if (std.mem.eql(u8, func_name, "add") and args.items.len == 2) blk: {
+                const left = args.items[0];
+                const right = args.items[1];
+                switch (left) {
+                    .Integer => |left_int| switch (right) {
+                        .Integer => |right_int| break :blk IRValue{ .Integer = left_int + right_int },
+                        else => break :blk IRValue{ .Integer = 0 },
+                    },
+                    else => break :blk IRValue{ .Integer = 0 },
+                }
+            } else if (std.mem.eql(u8, func_name, "subtract") and args.items.len == 2) blk: {
+                const left = args.items[0];
+                const right = args.items[1];
+                switch (left) {
+                    .Integer => |left_int| switch (right) {
+                        .Integer => |right_int| break :blk IRValue{ .Integer = left_int - right_int },
+                        else => break :blk IRValue{ .Integer = 0 },
+                    },
+                    else => break :blk IRValue{ .Integer = 0 },
+                }
+            } else if (std.mem.eql(u8, func_name, "multiply") and args.items.len == 2) blk: {
+                const left = args.items[0];
+                const right = args.items[1];
+                switch (left) {
+                    .Integer => |left_int| switch (right) {
+                        .Integer => |right_int| break :blk IRValue{ .Integer = left_int * right_int },
+                        else => break :blk IRValue{ .Integer = 0 },
+                    },
+                    else => break :blk IRValue{ .Integer = 0 },
+                }
+            } else if (std.mem.eql(u8, func_name, "divide") and args.items.len == 2) blk: {
+                const left = args.items[0];
+                const right = args.items[1];
+                switch (left) {
+                    .Integer => |left_int| switch (right) {
+                        .Integer => |right_int| {
+                            if (right_int == 0) break :blk IRValue{ .Integer = 0 };
+                            break :blk IRValue{ .Integer = @divTrunc(left_int, right_int) };
+                        },
+                        else => break :blk IRValue{ .Integer = 0 },
+                    },
+                    else => break :blk IRValue{ .Integer = 0 },
+                }
             } else blk: {
                 print("⚠️ Mathz function not implemented: {s}\n", .{func_name});
                 break :blk IRValue{ .Integer = 0 };
@@ -1872,11 +1951,33 @@ pub const LLVMIRPipeline = struct {
                 
                 const left_str = switch (left_arg.*) {
                     .String => |str_val| str_val,
+                    .Identifier, .Variable => |var_name| blk: {
+                        for (self.captured_variables.items) |captured_var| {
+                            if (std.mem.eql(u8, captured_var.name, var_name)) {
+                                switch (captured_var.value) {
+                                    .String => |str_val| break :blk str_val,
+                                    else => return CompileError.UnsupportedFeature,
+                                }
+                            }
+                        }
+                        return CompileError.UnsupportedFeature;
+                    },
                     else => return CompileError.UnsupportedFeature,
                 };
                 
                 const right_str = switch (right_arg.*) {
                     .String => |str_val| str_val,
+                    .Identifier, .Variable => |var_name| blk: {
+                        for (self.captured_variables.items) |captured_var| {
+                            if (std.mem.eql(u8, captured_var.name, var_name)) {
+                                switch (captured_var.value) {
+                                    .String => |str_val| break :blk str_val,
+                                    else => return CompileError.UnsupportedFeature,
+                                }
+                            }
+                        }
+                        return CompileError.UnsupportedFeature;
+                    },
                     else => return CompileError.UnsupportedFeature,
                 };
                 
@@ -1890,18 +1991,40 @@ pub const LLVMIRPipeline = struct {
                 
                 const str_val = switch (str_arg.*) {
                     .String => |str_val| str_val,
+                    .Identifier, .Variable => |var_name| blk: {
+                        for (self.captured_variables.items) |captured_var| {
+                            if (std.mem.eql(u8, captured_var.name, var_name)) {
+                                switch (captured_var.value) {
+                                    .String => |str_val| break :blk str_val,
+                                    else => return CompileError.UnsupportedFeature,
+                                }
+                            }
+                        }
+                        return CompileError.UnsupportedFeature;
+                    },
                     else => return CompileError.UnsupportedFeature,
                 };
                 
                 // Return string length at compile time
                 return IRValue{ .Integer = @as(i64, @intCast(str_val.len)) };
                 
-            } else if (std.mem.eql(u8, func_name, "upper") and method_call.arguments.items.len == 1) {
+            } else if ((std.mem.eql(u8, func_name, "upper") or std.mem.eql(u8, func_name, "to_upper")) and method_call.arguments.items.len == 1) {
                 // Extract string argument
                 const str_arg: *const ast.Expression = @ptrCast(@alignCast(method_call.arguments.items[0]));
                 
                 const str_val = switch (str_arg.*) {
                     .String => |str_val| str_val,
+                    .Identifier, .Variable => |var_name| blk: {
+                        for (self.captured_variables.items) |captured_var| {
+                            if (std.mem.eql(u8, captured_var.name, var_name)) {
+                                switch (captured_var.value) {
+                                    .String => |str_val| break :blk str_val,
+                                    else => return CompileError.UnsupportedFeature,
+                                }
+                            }
+                        }
+                        return CompileError.UnsupportedFeature;
+                    },
                     else => return CompileError.UnsupportedFeature,
                 };
                 
@@ -1912,12 +2035,23 @@ pub const LLVMIRPipeline = struct {
                 }
                 return IRValue{ .String = upper_str };
                 
-            } else if (std.mem.eql(u8, func_name, "lower") and method_call.arguments.items.len == 1) {
+            } else if ((std.mem.eql(u8, func_name, "lower") or std.mem.eql(u8, func_name, "to_lower")) and method_call.arguments.items.len == 1) {
                 // Extract string argument
                 const str_arg: *const ast.Expression = @ptrCast(@alignCast(method_call.arguments.items[0]));
                 
                 const str_val = switch (str_arg.*) {
                     .String => |str_val| str_val,
+                    .Identifier, .Variable => |var_name| blk: {
+                        for (self.captured_variables.items) |captured_var| {
+                            if (std.mem.eql(u8, captured_var.name, var_name)) {
+                                switch (captured_var.value) {
+                                    .String => |str_val| break :blk str_val,
+                                    else => return CompileError.UnsupportedFeature,
+                                }
+                            }
+                        }
+                        return CompileError.UnsupportedFeature;
+                    },
                     else => return CompileError.UnsupportedFeature,
                 };
                 
@@ -1927,6 +2061,30 @@ pub const LLVMIRPipeline = struct {
                     lower_str[i] = if (char >= 'A' and char <= 'Z') char + 32 else char;
                 }
                 return IRValue{ .String = lower_str };
+                
+            } else if (std.mem.eql(u8, func_name, "from_int") and method_call.arguments.items.len == 1) {
+                // Extract integer argument
+                const int_arg: *const ast.Expression = @ptrCast(@alignCast(method_call.arguments.items[0]));
+                
+                const int_val = switch (int_arg.*) {
+                    .Integer => |int_val| int_val,
+                    .Identifier, .Variable => |var_name| blk: {
+                        for (self.captured_variables.items) |captured_var| {
+                            if (std.mem.eql(u8, captured_var.name, var_name)) {
+                                switch (captured_var.value) {
+                                    .Integer => |int_val| break :blk int_val,
+                                    else => return CompileError.UnsupportedFeature,
+                                }
+                            }
+                        }
+                        return CompileError.UnsupportedFeature;
+                    },
+                    else => return CompileError.UnsupportedFeature,
+                };
+                
+                // Convert integer to string at compile time
+                const int_str = try std.fmt.allocPrint(self.allocator, "{d}", .{int_val});
+                return IRValue{ .String = int_str };
                 
             } else {
                 print("⚠️ Stringz function not implemented: {s}\n", .{func_name});
