@@ -17,7 +17,14 @@ void cursed_runtime_spill_int(int64_t value) {
 
 // vibez.spill() float implementation
 void cursed_runtime_spill_float(double value) {
-    printf("%f\n", value);
+    // Match interpreter precision: remove trailing zeros for cleaner output
+    if (value == (long)value) {
+        // If it's a whole number, print as integer
+        printf("%ld\n", (long)value);
+    } else {
+        // For decimals, use %.6g to match interpreter formatting better
+        printf("%.6g\n", value);
+    }
     fflush(stdout);
 }
 

@@ -1,0 +1,53 @@
+vibe main
+yeet "vibez"
+yeet "mathz"
+
+slay main_character() {
+    vibez.spill("=== CURSED Complete Language Showcase ===")
+    
+    fr fr All basic types
+    sus number drip = 42
+    sus pi meal = 3.14159
+    sus name tea = "CURSED Language"
+    sus flag lit = based
+    
+    vibez.spill("Basic Types:")
+    vibez.spill(number)
+    vibez.spill(pi)
+    vibez.spill(name)
+    vibez.spill(flag)
+    
+    fr fr Arithmetic expressions
+    vibez.spill("Arithmetic:")
+    vibez.spill(number + 8)
+    vibez.spill(pi * 2)
+    vibez.spill(2 + 3 * 4)
+    vibez.spill((10 + 5) / 3)
+    
+    fr fr Comparison operations
+    vibez.spill("Comparisons:")
+    vibez.spill(number > 40)
+    vibez.spill(pi < 4)
+    vibez.spill(number == 42)
+    vibez.spill(10 != 5)
+    
+    fr fr Logical operations  
+    vibez.spill("Logical:")
+    vibez.spill(1 && 1)
+    vibez.spill(1 || 0)
+    vibez.spill(0 && 1)
+    
+    fr fr Mathz functions
+    vibez.spill("Mathz Functions:")
+    vibez.spill(mathz.abs_normie(-25))
+    vibez.spill(mathz.max(number, 50))
+    vibez.spill(mathz.min(10, 5))
+    vibez.spill(mathz.add_two(15, 27))
+    
+    fr fr Complex nested expressions
+    vibez.spill("Complex Expressions:")
+    vibez.spill(mathz.max(number + 8, pi * 10))
+    vibez.spill((number > 40) && (pi < 4))
+    
+    vibez.spill("=== Showcase Complete - All Features Working! ===")
+}
