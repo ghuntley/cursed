@@ -337,14 +337,8 @@ pub const LLVMIRPipeline = struct {
             .Assignment => |assign_stmt| try self.compileAssignmentStatement(wip, &assign_stmt),
             .Expression => |expr| _ = try self.compileCompleteExpression(wip, &expr),
             .Return => |ret| try self.compileReturnStatement(wip, &ret),
-            .If => |if_stmt| {
-                print("⚠️ If statements temporarily disabled in LLVM backend\n", .{});
-                _ = if_stmt;
-            },
-            .While => |while_stmt| {
-                print("⚠️ While statements temporarily disabled in LLVM backend\n", .{});
-                _ = while_stmt;
-            },
+            .If => |if_stmt| try self.compileIfStatement(wip, &if_stmt),
+            .While => |while_stmt| try self.compileWhileStatement(wip, &while_stmt),
             .ShortDeclaration => |short_decl| try self.compileShortDeclarationStatement(wip, &short_decl),
             .Function => {}, // Functions handled separately in top-level pass
             .For => |for_stmt| try self.compileForStatement(wip, &for_stmt),
@@ -863,7 +857,7 @@ pub const LLVMIRPipeline = struct {
         const full_method_name = try std.fmt.allocPrint(self.allocator, "{s}.{s}", .{object_name, method_name});
         defer self.allocator.free(full_method_name);
         
-        print("🔍 Compiling method call: {s}\n", .{full_method_name});
+        // Debug: Compiling method call: {s}
         
         // Handle vibez.spill specially with proper multi-argument formatting
         if (std.mem.eql(u8, full_method_name, "vibez.spill")) {
@@ -1212,9 +1206,25 @@ pub const LLVMIRPipeline = struct {
                     }
                 },
                 .Identifier, .Variable => |name| {
-                    const owned_name = try self.allocator.dupe(u8, name);
-                    try ir_args.append(self.allocator, IRValue{ .Variable = owned_name });
-                    print("📝 Captured variable argument: {s}\n", .{name});
+                    // Look up variable value from captured_variables first
+                    for (self.captured_variables.items) |captured_var| {
+                        if (std.mem.eql(u8, captured_var.name, name)) {
+                            try ir_args.append(self.allocator, captured_var.value);
+                            switch (captured_var.value) {
+                                .String => |str_val| print("📝 Captured variable argument: {s} = \"{s}\"\n", .{name, str_val}),
+                                .Integer => |int_val| print("📝 Captured variable argument: {s} = {d}\n", .{name, int_val}),
+                                .Float => |float_val| print("📝 Captured variable argument: {s} = {d}\n", .{name, float_val}),
+                                .Boolean => |bool_val| print("📝 Captured variable argument: {s} = {s}\n", .{name, if (bool_val) "based" else "cringe"}),
+                                else => print("📝 Captured variable argument: {s} = (other)\n", .{name}),
+                            }
+                            break;
+                        }
+                    } else {
+                        // Fallback to variable reference if not found
+                        const owned_name = try self.allocator.dupe(u8, name);
+                        try ir_args.append(self.allocator, IRValue{ .Variable = owned_name });
+                        print("📝 Captured variable argument: {s} (unknown)\n", .{name});
+                    }
                 },
                 .Binary => |binary| {
                     // Handle binary expressions using recursive evaluator

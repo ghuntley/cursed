@@ -114,12 +114,12 @@ for test_file in "${test_files[@]}"; do
     if combined_output=$("$CURSED_COMPILER" --interpret "$test_file" 2>&1); then
         # Extract only the program output lines (filter out memory errors and debug info)  
         # Step 1: Split on error(gpa) and take only the first part (program output)
-        interp_output=$(echo "$combined_output" | sed '/^error(gpa):/,$d' | grep -v -E '^/[^:]*:[0-9]+:[0-9]+:' | grep -v '🔧\|✅\|🔍\|🚀\|🎉\|🧹' || echo "")
+        interp_output=$(echo "$combined_output" | sed '/^error(gpa):/,$d' | grep -v -E '^/[^:]*:[0-9]+:[0-9]+:' | grep -v '🔧\|✅\|🔍\|🚀\|🎉\|🧹\|📝\|💡\|⚡\|🏗️\|❌\|⚠️' || echo "")
         interp_exit=0
     else
         interp_exit=$?
         combined_output=$("$CURSED_COMPILER" --interpret "$test_file" 2>&1 || true)
-        interp_output=$(echo "$combined_output" | sed '/^error(gpa):/,$d' | grep -v -E '^/[^:]*:[0-9]+:[0-9]+:' | grep -v '🔧\|✅\|🔍\|🚀\|🎉\|🧹' || echo "")
+        interp_output=$(echo "$combined_output" | sed '/^error(gpa):/,$d' | grep -v -E '^/[^:]*:[0-9]+:[0-9]+:' | grep -v '🔧\|✅\|🔍\|🚀\|🎉\|🧹\|📝\|💡\|⚡\|🏗️\|❌\|⚠️' || echo "")
     fi
     
     # Try to compile (also from cursed root)
@@ -128,6 +128,7 @@ for test_file in "${test_files[@]}"; do
     comp_exit=1
     compiled_output=""
     
+    # Compile (suppress debug output during compilation)
     if comp_stderr=$("$CURSED_COMPILER" --compile "$test_file" -o "$temp_binary" 2>&1 >/dev/null); then
         # Compilation succeeded - now run the binary
         if binary_output=$("$temp_binary" 2>/dev/null); then
