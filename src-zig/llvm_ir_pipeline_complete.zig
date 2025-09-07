@@ -627,6 +627,51 @@ pub const LLVMIRPipeline = struct {
                     };
                     try self.captured_variables.append(self.allocator, var_data);
                 },
+                .Call => |call| {
+                    // Handle user-defined function calls like add_numbers(10, 5)
+                    const result = self.evaluateCallAtCompileTime(&call) catch |err| {
+                        print("⚠️ Could not evaluate function call in short declaration: {any}\n", .{err});
+                        // Fallback to variable reference
+                        const owned_name = try self.allocator.dupe(u8, name);
+                        const var_data = IRVariable{
+                            .name = owned_name,
+                            .value = IRValue{ .Variable = owned_name },
+                        };
+                        try self.captured_variables.append(self.allocator, var_data);
+                        return;
+                    };
+                    
+                    // Store the computed result
+                    const owned_name = try self.allocator.dupe(u8, name);
+                    const var_data = IRVariable{
+                        .name = owned_name,
+                        .value = result,
+                    };
+                    try self.captured_variables.append(self.allocator, var_data);
+                },
+                .Binary => |binary| {
+                    // Handle binary expressions like 15 + 27
+                    const binary_expr = ast.Expression{ .Binary = binary };
+                    const result = self.evaluateExpressionAtCompileTime(&binary_expr) catch |err| {
+                        print("⚠️ Could not evaluate binary expression in short declaration: {any}\n", .{err});
+                        // Fallback to variable reference
+                        const owned_name = try self.allocator.dupe(u8, name);
+                        const var_data = IRVariable{
+                            .name = owned_name,
+                            .value = IRValue{ .Variable = owned_name },
+                        };
+                        try self.captured_variables.append(self.allocator, var_data);
+                        return;
+                    };
+                    
+                    // Store the computed result
+                    const owned_name = try self.allocator.dupe(u8, name);
+                    const var_data = IRVariable{
+                        .name = owned_name,
+                        .value = result,
+                    };
+                    try self.captured_variables.append(self.allocator, var_data);
+                },
                 else => {
                     // For other expression types, capture as variable reference
                     const owned_name = try self.allocator.dupe(u8, name);
@@ -994,6 +1039,80 @@ pub const LLVMIRPipeline = struct {
                 .Integer => |left_int| switch (right) {
                     .Integer => |right_int| break :blk IRValue{ .Integer = @min(left_int, right_int) },
                     else => break :blk IRValue{ .Integer = left_int },
+                },
+                else => break :blk IRValue{ .Integer = 0 },
+            }
+        } else if (std.mem.eql(u8, func_name, "add") and args.items.len == 2) blk: {
+            const left = args.items[0];
+            const right = args.items[1];
+            switch (left) {
+                .Integer => |left_int| switch (right) {
+                    .Integer => |right_int| break :blk IRValue{ .Integer = left_int + right_int },
+                    else => break :blk IRValue{ .Integer = 0 },
+                },
+                else => break :blk IRValue{ .Integer = 0 },
+            }
+        } else if (std.mem.eql(u8, func_name, "subtract") and args.items.len == 2) blk: {
+            const left = args.items[0];
+            const right = args.items[1];
+            switch (left) {
+                .Integer => |left_int| switch (right) {
+                    .Integer => |right_int| break :blk IRValue{ .Integer = left_int - right_int },
+                    else => break :blk IRValue{ .Integer = 0 },
+                },
+                else => break :blk IRValue{ .Integer = 0 },
+            }
+        } else if (std.mem.eql(u8, func_name, "multiply") and args.items.len == 2) blk: {
+            const left = args.items[0];
+            const right = args.items[1];
+            switch (left) {
+                .Integer => |left_int| switch (right) {
+                    .Integer => |right_int| break :blk IRValue{ .Integer = left_int * right_int },
+                    else => break :blk IRValue{ .Integer = 0 },
+                },
+                else => break :blk IRValue{ .Integer = 0 },
+            }
+        } else if (std.mem.eql(u8, func_name, "divide") and args.items.len == 2) blk: {
+            const left = args.items[0];
+            const right = args.items[1];
+            switch (left) {
+                .Integer => |left_int| switch (right) {
+                    .Integer => |right_int| {
+                        if (right_int == 0) break :blk IRValue{ .Integer = 0 };
+                        break :blk IRValue{ .Integer = @divTrunc(left_int, right_int) };
+                    },
+                    else => break :blk IRValue{ .Integer = 0 },
+                },
+                else => break :blk IRValue{ .Integer = 0 },
+            }
+        } else if (std.mem.eql(u8, func_name, "pow") and args.items.len == 2) blk: {
+            const left = args.items[0];
+            const right = args.items[1];
+            switch (left) {
+                .Integer => |left_int| switch (right) {
+                    .Integer => |right_int| {
+                        if (right_int < 0) break :blk IRValue{ .Integer = 0 };
+                        var result: i64 = 1;
+                        var i: i64 = 0;
+                        while (i < right_int) : (i += 1) {
+                            result *= left_int;
+                        }
+                        break :blk IRValue{ .Integer = result };
+                    },
+                    else => break :blk IRValue{ .Integer = 0 },
+                },
+                else => break :blk IRValue{ .Integer = 0 },
+            }
+        } else if (std.mem.eql(u8, func_name, "mod") and args.items.len == 2) blk: {
+            const left = args.items[0];
+            const right = args.items[1];
+            switch (left) {
+                .Integer => |left_int| switch (right) {
+                    .Integer => |right_int| {
+                        if (right_int == 0) break :blk IRValue{ .Integer = 0 };
+                        break :blk IRValue{ .Integer = @mod(left_int, right_int) };
+                    },
+                    else => break :blk IRValue{ .Integer = 0 },
                 },
                 else => break :blk IRValue{ .Integer = 0 },
             }
@@ -1936,6 +2055,37 @@ pub const LLVMIRPipeline = struct {
                     },
                     else => break :blk IRValue{ .Integer = 0 },
                 }
+            } else if (std.mem.eql(u8, func_name, "pow") and args.items.len == 2) blk: {
+                const left = args.items[0];
+                const right = args.items[1];
+                switch (left) {
+                    .Integer => |left_int| switch (right) {
+                        .Integer => |right_int| {
+                            if (right_int < 0) break :blk IRValue{ .Integer = 0 };
+                            var result: i64 = 1;
+                            var i: i64 = 0;
+                            while (i < right_int) : (i += 1) {
+                                result *= left_int;
+                            }
+                            break :blk IRValue{ .Integer = result };
+                        },
+                        else => break :blk IRValue{ .Integer = 0 },
+                    },
+                    else => break :blk IRValue{ .Integer = 0 },
+                }
+            } else if (std.mem.eql(u8, func_name, "mod") and args.items.len == 2) blk: {
+                const left = args.items[0];
+                const right = args.items[1];
+                switch (left) {
+                    .Integer => |left_int| switch (right) {
+                        .Integer => |right_int| {
+                            if (right_int == 0) break :blk IRValue{ .Integer = 0 };
+                            break :blk IRValue{ .Integer = @mod(left_int, right_int) };
+                        },
+                        else => break :blk IRValue{ .Integer = 0 },
+                    },
+                    else => break :blk IRValue{ .Integer = 0 },
+                }
             } else blk: {
                 print("⚠️ Mathz function not implemented: {s}\n", .{func_name});
                 break :blk IRValue{ .Integer = 0 };
@@ -2092,6 +2242,16 @@ pub const LLVMIRPipeline = struct {
             }
         }
         
+        return CompileError.UnsupportedFeature;
+    }
+    
+    /// Evaluate user-defined function calls at compile time 
+    fn evaluateCallAtCompileTime(self: *Self, call: *const ast.CallExpression) !IRValue {
+        // For now, user-defined function calls are too complex to evaluate at compile time
+        // since they require full function execution with their own environments.
+        // This would require implementing a full interpreter within the compiler.
+        _ = self; _ = call;
+        print("⚠️ User-defined function calls not yet supported in compile-time evaluation\n", .{});
         return CompileError.UnsupportedFeature;
     }
        

@@ -1,0 +1,16 @@
+vibe main
+yeet "vibez"
+
+slay add_numbers(a normie, b normie) normie {
+    damn a + b
+}
+
+slay main_character() {
+    vibez.spill("=== Function Test ===")
+    
+    sus result normie = add_numbers(10, 5)
+    vibez.spill("add_numbers(10, 5) =")
+    vibez.spill(result)
+    
+    vibez.spill("=== Test Complete ===")
+}
