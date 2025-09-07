@@ -30,6 +30,7 @@ void cursed_runtime_spill_float(double value) {
 
 // vibez.spill() boolean implementation
 void cursed_runtime_spill_bool(int64_t value) {
-    printf("%s\n", value ? "true" : "false");
+    // Print CURSED boolean keywords
+    printf("%s\n", value ? "based" : "cringe");
     fflush(stdout);
 }
