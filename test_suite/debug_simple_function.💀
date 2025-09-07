@@ -1,0 +1,13 @@
+vibe main
+yeet "vibez"
+
+slay test_return(x normie) normie {
+    damn 42
+}
+
+slay main_character() {
+    vibez.spill("Before calling test_return")
+    sus result normie = test_return(5)
+    vibez.spill("After calling test_return")
+    vibez.spill(result)
+}

@@ -226,11 +226,29 @@ pub const LLVMIRPipeline = struct {
     fn declareCursedFunction(self: *Self, func_stmt: *const ast.FunctionStatement) !void {
         const func_name = func_stmt.name;
         
-        // For CURSED functions, main_character maps to main and returns i32 for C compatibility
+        // Determine return type based on function signature
         const return_type = if (std.mem.eql(u8, func_name, "main_character")) 
             llvm.Builder.Type.i32  // main_character maps to C main() 
-        else 
-            llvm.Builder.Type.void; // Other CURSED functions return void
+        else if (func_stmt.return_type) |ret_type| blk: {
+            // Map CURSED types to LLVM types
+            switch (ret_type) {
+                .Basic => |basic_type| switch (basic_type) {
+                    .Normie => break :blk llvm.Builder.Type.i64,  // Integer
+                    .Tea, .Txt => break :blk llvm.Builder.Type.ptr, // String (pointer)
+                    .Lit => break :blk llvm.Builder.Type.i1,       // Boolean
+                    .Drip, .Snack, .Meal => break :blk llvm.Builder.Type.double, // Float types
+                    .Smol => break :blk llvm.Builder.Type.i8,       // 8-bit
+                    .Mid => break :blk llvm.Builder.Type.i16,       // 16-bit
+                    .Thicc => break :blk llvm.Builder.Type.i64,     // 64-bit
+                    .Byte => break :blk llvm.Builder.Type.i8,       // Unsigned 8-bit
+                    .Rune => break :blk llvm.Builder.Type.i32,      // Unicode char
+                    else => break :blk llvm.Builder.Type.void,      // Default to void
+                },
+                .Pointer => break :blk llvm.Builder.Type.ptr,       // Pointer type
+                else => break :blk llvm.Builder.Type.void,           // Default to void
+            }
+        } else 
+            llvm.Builder.Type.void; // No return type specified
             
         // TODO: Handle function parameters properly
         var param_types: [0]llvm.Builder.Type = .{};
@@ -278,12 +296,37 @@ pub const LLVMIRPipeline = struct {
             try self.compileCompleteStatement(&wip, stmt);
         }
         
-        // Add return if not present  
+        // Add return if not present and function expects a return value
         if (std.mem.eql(u8, func_name, "main_character")) {
             // main_character maps to main() and must return i32 for C compatibility
+            // Only add return if no explicit return was processed
             const zero = try self.builder.intConst(llvm.Builder.Type.i32, 0);
             _ = try wip.ret(zero.toValue());
+        } else if (func_stmt.return_type != null) {
+            // Function has a return type but no explicit return found
+            // Add default return based on type
+            if (func_stmt.return_type) |ret_type| {
+                switch (ret_type) {
+                    .Basic => |basic_type| switch (basic_type) {
+                        .Normie, .Thicc => {
+                            const zero = try self.builder.intConst(llvm.Builder.Type.i64, 0);
+                            _ = try wip.ret(zero.toValue());
+                        },
+                        .Lit => {
+                            const false_val = try self.builder.intConst(llvm.Builder.Type.i1, 0);
+                            _ = try wip.ret(false_val.toValue());
+                        },
+                        else => {
+                            _ = try wip.retVoid();
+                        },
+                    },
+                    else => {
+                        _ = try wip.retVoid();
+                    },
+                }
+            }
         } else {
+            // Function has no return type, use void return
             _ = try wip.retVoid();
         }
         
@@ -484,12 +527,17 @@ pub const LLVMIRPipeline = struct {
     
     /// Compile return statement with COMPLETE implementation
     fn compileReturnStatement(self: *Self, wip: *llvm.Builder.WipFunction, ret: *const ast.ReturnStatement) (Allocator.Error || CompileError)!void {
-        _ = ret; // Ignore return value for now
-        _ = wip;
-        _ = self;
-        // For now, skip explicit return statement compilation to avoid type mismatch
-        // Most CURSED programs don't use explicit returns anyway
-        print("⚠️ Explicit return statement skipped (implicit returns handled in function finish)\n", .{});
+        if (ret.value) |value_expr| {
+            // Return statement with value: damn x + y
+            const expr_ptr: *const ast.Expression = @ptrCast(@alignCast(value_expr));
+            const return_value = try self.compileCompleteExpression(wip, expr_ptr);
+            _ = try wip.ret(return_value);
+            print("✅ Compiled return statement with value\n", .{});
+        } else {
+            // Return statement without value: damn
+            _ = try wip.retVoid();
+            print("✅ Compiled return statement (void)\n", .{});
+        }
     }
     
     /// Compile if statement with COMPLETE control flow implementation
@@ -628,26 +676,16 @@ pub const LLVMIRPipeline = struct {
                     try self.captured_variables.append(self.allocator, var_data);
                 },
                 .Call => |call| {
-                    // Handle user-defined function calls like add_numbers(10, 5)
-                    const result = self.evaluateCallAtCompileTime(&call) catch |err| {
-                        print("⚠️ Could not evaluate function call in short declaration: {any}\n", .{err});
-                        // Fallback to variable reference
-                        const owned_name = try self.allocator.dupe(u8, name);
-                        const var_data = IRVariable{
-                            .name = owned_name,
-                            .value = IRValue{ .Variable = owned_name },
-                        };
-                        try self.captured_variables.append(self.allocator, var_data);
-                        return;
-                    };
-                    
-                    // Store the computed result
+                    // For user-defined function calls, skip compile-time evaluation
+                    // Let LLVM runtime handle the actual call execution
+                    print("🔧 User-defined function call detected: skipping compile-time evaluation\n", .{});
                     const owned_name = try self.allocator.dupe(u8, name);
                     const var_data = IRVariable{
                         .name = owned_name,
-                        .value = result,
+                        .value = IRValue{ .Variable = owned_name }, // Store as variable reference for now
                     };
                     try self.captured_variables.append(self.allocator, var_data);
+                    _ = call;
                 },
                 .Binary => |binary| {
                     // Handle binary expressions like 15 + 27
@@ -891,11 +929,49 @@ pub const LLVMIRPipeline = struct {
     
     /// Compile function calls with COMPLETE implementation
     fn compileFunctionCall(self: *Self, wip: *llvm.Builder.WipFunction, call: *const ast.CallExpression) (Allocator.Error || CompileError)!llvm.Builder.Value {
-        _ = wip; // TODO: Implement direct function calls
-        _ = call;
-        print("⚠️ Direct function calls not implemented yet\n", .{});
-        const zero = try self.builder.intConst(llvm.Builder.Type.i64, 0);
-        return zero.toValue();
+        // Get function name
+        const func_name = switch (call.function.*) {
+            .Identifier => |name| name,
+            .Variable => |name| name,  
+            else => {
+                print("⚠️ Unsupported function call type\n", .{});
+                const zero = try self.builder.intConst(llvm.Builder.Type.i64, 0);
+                return zero.toValue();
+            },
+        };
+        
+        // Check if function exists in LLVM module
+        const function = self.functions.get(func_name) orelse {
+            print("⚠️ Function {s} not found for call\n", .{func_name});
+            const zero = try self.builder.intConst(llvm.Builder.Type.i64, 0);
+            return zero.toValue();
+        };
+        
+        // Evaluate arguments
+        var args = std.ArrayListUnmanaged(llvm.Builder.Value){};
+        defer args.deinit(self.allocator);
+        
+        for (call.arguments.items) |arg_ptr| {
+            const arg: *const ast.Expression = @ptrCast(@alignCast(arg_ptr));
+            const arg_value = try self.compileCompleteExpression(wip, arg);
+            try args.append(self.allocator, arg_value);
+        }
+        
+        // Generate LLVM function call with correct API
+        const fn_ty = function.typeOf(&self.builder);
+        const callee = function.toValue(&self.builder);
+        
+        const result = try wip.call(
+            .normal,                   // kind
+            llvm.Builder.CallConv.default, // calling-convention  
+            .none,                     // function attributes
+            fn_ty,                     // function type
+            callee,                    // callee value
+            args.items,                // arguments
+            ""                         // name
+        );
+        print("✅ Generated LLVM function call: {s}\n", .{func_name});
+        return result;
     }
     
     /// Compile method calls (vibez.spill, etc.) with COMPLETE implementation

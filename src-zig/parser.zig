@@ -598,7 +598,7 @@ pub const Parser = struct {
 
     fn parsePrattCall(self: *Parser, left: Expression) ParserError!Expression {
         _ = self.advance(); // consume '('
-        var arguments = ArrayList(*Expression){};
+        var arguments = std.ArrayList(*Expression){ .items = &.{}, .capacity = 0 };
         // CRITICAL FIX: Do NOT defer arguments.deinit - arena will handle cleanup
 
         if (!self.check(.RightParen)) {
@@ -656,7 +656,7 @@ pub const Parser = struct {
         // If next token is '(', treat as method call
         if (self.check(.LeftParen)) {
             _ = self.advance(); // '('
-            var arguments = ArrayList(*Expression){};
+            var arguments = std.ArrayList(*Expression){ .items = &.{}, .capacity = 0 };
             defer arguments.deinit(self.arena_allocator);
             
             if (!self.check(.RightParen)) {
@@ -683,7 +683,7 @@ pub const Parser = struct {
             _ = try self.consume(.RightParen, "Expected ')' after arguments");
             
             // FIXED: Use arena allocator for arguments_copy to prevent memory leaks
-            var arguments_copy = ArrayList(*Expression){};
+            var arguments_copy = std.ArrayList(*Expression){ .items = &.{}, .capacity = 0 };
             for (arguments.items) |arg| {
                 try arguments_copy.append(self.arena_allocator, arg);
             }
@@ -1464,7 +1464,7 @@ pub const Parser = struct {
     fn parseBlockStatement(self: *Parser) ParserError!Statement {
         _ = try self.consume(.LeftBrace, "Expected '{'");
         
-        var statements = ArrayList(*Statement){};
+        var statements = std.ArrayList(*Statement){ .items = &.{}, .capacity = 0 };
         // CRITICAL FIX: Do NOT defer statements.deinit - the ArrayList will be owned by BlockStatement
         
         // Parse statements within the block
@@ -1554,7 +1554,9 @@ pub const Parser = struct {
         
         // Parse return type
         if (!self.check(.LeftBrace)) {
+            std.debug.print("🔧 DEBUG: Parsing return type...\n", .{});
             func.return_type = try self.parseType();
+            std.debug.print("🔧 DEBUG: Return type parsed successfully\n", .{});
         }
         
         // Parse body
@@ -1590,6 +1592,7 @@ pub const Parser = struct {
         
         _ = try self.consume(.RightBrace, "Expected '}'");
         
+        std.debug.print("🔧 DEBUG: Function parsing completed: {s}\n", .{func.name});
         return func;
     }
 

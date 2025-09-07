@@ -1,0 +1,12 @@
+vibe main
+yeet "vibez"
+
+slay test_return(x normie) {
+    damn 42
+}
+
+slay main_character() {
+    vibez.spill("Testing function with params")
+    sus result normie = test_return(5)
+    vibez.spill(result)
+}

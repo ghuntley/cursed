@@ -1,0 +1,18 @@
+vibe main
+yeet "vibez"
+
+slay test_return(x normie) normie {
+    ready x > 0 {
+        damn 1
+    } otherwise ready x < 0 {
+        damn -1
+    } otherwise {
+        damn 0
+    }
+}
+
+slay main_character() {
+    vibez.spill("Testing complex function")
+    sus result normie = test_return(5)
+    vibez.spill(result)
+}
