@@ -875,6 +875,11 @@ pub const LLVMIRPipeline = struct {
             return try self.compileMathzCall(wip, method_call, full_method_name);
         }
         
+        // Handle stringz functions
+        if (std.mem.startsWith(u8, full_method_name, "stringz.")) {
+            return try self.compileStringzCall(wip, method_call, full_method_name);
+        }
+        
         print("⚠️ Method call not implemented: {s}\n", .{full_method_name});
         const zero = try self.builder.intConst(llvm.Builder.Type.i64, 0);
         return zero.toValue();
@@ -993,6 +998,109 @@ pub const LLVMIRPipeline = struct {
                 return zero_fallback.toValue();
             },
         }
+    }
+    
+    /// Compile stringz function calls with compile-time evaluation
+    fn compileStringzCall(self: *Self, wip: *llvm.Builder.WipFunction, method_call: *const ast.MethodCallExpression, full_method_name: []const u8) (Allocator.Error || CompileError)!llvm.Builder.Value {
+        _ = wip; // Bypass Builder API for now
+        
+        print("🔧 Compiling stringz function: {s}\n", .{full_method_name});
+        
+        // Extract function name (everything after "stringz.")
+        const func_name = full_method_name[8..]; // Skip "stringz."
+        
+        // Evaluate arguments
+        var args = std.ArrayListUnmanaged(IRValue){};
+        for (method_call.arguments.items) |arg_ptr| {
+            const arg: *const ast.Expression = @ptrCast(@alignCast(arg_ptr));
+            
+            const arg_value = switch (arg.*) {
+                .Integer => |int_val| IRValue{ .Integer = int_val },
+                .Float => |float_val| IRValue{ .Float = float_val },
+                .String => |str_val| IRValue{ .String = str_val },
+                .Identifier, .Variable => |name| blk: {
+                    for (self.captured_variables.items) |var_data| {
+                        if (std.mem.eql(u8, var_data.name, name)) {
+                            break :blk var_data.value;
+                        }
+                    }
+                    break :blk IRValue{ .Integer = 0 }; // Default if not found
+                },
+                else => blk: {
+                    print("⚠️ Unsupported stringz argument type\n", .{});
+                    break :blk IRValue{ .Integer = 0 };
+                },
+            };
+            try args.append(self.allocator, arg_value);
+        }
+        
+        // Perform compile-time evaluation of stringz functions
+        const result = if (std.mem.eql(u8, func_name, "concat") and args.items.len == 2) blk: {
+            const left = args.items[0];
+            const right = args.items[1];
+            break :blk switch (left) {
+                .String => |left_str| switch (right) {
+                    .String => |right_str| blk2: {
+                        const concatenated = try std.fmt.allocPrint(self.allocator, "{s}{s}", .{left_str, right_str});
+                        break :blk2 IRValue{ .String = concatenated };
+                    },
+                    else => IRValue{ .String = "" },
+                },
+                else => IRValue{ .String = "" },
+            };
+        } else if (std.mem.eql(u8, func_name, "length") and args.items.len == 1) blk: {
+            const arg = args.items[0];
+            break :blk switch (arg) {
+                .String => |str_val| IRValue{ .Integer = @as(i64, @intCast(str_val.len)) },
+                else => IRValue{ .Integer = 0 },
+            };
+        } else if (std.mem.eql(u8, func_name, "upper") and args.items.len == 1) blk: {
+            const arg = args.items[0];
+            break :blk switch (arg) {
+                .String => |str_val| blk2: {
+                    var upper_str = try self.allocator.alloc(u8, str_val.len);
+                    for (str_val, 0..) |char, i| {
+                        upper_str[i] = if (char >= 'a' and char <= 'z') char - 32 else char;
+                    }
+                    break :blk2 IRValue{ .String = upper_str };
+                },
+                else => IRValue{ .String = "" },
+            };
+        } else if (std.mem.eql(u8, func_name, "lower") and args.items.len == 1) blk: {
+            const arg = args.items[0];
+            break :blk switch (arg) {
+                .String => |str_val| blk2: {
+                    var lower_str = try self.allocator.alloc(u8, str_val.len);
+                    for (str_val, 0..) |char, i| {
+                        lower_str[i] = if (char >= 'A' and char <= 'Z') char + 32 else char;
+                    }
+                    break :blk2 IRValue{ .String = lower_str };
+                },
+                else => IRValue{ .String = "" },
+            };
+        } else blk: {
+            print("⚠️ Stringz function not implemented: {s}\n", .{func_name});
+            break :blk IRValue{ .String = "" };
+        };
+        
+        // Convert result to LLVM value
+        return switch (result) {
+            .String => |str_val| blk: {
+                print("✅ Computed stringz.{s}() = \"{s}\"\n", .{func_name, str_val});
+                // For strings, we need to create a global string constant
+                const string_const = try self.compileStringConstant(str_val);
+                break :blk string_const;
+            },
+            .Integer => |int_val| blk: {
+                const int_const = try self.builder.intConst(llvm.Builder.Type.i64, int_val);
+                print("✅ Computed stringz.{s}() = {d}\n", .{func_name, int_val});
+                break :blk int_const.toValue();
+            },
+            else => blk: {
+                const zero_fallback = try self.builder.intConst(llvm.Builder.Type.i64, 0);
+                break :blk zero_fallback.toValue();
+            },
+        };
     }
     
     /// Compile vibez.spill() with string interpolation like interpreter
@@ -1743,6 +1851,77 @@ pub const LLVMIRPipeline = struct {
                 print("⚠️ Mathz function not implemented: {s}\n", .{func_name});
                 break :blk IRValue{ .Integer = 0 };
             };
+        } else if (std.mem.startsWith(u8, full_method_name, "stringz.")) {
+            const func_name = full_method_name[8..]; // Skip "stringz."
+            
+            // Handle stringz functions at compile time
+            if (std.mem.eql(u8, func_name, "concat") and method_call.arguments.items.len == 2) {
+                // Extract string arguments
+                const left_arg: *const ast.Expression = @ptrCast(@alignCast(method_call.arguments.items[0]));
+                const right_arg: *const ast.Expression = @ptrCast(@alignCast(method_call.arguments.items[1]));
+                
+                const left_str = switch (left_arg.*) {
+                    .String => |str_val| str_val,
+                    else => return CompileError.UnsupportedFeature,
+                };
+                
+                const right_str = switch (right_arg.*) {
+                    .String => |str_val| str_val,
+                    else => return CompileError.UnsupportedFeature,
+                };
+                
+                // Concatenate strings at compile time
+                const concatenated = try std.fmt.allocPrint(self.allocator, "{s}{s}", .{left_str, right_str});
+                return IRValue{ .String = concatenated };
+                
+            } else if (std.mem.eql(u8, func_name, "length") and method_call.arguments.items.len == 1) {
+                // Extract string argument
+                const str_arg: *const ast.Expression = @ptrCast(@alignCast(method_call.arguments.items[0]));
+                
+                const str_val = switch (str_arg.*) {
+                    .String => |str_val| str_val,
+                    else => return CompileError.UnsupportedFeature,
+                };
+                
+                // Return string length at compile time
+                return IRValue{ .Integer = @as(i64, @intCast(str_val.len)) };
+                
+            } else if (std.mem.eql(u8, func_name, "upper") and method_call.arguments.items.len == 1) {
+                // Extract string argument
+                const str_arg: *const ast.Expression = @ptrCast(@alignCast(method_call.arguments.items[0]));
+                
+                const str_val = switch (str_arg.*) {
+                    .String => |str_val| str_val,
+                    else => return CompileError.UnsupportedFeature,
+                };
+                
+                // Convert to uppercase at compile time (basic implementation)
+                var upper_str = try self.allocator.alloc(u8, str_val.len);
+                for (str_val, 0..) |char, i| {
+                    upper_str[i] = if (char >= 'a' and char <= 'z') char - 32 else char;
+                }
+                return IRValue{ .String = upper_str };
+                
+            } else if (std.mem.eql(u8, func_name, "lower") and method_call.arguments.items.len == 1) {
+                // Extract string argument
+                const str_arg: *const ast.Expression = @ptrCast(@alignCast(method_call.arguments.items[0]));
+                
+                const str_val = switch (str_arg.*) {
+                    .String => |str_val| str_val,
+                    else => return CompileError.UnsupportedFeature,
+                };
+                
+                // Convert to lowercase at compile time (basic implementation)  
+                var lower_str = try self.allocator.alloc(u8, str_val.len);
+                for (str_val, 0..) |char, i| {
+                    lower_str[i] = if (char >= 'A' and char <= 'Z') char + 32 else char;
+                }
+                return IRValue{ .String = lower_str };
+                
+            } else {
+                print("⚠️ Stringz function not implemented: {s}\n", .{func_name});
+                return IRValue{ .Integer = 0 };
+            }
         }
         
         return CompileError.UnsupportedFeature;
