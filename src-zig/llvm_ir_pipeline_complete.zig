@@ -985,8 +985,9 @@ pub const LLVMIRPipeline = struct {
                     print("📝 Captured variable argument: {s}\n", .{name});
                 },
                 .Binary => |binary| {
-                    // Handle binary expressions like int_val + 5
-                    const result = self.evaluateBinaryAtCompileTime(&binary) catch |err| {
+                    // Handle binary expressions using recursive evaluator
+                    const binary_expr = ast.Expression{ .Binary = binary };
+                    const result = self.evaluateExpressionAtCompileTime(&binary_expr) catch |err| {
                         print("⚠️ Cannot evaluate binary expression: {any}\n", .{err});
                         continue;
                     };
@@ -1233,12 +1234,12 @@ pub const LLVMIRPipeline = struct {
             .{self.captured_strings.items.len, self.captured_variables.items.len, self.captured_calls.items.len});
     }
     
-    /// Evaluate binary expressions at compile time for vibez.spill arguments
-    fn evaluateBinaryAtCompileTime(self: *Self, binary: *const ast.BinaryExpression) !IRValue {
-        // Get left operand value
-        const left_val = switch (binary.left.*) {
-            .Integer => |val| IRValue{ .Integer = val },
-            .Float => |val| IRValue{ .Float = val },
+    /// Recursively evaluate any expression at compile time
+    fn evaluateExpressionAtCompileTime(self: *Self, expr: *const ast.Expression) !IRValue {
+        return switch (expr.*) {
+            .Integer => |int_val| IRValue{ .Integer = int_val },
+            .Float => |float_val| IRValue{ .Float = float_val },
+            .String => |str_val| IRValue{ .String = str_val },
             .Identifier, .Variable => |name| blk: {
                 // Look up variable in captured variables
                 for (self.captured_variables.items) |var_data| {
@@ -1246,90 +1247,100 @@ pub const LLVMIRPipeline = struct {
                         break :blk var_data.value;
                     }
                 }
-                return CompileError.VariableNotFound;
+                break :blk IRValue{ .Integer = 0 }; // Default if not found
             },
-            else => return CompileError.InvalidExpression,
-        };
-        
-        // Get right operand value
-        const right_val = switch (binary.right.*) {
-            .Integer => |val| IRValue{ .Integer = val },
-            .Float => |val| IRValue{ .Float = val },
-            .Identifier, .Variable => |name| blk: {
-                // Look up variable in captured variables
-                for (self.captured_variables.items) |var_data| {
-                    if (std.mem.eql(u8, var_data.name, name)) {
-                        break :blk var_data.value;
+            .Unary => |unary| blk: {
+                if (std.mem.eql(u8, unary.operator, "-")) {
+                    const operand = try self.evaluateExpressionAtCompileTime(unary.operand);
+                    switch (operand) {
+                        .Integer => |val| break :blk IRValue{ .Integer = -val },
+                        .Float => |val| break :blk IRValue{ .Float = -val },
+                        else => break :blk IRValue{ .Integer = 0 },
                     }
+                } else {
+                    break :blk IRValue{ .Integer = 0 };
                 }
-                return CompileError.VariableNotFound;
             },
-            else => return CompileError.InvalidExpression,
-        };
-        
-        // Perform the operation with proper type handling
-        return switch (left_val) {
-            .Integer => |left_int| switch (right_val) {
-                .Integer => |right_int| blk: {
-                    const result = if (std.mem.eql(u8, binary.operator, "+"))
-                        left_int + right_int
-                    else if (std.mem.eql(u8, binary.operator, "-"))
-                        left_int - right_int
-                    else if (std.mem.eql(u8, binary.operator, "*"))
-                        left_int * right_int
-                    else if (std.mem.eql(u8, binary.operator, "/"))
-                        @divTrunc(left_int, right_int)
-                    else
-                        return CompileError.UnsupportedFeature;
-                    break :blk IRValue{ .Integer = result };
-                },
-                .Float => |right_float| blk: {
-                    const left_float = @as(f64, @floatFromInt(left_int));
-                    const result = if (std.mem.eql(u8, binary.operator, "+"))
-                        left_float + right_float
-                    else if (std.mem.eql(u8, binary.operator, "-"))
-                        left_float - right_float
-                    else if (std.mem.eql(u8, binary.operator, "*"))
-                        left_float * right_float
-                    else if (std.mem.eql(u8, binary.operator, "/"))
-                        left_float / right_float
-                    else
-                        return CompileError.UnsupportedFeature;
-                    break :blk IRValue{ .Float = result };
-                },
-                else => return CompileError.InvalidExpression,
+            .Binary => |binary| blk: {
+                // Recursively evaluate both operands
+                const left_val = try self.evaluateExpressionAtCompileTime(binary.left);
+                const right_val = try self.evaluateExpressionAtCompileTime(binary.right);
+                
+                // Perform operation with proper type promotion
+                const result = switch (left_val) {
+                    .Integer => |left_int| switch (right_val) {
+                        .Integer => |right_int| blk2: {
+                            const res = if (std.mem.eql(u8, binary.operator, "+"))
+                                left_int + right_int
+                            else if (std.mem.eql(u8, binary.operator, "-"))
+                                left_int - right_int
+                            else if (std.mem.eql(u8, binary.operator, "*"))
+                                left_int * right_int
+                            else if (std.mem.eql(u8, binary.operator, "/"))
+                                @divTrunc(left_int, right_int)
+                            else
+                                return CompileError.UnsupportedFeature;
+                            break :blk2 IRValue{ .Integer = res };
+                        },
+                        .Float => |right_float| blk2: {
+                            const left_float = @as(f64, @floatFromInt(left_int));
+                            const res = if (std.mem.eql(u8, binary.operator, "+"))
+                                left_float + right_float
+                            else if (std.mem.eql(u8, binary.operator, "-"))
+                                left_float - right_float
+                            else if (std.mem.eql(u8, binary.operator, "*"))
+                                left_float * right_float
+                            else if (std.mem.eql(u8, binary.operator, "/"))
+                                left_float / right_float
+                            else
+                                return CompileError.UnsupportedFeature;
+                            break :blk2 IRValue{ .Float = res };
+                        },
+                        else => return CompileError.InvalidExpression,
+                    },
+                    .Float => |left_float| switch (right_val) {
+                        .Integer => |right_int| blk2: {
+                            const right_float = @as(f64, @floatFromInt(right_int));
+                            const res = if (std.mem.eql(u8, binary.operator, "+"))
+                                left_float + right_float
+                            else if (std.mem.eql(u8, binary.operator, "-"))
+                                left_float - right_float
+                            else if (std.mem.eql(u8, binary.operator, "*"))
+                                left_float * right_float
+                            else if (std.mem.eql(u8, binary.operator, "/"))
+                                left_float / right_float
+                            else
+                                return CompileError.UnsupportedFeature;
+                            break :blk2 IRValue{ .Float = res };
+                        },
+                        .Float => |right_float| blk2: {
+                            const res = if (std.mem.eql(u8, binary.operator, "+"))
+                                left_float + right_float
+                            else if (std.mem.eql(u8, binary.operator, "-"))
+                                left_float - right_float
+                            else if (std.mem.eql(u8, binary.operator, "*"))
+                                left_float * right_float
+                            else if (std.mem.eql(u8, binary.operator, "/"))
+                                left_float / right_float
+                            else
+                                return CompileError.UnsupportedFeature;
+                            break :blk2 IRValue{ .Float = res };
+                        },
+                        else => return CompileError.InvalidExpression,
+                    },
+                    else => return CompileError.InvalidExpression,
+                };
+                break :blk result;
             },
-            .Float => |left_float| switch (right_val) {
-                .Integer => |right_int| blk: {
-                    const right_float = @as(f64, @floatFromInt(right_int));
-                    const result = if (std.mem.eql(u8, binary.operator, "+"))
-                        left_float + right_float
-                    else if (std.mem.eql(u8, binary.operator, "-"))
-                        left_float - right_float
-                    else if (std.mem.eql(u8, binary.operator, "*"))
-                        left_float * right_float
-                    else if (std.mem.eql(u8, binary.operator, "/"))
-                        left_float / right_float
-                    else
-                        return CompileError.UnsupportedFeature;
-                    break :blk IRValue{ .Float = result };
-                },
-                .Float => |right_float| blk: {
-                    const result = if (std.mem.eql(u8, binary.operator, "+"))
-                        left_float + right_float
-                    else if (std.mem.eql(u8, binary.operator, "-"))
-                        left_float - right_float
-                    else if (std.mem.eql(u8, binary.operator, "*"))
-                        left_float * right_float
-                    else if (std.mem.eql(u8, binary.operator, "/"))
-                        left_float / right_float
-                    else
-                        return CompileError.UnsupportedFeature;
-                    break :blk IRValue{ .Float = result };
-                },
-                else => return CompileError.InvalidExpression,
+            .MethodCall => |method_call| blk: {
+                // Handle method calls like mathz.abs_normie(-42)
+                const result = try self.evaluateMethodCallAtCompileTime(method_call);
+                break :blk result;
             },
-            else => return CompileError.InvalidExpression,
+            else => {
+                print("⚠️ Unsupported expression type in compile-time evaluation: {}\n", .{expr.*});
+                return IRValue{ .Integer = 0 };
+            },
         };
     }
     
