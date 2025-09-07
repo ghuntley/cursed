@@ -29,9 +29,32 @@ fn formatFloatLikeC(allocator: Allocator, value: f64) ![]u8 {
     }
     
     // For very small or very large values, use scientific notation
-    // Match LLVM backend format: 1e-07 instead of 1.00000e-7
+    // Match C's %g format exactly: 2.14748e+09 instead of 2.147483648e9
     if (abs_value < 0.0001 or abs_value >= 1000000.0) {
-        return std.fmt.allocPrint(allocator, "{e}", .{value});
+        // Use %.5e to match C's %g precision (6 significant digits = 5 after decimal)
+        const scientific = try std.fmt.allocPrint(allocator, "{e:.5}", .{value});
+        
+        // Convert e+09 format to match C exactly (e.g., replace e+9 with e+09)
+        const result_len = scientific.len;
+        for (scientific, 0..) |char, i| {
+            if (char == 'e' and i + 2 < scientific.len) {
+                // Check if we have e+X format where X is single digit
+                if ((scientific[i + 1] == '+' or scientific[i + 1] == '-') and 
+                    i + 3 < scientific.len and
+                    std.ascii.isDigit(scientific[i + 2]) and
+                    (i + 3 >= scientific.len or !std.ascii.isDigit(scientific[i + 3]))) {
+                    // Need to pad single digit exponent
+                    const new_result = try allocator.alloc(u8, result_len + 1);
+                    @memcpy(new_result[0..i+2], scientific[0..i+2]); // Copy up to e+/e-
+                    new_result[i + 2] = '0'; // Add padding zero
+                    @memcpy(new_result[i+3..], scientific[i+2..]); // Copy remaining
+                    allocator.free(scientific);
+                    return new_result;
+                }
+                break;
+            }
+        }
+        return scientific;
     }
     
     // For integer values (within precision limits), show as integers
@@ -40,8 +63,8 @@ fn formatFloatLikeC(allocator: Allocator, value: f64) ![]u8 {
     }
     
     // For decimal values, use %g-like behavior with limited significant digits  
-    // Match LLVM backend precision: use 6 digits instead of 5
-    const formatted = std.fmt.allocPrint(allocator, "{d:.6}", .{value}) catch return std.fmt.allocPrint(allocator, "{d}", .{value});
+    // Match C's %g precision exactly (use 5 decimal places for 6 significant digits total)
+    const formatted = std.fmt.allocPrint(allocator, "{d:.5}", .{value}) catch return std.fmt.allocPrint(allocator, "{d}", .{value});
     
     // Remove trailing zeros after decimal point (like %g does)
     var result = formatted;

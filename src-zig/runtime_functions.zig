@@ -68,12 +68,22 @@ pub fn string_concat(allocator: Allocator, a: []const u8, b: []const u8) ![]u8 {
 // === ENVIRONMENT VARIABLE RUNTIME FUNCTIONS ===
 
 pub fn runtime_get_env(allocator: Allocator, name: []const u8) !struct { []const u8, []const u8 } {
-    const value = std.posix.getenv(name);
-    if (value) |v| {
-        const owned_value = try allocator.dupe(u8, v);
-        return .{ owned_value, "" };
+    if (@import("builtin").target.os.tag == .windows) {
+        // Use cross-platform API for Windows
+        const value = std.process.getEnvVarOwned(allocator, name) catch |err| switch (err) {
+            error.EnvironmentVariableNotFound => return .{ "", "Environment variable not found" },
+            else => return .{ "", "Error accessing environment variable" },
+        };
+        return .{ value, "" };
     } else {
-        return .{ "", "Environment variable not found" };
+        // Use POSIX getenv for non-Windows
+        const value = std.posix.getenv(name);
+        if (value) |v| {
+            const owned_value = try allocator.dupe(u8, v);
+            return .{ owned_value, "" };
+        } else {
+            return .{ "", "Environment variable not found" };
+        }
     }
 }
 
@@ -130,7 +140,13 @@ pub fn runtime_expand_env(allocator: Allocator, text: []const u8) ![]const u8 {
                 }
                 if (end < text.len and text[end] == '}') {
                     const var_name = text[start..end];
-                    const value = std.posix.getenv(var_name) orelse "";
+                    const value = if (@import("builtin").target.os.tag == .windows) 
+                        std.process.getEnvVarOwned(allocator, var_name) catch ""
+                    else 
+                        std.posix.getenv(var_name) orelse "";
+                    defer if (@import("builtin").target.os.tag == .windows) {
+                        if (value.len > 0) allocator.free(value);
+                    };
                     try result.appendSlice(allocator, value);
                     i = end + 1;
                 } else {
@@ -145,7 +161,13 @@ pub fn runtime_expand_env(allocator: Allocator, text: []const u8) ![]const u8 {
                     end += 1;
                 }
                 const var_name = text[start..end];
-                const value = std.posix.getenv(var_name) orelse "";
+                const value = if (@import("builtin").target.os.tag == .windows) 
+                    std.process.getEnvVarOwned(allocator, var_name) catch ""
+                else 
+                    std.posix.getenv(var_name) orelse "";
+                defer if (@import("builtin").target.os.tag == .windows) {
+                    if (value.len > 0) allocator.free(value);
+                };
                 try result.appendSlice(allocator, value);
                 i = end;
             } else {

@@ -7,7 +7,8 @@ const Allocator = std.mem.Allocator;
 const lexer = @import("lexer.zig");
 const parser = @import("parser.zig");
 const interpreter = @import("interpreter.zig");
-const LLVMIRPipeline = @import("llvm_ir_pipeline.zig").LLVMIRPipeline;
+// Use COMPLETE LLVM implementation - FULL IR generation following Oracle guidance
+const LLVMIRPipeline = @import("llvm_ir_pipeline_complete.zig").LLVMIRPipeline;
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{
@@ -138,7 +139,7 @@ fn printUsage() void {
 }
 
 fn compileToExecutable(allocator: Allocator, source: []const u8, filename: []const u8, output_name: []const u8, verbose: bool, debug_mode: bool, optimize: bool, emit_ir: bool) !void {
-    if (verbose) print("🔥 Starting CURSED LLVM compilation pipeline...\n", .{});
+    if (verbose) print("🔥 Starting CURSED Zig-native LLVM compilation pipeline...\n", .{});
     
     // Step 1: Lexical Analysis
     if (verbose) print("🔍 Step 1: Lexical analysis...\n", .{});
@@ -174,7 +175,7 @@ fn compileToExecutable(allocator: Allocator, source: []const u8, filename: []con
     if (verbose) print("🛠️ Step 3: Initializing LLVM backend...\n", .{});
     
     const base_name = std.fs.path.stem(filename);
-    const pipeline = LLVMIRPipeline.init(allocator, base_name) catch |err| {
+    var pipeline = LLVMIRPipeline.init(allocator, base_name) catch |err| {
         print("❌ LLVM initialization failed: {any}\n", .{err});
         return;
     };
