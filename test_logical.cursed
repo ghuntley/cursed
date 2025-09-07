@@ -1,0 +1,11 @@
+vibe main
+yeet "vibez"
+
+slay main_character() {
+    vibez.spill("Testing logical operators...")
+    
+    vibez.spill(1 && 1)
+    vibez.spill(1 && 0)
+    vibez.spill(1 || 0)
+    vibez.spill(0 || 0)
+}
