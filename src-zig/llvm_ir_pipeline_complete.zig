@@ -1243,6 +1243,7 @@ pub const LLVMIRPipeline = struct {
             .Integer => |int_val| IRValue{ .Integer = int_val },
             .Float => |float_val| IRValue{ .Float = float_val },
             .String => |str_val| IRValue{ .String = str_val },
+            .Boolean => |bool_val| IRValue{ .Integer = if (bool_val) 1 else 0 },
             .Identifier, .Variable => |name| blk: {
                 // Look up variable in captured variables
                 for (self.captured_variables.items) |var_data| {
