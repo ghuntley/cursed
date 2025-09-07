@@ -250,9 +250,32 @@ pub const LLVMIRPipeline = struct {
         } else 
             llvm.Builder.Type.void; // No return type specified
             
-        // TODO: Handle function parameters properly
-        var param_types: [0]llvm.Builder.Type = .{};
-        const func_type = try self.builder.fnType(return_type, &param_types, .normal);
+        // Handle function parameters properly
+        var param_types = std.ArrayListUnmanaged(llvm.Builder.Type){};
+        defer param_types.deinit(self.allocator);
+        
+        for (func_stmt.parameters.items) |param| {
+            const param_type = switch (param.param_type) {
+                .Basic => |basic_type| switch (basic_type) {
+                    .Normie => llvm.Builder.Type.i64,
+                    .Tea, .Txt => llvm.Builder.Type.ptr,
+                    .Lit => llvm.Builder.Type.i1,
+                    .Drip, .Snack, .Meal => llvm.Builder.Type.double,
+                    .Smol => llvm.Builder.Type.i8,
+                    .Mid => llvm.Builder.Type.i16,
+                    .Thicc => llvm.Builder.Type.i64,
+                    .Byte => llvm.Builder.Type.i8,
+                    .Rune => llvm.Builder.Type.i32,
+                    else => llvm.Builder.Type.i64, // Default
+                },
+                .Pointer => llvm.Builder.Type.ptr,
+                else => llvm.Builder.Type.i64, // Default
+            };
+            
+            try param_types.append(self.allocator, param_type);
+        }
+        
+        const func_type = try self.builder.fnType(return_type, param_types.items, .normal);
         
         // Map main_character to main for C compatibility
         const llvm_name = if (std.mem.eql(u8, func_name, "main_character"))
@@ -290,6 +313,42 @@ pub const LLVMIRPipeline = struct {
         
         // Clear variables for new function scope
         self.variables.clearRetainingCapacity();
+        
+        // Register function parameters as variables
+        for (func_stmt.parameters.items, 0..) |param, param_index| {
+            // Get parameter value from LLVM function arguments
+            const param_value = wip.arg(@intCast(param_index));
+            
+            // Create alloca for parameter in entry block
+            const param_llvm_type = switch (param.param_type) {
+                .Basic => |basic_type| switch (basic_type) {
+                    .Normie => llvm.Builder.Type.i64,
+                    .Tea, .Txt => llvm.Builder.Type.ptr,
+                    .Lit => llvm.Builder.Type.i1,
+                    .Drip, .Snack, .Meal => llvm.Builder.Type.double,
+                    .Smol => llvm.Builder.Type.i8,
+                    .Mid => llvm.Builder.Type.i16,
+                    .Thicc => llvm.Builder.Type.i64,
+                    .Byte => llvm.Builder.Type.i8,
+                    .Rune => llvm.Builder.Type.i32,
+                    else => llvm.Builder.Type.i64,
+                },
+                .Pointer => llvm.Builder.Type.ptr,
+                else => llvm.Builder.Type.i64,
+            };
+            
+            const len_val = try self.builder.intConst(llvm.Builder.Type.i32, 1);
+            const alloca = try wip.alloca(.normal, param_llvm_type, len_val.toValue(), .default, .default, param.name);
+            
+            // Store parameter value in alloca
+            _ = try wip.store(.normal, param_value, alloca, .default);
+            
+            // Register parameter for access within function
+            const safe_name = try self.allocator.dupe(u8, param.name);
+            try self.variables.put(safe_name, alloca);
+            
+            print("✅ Registered function parameter: {s} (type: {})\n", .{param.name, param_llvm_type});
+        }
         
         // Compile function body with COMPLETE implementation
         for (func_stmt.body.items) |stmt| {
@@ -1428,24 +1487,32 @@ pub const LLVMIRPipeline = struct {
                     }
                 },
                 .Identifier, .Variable => |name| {
-                    // Look up variable value from captured_variables first
-                    for (self.captured_variables.items) |captured_var| {
-                        if (std.mem.eql(u8, captured_var.name, name)) {
-                            try ir_args.append(self.allocator, captured_var.value);
-                            switch (captured_var.value) {
-                                .String => |str_val| print("📝 Captured variable argument: {s} = \"{s}\"\n", .{name, str_val}),
-                                .Integer => |int_val| print("📝 Captured variable argument: {s} = {d}\n", .{name, int_val}),
-                                .Float => |float_val| print("📝 Captured variable argument: {s} = {d}\n", .{name, float_val}),
-                                .Boolean => |bool_val| print("📝 Captured variable argument: {s} = {s}\n", .{name, if (bool_val) "based" else "cringe"}),
-                                else => print("📝 Captured variable argument: {s} = (other)\n", .{name}),
-                            }
-                            break;
-                        }
-                    } else {
-                        // Fallback to variable reference if not found
+                    // PRIORITY 1: Check LLVM runtime variables first (for function call results)
+                    if (self.variables.get(name)) |_| {
+                        // Variable exists in LLVM - this is a runtime value
                         const owned_name = try self.allocator.dupe(u8, name);
                         try ir_args.append(self.allocator, IRValue{ .Variable = owned_name });
-                        print("📝 Captured variable argument: {s} (unknown)\n", .{name});
+                        print("📝 Captured runtime variable argument: {s} (LLVM runtime value)\n", .{name});
+                    } else {
+                        // PRIORITY 2: Look up variable value from captured_variables (compile-time values)
+                        for (self.captured_variables.items) |captured_var| {
+                            if (std.mem.eql(u8, captured_var.name, name)) {
+                                try ir_args.append(self.allocator, captured_var.value);
+                                switch (captured_var.value) {
+                                    .String => |str_val| print("📝 Captured compile-time variable: {s} = \"{s}\"\n", .{name, str_val}),
+                                    .Integer => |int_val| print("📝 Captured compile-time variable: {s} = {d}\n", .{name, int_val}),
+                                    .Float => |float_val| print("📝 Captured compile-time variable: {s} = {d}\n", .{name, float_val}),
+                                    .Boolean => |bool_val| print("📝 Captured compile-time variable: {s} = {s}\n", .{name, if (bool_val) "based" else "cringe"}),
+                                    else => print("📝 Captured compile-time variable: {s} = (other)\n", .{name}),
+                                }
+                                break;
+                            }
+                        } else {
+                            // Variable not found in either compile-time or runtime
+                            const owned_name = try self.allocator.dupe(u8, name);
+                            try ir_args.append(self.allocator, IRValue{ .Variable = owned_name });
+                            print("📝 Captured unknown variable: {s}\n", .{name});
+                        }
                     }
                 },
                 .Binary => |binary| {

@@ -175,7 +175,7 @@ pub const Parser = struct {
     /// Check if the current token is a keyword that can be used as a method name
     fn isKeywordAllowedAsMethodName(self: *Parser) bool {
         return switch (self.peek().kind) {
-            .Spill, .Tea, .Drip, .Lit, .Cap, .Normie, .Smol, .Mid, .Thicc, 
+            .Tea, .Drip, .Lit, .Cap, .Normie, .Smol, .Mid, .Thicc, 
             .Snack, .Meal, .Byte, .Rune, .Extra, .Txt, .Sip => true,
             else => false,
         };
@@ -321,7 +321,8 @@ pub const Parser = struct {
             .Plus, .Minus => .Term,
             .Star, .Slash, .Percent => .Factor,
             .PlusPlus, .MinusMinus => .Unary,
-            .LeftParen, .LeftBracket => .Call,
+            .Bang, .At => .Unary, // Added .At for ඞ unary operator
+            .LeftParen, .LeftBracket, .LeftBrace => .Call,
             .Dot => .Access,
             else => .None,
         };
@@ -339,7 +340,7 @@ pub const Parser = struct {
             .LeftParen => parsePrattGrouping,
             .LeftBracket => parsePrattArrayOrComposite,
             .LeftBrace => parsePrattMapOrComposite,
-            .Bang, .Minus, .Star, .Amp, .At => parsePrattUnary,
+            .Bang, .Minus, .Star, .Amp, .At => parsePrattUnary, // Added .At for ඞ address-of operator
             .PlusPlus, .MinusMinus => parsePrattPrefixIncrement,
             .Normie, .Tea, .Txt, .Sip, .Smol, .Mid, .Thicc, .Snack, .Meal, .Byte, .Rune, .Extra, .Lit, .Cap, .Yikes => parsePrattTypeForComposite,
             else => null,
@@ -358,6 +359,7 @@ pub const Parser = struct {
             .LeftParen => parsePrattCall,
             .Dot => parsePrattMemberAccess,
             .LeftBracket => parsePrattArrayAccess,
+            .LeftBrace => parsePrattStructLiteral,
             .PlusPlus, .MinusMinus => parsePrattPostfixIncrement,
             else => null,
         };
@@ -542,7 +544,7 @@ pub const Parser = struct {
         }
         
         // Parse as map literal {key: value, ...}
-        var entries = ArrayList(ast.MapEntry){};
+        var entries = std.ArrayList(ast.MapEntry){ .items = &.{}, .capacity = 0 };
         
         while (!self.check(.RightBrace) and !self.isAtEnd()) {
             const key = try self.parseExpression();
@@ -596,7 +598,7 @@ pub const Parser = struct {
 
     fn parsePrattCall(self: *Parser, left: Expression) ParserError!Expression {
         _ = self.advance(); // consume '('
-        var arguments = ArrayList(*Expression){};
+        var arguments = std.ArrayList(*Expression){ .items = &.{}, .capacity = 0 };
         // CRITICAL FIX: Do NOT defer arguments.deinit - arena will handle cleanup
 
         if (!self.check(.RightParen)) {
@@ -654,7 +656,7 @@ pub const Parser = struct {
         // If next token is '(', treat as method call
         if (self.check(.LeftParen)) {
             _ = self.advance(); // '('
-            var arguments = ArrayList(*Expression){};
+            var arguments = std.ArrayList(*Expression){ .items = &.{}, .capacity = 0 };
             defer arguments.deinit(self.arena_allocator);
             
             if (!self.check(.RightParen)) {
@@ -681,7 +683,7 @@ pub const Parser = struct {
             _ = try self.consume(.RightParen, "Expected ')' after arguments");
             
             // FIXED: Use arena allocator for arguments_copy to prevent memory leaks
-            var arguments_copy = ArrayList(*Expression){};
+            var arguments_copy = std.ArrayList(*Expression){ .items = &.{}, .capacity = 0 };
             for (arguments.items) |arg| {
                 try arguments_copy.append(self.arena_allocator, arg);
             }
@@ -751,6 +753,48 @@ pub const Parser = struct {
         return Expression{ .Unary = try self.allocateUnaryExpression(ast.UnaryExpression{
             .operator = operator,
             .operand = try self.allocateExpression(left),
+        })};
+    }
+
+    fn parsePrattStructLiteral(self: *Parser, left: Expression) ParserError!Expression {
+        // left should be an identifier representing the struct name
+        const struct_name = switch (left) {
+            .Identifier => |name| name,
+            else => return ParserError.UnexpectedToken,
+        };
+
+        _ = self.advance(); // consume '{'
+
+        var fields = ArrayList(ast.FieldInitializer){};
+
+        if (!self.check(.RightBrace)) {
+            while (true) {
+                if (!self.check(.Identifier)) {
+                    return ParserError.UnexpectedToken;
+                }
+
+                const field_name = self.advance().lexeme;
+                _ = try self.consume(.Colon, "Expected ':' after field name");
+                const value = try self.parseExpression();
+
+                const value_ptr = try self.arena_allocator.create(Expression);
+                value_ptr.* = value;
+
+                try fields.append(self.allocator, ast.FieldInitializer{
+                    .field_name = field_name,
+                    .value = value_ptr,
+                });
+
+                if (!self.match(.Comma)) break;
+            }
+        }
+
+        _ = try self.consume(.RightBrace, "Expected '}'");
+
+        // Return the new StructExpression type
+        return Expression{ .Struct = try self.allocateStructExpression(ast.StructExpression{
+            .struct_name = struct_name,
+            .fields = fields,
         })};
     }
 
@@ -1250,7 +1294,7 @@ pub const Parser = struct {
             return Statement{ .Function = self.parseFunctionStatement() catch |parse_err| {
                 const error_token = if (self.current < self.tokens.len) self.tokens[self.current] else self.tokens[self.tokens.len - 1];
                 _ = self.reportErrorAtToken(error_token, "Error parsing function statement") catch {};
-                
+
                 // Try to recover to the end of the function
                 self.syncToMatchingDelimiter(.LeftBrace, .RightBrace);
                 self.recoverFromStatementError();
@@ -1420,7 +1464,7 @@ pub const Parser = struct {
     fn parseBlockStatement(self: *Parser) ParserError!Statement {
         _ = try self.consume(.LeftBrace, "Expected '{'");
         
-        var statements = ArrayList(*Statement){};
+        var statements = std.ArrayList(*Statement){ .items = &.{}, .capacity = 0 };
         // CRITICAL FIX: Do NOT defer statements.deinit - the ArrayList will be owned by BlockStatement
         
         // Parse statements within the block
@@ -1448,8 +1492,7 @@ pub const Parser = struct {
 
     fn parseFunctionStatement(self: *Parser) ParserError!FunctionStatement {
         _ = try self.consume(.Slay, "Expected 'slay'");
-        
-        if (!self.check(.Identifier) and !self.check(.Spill) and !self.check(.MainCharacter)) {
+        if (!self.check(.Identifier) and !self.check(.MainCharacter)) {
             _ = self.reportErrorWithContext("Expected function name after 'slay'", "parseFunctionStatement") catch {};
             return ParserError.UnexpectedToken;
         }
@@ -1566,7 +1609,7 @@ pub const Parser = struct {
         
         // Parse optional type annotation after identifier
         var var_type: ?Type = null;
-        if (self.checkBasicType() or self.check(.Identifier) or self.check(.Slay)) {
+        if (self.checkBasicType() or self.check(.Identifier) or self.check(.Slay) or self.check(.At)) {
             var_type = try self.parseType();
         }
         
@@ -1580,7 +1623,6 @@ pub const Parser = struct {
         
         // Parse initializer
         if (self.match(.Equal) or self.match(.ColonEqual)) {
-            // std.debug.print("DEBUG: About to parse initializer expression for variable: {s}\n", .{name});
             const init_expr = try self.parseExpression();
             const init_ptr = try self.arena_allocator.create(Expression);
     
@@ -1834,6 +1876,12 @@ pub const Parser = struct {
                 },
                 else => {}
             }
+        }
+        
+        // Handle error-returning function syntax: type yikes
+        if (self.match(.Yikes)) {
+            // Return the base type since the error capability is implicit
+            return result_type;
         }
         
         return result_type;
@@ -2866,25 +2914,32 @@ pub const Parser = struct {
             // CRITICAL: Check for struct literal Name{field: value, ...} with proper brace handling
             // This distinguishes between struct literals and erroneous complex expressions
             if (self.check(.LeftBrace)) {
+                std.debug.print("DEBUG: Found brace after identifier '{s}'\n", .{name});
                 // Additional validation: ensure this is actually a struct literal context
                 // and not a misplaced brace from a complex expression
                 if (self.isValidStructLiteralContext()) {
+                    std.debug.print("DEBUG: Valid struct literal context detected\n", .{});
                     return try self.parseStructLiteral(name);
                 } else {
+                    std.debug.print("DEBUG: Invalid struct literal context, treating as identifier\n", .{});
                     // This might be part of a complex expression that was incorrectly parsed
                     // Return the identifier and let the caller handle the brace
                     // The brace will be handled by parseBlockStatement in parseStatement
+                    std.debug.print("DEBUG: Returning identifier due to invalid struct context: '{s}'\n", .{name});
                     return Expression{ .Identifier = name };
                 }
             }
             
+            // std.debug.print("DEBUG: Returning final identifier: '{s}'\n", .{name});
             return Expression{ .Identifier = name };
         }
         
+        // std.debug.print("DEBUG: parsePrimary unexpected token: {any}\n", .{self.peek().kind});
         return ParserError.UnexpectedToken;
     }
 
     fn parseStructLiteral(self: *Parser, struct_name: []const u8) ParserError!Expression {
+        std.debug.print("DEBUG: Parsing struct literal for '{s}'\n", .{struct_name});
         _ = try self.consume(.LeftBrace, "Expected '{'");
         
         // Support both StructFieldAssignment (legacy) and FieldInitializer (new)
@@ -2893,10 +2948,12 @@ pub const Parser = struct {
         if (!self.check(.RightBrace)) {
             while (true) {
                 if (!self.check(.Identifier)) {
+                    std.debug.print("DEBUG: Expected identifier for field name, got: {any}\n", .{self.peek().kind});
                     return ParserError.UnexpectedToken;
                 }
                 
                 const field_name = self.advance().lexeme;
+                std.debug.print("DEBUG: Parsing field '{s}'\n", .{field_name});
         _ = try self.consume(.Colon, "Expected ':' after field name");
                 const value = try self.parseExpression();
                 
@@ -3578,9 +3635,8 @@ pub const Parser = struct {
             
             // Parse visibility modifier for fields
             var visibility = ast.Visibility.Private;
-            if (self.match(.Spill)) {
-                visibility = .Public;
-            } else if (self.match(.Priv)) {
+            // Removed .Spill keyword - not used as visibility modifier
+            if (self.match(.Priv)) {
                 visibility = .Private;
             } else if (self.match(.Crew)) {
                 visibility = .Package;
@@ -3876,34 +3932,17 @@ pub const Parser = struct {
         }
         const name = self.advance().lexeme;
         
-        // Check for two syntax variants:
-        // 1. be_like Name = Type (type alias with =)
-        // 2. be_like Name squad { ... } (struct type definition)
-        if (self.match(.Equal)) {
-            // Variant 1: Type alias with =
-            const target_type = try self.parseType();
-            
-            return Statement{ .TypeAlias = ast.TypeAliasStatement{
-                .name = name,
-                .target_type = target_type,
-                .visibility = .Public,
-            }};
-        } else if (self.check(.Squad) or self.check(.Struct)) {
-            // Variant 2: Struct type definition - delegate to parseStructStatement but override name
-            // Save current position and name, then reset to parse as normal struct
-            const saved_name = name;
-            
-            // Parse the struct part normally
-            const struct_stmt = try self.parseStructStatement();
-            
-            // Override the name with the be_like name
-            var modified_struct = struct_stmt.Struct;
-            modified_struct.name = saved_name;
-            
-            return Statement{ .Struct = modified_struct };
-        } else {
-            return ParserError.UnexpectedToken;
-        }
+        // Expect '='
+        _ = try self.consume(.Equal, "Expected '=' after type alias name");
+        
+        // Parse target type
+        const target_type = try self.parseType();
+        
+        return Statement{ .TypeAlias = ast.TypeAliasStatement{
+            .name = name,
+            .target_type = target_type,
+            .visibility = .Public,
+        }};
     }
 
     fn parseStanStatement(self: *Parser) ParserError!Statement {
@@ -4457,8 +4496,8 @@ pub const Parser = struct {
                self.check(.Sip) or self.check(.Smol) or self.check(.Mid) or
                self.check(.Thicc) or self.check(.Snack) or self.check(.Meal) or
                self.check(.Byte) or self.check(.Rune) or self.check(.Extra) or
-               self.check(.Lit) or self.check(.Cap) or self.check(.Yikes) or 
-               self.check(.At) or self.check(.Identifier);
+               self.check(.Lit) or self.check(.Cap) or self.check(.Yikes) or self.check(.Identifier);
+               // Removed .At - pointer types should be handled separately in parseType
     }
 
     fn advance(self: *Parser) Token {
@@ -4633,6 +4672,7 @@ pub const Parser = struct {
     // CRITICAL FIX: Helper function to validate struct literal context
     // This prevents misidentification of complex expressions as struct literals
     fn isValidStructLiteralContext(self: *Parser) bool {
+        // DEBUG: Checking if valid struct literal context
         // Look ahead to see if the brace contains field assignments (field: value)
         var pos = self.current + 1; // Skip the '{'
         var brace_depth: usize = 1;
@@ -5017,6 +5057,11 @@ pub const Parser = struct {
     fn parseComplexType(self: *Parser) ParserError!ast.Type {
         // Parse union types: Type1 | Type2 | Type3
         const base_type = try self.parseBasicType();
+        // Check for error-returning function syntax: normie yikes, tea yikes, etc.
+        if (self.match(.Yikes)) {
+            // Return the base type since the error capability is implicit
+            return base_type;
+        }
         
         if (self.match(.Pipe)) {
             var union_types = std.ArrayList(u8){};

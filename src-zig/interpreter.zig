@@ -977,8 +977,9 @@ pub const Interpreter = struct {
                         .declaration = func,
                         .closure = self.environment,
                     };
-                    // Function registered
+                    // Function registered with debug output
                     try self.functions.put(func.name, cursed_func);
+                    std.debug.print("🔧 DEBUG: Registered function: {s}\n", .{func.name});
                 },
                 .Struct => |struct_decl| {
                     // Removed DEBUG output
