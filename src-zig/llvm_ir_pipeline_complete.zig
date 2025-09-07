@@ -30,6 +30,7 @@ const IRCall = struct {
 const IRValue = union(enum) {
     String: []const u8,
     Integer: i64,
+    Float: f64,
     Variable: []const u8,
 };
 
@@ -376,13 +377,12 @@ pub const LLVMIRPipeline = struct {
                 },
                 .Float => |float_val| {
                     const owned_name = try self.allocator.dupe(u8, var_name);
-                    const int_val: i64 = @intFromFloat(float_val);
                     const var_data = IRVariable{
                         .name = owned_name,
-                        .value = IRValue{ .Integer = int_val },
+                        .value = IRValue{ .Float = float_val },
                     };
                     try self.captured_variables.append(self.allocator, var_data);
-                    print("📝 Captured float variable: {s} = {d} (converted from {d})\n", .{var_name, int_val, float_val});
+                    print("📝 Captured float variable: {s} = {d}\n", .{var_name, float_val});
                 },
                 .Unary => |unary| {
                     // Handle negative number assignments like: sus x drip = -42
@@ -860,6 +860,10 @@ pub const LLVMIRPipeline = struct {
                     try ir_args.append(self.allocator, IRValue{ .Integer = int_val });
                     print("📝 Captured integer argument: {d}\n", .{int_val});
                 },
+                .Float => |float_val| {
+                    try ir_args.append(self.allocator, IRValue{ .Float = float_val });
+                    print("📝 Captured float argument: {d}\n", .{float_val});
+                },
                 .Unary => |unary| {
                     // Handle negative numbers like -42
                     if (std.mem.eql(u8, unary.operator, "-")) {
@@ -886,8 +890,12 @@ pub const LLVMIRPipeline = struct {
                         print("⚠️ Cannot evaluate binary expression: {any}\n", .{err});
                         continue;
                     };
-                    try ir_args.append(self.allocator, IRValue{ .Integer = result });
-                    print("📝 Captured computed binary result: {d}\n", .{result});
+                    try ir_args.append(self.allocator, result);
+                    switch (result) {
+                        .Integer => |int_val| print("📝 Captured computed binary result: {d}\n", .{int_val}),
+                        .Float => |float_val| print("📝 Captured computed binary result: {d}\n", .{float_val}),
+                        else => {},
+                    }
                 },
                 else => {
                     print("⚠️ Unsupported argument type in vibez.spill: {}\n", .{arg.*});
@@ -958,6 +966,22 @@ pub const LLVMIRPipeline = struct {
                     defer self.allocator.free(store_line);
                     try file.writeAll(store_line);
                 },
+                .Float => |float_val| {
+                    const alloca_line = try std.fmt.allocPrint(self.allocator, "  %{s} = alloca double, align 8\n", .{var_data.name});
+                    defer self.allocator.free(alloca_line);
+                    try file.writeAll(alloca_line);
+                    
+                    // Format float for LLVM IR (must have decimal point)
+                    const float_str = if (@mod(float_val, 1.0) == 0.0)
+                        try std.fmt.allocPrint(self.allocator, "{d}.0", .{@as(i64, @intFromFloat(float_val))})
+                    else 
+                        try std.fmt.allocPrint(self.allocator, "{d}", .{float_val});
+                    defer self.allocator.free(float_str);
+                    
+                    const store_line = try std.fmt.allocPrint(self.allocator, "  store double {s}, ptr %{s}, align 8\n", .{float_str, var_data.name});
+                    defer self.allocator.free(store_line);
+                    try file.writeAll(store_line);
+                },
                 .Variable => |_| {
                     // For variables assigned from expressions (like method calls)
                     // We need to allocate space but can't store a specific value yet
@@ -1001,6 +1025,18 @@ pub const LLVMIRPipeline = struct {
                             defer self.allocator.free(call_line);
                             try file.writeAll(call_line);
                         },
+                        .Float => |float_val| {
+                            // Format float for LLVM IR (must have decimal point)
+                            const float_str = if (@mod(float_val, 1.0) == 0.0)
+                                try std.fmt.allocPrint(self.allocator, "{d}.0", .{@as(i64, @intFromFloat(float_val))})
+                            else 
+                                try std.fmt.allocPrint(self.allocator, "{d}", .{float_val});
+                            defer self.allocator.free(float_str);
+                            
+                            const call_line = try std.fmt.allocPrint(self.allocator, "  call void @cursed_runtime_spill_float(double {s})\n", .{float_str});
+                            defer self.allocator.free(call_line);
+                            try file.writeAll(call_line);
+                        },
                         .Variable => |var_name| {
                             // Check if variable exists in our tracked variables before generating load
                             var variable_exists = false;
@@ -1012,13 +1048,52 @@ pub const LLVMIRPipeline = struct {
                             }
                             
                             if (variable_exists) {
-                                const load_line = try std.fmt.allocPrint(self.allocator, "  %{s}_load = load i64, ptr %{s}, align 8\n", .{var_name, var_name});
-                                defer self.allocator.free(load_line);
-                                try file.writeAll(load_line);
-                                
-                                const call_line = try std.fmt.allocPrint(self.allocator, "  call void @cursed_runtime_spill_int(i64 %{s}_load)\n", .{var_name});
-                                defer self.allocator.free(call_line);
-                                try file.writeAll(call_line);
+                                // Determine variable type and generate appropriate load/call
+                                for (self.captured_variables.items) |captured_var| {
+                                    if (std.mem.eql(u8, captured_var.name, var_name)) {
+                                        switch (captured_var.value) {
+                                            .Integer => {
+                                                const load_line = try std.fmt.allocPrint(self.allocator, "  %{s}_load = load i64, ptr %{s}, align 8\n", .{var_name, var_name});
+                                                defer self.allocator.free(load_line);
+                                                try file.writeAll(load_line);
+                                                
+                                                const call_line = try std.fmt.allocPrint(self.allocator, "  call void @cursed_runtime_spill_int(i64 %{s}_load)\n", .{var_name});
+                                                defer self.allocator.free(call_line);
+                                                try file.writeAll(call_line);
+                                            },
+                                            .Float => {
+                                                const load_line = try std.fmt.allocPrint(self.allocator, "  %{s}_load = load double, ptr %{s}, align 8\n", .{var_name, var_name});
+                                                defer self.allocator.free(load_line);
+                                                try file.writeAll(load_line);
+                                                
+                                                const call_line = try std.fmt.allocPrint(self.allocator, "  call void @cursed_runtime_spill_float(double %{s}_load)\n", .{var_name});
+                                                defer self.allocator.free(call_line);
+                                                try file.writeAll(call_line);
+                                            },
+                                            .String => {
+                                                // String variables are pointers, so load the pointer and call string function
+                                                const load_line = try std.fmt.allocPrint(self.allocator, "  %{s}_load = load ptr, ptr %{s}, align 8\n", .{var_name, var_name});
+                                                defer self.allocator.free(load_line);
+                                                try file.writeAll(load_line);
+                                                
+                                                const call_line = try std.fmt.allocPrint(self.allocator, "  call void @cursed_runtime_spill_string(ptr %{s}_load)\n", .{var_name});
+                                                defer self.allocator.free(call_line);
+                                                try file.writeAll(call_line);
+                                            },
+                                            else => {
+                                                // Fallback to integer for unknown types
+                                                const load_line = try std.fmt.allocPrint(self.allocator, "  %{s}_load = load i64, ptr %{s}, align 8\n", .{var_name, var_name});
+                                                defer self.allocator.free(load_line);
+                                                try file.writeAll(load_line);
+                                                
+                                                const call_line = try std.fmt.allocPrint(self.allocator, "  call void @cursed_runtime_spill_int(i64 %{s}_load)\n", .{var_name});
+                                                defer self.allocator.free(call_line);
+                                                try file.writeAll(call_line);
+                                            },
+                                        }
+                                        break;
+                                    }
+                                }
                             } else {
                                 // Variable doesn't exist (likely due to unsupported type) - emit as empty call
                                 try file.writeAll("  ; Variable not available (unsupported type)\n");
@@ -1046,18 +1121,16 @@ pub const LLVMIRPipeline = struct {
     }
     
     /// Evaluate binary expressions at compile time for vibez.spill arguments
-    fn evaluateBinaryAtCompileTime(self: *Self, binary: *const ast.BinaryExpression) !i64 {
+    fn evaluateBinaryAtCompileTime(self: *Self, binary: *const ast.BinaryExpression) !IRValue {
         // Get left operand value
         const left_val = switch (binary.left.*) {
-            .Integer => |val| val,
+            .Integer => |val| IRValue{ .Integer = val },
+            .Float => |val| IRValue{ .Float = val },
             .Identifier, .Variable => |name| blk: {
                 // Look up variable in captured variables
                 for (self.captured_variables.items) |var_data| {
                     if (std.mem.eql(u8, var_data.name, name)) {
-                        switch (var_data.value) {
-                            .Integer => |val| break :blk val,
-                            else => return CompileError.InvalidExpression,
-                        }
+                        break :blk var_data.value;
                     }
                 }
                 return CompileError.VariableNotFound;
@@ -1067,16 +1140,13 @@ pub const LLVMIRPipeline = struct {
         
         // Get right operand value
         const right_val = switch (binary.right.*) {
-            .Integer => |val| val,
-            .Float => |val| @as(i64, @intFromFloat(val)), // Convert float to int for now
+            .Integer => |val| IRValue{ .Integer = val },
+            .Float => |val| IRValue{ .Float = val },
             .Identifier, .Variable => |name| blk: {
                 // Look up variable in captured variables
                 for (self.captured_variables.items) |var_data| {
                     if (std.mem.eql(u8, var_data.name, name)) {
-                        switch (var_data.value) {
-                            .Integer => |val| break :blk val,
-                            else => return CompileError.InvalidExpression,
-                        }
+                        break :blk var_data.value;
                     }
                 }
                 return CompileError.VariableNotFound;
@@ -1084,17 +1154,70 @@ pub const LLVMIRPipeline = struct {
             else => return CompileError.InvalidExpression,
         };
         
-        // Perform the operation
-        return if (std.mem.eql(u8, binary.operator, "+"))
-            left_val + right_val
-        else if (std.mem.eql(u8, binary.operator, "-"))
-            left_val - right_val
-        else if (std.mem.eql(u8, binary.operator, "*"))
-            left_val * right_val
-        else if (std.mem.eql(u8, binary.operator, "/"))
-            @divTrunc(left_val, right_val)
-        else
-            CompileError.UnsupportedFeature;
+        // Perform the operation with proper type handling
+        return switch (left_val) {
+            .Integer => |left_int| switch (right_val) {
+                .Integer => |right_int| blk: {
+                    const result = if (std.mem.eql(u8, binary.operator, "+"))
+                        left_int + right_int
+                    else if (std.mem.eql(u8, binary.operator, "-"))
+                        left_int - right_int
+                    else if (std.mem.eql(u8, binary.operator, "*"))
+                        left_int * right_int
+                    else if (std.mem.eql(u8, binary.operator, "/"))
+                        @divTrunc(left_int, right_int)
+                    else
+                        return CompileError.UnsupportedFeature;
+                    break :blk IRValue{ .Integer = result };
+                },
+                .Float => |right_float| blk: {
+                    const left_float = @as(f64, @floatFromInt(left_int));
+                    const result = if (std.mem.eql(u8, binary.operator, "+"))
+                        left_float + right_float
+                    else if (std.mem.eql(u8, binary.operator, "-"))
+                        left_float - right_float
+                    else if (std.mem.eql(u8, binary.operator, "*"))
+                        left_float * right_float
+                    else if (std.mem.eql(u8, binary.operator, "/"))
+                        left_float / right_float
+                    else
+                        return CompileError.UnsupportedFeature;
+                    break :blk IRValue{ .Float = result };
+                },
+                else => return CompileError.InvalidExpression,
+            },
+            .Float => |left_float| switch (right_val) {
+                .Integer => |right_int| blk: {
+                    const right_float = @as(f64, @floatFromInt(right_int));
+                    const result = if (std.mem.eql(u8, binary.operator, "+"))
+                        left_float + right_float
+                    else if (std.mem.eql(u8, binary.operator, "-"))
+                        left_float - right_float
+                    else if (std.mem.eql(u8, binary.operator, "*"))
+                        left_float * right_float
+                    else if (std.mem.eql(u8, binary.operator, "/"))
+                        left_float / right_float
+                    else
+                        return CompileError.UnsupportedFeature;
+                    break :blk IRValue{ .Float = result };
+                },
+                .Float => |right_float| blk: {
+                    const result = if (std.mem.eql(u8, binary.operator, "+"))
+                        left_float + right_float
+                    else if (std.mem.eql(u8, binary.operator, "-"))
+                        left_float - right_float
+                    else if (std.mem.eql(u8, binary.operator, "*"))
+                        left_float * right_float
+                    else if (std.mem.eql(u8, binary.operator, "/"))
+                        left_float / right_float
+                    else
+                        return CompileError.UnsupportedFeature;
+                    break :blk IRValue{ .Float = result };
+                },
+                else => return CompileError.InvalidExpression,
+            },
+            else => return CompileError.InvalidExpression,
+        };
     }
        
     /// Automatically compile LLVM IR to native binary executable
