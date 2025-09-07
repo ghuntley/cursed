@@ -1,0 +1,8 @@
+vibe main
+yeet "vibez"  
+
+sus test_ascii normie = 42
+
+slay main_character() {
+    vibez.spill("ASCII test works:", test_ascii)
+}

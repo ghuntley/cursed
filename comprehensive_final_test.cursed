@@ -1,0 +1,19 @@
+vibe main
+yeet "vibez"
+
+slay main_character() {
+    vibez.spill("=== CURSED Comprehensive Test ===")
+    
+    sus positive drip = 42
+    sus negative drip = -17
+    sus zero drip = 0
+    
+    vibez.spill("Positive number:")
+    vibez.spill(positive)
+    vibez.spill("Negative number:")  
+    vibez.spill(negative)
+    vibez.spill("Zero:")
+    vibez.spill(zero)
+    
+    vibez.spill("=== Test Complete ===")
+}

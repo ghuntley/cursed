@@ -1,0 +1,17 @@
+vibe main
+yeet "vibez"
+
+squad Node {
+    data normie
+    next ඞNode
+}
+
+slay test_unicode_struct() {
+    vibez.spill("Before ඞNode literal")
+    sus node ඞNode = ඞNode{data: 42, next: nah}
+    vibez.spill("After ඞNode literal")
+}
+
+slay main_character() {
+    vibez.spill("Testing Unicode struct")
+}

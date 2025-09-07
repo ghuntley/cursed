@@ -1,0 +1,10 @@
+vibe main
+yeet "vibez"
+
+slay test_yikes_return(x normie) normie yikes {
+    damn x * 2
+}
+
+slay main_character() {
+    vibez.spill("Testing yikes return function")
+}
