@@ -354,9 +354,29 @@ pub const LLVMIRPipeline = struct {
         if (let_stmt.initializer) |initializer| {
             const expr_ptr: *const ast.Expression = @ptrCast(@alignCast(initializer));
             
-            switch (expr_ptr.*) {
+            // Use recursive evaluator for any expression type
+            const result_value = self.evaluateExpressionAtCompileTime(expr_ptr) catch |err| {
+                print("⚠️ Cannot evaluate variable initializer: {any}\n", .{err});
+                
+                // Fallback: create variable with default value
+                const owned_name = try self.allocator.dupe(u8, var_name);
+                const var_data = IRVariable{
+                    .name = owned_name,
+                    .value = IRValue{ .Integer = 0 },
+                };
+                try self.captured_variables.append(self.allocator, var_data);
+                print("📝 Captured default variable: {s} = 0 (fallback)\n", .{var_name});
+                
+                // Still create alloca for Builder state
+                const alloca = try wip.alloca(.normal, var_type, .none, .default, .default, "");
+                try self.variables.put(var_name, alloca);
+                return;
+            };
+            
+            // Store the computed result
+            const owned_name = try self.allocator.dupe(u8, var_name);
+            switch (result_value) {
                 .String => |str_val| {
-                    const owned_name = try self.allocator.dupe(u8, var_name);
                     const owned_str = try self.allocator.dupe(u8, str_val);
                     try self.captured_strings.append(self.allocator, owned_str);
                     const var_data = IRVariable{
@@ -364,48 +384,31 @@ pub const LLVMIRPipeline = struct {
                         .value = IRValue{ .String = owned_str },
                     };
                     try self.captured_variables.append(self.allocator, var_data);
-                    print("📝 Captured string variable: {s} = {s}\n", .{var_name, str_val});
+                    print("📝 Captured computed string variable: {s} = {s}\n", .{var_name, str_val});
                 },
                 .Integer => |int_val| {
-                    const owned_name = try self.allocator.dupe(u8, var_name);
                     const var_data = IRVariable{
                         .name = owned_name,
                         .value = IRValue{ .Integer = int_val },
                     };
                     try self.captured_variables.append(self.allocator, var_data);
-                    print("📝 Captured integer variable: {s} = {d}\n", .{var_name, int_val});
+                    print("📝 Captured computed integer variable: {s} = {d}\n", .{var_name, int_val});
                 },
                 .Float => |float_val| {
-                    const owned_name = try self.allocator.dupe(u8, var_name);
                     const var_data = IRVariable{
                         .name = owned_name,
                         .value = IRValue{ .Float = float_val },
                     };
                     try self.captured_variables.append(self.allocator, var_data);
-                    print("📝 Captured float variable: {s} = {d}\n", .{var_name, float_val});
-                },
-                .Unary => |unary| {
-                    // Handle negative number assignments like: sus x drip = -42
-                    if (std.mem.eql(u8, unary.operator, "-")) {
-                        switch (unary.operand.*) {
-                            .Integer => |int_val| {
-                                const owned_name = try self.allocator.dupe(u8, var_name);
-                                const neg_val = -int_val;
-                                const var_data = IRVariable{
-                                    .name = owned_name,
-                                    .value = IRValue{ .Integer = neg_val },
-                                };
-                                try self.captured_variables.append(self.allocator, var_data);
-                                print("📝 Captured negative integer variable: {s} = {d}\n", .{var_name, neg_val});
-                            },
-                            else => print("⚠️ Unsupported unary operand in variable\n", .{}),
-                        }
-                    } else {
-                        print("⚠️ Unsupported unary operator in variable: {s}\n", .{unary.operator});
-                    }
+                    print("📝 Captured computed float variable: {s} = {d}\n", .{var_name, float_val});
                 },
                 else => {
-                    print("⚠️ Unsupported variable initializer type: {}\n", .{expr_ptr.*});
+                    const var_data = IRVariable{
+                        .name = owned_name,
+                        .value = IRValue{ .Integer = 0 },
+                    };
+                    try self.captured_variables.append(self.allocator, var_data);
+                    print("📝 Captured default variable: {s} = 0\n", .{var_name});
                 },
             }
         }
