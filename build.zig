@@ -16,11 +16,8 @@ pub fn build(b: *std.Build) void {
     
     cursed_exe.linkLibC();
     
-    // Link against LLVM libraries
-    cursed_exe.linkSystemLibrary("LLVM-18");
-    cursed_exe.addLibraryPath(.{ .cwd_relative = "/usr/lib/llvm-18/lib/" });
-    cursed_exe.addIncludePath(.{ .cwd_relative = "/usr/include/llvm-c-18/" });
-    cursed_exe.addIncludePath(.{ .cwd_relative = "/usr/include/llvm-18/" });
+    // No longer need external LLVM libraries - using Zig's built-in LLVM IR builder
+    // This enables cross-platform compilation including Windows
 
     // Install the executable
     b.installArtifact(cursed_exe);

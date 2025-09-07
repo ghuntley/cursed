@@ -1861,32 +1861,22 @@ pub const LLVMIRPipeline = struct {
                 // String concatenation
                 return try self.generateStringConcatenation(left, right);
             } else {
-                // Check if this is likely to overflow (for edge cases like max_int + 1)
-                if (try self.isLikelyToOverflow(left, right, "add")) {
-                    return try self.buildIntegerOperationWithOverflowCheck(left, right, "add");
-                } else {
-                    return c.LLVMBuildAdd(self.builder, left, right, "add_tmp");
-                }
+                // Always use overflow checking for integer arithmetic to match interpreter behavior
+                return try self.buildIntegerOperationWithOverflowCheck(left, right, "add");
             }
         } else if (std.mem.eql(u8, bin_op.operator, "-")) {
             if (is_float) {
                 return c.LLVMBuildFSub(self.builder, left, right, "fsub_tmp");
             } else {
-                if (try self.isLikelyToOverflow(left, right, "sub")) {
-                    return try self.buildIntegerOperationWithOverflowCheck(left, right, "sub");
-                } else {
-                    return c.LLVMBuildSub(self.builder, left, right, "sub_tmp");
-                }
+                // Always use overflow checking for integer arithmetic to match interpreter behavior
+                return try self.buildIntegerOperationWithOverflowCheck(left, right, "sub");
             }
         } else if (std.mem.eql(u8, bin_op.operator, "*")) {
             if (is_float) {
                 return c.LLVMBuildFMul(self.builder, left, right, "fmul_tmp");
             } else {
-                if (try self.isLikelyToOverflow(left, right, "mul")) {
-                    return try self.buildIntegerOperationWithOverflowCheck(left, right, "mul");
-                } else {
-                    return c.LLVMBuildMul(self.builder, left, right, "mul_tmp");
-                }
+                // Always use overflow checking for integer arithmetic to match interpreter behavior
+                return try self.buildIntegerOperationWithOverflowCheck(left, right, "mul");
             }
         } else if (std.mem.eql(u8, bin_op.operator, "/")) {
             if (!left_is_float and !right_is_float) {
