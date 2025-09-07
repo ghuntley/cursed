@@ -1,0 +1,13 @@
+vibe main
+yeet "vibez"
+
+slay main_character() {
+    sus x drip = 42
+    sus name drip = "CURSED"
+    
+    vibez.spill("Testing extended LLVM pipeline!")
+    vibez.spill(x)
+    vibez.spill(name)
+    
+    rn 0
+}

@@ -1,0 +1,16 @@
+vibe main
+yeet "vibez"
+
+squad Node {
+    data normie  
+    next ඞNode
+}
+
+slay create_test(value normie) ඞNode {
+    vibez.spill("Creating node with value:", value)
+    damn nah
+}
+
+slay main_character() {
+    create_test(42)
+}

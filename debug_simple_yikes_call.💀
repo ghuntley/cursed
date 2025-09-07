@@ -1,0 +1,12 @@
+vibe main
+yeet "vibez"
+
+slay simple_error_test() normie yikes {
+    damn 42
+}
+
+slay main_character() {
+    vibez.spill("Before call")
+    sus result = simple_error_test()
+    vibez.spill("After call:", result)
+}

@@ -1,0 +1,13 @@
+vibe main
+
+slay simple_function() normie {
+    damn 42
+}
+
+slay yikes_function() normie yikes {
+    damn 42
+}
+
+slay main_character() {
+    vibez.spill("Testing both")
+}

@@ -1,0 +1,16 @@
+vibe main
+yeet "vibez"
+
+squad Node {
+    data normie  
+    next ඞNode
+}
+
+slay create_with_literal(value normie) ඞNode {
+    sus node ඞNode = ඞNode{data: value, next: nah}
+    damn node
+}
+
+slay main_character() {
+    vibez.spill("Testing struct literal...")
+}

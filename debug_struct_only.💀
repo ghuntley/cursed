@@ -1,0 +1,18 @@
+vibe main
+yeet "vibez"
+
+squad Node {
+    data normie
+    next ඞNode  
+}
+
+slay create_only() ඞNode {
+    sus node ඞNode = ඞNode{data: 42, next: nah}
+    damn node
+}
+
+slay main_character() {
+    vibez.spill("Creating node...")
+    sus result = create_only()
+    vibez.spill("Node created successfully")
+}
