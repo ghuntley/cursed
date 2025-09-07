@@ -1,0 +1,4676 @@
+[1mCURSED Test Suite - Fixed Version[0m
+====================================
+Compiler: /home/ghuntley/cursed/test_suite/../zig-out/bin/cursed-compiler
+Test directory: /home/ghuntley/cursed/test_suite/test_programs
+Working from: /home/ghuntley/cursed/test_suite/.. (for stdlib loading)
+
+Scanning for test files...
+Found 444 test files
+
+[1m[1/444] Testing: arithmetic/01_mixed_types.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[2/444] Testing: arithmetic/02_edge_cases.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[3/444] Testing: arithmetic/03_operator_precedence.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[4/444] Testing: arithmetic/04_complex_expressions.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[5/444] Testing: arithmetic/arithmetic_basic_operations.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[6/444] Testing: arithmetic/division_semantics_test.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[7/444] Testing: arithmetic/feature_arithmetic_operations.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[8/444] Testing: arithmetic/overflow_edge_cases.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[9/444] Testing: basic/01_hello_world.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[10/444] Testing: basic/02_simple_arithmetic.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[11/444] Testing: basic/03_variable_assignment.💀[0m
+  Result: [31mFAIL (OUTPUT_MISMATCH)[0m
+  [36mInterpreter (exit: 0):[0m
+    === Variable Assignment Test === 
+    x = 
+    42 
+    y = x + 8 = 
+    50 
+    name = 
+    CURSED 
+    === Test Complete === 
+
+  [36mCompiled (exit: 0):[0m
+    === Variable Assignment Test ===
+    x =
+    42
+    y = x + 8 =
+    50
+    name =
+    y = x + 8 =
+    === Test Complete ===
+
+  [33mHEX COMPARISON (to identify differences):[0m
+  [36mInterpreter HEX (exit: 0):[0m
+    00000000: 3d3d 3d20 5661 7269 6162 6c65 2041 7373  === Variable Ass
+    00000010: 6967 6e6d 656e 7420 5465 7374 203d 3d3d  ignment Test ===
+    00000020: 200a 7820 3d20 0a34 3220 0a79 203d 2078   .x = .42 .y = x
+    00000030: 202b 2038 203d 200a 3530 200a 6e61 6d65   + 8 = .50 .name
+    00000040: 203d 200a 4355 5253 4544 200a 3d3d 3d20   = .CURSED .=== 
+    00000050: 5465 7374 2043 6f6d 706c 6574 6520 3d3d  Test Complete ==
+    00000060: 3d20                                     = 
+
+  [36mCompiled HEX (exit: 0):[0m
+    00000000: 3d3d 3d20 5661 7269 6162 6c65 2041 7373  === Variable Ass
+    00000010: 6967 6e6d 656e 7420 5465 7374 203d 3d3d  ignment Test ===
+    00000020: 0a78 203d 0a34 320a 7920 3d20 7820 2b20  .x =.42.y = x + 
+    00000030: 3820 3d0a 3530 0a6e 616d 6520 3d0a 7920  8 =.50.name =.y 
+    00000040: 3d20 7820 2b20 3820 3d0a 3d3d 3d20 5465  = x + 8 =.=== Te
+    00000050: 7374 2043 6f6d 706c 6574 6520 3d3d 3d    st Complete ===
+
+---
+[1m[12/444] Testing: basic/basic_hello_world.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[13/444] Testing: basic/hello_world_simple.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[14/444] Testing: complex/01_linked_list_pointers.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[15/444] Testing: complex/01_nested_operations.💀[0m
+  Result: [31mFAIL (OUTPUT_MISMATCH)[0m
+  [36mInterpreter (exit: 0):[0m
+    === Nested Operations Test === 
+    Complex arithmetic: 
+    15 
+    Nested function calls: 
+    39 
+    Nested conditionals: 
+    x is between 10 and 20 
+    Multiple operations: 
+    12 
+    === Test Complete === 
+
+  [36mCompiled (exit: 0):[0m
+    === Nested Operations Test ===
+    Complex arithmetic:
+    15
+    Nested function calls:
+    0
+    Nested conditionals:
+    Multiple operations:
+    12
+    === Test Complete ===
+
+  [33mHEX COMPARISON (to identify differences):[0m
+  [36mInterpreter HEX (exit: 0):[0m
+    00000000: 3d3d 3d20 4e65 7374 6564 204f 7065 7261  === Nested Opera
+    00000010: 7469 6f6e 7320 5465 7374 203d 3d3d 200a  tions Test === .
+    00000020: 436f 6d70 6c65 7820 6172 6974 686d 6574  Complex arithmet
+    00000030: 6963 3a20 0a31 3520 0a4e 6573 7465 6420  ic: .15 .Nested 
+    00000040: 6675 6e63 7469 6f6e 2063 616c 6c73 3a20  function calls: 
+    00000050: 0a33 3920 0a4e 6573 7465 6420 636f 6e64  .39 .Nested cond
+    00000060: 6974 696f 6e61 6c73 3a20 0a78 2069 7320  itionals: .x is 
+    00000070: 6265 7477 6565 6e20 3130 2061 6e64 2032  between 10 and 2
+    00000080: 3020 0a4d 756c 7469 706c 6520 6f70 6572  0 .Multiple oper
+    00000090: 6174 696f 6e73 3a20 0a31 3220 0a3d 3d3d  ations: .12 .===
+    000000a0: 2054 6573 7420 436f 6d70 6c65 7465 203d   Test Complete =
+    000000b0: 3d3d 20                                  == 
+
+  [36mCompiled HEX (exit: 0):[0m
+    00000000: 3d3d 3d20 4e65 7374 6564 204f 7065 7261  === Nested Opera
+    00000010: 7469 6f6e 7320 5465 7374 203d 3d3d 0a43  tions Test ===.C
+    00000020: 6f6d 706c 6578 2061 7269 7468 6d65 7469  omplex arithmeti
+    00000030: 633a 0a31 350a 4e65 7374 6564 2066 756e  c:.15.Nested fun
+    00000040: 6374 696f 6e20 6361 6c6c 733a 0a30 0a4e  ction calls:.0.N
+    00000050: 6573 7465 6420 636f 6e64 6974 696f 6e61  ested conditiona
+    00000060: 6c73 3a0a 4d75 6c74 6970 6c65 206f 7065  ls:.Multiple ope
+    00000070: 7261 7469 6f6e 733a 0a31 320a 3d3d 3d20  rations:.12.=== 
+    00000080: 5465 7374 2043 6f6d 706c 6574 6520 3d3d  Test Complete ==
+    00000090: 3d                                       =
+
+---
+[1m[16/444] Testing: complex/02_fizzbuzz.💀[0m
+  Result: [31mFAIL (OUTPUT_MISMATCH)[0m
+  [36mInterpreter (exit: 0):[0m
+    === FizzBuzz Test === 
+    FizzBuzz from 1 to 15: 
+    1 
+    2 
+    Fizz 
+    4 
+    Buzz 
+    Fizz 
+    7 
+    8 
+    Fizz 
+    Buzz 
+    11 
+    Fizz 
+    13 
+    14 
+    FizzBuzz 
+    === Test Complete === 
+
+  [36mCompiled (exit: 0):[0m
+    === FizzBuzz Test ===
+    FizzBuzz from 1 to 15:
+    === Test Complete ===
+
+  [33mHEX COMPARISON (to identify differences):[0m
+  [36mInterpreter HEX (exit: 0):[0m
+    00000000: 3d3d 3d20 4669 7a7a 4275 7a7a 2054 6573  === FizzBuzz Tes
+    00000010: 7420 3d3d 3d20 0a46 697a 7a42 757a 7a20  t === .FizzBuzz 
+    00000020: 6672 6f6d 2031 2074 6f20 3135 3a20 0a31  from 1 to 15: .1
+    00000030: 200a 3220 0a46 697a 7a20 0a34 200a 4275   .2 .Fizz .4 .Bu
+    00000040: 7a7a 200a 4669 7a7a 200a 3720 0a38 200a  zz .Fizz .7 .8 .
+    00000050: 4669 7a7a 200a 4275 7a7a 200a 3131 200a  Fizz .Buzz .11 .
+    00000060: 4669 7a7a 200a 3133 200a 3134 200a 4669  Fizz .13 .14 .Fi
+    00000070: 7a7a 4275 7a7a 200a 3d3d 3d20 5465 7374  zzBuzz .=== Test
+    00000080: 2043 6f6d 706c 6574 6520 3d3d 3d20        Complete === 
+
+  [36mCompiled HEX (exit: 0):[0m
+    00000000: 3d3d 3d20 4669 7a7a 4275 7a7a 2054 6573  === FizzBuzz Tes
+    00000010: 7420 3d3d 3d0a 4669 7a7a 4275 7a7a 2066  t ===.FizzBuzz f
+    00000020: 726f 6d20 3120 746f 2031 353a 0a3d 3d3d  rom 1 to 15:.===
+    00000030: 2054 6573 7420 436f 6d70 6c65 7465 203d   Test Complete =
+    00000040: 3d3d                                     ==
+
+---
+[1m[17/444] Testing: comprehensive/01_comprehensive_pointers.💀[0m
+  Result: [31mINTERPRETER ERROR (compiled worked)[0m
+  [36mInterpreter (exit: 1):[0m
+    DEBUG: Function 'create_person' not found
+    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/comprehensive/01_comprehensive_pointers.💀: error.UndefinedFunction
+    error: UndefinedFunction
+                        return InterpreterError.UndefinedFunction;
+                        ^
+                .Call => |call| return try self.evaluateCall(call),
+                                       ^
+                try self.evaluateExpression(initializer_expr.*)
+                ^
+                    try self.executeLetStatement(let);
+                    ^
+                    _ = try self.executeStatement(stmt.*);
+                        ^
+            return self.execute(program);
+            ^
+            return err;
+            ^
+            try interpretSource(allocator, source, filename.?, verbose);
+            ^
+
+  [36mCompiled (exit: 0):[0m
+    4. Pointer Chains:
+    42
+    5. Function Parameters:
+    100
+    200
+    === Comprehensive Test Complete ===
+
+---
+[1m[18/444] Testing: comprehensive/02_pointer_stress_test.💀[0m
+  Result: [31mINTERPRETER ERROR (compiled worked)[0m
+  [36mInterpreter (exit: 1):[0m
+    Using world's first Among Us pointer syntax ඞ 
+    ===================================== 
+    === Multiple Indirection Stress Test === 
+    Base value: 42 
+    Via ptr1: 42 
+    Via ptr2: 42 
+    Via ptr3: 42 
+    Modified via ptr3: 42 
+    DEBUG: Function 'stress_test_complex_expressions' not found
+    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/comprehensive/02_pointer_stress_test.💀: error.UndefinedFunction
+    error: UndefinedFunction
+                        return InterpreterError.UndefinedFunction;
+                        ^
+                .Call => |call| return try self.evaluateCall(call),
+                                       ^
+                    _ = try self.evaluateExpression(expr);
+                        ^
+                if (try self.executeStatement(stmt.*)) {
+                    ^
+                _ = try self.callFunction(main_func, &[_]Value{});
+                    ^
+            return self.execute(program);
+            ^
+            return err;
+            ^
+            try interpretSource(allocator, source, filename.?, verbose);
+            ^
+
+  [36mCompiled (exit: 0):[0m
+    === Multiple Indirection Stress Test ===
+    Base value:
+    42
+    Via ptr1:
+    42
+    Via ptr2:
+    0
+    Via ptr3:
+    0
+    Modified via ptr3:
+    42
+    === Recursive Structure Stress Test ===
+    Root data:
+    Left data:
+    Right data:
+    🚀 CURSED Pointer Stress Test Suite
+    Using world's first Among Us pointer syntax ඞ
+    =====================================
+    =====================================
+    ✨ All stress tests completed!
+    ඞ Among Us pointers are rock solid! ඞ
+
+---
+[1m[19/444] Testing: comprehensive/03_pointer_performance_test.💀[0m
+  Result: [31mINTERPRETER ERROR (compiled worked)[0m
+  [36mInterpreter (exit: 1):[0m
+    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/comprehensive/03_pointer_performance_test.💀: error.UndefinedVariable
+    error: UndefinedVariable
+            return InterpreterError.UndefinedVariable;
+            ^
+                        return InterpreterError.UndefinedVariable;
+                        ^
+            const array_value = try self.evaluateExpression(access.array.*);
+                                ^
+                .ArrayAccess => |access| return try self.evaluateArrayAccess(access),
+                                                ^
+            const operand = try self.evaluateExpression(unary.operand.*);
+                            ^
+                .Unary => |unary| return try self.evaluateUnary(unary.*),
+                                         ^
+                try self.evaluateExpression(initializer_expr.*)
+                ^
+                    try self.executeLetStatement(let);
+                    ^
+                    _ = try self.executeStatement(stmt.*);
+                        ^
+            return self.execute(program);
+            ^
+            return err;
+            ^
+            try interpretSource(allocator, source, filename.?, verbose);
+            ^
+
+  [36mCompiled (exit: 0):[0m
+    (no output)
+
+---
+[1m[20/444] Testing: comprehensive/control_flow_comprehensive.💀[0m
+  Result: [31mFAIL (OUTPUT_MISMATCH)[0m
+  [36mInterpreter (exit: 0):[0m
+    === Comprehensive Control Flow Test === 
+    Value is greater than 10 
+    Grade: C 
+    Both conditions met 
+    Boolean test passed 
+    === Control Flow Test Complete === 
+
+  [36mCompiled (exit: 0):[0m
+    === Comprehensive Control Flow Test ===
+    === Control Flow Test Complete ===
+
+  [33mHEX COMPARISON (to identify differences):[0m
+  [36mInterpreter HEX (exit: 0):[0m
+    00000000: 3d3d 3d20 436f 6d70 7265 6865 6e73 6976  === Comprehensiv
+    00000010: 6520 436f 6e74 726f 6c20 466c 6f77 2054  e Control Flow T
+    00000020: 6573 7420 3d3d 3d20 0a56 616c 7565 2069  est === .Value i
+    00000030: 7320 6772 6561 7465 7220 7468 616e 2031  s greater than 1
+    00000040: 3020 0a47 7261 6465 3a20 4320 0a42 6f74  0 .Grade: C .Bot
+    00000050: 6820 636f 6e64 6974 696f 6e73 206d 6574  h conditions met
+    00000060: 200a 426f 6f6c 6561 6e20 7465 7374 2070   .Boolean test p
+    00000070: 6173 7365 6420 0a3d 3d3d 2043 6f6e 7472  assed .=== Contr
+    00000080: 6f6c 2046 6c6f 7720 5465 7374 2043 6f6d  ol Flow Test Com
+    00000090: 706c 6574 6520 3d3d 3d20                 plete === 
+
+  [36mCompiled HEX (exit: 0):[0m
+    00000000: 3d3d 3d20 436f 6d70 7265 6865 6e73 6976  === Comprehensiv
+    00000010: 6520 436f 6e74 726f 6c20 466c 6f77 2054  e Control Flow T
+    00000020: 6573 7420 3d3d 3d0a 3d3d 3d20 436f 6e74  est ===.=== Cont
+    00000030: 726f 6c20 466c 6f77 2054 6573 7420 436f  rol Flow Test Co
+    00000040: 6d70 6c65 7465 203d 3d3d                 mplete ===
+
+---
+[1m[21/444] Testing: comprehensive/function_definitions_test.💀[0m
+  Result: [31mFAIL (OUTPUT_MISMATCH)[0m
+  [36mInterpreter (exit: 0):[0m
+    === Function Definitions Test === 
+    10 + 5 = 
+    15 
+    2 * 3 * 4 = 
+    24 
+    Message from function: 
+    Hello from function! 
+    Average of 10, 20, 30: 
+    20 
+    === Test Complete === 
+
+  [36mCompiled (exit: 0):[0m
+    === Function Definitions Test ===
+    10 + 5 =
+    0
+    2 * 3 * 4 =
+    0
+    Message from function:
+    Average of 10, 20, 30:
+    0
+    === Test Complete ===
+
+  [33mHEX COMPARISON (to identify differences):[0m
+  [36mInterpreter HEX (exit: 0):[0m
+    00000000: 3d3d 3d20 4675 6e63 7469 6f6e 2044 6566  === Function Def
+    00000010: 696e 6974 696f 6e73 2054 6573 7420 3d3d  initions Test ==
+    00000020: 3d20 0a31 3020 2b20 3520 3d20 0a31 3520  = .10 + 5 = .15 
+    00000030: 0a32 202a 2033 202a 2034 203d 200a 3234  .2 * 3 * 4 = .24
+    00000040: 200a 4d65 7373 6167 6520 6672 6f6d 2066   .Message from f
+    00000050: 756e 6374 696f 6e3a 200a 4865 6c6c 6f20  unction: .Hello 
+    00000060: 6672 6f6d 2066 756e 6374 696f 6e21 200a  from function! .
+    00000070: 4176 6572 6167 6520 6f66 2031 302c 2032  Average of 10, 2
+    00000080: 302c 2033 303a 200a 3230 200a 3d3d 3d20  0, 30: .20 .=== 
+    00000090: 5465 7374 2043 6f6d 706c 6574 6520 3d3d  Test Complete ==
+    000000a0: 3d20                                     = 
+
+  [36mCompiled HEX (exit: 0):[0m
+    00000000: 3d3d 3d20 4675 6e63 7469 6f6e 2044 6566  === Function Def
+    00000010: 696e 6974 696f 6e73 2054 6573 7420 3d3d  initions Test ==
+    00000020: 3d0a 3130 202b 2035 203d 0a30 0a32 202a  =.10 + 5 =.0.2 *
+    00000030: 2033 202a 2034 203d 0a30 0a4d 6573 7361   3 * 4 =.0.Messa
+    00000040: 6765 2066 726f 6d20 6675 6e63 7469 6f6e  ge from function
+    00000050: 3a0a 4176 6572 6167 6520 6f66 2031 302c  :.Average of 10,
+    00000060: 2032 302c 2033 303a 0a30 0a3d 3d3d 2054   20, 30:.0.=== T
+    00000070: 6573 7420 436f 6d70 6c65 7465 203d 3d3d  est Complete ===
+
+---
+[1m[22/444] Testing: comprehensive/test_comprehensive_language_features.💀[0m
+  Result: [31mFAIL (OUTPUT_MISMATCH)[0m
+  [36mInterpreter (exit: 0):[0m
+    CURSED Comprehensive Language Features Test 
+    ========================================= 
+    Variable declaration: 
+    42 
+    Function call test - multiply 5 * 6: 
+    30 
+    Control flow test: 
+    Value is large 
+    Value is medium 
+    Value is small 
+    Testing periodt loop: 
+    Loop iteration: 
+    1 
+    Loop iteration: 
+    2 
+    Loop iteration: 
+    3 
+    Testing arithmetic operations: 
+    Addition: 
+    22 
+    Subtraction: 
+    8 
+    Multiplication: 
+    105 
+    Division: 
+    2 
+    Math operations completed 
+    All tests completed successfully! 
+
+  [36mCompiled (exit: 0):[0m
+    Testing arithmetic operations:
+    Addition:
+    22
+    Subtraction:
+    8
+    Multiplication:
+    105
+    Division:
+    2
+    Math operations completed
+    Testing periodt loop:
+    CURSED Comprehensive Language Features Test
+    =========================================
+    Variable declaration:
+    42
+    Function call test - multiply 5 * 6:
+    0
+    Control flow test:
+    All tests completed successfully!
+
+  [33mHEX COMPARISON (to identify differences):[0m
+  [36mInterpreter HEX (exit: 0):[0m
+    00000000: 4355 5253 4544 2043 6f6d 7072 6568 656e  CURSED Comprehen
+    00000010: 7369 7665 204c 616e 6775 6167 6520 4665  sive Language Fe
+    00000020: 6174 7572 6573 2054 6573 7420 0a3d 3d3d  atures Test .===
+    00000030: 3d3d 3d3d 3d3d 3d3d 3d3d 3d3d 3d3d 3d3d  ================
+    00000040: 3d3d 3d3d 3d3d 3d3d 3d3d 3d3d 3d3d 3d3d  ================
+    00000050: 3d3d 3d3d 3d3d 200a 5661 7269 6162 6c65  ====== .Variable
+    00000060: 2064 6563 6c61 7261 7469 6f6e 3a20 0a34   declaration: .4
+    00000070: 3220 0a46 756e 6374 696f 6e20 6361 6c6c  2 .Function call
+    00000080: 2074 6573 7420 2d20 6d75 6c74 6970 6c79   test - multiply
+    00000090: 2035 202a 2036 3a20 0a33 3020 0a43 6f6e   5 * 6: .30 .Con
+    000000a0: 7472 6f6c 2066 6c6f 7720 7465 7374 3a20  trol flow test: 
+    000000b0: 0a56 616c 7565 2069 7320 6c61 7267 6520  .Value is large 
+    000000c0: 0a56 616c 7565 2069 7320 6d65 6469 756d  .Value is medium
+    000000d0: 200a 5661 6c75 6520 6973 2073 6d61 6c6c   .Value is small
+    000000e0: 200a 5465 7374 696e 6720 7065 7269 6f64   .Testing period
+    000000f0: 7420 6c6f 6f70 3a20 0a4c 6f6f 7020 6974  t loop: .Loop it
+    00000100: 6572 6174 696f 6e3a 200a 3120 0a4c 6f6f  eration: .1 .Loo
+    00000110: 7020 6974 6572 6174 696f 6e3a 200a 3220  p iteration: .2 
+    00000120: 0a4c 6f6f 7020 6974 6572 6174 696f 6e3a  .Loop iteration:
+    00000130: 200a 3320 0a54 6573 7469 6e67 2061 7269   .3 .Testing ari
+    00000140: 7468 6d65 7469 6320 6f70 6572 6174 696f  thmetic operatio
+    00000150: 6e73 3a20 0a41 6464 6974 696f 6e3a 200a  ns: .Addition: .
+    00000160: 3232 200a 5375 6274 7261 6374 696f 6e3a  22 .Subtraction:
+    00000170: 200a 3820 0a4d 756c 7469 706c 6963 6174   .8 .Multiplicat
+    00000180: 696f 6e3a 200a 3130 3520 0a44 6976 6973  ion: .105 .Divis
+    00000190: 696f 6e3a 200a 3220 0a4d 6174 6820 6f70  ion: .2 .Math op
+    000001a0: 6572 6174 696f 6e73 2063 6f6d 706c 6574  erations complet
+    000001b0: 6564 200a 416c 6c20 7465 7374 7320 636f  ed .All tests co
+    000001c0: 6d70 6c65 7465 6420 7375 6363 6573 7366  mpleted successf
+    000001d0: 756c 6c79 2120                           ully! 
+
+  [36mCompiled HEX (exit: 0):[0m
+    00000000: 5465 7374 696e 6720 6172 6974 686d 6574  Testing arithmet
+    00000010: 6963 206f 7065 7261 7469 6f6e 733a 0a41  ic operations:.A
+    00000020: 6464 6974 696f 6e3a 0a32 320a 5375 6274  ddition:.22.Subt
+    00000030: 7261 6374 696f 6e3a 0a38 0a4d 756c 7469  raction:.8.Multi
+    00000040: 706c 6963 6174 696f 6e3a 0a31 3035 0a44  plication:.105.D
+    00000050: 6976 6973 696f 6e3a 0a32 0a4d 6174 6820  ivision:.2.Math 
+    00000060: 6f70 6572 6174 696f 6e73 2063 6f6d 706c  operations compl
+    00000070: 6574 6564 0a54 6573 7469 6e67 2070 6572  eted.Testing per
+    00000080: 696f 6474 206c 6f6f 703a 0a43 5552 5345  iodt loop:.CURSE
+    00000090: 4420 436f 6d70 7265 6865 6e73 6976 6520  D Comprehensive 
+    000000a0: 4c61 6e67 7561 6765 2046 6561 7475 7265  Language Feature
+    000000b0: 7320 5465 7374 0a3d 3d3d 3d3d 3d3d 3d3d  s Test.=========
+    000000c0: 3d3d 3d3d 3d3d 3d3d 3d3d 3d3d 3d3d 3d3d  ================
+    000000d0: 3d3d 3d3d 3d3d 3d3d 3d3d 3d3d 3d3d 3d3d  ================
+    000000e0: 0a56 6172 6961 626c 6520 6465 636c 6172  .Variable declar
+    000000f0: 6174 696f 6e3a 0a34 320a 4675 6e63 7469  ation:.42.Functi
+    00000100: 6f6e 2063 616c 6c20 7465 7374 202d 206d  on call test - m
+    00000110: 756c 7469 706c 7920 3520 2a20 363a 0a30  ultiply 5 * 6:.0
+    00000120: 0a43 6f6e 7472 6f6c 2066 6c6f 7720 7465  .Control flow te
+    00000130: 7374 3a0a 416c 6c20 7465 7374 7320 636f  st:.All tests co
+    00000140: 6d70 6c65 7465 6420 7375 6363 6573 7366  mpleted successf
+    00000150: 756c 6c79 21                             ully!
+
+---
+[1m[23/444] Testing: control_flow/01_if_statements.💀[0m
+  Result: [31mFAIL (OUTPUT_MISMATCH)[0m
+  [36mInterpreter (exit: 0):[0m
+    === If Statement Test === 
+    x = 10, y = 5 
+    x is greater than y 
+    x is not less than y 
+    Score evaluation: 
+    Grade B 
+    === Test Complete === 
+
+  [36mCompiled (exit: 0):[0m
+    === If Statement Test ===
+    x = 10, y = 5
+    Score evaluation:
+    === Test Complete ===
+
+  [33mHEX COMPARISON (to identify differences):[0m
+  [36mInterpreter HEX (exit: 0):[0m
+    00000000: 3d3d 3d20 4966 2053 7461 7465 6d65 6e74  === If Statement
+    00000010: 2054 6573 7420 3d3d 3d20 0a78 203d 2031   Test === .x = 1
+    00000020: 302c 2079 203d 2035 200a 7820 6973 2067  0, y = 5 .x is g
+    00000030: 7265 6174 6572 2074 6861 6e20 7920 0a78  reater than y .x
+    00000040: 2069 7320 6e6f 7420 6c65 7373 2074 6861   is not less tha
+    00000050: 6e20 7920 0a53 636f 7265 2065 7661 6c75  n y .Score evalu
+    00000060: 6174 696f 6e3a 200a 4772 6164 6520 4220  ation: .Grade B 
+    00000070: 0a3d 3d3d 2054 6573 7420 436f 6d70 6c65  .=== Test Comple
+    00000080: 7465 203d 3d3d 20                        te === 
+
+  [36mCompiled HEX (exit: 0):[0m
+    00000000: 3d3d 3d20 4966 2053 7461 7465 6d65 6e74  === If Statement
+    00000010: 2054 6573 7420 3d3d 3d0a 7820 3d20 3130   Test ===.x = 10
+    00000020: 2c20 7920 3d20 350a 5363 6f72 6520 6576  , y = 5.Score ev
+    00000030: 616c 7561 7469 6f6e 3a0a 3d3d 3d20 5465  aluation:.=== Te
+    00000040: 7374 2043 6f6d 706c 6574 6520 3d3d 3d    st Complete ===
+
+---
+[1m[24/444] Testing: control_flow/02_loops.💀[0m
+  Result: [31mFAIL (OUTPUT_MISMATCH)[0m
+  [36mInterpreter (exit: 0):[0m
+    === Loops Test === 
+    Simple counting: 
+    1 
+    2 
+    3 
+    4 
+    5 
+    Countdown: 
+    3 
+    2 
+    1 
+    Blast off! 
+    === Test Complete === 
+
+  [36mCompiled (exit: 0):[0m
+    === Loops Test ===
+    Simple counting:
+    Countdown:
+    Blast off!
+    === Test Complete ===
+
+  [33mHEX COMPARISON (to identify differences):[0m
+  [36mInterpreter HEX (exit: 0):[0m
+    00000000: 3d3d 3d20 4c6f 6f70 7320 5465 7374 203d  === Loops Test =
+    00000010: 3d3d 200a 5369 6d70 6c65 2063 6f75 6e74  == .Simple count
+    00000020: 696e 673a 200a 3120 0a32 200a 3320 0a34  ing: .1 .2 .3 .4
+    00000030: 200a 3520 0a43 6f75 6e74 646f 776e 3a20   .5 .Countdown: 
+    00000040: 0a33 200a 3220 0a31 200a 426c 6173 7420  .3 .2 .1 .Blast 
+    00000050: 6f66 6621 200a 3d3d 3d20 5465 7374 2043  off! .=== Test C
+    00000060: 6f6d 706c 6574 6520 3d3d 3d20            omplete === 
+
+  [36mCompiled HEX (exit: 0):[0m
+    00000000: 3d3d 3d20 4c6f 6f70 7320 5465 7374 203d  === Loops Test =
+    00000010: 3d3d 0a53 696d 706c 6520 636f 756e 7469  ==.Simple counti
+    00000020: 6e67 3a0a 436f 756e 7464 6f77 6e3a 0a42  ng:.Countdown:.B
+    00000030: 6c61 7374 206f 6666 210a 3d3d 3d20 5465  last off!.=== Te
+    00000040: 7374 2043 6f6d 706c 6574 6520 3d3d 3d    st Complete ===
+
+---
+[1m[25/444] Testing: control_flow/control_flow_comprehensive.💀[0m
+  Result: [31mFAIL (OUTPUT_MISMATCH)[0m
+  [36mInterpreter (exit: 0):[0m
+    === Testing Control Flow === 
+    x is greater than 5 
+    Both x and y are positive, y > x 
+    Complex boolean condition 1 passed 
+    Complex boolean condition 2 passed 
+    Grade B 
+    Function returned true 
+    Expression-based condition passed 
+
+  [36mCompiled (exit: 0):[0m
+    === Testing Control Flow ===
+
+  [33mHEX COMPARISON (to identify differences):[0m
+  [36mInterpreter HEX (exit: 0):[0m
+    00000000: 3d3d 3d20 5465 7374 696e 6720 436f 6e74  === Testing Cont
+    00000010: 726f 6c20 466c 6f77 203d 3d3d 200a 7820  rol Flow === .x 
+    00000020: 6973 2067 7265 6174 6572 2074 6861 6e20  is greater than 
+    00000030: 3520 0a42 6f74 6820 7820 616e 6420 7920  5 .Both x and y 
+    00000040: 6172 6520 706f 7369 7469 7665 2c20 7920  are positive, y 
+    00000050: 3e20 7820 0a43 6f6d 706c 6578 2062 6f6f  > x .Complex boo
+    00000060: 6c65 616e 2063 6f6e 6469 7469 6f6e 2031  lean condition 1
+    00000070: 2070 6173 7365 6420 0a43 6f6d 706c 6578   passed .Complex
+    00000080: 2062 6f6f 6c65 616e 2063 6f6e 6469 7469   boolean conditi
+    00000090: 6f6e 2032 2070 6173 7365 6420 0a47 7261  on 2 passed .Gra
+    000000a0: 6465 2042 200a 4675 6e63 7469 6f6e 2072  de B .Function r
+    000000b0: 6574 7572 6e65 6420 7472 7565 200a 4578  eturned true .Ex
+    000000c0: 7072 6573 7369 6f6e 2d62 6173 6564 2063  pression-based c
+    000000d0: 6f6e 6469 7469 6f6e 2070 6173 7365 6420  ondition passed 
+
+  [36mCompiled HEX (exit: 0):[0m
+    00000000: 3d3d 3d20 5465 7374 696e 6720 436f 6e74  === Testing Cont
+    00000010: 726f 6c20 466c 6f77 203d 3d3d            rol Flow ===
+
+---
+[1m[26/444] Testing: control_flow/control_flow_if_else.💀[0m
+  Result: [33mFAIL (different error messages)[0m
+  [36mInterpreter (exit: 1):[0m
+    Grade: A 
+    High honor! 
+    Grade: B 
+    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/control_flow/control_flow_if_else.💀: error.UndefinedVariable
+    error: UndefinedVariable
+            return InterpreterError.UndefinedVariable;
+            ^
+                        return InterpreterError.UndefinedVariable;
+                        ^
+            const left = try self.evaluateExpression(bin.left.*);
+                         ^
+                .Binary => |bin| return try self.evaluateBinary(bin),
+                                        ^
+                try self.evaluateExpression(initializer_expr.*)
+                ^
+                    try self.executeLetStatement(let);
+                    ^
+                    _ = try self.executeStatement(stmt.*);
+                        ^
+            return self.execute(program);
+            ^
+            return err;
+            ^
+            try interpretSource(allocator, source, filename.?, verbose);
+            ^
+
+  [36mCompiled (exit: 127):[0m
+    Runtime error (exit 127)
+
+---
+[1m[27/444] Testing: control_flow/feature_control_flow_comprehensive.💀[0m
+  Result: [31mFAIL (OUTPUT_MISMATCH)[0m
+  [36mInterpreter (exit: 0):[0m
+    === Control Flow Test === 
+    Value is greater than 10 
+    Check is not greater than 7 
+    Starting loop count: 
+    0 
+    1 
+    2 
+    Both conditions met 
+    Boolean test passed 
+    === Control Flow Test Complete === 
+
+  [36mCompiled (exit: 0):[0m
+    === Control Flow Test ===
+    Starting loop count:
+    === Control Flow Test Complete ===
+
+  [33mHEX COMPARISON (to identify differences):[0m
+  [36mInterpreter HEX (exit: 0):[0m
+    00000000: 3d3d 3d20 436f 6e74 726f 6c20 466c 6f77  === Control Flow
+    00000010: 2054 6573 7420 3d3d 3d20 0a56 616c 7565   Test === .Value
+    00000020: 2069 7320 6772 6561 7465 7220 7468 616e   is greater than
+    00000030: 2031 3020 0a43 6865 636b 2069 7320 6e6f   10 .Check is no
+    00000040: 7420 6772 6561 7465 7220 7468 616e 2037  t greater than 7
+    00000050: 200a 5374 6172 7469 6e67 206c 6f6f 7020   .Starting loop 
+    00000060: 636f 756e 743a 200a 3020 0a31 200a 3220  count: .0 .1 .2 
+    00000070: 0a42 6f74 6820 636f 6e64 6974 696f 6e73  .Both conditions
+    00000080: 206d 6574 200a 426f 6f6c 6561 6e20 7465   met .Boolean te
+    00000090: 7374 2070 6173 7365 6420 0a3d 3d3d 2043  st passed .=== C
+    000000a0: 6f6e 7472 6f6c 2046 6c6f 7720 5465 7374  ontrol Flow Test
+    000000b0: 2043 6f6d 706c 6574 6520 3d3d 3d20        Complete === 
+
+  [36mCompiled HEX (exit: 0):[0m
+    00000000: 3d3d 3d20 436f 6e74 726f 6c20 466c 6f77  === Control Flow
+    00000010: 2054 6573 7420 3d3d 3d0a 5374 6172 7469   Test ===.Starti
+    00000020: 6e67 206c 6f6f 7020 636f 756e 743a 0a3d  ng loop count:.=
+    00000030: 3d3d 2043 6f6e 7472 6f6c 2046 6c6f 7720  == Control Flow 
+    00000040: 5465 7374 2043 6f6d 706c 6574 6520 3d3d  Test Complete ==
+    00000050: 3d                                       =
+
+---
+[1m[28/444] Testing: edge_cases/01_boundary_conditions.💀[0m
+  Result: [31mINTERPRETER ERROR (compiled worked)[0m
+  [36mInterpreter (exit: 1):[0m
+    Zero value: 0 
+    Zero abs: DEBUG: Function 'custom_abs' not found
+    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/edge_cases/01_boundary_conditions.💀: error.UndefinedFunction
+    error: UndefinedFunction
+                        return InterpreterError.UndefinedFunction;
+                        ^
+                .Call => |call| return try self.evaluateCall(call),
+                                       ^
+                            const arg_value = try self.evaluateExpression(arg_ptr.*);
+                                              ^
+                    _ = try self.evaluateExpression(expr);
+                        ^
+                    _ = try self.executeStatement(stmt.*);
+                        ^
+            return self.execute(program);
+            ^
+            return err;
+            ^
+            try interpretSource(allocator, source, filename.?, verbose);
+            ^
+
+  [36mCompiled (exit: 0):[0m
+    Zero value:
+    0
+    Zero abs:
+    Testing negative values...
+    Negative abs:
+    Testing string boundaries...
+    Empty string:
+    Testing negative values...
+    Single char:
+    Negative abs:
+    Testing extreme arithmetic...
+    Large + zero:
+    999999
+    Large - zero:
+    999999
+    Large * zero:
+    0
+    Testing boundary math operations...
+    Max(999, -999):
+    0
+    Min(999, -999):
+    0
+    Testing zero division safety...
+    999 / 1:
+    999
+    0 / 1:
+    0
+    Boundary conditions test completed
+
+---
+[1m[29/444] Testing: edge_cases/01_pointer_edge_cases.💀[0m
+  Result: [31mFAIL (OUTPUT_MISMATCH)[0m
+  [36mInterpreter (exit: 0):[0m
+    === Pointer Edge Cases === 
+    Chain assignment result: 
+    100 
+    Original value after chain modification: 
+    100 
+    Pointers are not equal 
+    Triple pointer dereference: 
+    50 
+    === Test Complete === 
+
+  [36mCompiled (exit: 0):[0m
+    === Pointer Edge Cases ===
+    Chain assignment result:
+    42
+    Original value after chain modification:
+    100
+    Triple pointer dereference:
+    0
+    === Test Complete ===
+
+  [33mHEX COMPARISON (to identify differences):[0m
+  [36mInterpreter HEX (exit: 0):[0m
+    00000000: 3d3d 3d20 506f 696e 7465 7220 4564 6765  === Pointer Edge
+    00000010: 2043 6173 6573 203d 3d3d 200a 4368 6169   Cases === .Chai
+    00000020: 6e20 6173 7369 676e 6d65 6e74 2072 6573  n assignment res
+    00000030: 756c 743a 200a 3130 3020 0a4f 7269 6769  ult: .100 .Origi
+    00000040: 6e61 6c20 7661 6c75 6520 6166 7465 7220  nal value after 
+    00000050: 6368 6169 6e20 6d6f 6469 6669 6361 7469  chain modificati
+    00000060: 6f6e 3a20 0a31 3030 200a 506f 696e 7465  on: .100 .Pointe
+    00000070: 7273 2061 7265 206e 6f74 2065 7175 616c  rs are not equal
+    00000080: 200a 5472 6970 6c65 2070 6f69 6e74 6572   .Triple pointer
+    00000090: 2064 6572 6566 6572 656e 6365 3a20 0a35   dereference: .5
+    000000a0: 3020 0a3d 3d3d 2054 6573 7420 436f 6d70  0 .=== Test Comp
+    000000b0: 6c65 7465 203d 3d3d 20                   lete === 
+
+  [36mCompiled HEX (exit: 0):[0m
+    00000000: 3d3d 3d20 506f 696e 7465 7220 4564 6765  === Pointer Edge
+    00000010: 2043 6173 6573 203d 3d3d 0a43 6861 696e   Cases ===.Chain
+    00000020: 2061 7373 6967 6e6d 656e 7420 7265 7375   assignment resu
+    00000030: 6c74 3a0a 3432 0a4f 7269 6769 6e61 6c20  lt:.42.Original 
+    00000040: 7661 6c75 6520 6166 7465 7220 6368 6169  value after chai
+    00000050: 6e20 6d6f 6469 6669 6361 7469 6f6e 3a0a  n modification:.
+    00000060: 3130 300a 5472 6970 6c65 2070 6f69 6e74  100.Triple point
+    00000070: 6572 2064 6572 6566 6572 656e 6365 3a0a  er dereference:.
+    00000080: 300a 3d3d 3d20 5465 7374 2043 6f6d 706c  0.=== Test Compl
+    00000090: 6574 6520 3d3d 3d                        ete ===
+
+---
+[1m[30/444] Testing: edge_cases/02_empty_inputs.💀[0m
+  Result: [31mFAIL (OUTPUT_MISMATCH)[0m
+  [36mInterpreter (exit: 0):[0m
+    === Empty Inputs Test === 
+    Empty tea: 
+     
+    After empty tea 
+    Zero value: 
+    zero 
+    Non-zero value: 
+    non-zero 
+    === Test Complete === 
+
+  [36mCompiled (exit: 0):[0m
+    === Empty Inputs Test ===
+    Empty tea:
+    === Empty Inputs Test ===
+    After empty tea
+    Zero value:
+    Non-zero value:
+    === Test Complete ===
+
+  [33mHEX COMPARISON (to identify differences):[0m
+  [36mInterpreter HEX (exit: 0):[0m
+    00000000: 3d3d 3d20 456d 7074 7920 496e 7075 7473  === Empty Inputs
+    00000010: 2054 6573 7420 3d3d 3d20 0a45 6d70 7479   Test === .Empty
+    00000020: 2074 6561 3a20 0a20 0a41 6674 6572 2065   tea: . .After e
+    00000030: 6d70 7479 2074 6561 200a 5a65 726f 2076  mpty tea .Zero v
+    00000040: 616c 7565 3a20 0a7a 6572 6f20 0a4e 6f6e  alue: .zero .Non
+    00000050: 2d7a 6572 6f20 7661 6c75 653a 200a 6e6f  -zero value: .no
+    00000060: 6e2d 7a65 726f 200a 3d3d 3d20 5465 7374  n-zero .=== Test
+    00000070: 2043 6f6d 706c 6574 6520 3d3d 3d20        Complete === 
+
+  [36mCompiled HEX (exit: 0):[0m
+    00000000: 3d3d 3d20 456d 7074 7920 496e 7075 7473  === Empty Inputs
+    00000010: 2054 6573 7420 3d3d 3d0a 456d 7074 7920   Test ===.Empty 
+    00000020: 7465 613a 0a3d 3d3d 2045 6d70 7479 2049  tea:.=== Empty I
+    00000030: 6e70 7574 7320 5465 7374 203d 3d3d 0a41  nputs Test ===.A
+    00000040: 6674 6572 2065 6d70 7479 2074 6561 0a5a  fter empty tea.Z
+    00000050: 6572 6f20 7661 6c75 653a 0a4e 6f6e 2d7a  ero value:.Non-z
+    00000060: 6572 6f20 7661 6c75 653a 0a3d 3d3d 2054  ero value:.=== T
+    00000070: 6573 7420 436f 6d70 6c65 7465 203d 3d3d  est Complete ===
+
+---
+[1m[31/444] Testing: edge_cases/edge_case_boundary_values.💀[0m
+  Result: [31mINTERPRETER ERROR (compiled worked)[0m
+  [36mInterpreter (exit: 1):[0m
+    Always true: ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/edge_cases/edge_case_boundary_values.💀: error.UndefinedVariable
+    error: UndefinedVariable
+            return InterpreterError.UndefinedVariable;
+            ^
+                        return InterpreterError.UndefinedVariable;
+                        ^
+                            const arg_value = try self.evaluateExpression(arg_ptr.*);
+                                              ^
+                    _ = try self.evaluateExpression(expr);
+                        ^
+                    _ = try self.executeStatement(stmt.*);
+                        ^
+            return self.execute(program);
+            ^
+            return err;
+            ^
+            try interpretSource(allocator, source, filename.?, verbose);
+            ^
+
+  [36mCompiled (exit: 0):[0m
+    Always true:
+    Always false:
+    cringe
+    Empty tea:
+    Always false:
+    Abs of single digit:
+    0
+
+---
+[1m[32/444] Testing: edge_cases/edge_case_operator_precedence.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[33/444] Testing: errors/01_division_by_zero.💀[0m
+  Result: [33mFAIL (different error messages)[0m
+  [36mInterpreter (exit: 1):[0m
+    === Division by Zero Test === 
+    Normal division: 
+    5 
+    Attempting division by zero: 
+    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/errors/01_division_by_zero.💀: error.DivisionByZero
+    error: DivisionByZero
+                            return InterpreterError.DivisionByZero;
+                            ^
+                .Binary => |bin| return try self.evaluateBinary(bin),
+                                        ^
+                            const arg_value = try self.evaluateExpression(arg_ptr.*);
+                                              ^
+                    _ = try self.evaluateExpression(expr);
+                        ^
+                if (try self.executeStatement(stmt.*)) {
+                    ^
+                _ = try self.callFunction(main_func, &[_]Value{});
+                    ^
+            return self.execute(program);
+            ^
+            return err;
+            ^
+            try interpretSource(allocator, source, filename.?, verbose);
+            ^
+
+  [36mCompiled (exit: 134):[0m
+    Compilation failed
+
+---
+[1m[34/444] Testing: errors/01_pointer_syntax_errors.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[35/444] Testing: errors/02_old_syntax_rejection.💀[0m
+  Result: [33mFAIL (different error messages)[0m
+  [36mInterpreter (exit: 1):[0m
+    Error at line 13, column 13: Legacy '@' pointer syntax is not supported. Use 'ඞ' (Among Us character) instead.
+    ❌ Lexer error in /home/ghuntley/cursed/test_suite/test_programs/errors/02_old_syntax_rejection.💀: error.LegacySyntaxRejected
+    error: LegacySyntaxRejected
+                    return error.LegacySyntaxRejected;
+                    ^
+                const token = try self.nextToken();
+                              ^
+            return err;
+            ^
+            try interpretSource(allocator, source, filename.?, verbose);
+            ^
+
+  [36mCompiled (exit: 1):[0m
+    Compilation failed
+
+---
+[1m[36/444] Testing: errors/02_undefined_variable.💀[0m
+  Result: [31mINTERPRETER ERROR (compiled worked)[0m
+  [36mInterpreter (exit: 1):[0m
+    === Undefined Variable Test === 
+    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/errors/02_undefined_variable.💀: error.UndefinedVariable
+    error: UndefinedVariable
+            return InterpreterError.UndefinedVariable;
+            ^
+                        return InterpreterError.UndefinedVariable;
+                        ^
+                            const arg_value = try self.evaluateExpression(arg_ptr.*);
+                                              ^
+                    _ = try self.evaluateExpression(expr);
+                        ^
+                if (try self.executeStatement(stmt.*)) {
+                    ^
+                _ = try self.callFunction(main_func, &[_]Value{});
+                    ^
+            return self.execute(program);
+            ^
+            return err;
+            ^
+            try interpretSource(allocator, source, filename.?, verbose);
+            ^
+
+  [36mCompiled (exit: 0):[0m
+    === Undefined Variable Test ===
+    This should not execute
+
+---
+[1m[37/444] Testing: errors/03_error_handling_basic.💀[0m
+  Result: [31mINTERPRETER ERROR (compiled worked)[0m
+  [36mInterpreter (exit: 1):[0m
+    === Error Handling Test Suite === 
+    === Basic Error Handling Tests === 
+    Safe division 10/2 = 5 
+    Error: Division by zero prevented 
+    Safe division 10/0 result: -1 
+    Safe division 0/5 = 0 
+    Safe division -10/2 = -5 
+    DEBUG: Function 'test_input_validation' not found
+    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/errors/03_error_handling_basic.💀: error.UndefinedFunction
+    error: UndefinedFunction
+                        return InterpreterError.UndefinedFunction;
+                        ^
+                .Call => |call| return try self.evaluateCall(call),
+                                       ^
+                    _ = try self.evaluateExpression(expr);
+                        ^
+                if (try self.executeStatement(stmt.*)) {
+                    ^
+                _ = try self.callFunction(main_func, &[_]Value{});
+                    ^
+            return self.execute(program);
+            ^
+            return err;
+            ^
+            try interpretSource(allocator, source, filename.?, verbose);
+            ^
+
+  [36mCompiled (exit: 0):[0m
+    === Basic Error Handling Tests ===
+    Safe division 10/2 =
+    0
+    Safe division 10/0 result:
+    0
+    Safe division 0/5 =
+    0
+    Safe division -10/2 =
+    0
+    === Error Recovery Tests ===
+    === Error Handling Test Suite ===
+    All error handling tests completed
+
+---
+[1m[38/444] Testing: errors/03_error_handling_simple.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[39/444] Testing: errors/03_error_handling_yikes_fam_shook.💀[0m
+  Result: [31mINTERPRETER ERROR (compiled worked)[0m
+  [36mInterpreter (exit: 1):[0m
+    Caught error: ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/errors/03_error_handling_yikes_fam_shook.💀: error.TypeMismatch
+    error: TypeMismatch
+                    return InterpreterError.TypeMismatch;
+                    ^
+                    return try self.evaluateMethodCall(object_as_member, method_call.arguments.items);
+                           ^
+                            const arg_value = try self.evaluateExpression(arg_ptr.*);
+                                              ^
+                    _ = try self.evaluateExpression(expr);
+                        ^
+                if (try self.executeStatement(stmt_ptr.*)) {
+                    ^
+                    if (try self.executeBlockStatement(block)) {
+                        ^
+                    _ = try self.executeStatement(stmt.*);
+                        ^
+            return self.execute(program);
+            ^
+            return err;
+            ^
+            try interpretSource(allocator, source, filename.?, verbose);
+            ^
+
+  [36mCompiled (exit: 0):[0m
+    Caught error:
+    Nested error caught:
+    Second operation failed:
+    Error handling tests completed
+
+---
+[1m[40/444] Testing: errors/04_boundary_error_conditions.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[41/444] Testing: errors/04_panic_recovery.💀[0m
+  Result: [31mFAIL (OUTPUT_MISMATCH)[0m
+  [36mInterpreter (exit: 0):[0m
+    Outer panic handled: nah 
+    Panic recovery tests completed successfully 
+
+  [36mCompiled (exit: 0):[0m
+    Outer panic handled:
+    Panic recovery tests completed successfully
+
+  [33mHEX COMPARISON (to identify differences):[0m
+  [36mInterpreter HEX (exit: 0):[0m
+    00000000: 4f75 7465 7220 7061 6e69 6320 6861 6e64  Outer panic hand
+    00000010: 6c65 643a 206e 6168 200a 5061 6e69 6320  led: nah .Panic 
+    00000020: 7265 636f 7665 7279 2074 6573 7473 2063  recovery tests c
+    00000030: 6f6d 706c 6574 6564 2073 7563 6365 7373  ompleted success
+    00000040: 6675 6c6c 7920                           fully 
+
+  [36mCompiled HEX (exit: 0):[0m
+    00000000: 4f75 7465 7220 7061 6e69 6320 6861 6e64  Outer panic hand
+    00000010: 6c65 643a 0a50 616e 6963 2072 6563 6f76  led:.Panic recov
+    00000020: 6572 7920 7465 7374 7320 636f 6d70 6c65  ery tests comple
+    00000030: 7465 6420 7375 6363 6573 7366 756c 6c79  ted successfully
+
+---
+[1m[42/444] Testing: errors/05_error_handling_fixed.💀[0m
+  Result: [31mFAIL (OUTPUT_MISMATCH)[0m
+  [36mInterpreter (exit: 0):[0m
+    === Error Handling Test === 
+    Normal division test: 
+    Result: 5 
+    Testing error conditions... 
+    Error detected: Division by zero prevented 
+    Input validation passed 
+    Testing validation function... 
+    Negative number detected: -42 
+    Converted to positive: 42 
+    Error handling test completed 
+
+  [36mCompiled (exit: 0):[0m
+    === Error Handling Test ===
+    Normal division test:
+    Result:
+    5
+    Testing error conditions...
+    Testing validation function...
+    Error handling test completed
+
+  [33mHEX COMPARISON (to identify differences):[0m
+  [36mInterpreter HEX (exit: 0):[0m
+    00000000: 3d3d 3d20 4572 726f 7220 4861 6e64 6c69  === Error Handli
+    00000010: 6e67 2054 6573 7420 3d3d 3d20 0a4e 6f72  ng Test === .Nor
+    00000020: 6d61 6c20 6469 7669 7369 6f6e 2074 6573  mal division tes
+    00000030: 743a 200a 5265 7375 6c74 3a20 3520 0a54  t: .Result: 5 .T
+    00000040: 6573 7469 6e67 2065 7272 6f72 2063 6f6e  esting error con
+    00000050: 6469 7469 6f6e 732e 2e2e 200a 4572 726f  ditions... .Erro
+    00000060: 7220 6465 7465 6374 6564 3a20 4469 7669  r detected: Divi
+    00000070: 7369 6f6e 2062 7920 7a65 726f 2070 7265  sion by zero pre
+    00000080: 7665 6e74 6564 200a 496e 7075 7420 7661  vented .Input va
+    00000090: 6c69 6461 7469 6f6e 2070 6173 7365 6420  lidation passed 
+    000000a0: 0a54 6573 7469 6e67 2076 616c 6964 6174  .Testing validat
+    000000b0: 696f 6e20 6675 6e63 7469 6f6e 2e2e 2e20  ion function... 
+    000000c0: 0a4e 6567 6174 6976 6520 6e75 6d62 6572  .Negative number
+    000000d0: 2064 6574 6563 7465 643a 202d 3432 200a   detected: -42 .
+    000000e0: 436f 6e76 6572 7465 6420 746f 2070 6f73  Converted to pos
+    000000f0: 6974 6976 653a 2034 3220 0a45 7272 6f72  itive: 42 .Error
+    00000100: 2068 616e 646c 696e 6720 7465 7374 2063   handling test c
+    00000110: 6f6d 706c 6574 6564 20                   ompleted 
+
+  [36mCompiled HEX (exit: 0):[0m
+    00000000: 3d3d 3d20 4572 726f 7220 4861 6e64 6c69  === Error Handli
+    00000010: 6e67 2054 6573 7420 3d3d 3d0a 4e6f 726d  ng Test ===.Norm
+    00000020: 616c 2064 6976 6973 696f 6e20 7465 7374  al division test
+    00000030: 3a0a 5265 7375 6c74 3a0a 350a 5465 7374  :.Result:.5.Test
+    00000040: 696e 6720 6572 726f 7220 636f 6e64 6974  ing error condit
+    00000050: 696f 6e73 2e2e 2e0a 5465 7374 696e 6720  ions....Testing 
+    00000060: 7661 6c69 6461 7469 6f6e 2066 756e 6374  validation funct
+    00000070: 696f 6e2e 2e2e 0a45 7272 6f72 2068 616e  ion....Error han
+    00000080: 646c 696e 6720 7465 7374 2063 6f6d 706c  dling test compl
+    00000090: 6574 6564                                eted
+
+---
+[1m[43/444] Testing: feature/feature_comprehensive_syntax.💀[0m
+  Result: [31mINTERPRETER ERROR (compiled worked)[0m
+  [36mInterpreter (exit: 1):[0m
+    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/feature/feature_comprehensive_syntax.💀: error.UndefinedVariable
+    error: UndefinedVariable
+            return InterpreterError.UndefinedVariable;
+            ^
+                        return InterpreterError.UndefinedVariable;
+                        ^
+                                    const arg_val = try self.evaluateExpression(arg_expr.*);
+                                                    ^
+                    return try self.evaluateMethodCall(object_as_member, method_call.arguments.items);
+                           ^
+                try self.evaluateExpression(initializer_expr.*)
+                ^
+                    try self.executeLetStatement(let);
+                    ^
+                    _ = try self.executeStatement(stmt.*);
+                        ^
+            return self.execute(program);
+            ^
+            return err;
+            ^
+            try interpretSource(allocator, source, filename.?, verbose);
+            ^
+
+  [36mCompiled (exit: 0):[0m
+    Array sum:
+    0
+    Complex calculation (3*4 + 20/5):
+    0
+    String concatenation:
+    0
+    Boolean expression result:
+    0
+    === SYNTAX VALIDATION COMPLETE ===
+
+---
+[1m[44/444] Testing: features/feature_complete_stdlib_demo.💀[0m
+  Result: [33mFAIL (different error messages)[0m
+  [36mInterpreter (exit: 1):[0m
+    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/features/feature_complete_stdlib_demo.💀: error.UndefinedFunction
+    error: UndefinedFunction
+                        return InterpreterError.UndefinedFunction;
+                        ^
+                    return try self.evaluateMethodCall(object_as_member, method_call.arguments.items);
+                           ^
+                    _ = try self.evaluateExpression(expr);
+                        ^
+                if (try self.executeStatement(stmt.*)) {
+                    ^
+                _ = try self.callFunction(main_func, &[_]Value{});
+                    ^
+            return self.execute(program);
+            ^
+            return err;
+            ^
+            try interpretSource(allocator, source, filename.?, verbose);
+            ^
+
+  [36mCompiled (exit: 127):[0m
+    Runtime error (exit 127)
+
+---
+[1m[45/444] Testing: features/feature_control_flow_simple.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[46/444] Testing: features/feature_function_definitions.💀[0m
+  Result: [31mINTERPRETER ERROR (compiled worked)[0m
+  [36mInterpreter (exit: 1):[0m
+    Hello from CURSED! 
+    Addition result: {} 8 
+    DEBUG: Function 'format_message' not found
+    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/features/feature_function_definitions.💀: error.UndefinedFunction
+    error: UndefinedFunction
+                        return InterpreterError.UndefinedFunction;
+                        ^
+                .Call => |call| return try self.evaluateCall(call),
+                                       ^
+                try self.evaluateExpression(initializer_expr.*)
+                ^
+                    try self.executeLetStatement(let);
+                    ^
+                if (try self.executeStatement(stmt.*)) {
+                    ^
+                _ = try self.callFunction(main_func, &[_]Value{});
+                    ^
+            return self.execute(program);
+            ^
+            return err;
+            ^
+            try interpretSource(allocator, source, filename.?, verbose);
+            ^
+
+  [36mCompiled (exit: 0):[0m
+    Addition result: {}
+    0
+    0
+    Is valid: {}
+    0
+    Hello from CURSED!
+
+---
+[1m[47/444] Testing: features/feature_stdlib_imports.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[48/444] Testing: features/feature_stdlib_integration.💀[0m
+  Result: [31mFAIL (OUTPUT_MISMATCH)[0m
+  [36mInterpreter (exit: 0):[0m
+    === Stdlib Test === 
+    abs(-42): 
+    42 
+    add(3, 4): 
+    7 
+    === Test Complete === 
+
+  [36mCompiled (exit: 0):[0m
+    === Stdlib Test ===
+    abs(-42):
+    0
+    add(3, 4):
+    0
+    === Test Complete ===
+
+  [33mHEX COMPARISON (to identify differences):[0m
+  [36mInterpreter HEX (exit: 0):[0m
+    00000000: 3d3d 3d20 5374 646c 6962 2054 6573 7420  === Stdlib Test 
+    00000010: 3d3d 3d20 0a61 6273 282d 3432 293a 200a  === .abs(-42): .
+    00000020: 3432 200a 6164 6428 332c 2034 293a 200a  42 .add(3, 4): .
+    00000030: 3720 0a3d 3d3d 2054 6573 7420 436f 6d70  7 .=== Test Comp
+    00000040: 6c65 7465 203d 3d3d 20                   lete === 
+
+  [36mCompiled HEX (exit: 0):[0m
+    00000000: 3d3d 3d20 5374 646c 6962 2054 6573 7420  === Stdlib Test 
+    00000010: 3d3d 3d0a 6162 7328 2d34 3229 3a0a 300a  ===.abs(-42):.0.
+    00000020: 6164 6428 332c 2034 293a 0a30 0a3d 3d3d  add(3, 4):.0.===
+    00000030: 2054 6573 7420 436f 6d70 6c65 7465 203d   Test Complete =
+    00000040: 3d3d                                     ==
+
+---
+[1m[49/444] Testing: functions/01_pointer_parameters.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[50/444] Testing: functions/01_simple_function.💀[0m
+  Result: [31mFAIL (OUTPUT_MISMATCH)[0m
+  [36mInterpreter (exit: 0):[0m
+    === Simple Function Test === 
+    Testing add_numbers: 
+    10 
+    Testing greet function: 
+    Hello, 
+    CURSED Developer 
+    === Test Complete === 
+
+  [36mCompiled (exit: 0):[0m
+    Hello,
+    === Simple Function Test ===
+    Testing add_numbers:
+    0
+    Testing greet function:
+    === Test Complete ===
+
+  [33mHEX COMPARISON (to identify differences):[0m
+  [36mInterpreter HEX (exit: 0):[0m
+    00000000: 3d3d 3d20 5369 6d70 6c65 2046 756e 6374  === Simple Funct
+    00000010: 696f 6e20 5465 7374 203d 3d3d 200a 5465  ion Test === .Te
+    00000020: 7374 696e 6720 6164 645f 6e75 6d62 6572  sting add_number
+    00000030: 733a 200a 3130 200a 5465 7374 696e 6720  s: .10 .Testing 
+    00000040: 6772 6565 7420 6675 6e63 7469 6f6e 3a20  greet function: 
+    00000050: 0a48 656c 6c6f 2c20 0a43 5552 5345 4420  .Hello, .CURSED 
+    00000060: 4465 7665 6c6f 7065 7220 0a3d 3d3d 2054  Developer .=== T
+    00000070: 6573 7420 436f 6d70 6c65 7465 203d 3d3d  est Complete ===
+    00000080: 20                                        
+
+  [36mCompiled HEX (exit: 0):[0m
+    00000000: 4865 6c6c 6f2c 0a3d 3d3d 2053 696d 706c  Hello,.=== Simpl
+    00000010: 6520 4675 6e63 7469 6f6e 2054 6573 7420  e Function Test 
+    00000020: 3d3d 3d0a 5465 7374 696e 6720 6164 645f  ===.Testing add_
+    00000030: 6e75 6d62 6572 733a 0a30 0a54 6573 7469  numbers:.0.Testi
+    00000040: 6e67 2067 7265 6574 2066 756e 6374 696f  ng greet functio
+    00000050: 6e3a 0a3d 3d3d 2054 6573 7420 436f 6d70  n:.=== Test Comp
+    00000060: 6c65 7465 203d 3d3d                      lete ===
+
+---
+[1m[51/444] Testing: functions/02_pointer_return_values.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[52/444] Testing: functions/02_recursive_function.💀[0m
+  Result: [31mFAIL (OUTPUT_MISMATCH)[0m
+  [36mInterpreter (exit: 0):[0m
+    === Recursive Function Test === 
+    Factorial of 5: 
+    120 
+    Countdown from 3: 
+    3 
+    2 
+    1 
+    Done! 
+    === Test Complete === 
+
+  [36mCompiled (exit: 0):[0m
+    === Recursive Function Test ===
+    Factorial of 5:
+    0
+    Countdown from 3:
+    Done!
+    === Test Complete ===
+
+  [33mHEX COMPARISON (to identify differences):[0m
+  [36mInterpreter HEX (exit: 0):[0m
+    00000000: 3d3d 3d20 5265 6375 7273 6976 6520 4675  === Recursive Fu
+    00000010: 6e63 7469 6f6e 2054 6573 7420 3d3d 3d20  nction Test === 
+    00000020: 0a46 6163 746f 7269 616c 206f 6620 353a  .Factorial of 5:
+    00000030: 200a 3132 3020 0a43 6f75 6e74 646f 776e   .120 .Countdown
+    00000040: 2066 726f 6d20 333a 200a 3320 0a32 200a   from 3: .3 .2 .
+    00000050: 3120 0a44 6f6e 6521 200a 3d3d 3d20 5465  1 .Done! .=== Te
+    00000060: 7374 2043 6f6d 706c 6574 6520 3d3d 3d20  st Complete === 
+
+  [36mCompiled HEX (exit: 0):[0m
+    00000000: 3d3d 3d20 5265 6375 7273 6976 6520 4675  === Recursive Fu
+    00000010: 6e63 7469 6f6e 2054 6573 7420 3d3d 3d0a  nction Test ===.
+    00000020: 4661 6374 6f72 6961 6c20 6f66 2035 3a0a  Factorial of 5:.
+    00000030: 300a 436f 756e 7464 6f77 6e20 6672 6f6d  0.Countdown from
+    00000040: 2033 3a0a 446f 6e65 210a 3d3d 3d20 5465   3:.Done!.=== Te
+    00000050: 7374 2043 6f6d 706c 6574 6520 3d3d 3d    st Complete ===
+
+---
+[1m[53/444] Testing: functions/03_nested_function_calls.💀[0m
+  Result: [31mFAIL (OUTPUT_MISMATCH)[0m
+  [36mInterpreter (exit: 0):[0m
+    === Nested Function Calls Test === 
+    double_value(5): 
+    10 
+    add_one(7): 
+    8 
+    complex_calc(3) = double_value(add_one(3)): 
+    8 
+    Nested in expression: 
+    7 
+    === Test Complete === 
+
+  [36mCompiled (exit: 0):[0m
+    === Nested Function Calls Test ===
+    double_value(5):
+    add_one(7):
+    complex_calc(3) = double_value(add_one(3)):
+    Nested in expression:
+    1
+    === Test Complete ===
+
+  [33mHEX COMPARISON (to identify differences):[0m
+  [36mInterpreter HEX (exit: 0):[0m
+    00000000: 3d3d 3d20 4e65 7374 6564 2046 756e 6374  === Nested Funct
+    00000010: 696f 6e20 4361 6c6c 7320 5465 7374 203d  ion Calls Test =
+    00000020: 3d3d 200a 646f 7562 6c65 5f76 616c 7565  == .double_value
+    00000030: 2835 293a 200a 3130 200a 6164 645f 6f6e  (5): .10 .add_on
+    00000040: 6528 3729 3a20 0a38 200a 636f 6d70 6c65  e(7): .8 .comple
+    00000050: 785f 6361 6c63 2833 2920 3d20 646f 7562  x_calc(3) = doub
+    00000060: 6c65 5f76 616c 7565 2861 6464 5f6f 6e65  le_value(add_one
+    00000070: 2833 2929 3a20 0a38 200a 4e65 7374 6564  (3)): .8 .Nested
+    00000080: 2069 6e20 6578 7072 6573 7369 6f6e 3a20   in expression: 
+    00000090: 0a37 200a 3d3d 3d20 5465 7374 2043 6f6d  .7 .=== Test Com
+    000000a0: 706c 6574 6520 3d3d 3d20                 plete === 
+
+  [36mCompiled HEX (exit: 0):[0m
+    00000000: 3d3d 3d20 4e65 7374 6564 2046 756e 6374  === Nested Funct
+    00000010: 696f 6e20 4361 6c6c 7320 5465 7374 203d  ion Calls Test =
+    00000020: 3d3d 0a64 6f75 626c 655f 7661 6c75 6528  ==.double_value(
+    00000030: 3529 3a0a 6164 645f 6f6e 6528 3729 3a0a  5):.add_one(7):.
+    00000040: 636f 6d70 6c65 785f 6361 6c63 2833 2920  complex_calc(3) 
+    00000050: 3d20 646f 7562 6c65 5f76 616c 7565 2861  = double_value(a
+    00000060: 6464 5f6f 6e65 2833 2929 3a0a 4e65 7374  dd_one(3)):.Nest
+    00000070: 6564 2069 6e20 6578 7072 6573 7369 6f6e  ed in expression
+    00000080: 3a0a 310a 3d3d 3d20 5465 7374 2043 6f6d  :.1.=== Test Com
+    00000090: 706c 6574 6520 3d3d 3d                   plete ===
+
+---
+[1m[54/444] Testing: functions/04_function_parameters.💀[0m
+  Result: [31mFAIL (OUTPUT_MISMATCH)[0m
+  [36mInterpreter (exit: 0):[0m
+    === Function Parameters Test === 
+    No parameters: 
+    42 
+    One parameter: 
+    20 
+    Multiple parameters: 
+    6 
+    Parameters with expressions: 
+    20 
+    === Test Complete === 
+
+  [36mCompiled (exit: 0):[0m
+    === Function Parameters Test ===
+    No parameters:
+    One parameter:
+    Multiple parameters:
+    Parameters with expressions:
+    === Test Complete ===
+
+  [33mHEX COMPARISON (to identify differences):[0m
+  [36mInterpreter HEX (exit: 0):[0m
+    00000000: 3d3d 3d20 4675 6e63 7469 6f6e 2050 6172  === Function Par
+    00000010: 616d 6574 6572 7320 5465 7374 203d 3d3d  ameters Test ===
+    00000020: 200a 4e6f 2070 6172 616d 6574 6572 733a   .No parameters:
+    00000030: 200a 3432 200a 4f6e 6520 7061 7261 6d65   .42 .One parame
+    00000040: 7465 723a 200a 3230 200a 4d75 6c74 6970  ter: .20 .Multip
+    00000050: 6c65 2070 6172 616d 6574 6572 733a 200a  le parameters: .
+    00000060: 3620 0a50 6172 616d 6574 6572 7320 7769  6 .Parameters wi
+    00000070: 7468 2065 7870 7265 7373 696f 6e73 3a20  th expressions: 
+    00000080: 0a32 3020 0a3d 3d3d 2054 6573 7420 436f  .20 .=== Test Co
+    00000090: 6d70 6c65 7465 203d 3d3d 20              mplete === 
+
+  [36mCompiled HEX (exit: 0):[0m
+    00000000: 3d3d 3d20 4675 6e63 7469 6f6e 2050 6172  === Function Par
+    00000010: 616d 6574 6572 7320 5465 7374 203d 3d3d  ameters Test ===
+    00000020: 0a4e 6f20 7061 7261 6d65 7465 7273 3a0a  .No parameters:.
+    00000030: 4f6e 6520 7061 7261 6d65 7465 723a 0a4d  One parameter:.M
+    00000040: 756c 7469 706c 6520 7061 7261 6d65 7465  ultiple paramete
+    00000050: 7273 3a0a 5061 7261 6d65 7465 7273 2077  rs:.Parameters w
+    00000060: 6974 6820 6578 7072 6573 7369 6f6e 733a  ith expressions:
+    00000070: 0a3d 3d3d 2054 6573 7420 436f 6d70 6c65  .=== Test Comple
+    00000080: 7465 203d 3d3d                           te ===
+
+---
+[1m[55/444] Testing: functions/feature_function_calls.💀[0m
+  Result: [31mFAIL (OUTPUT_MISMATCH)[0m
+  [36mInterpreter (exit: 0):[0m
+    === Function Call Test === 
+    Sum of 7 and 13: 
+    20 
+    Function call successful 
+    Is 25 positive? 
+    based 
+    Is -5 positive? 
+    cringe 
+    Function result in expression: 
+    14 
+    Mixed function calls result: 
+    5 
+    === Function Test Complete === 
+
+  [36mCompiled (exit: 0):[0m
+    === Function Call Test ===
+    Sum of 7 and 13:
+    0
+    Is 25 positive?
+    0
+    Is -5 positive?
+    0
+    Function result in expression:
+    0
+    Mixed function calls result:
+    0
+    === Function Test Complete ===
+
+  [33mHEX COMPARISON (to identify differences):[0m
+  [36mInterpreter HEX (exit: 0):[0m
+    00000000: 3d3d 3d20 4675 6e63 7469 6f6e 2043 616c  === Function Cal
+    00000010: 6c20 5465 7374 203d 3d3d 200a 5375 6d20  l Test === .Sum 
+    00000020: 6f66 2037 2061 6e64 2031 333a 200a 3230  of 7 and 13: .20
+    00000030: 200a 4675 6e63 7469 6f6e 2063 616c 6c20   .Function call 
+    00000040: 7375 6363 6573 7366 756c 200a 4973 2032  successful .Is 2
+    00000050: 3520 706f 7369 7469 7665 3f20 0a62 6173  5 positive? .bas
+    00000060: 6564 200a 4973 202d 3520 706f 7369 7469  ed .Is -5 positi
+    00000070: 7665 3f20 0a63 7269 6e67 6520 0a46 756e  ve? .cringe .Fun
+    00000080: 6374 696f 6e20 7265 7375 6c74 2069 6e20  ction result in 
+    00000090: 6578 7072 6573 7369 6f6e 3a20 0a31 3420  expression: .14 
+    000000a0: 0a4d 6978 6564 2066 756e 6374 696f 6e20  .Mixed function 
+    000000b0: 6361 6c6c 7320 7265 7375 6c74 3a20 0a35  calls result: .5
+    000000c0: 200a 3d3d 3d20 4675 6e63 7469 6f6e 2054   .=== Function T
+    000000d0: 6573 7420 436f 6d70 6c65 7465 203d 3d3d  est Complete ===
+    000000e0: 20                                        
+
+  [36mCompiled HEX (exit: 0):[0m
+    00000000: 3d3d 3d20 4675 6e63 7469 6f6e 2043 616c  === Function Cal
+    00000010: 6c20 5465 7374 203d 3d3d 0a53 756d 206f  l Test ===.Sum o
+    00000020: 6620 3720 616e 6420 3133 3a0a 300a 4973  f 7 and 13:.0.Is
+    00000030: 2032 3520 706f 7369 7469 7665 3f0a 300a   25 positive?.0.
+    00000040: 4973 202d 3520 706f 7369 7469 7665 3f0a  Is -5 positive?.
+    00000050: 300a 4675 6e63 7469 6f6e 2072 6573 756c  0.Function resul
+    00000060: 7420 696e 2065 7870 7265 7373 696f 6e3a  t in expression:
+    00000070: 0a30 0a4d 6978 6564 2066 756e 6374 696f  .0.Mixed functio
+    00000080: 6e20 6361 6c6c 7320 7265 7375 6c74 3a0a  n calls result:.
+    00000090: 300a 3d3d 3d20 4675 6e63 7469 6f6e 2054  0.=== Function T
+    000000a0: 6573 7420 436f 6d70 6c65 7465 203d 3d3d  est Complete ===
+
+---
+[1m[56/444] Testing: functions/functions_parameter_return.💀[0m
+  Result: [31mFAIL (OUTPUT_MISMATCH)[0m
+  [36mInterpreter (exit: 0):[0m
+    42 
+    42 
+    30 
+    based 
+    12 
+
+  [36mCompiled (exit: 0):[0m
+    0
+    0
+    0
+    0
+    42
+
+  [33mHEX COMPARISON (to identify differences):[0m
+  [36mInterpreter HEX (exit: 0):[0m
+    00000000: 3432 200a 3432 200a 3330 200a 6261 7365  42 .42 .30 .base
+    00000010: 6420 0a31 3220                           d .12 
+
+  [36mCompiled HEX (exit: 0):[0m
+    00000000: 300a 300a 300a 300a 3432                 0.0.0.0.42
+
+---
+[1m[57/444] Testing: leetcode/arrays/001_two_sum.💀[0m
+  Result: [31mINTERPRETER ERROR (compiled worked)[0m
+  [36mInterpreter (exit: 1):[0m
+    DEBUG: Function 'test_two_sum' not found
+    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/leetcode/arrays/001_two_sum.💀: error.UndefinedFunction
+    error: UndefinedFunction
+                        return InterpreterError.UndefinedFunction;
+                        ^
+                .Call => |call| return try self.evaluateCall(call),
+                                       ^
+                    _ = try self.evaluateExpression(expr);
+                        ^
+                if (try self.executeStatement(stmt.*)) {
+                    ^
+                _ = try self.callFunction(main_func, &[_]Value{});
+                    ^
+            return self.execute(program);
+            ^
+            return err;
+            ^
+            try interpretSource(allocator, source, filename.?, verbose);
+            ^
+
+  [36mCompiled (exit: 0):[0m
+    (no output)
+
+---
+[1m[58/444] Testing: leetcode/arrays/001_two_sum_basic.💀[0m
+  Result: [31mINTERPRETER ERROR (compiled worked)[0m
+  [36mInterpreter (exit: 134):[0m
+    === LeetCode #1: Two Sum (Basic) === 
+    Array: [2, 7, 11, 15], Target: 9 
+    Found indices: 0, 1 
+    thread 1494245 panic: integer overflow
+            return InterpreterError.TypeMismatch;
+            ^
+                .Binary => |bin| return try self.evaluateBinary(bin),
+                                        ^
+            const left = try self.evaluateExpression(bin.left.*);
+                         ^
+                .Binary => |bin| return try self.evaluateBinary(bin),
+                                        ^
+            const left = try self.evaluateExpression(bin.left.*);
+                         ^
+                .Binary => |bin| return try self.evaluateBinary(bin),
+                                        ^
+                            const arg_value = try self.evaluateExpression(arg_ptr.*);
+                                              ^
+                    _ = try self.evaluateExpression(expr);
+                        ^
+                    if (try self.executeStatement(stmt.*)) {
+                        ^
+                    if (try self.executeIfStatement(if_stmt)) {
+                        ^
+                if (try self.executeStatement(stmt.*)) {
+                    ^
+        return @as(cast_target, @ptrCast(slice))[0 .. slice.len * @sizeOf(std.meta.Elem(Slice))];
+                                                                ^
+        const bytes = mem.sliceAsBytes(memory);
+                                      ^
+                gpa.free(self.allocatedSlice());
+                        ^
+                            defer args.deinit(self.allocator);
+                                             ^
+                .Call => |call| return try self.evaluateCall(call),
+                                                            ^
+                    _ = try self.evaluateExpression(expr);
+                                                   ^
+                if (try self.executeStatement(stmt.*)) {
+                                             ^
+                _ = try self.callFunction(main_func, &[_]Value{});
+                                         ^
+            return self.execute(program);
+                               ^
+        cursed_interpreter.interpret(program) catch |err| {
+                                    ^
+            try interpretSource(allocator, source, filename.?, verbose);
+                               ^
+                const result = root.main() catch |err| {
+                                        ^
+    ../sysdeps/nptl/libc_start_call_main.h:58:16: 0x7ce11982a1c9 in __libc_start_call_main (../sysdeps/x86/libc-start.c)
+    ../csu/libc-start.c:360:3: 0x7ce11982a28a in __libc_start_main_impl (../sysdeps/x86/libc-start.c)
+    ???:?:?: 0x1688504 in ??? (???)
+    ???:?:?: 0x0 in ??? (???)
+
+  [36mCompiled (exit: 0):[0m
+    === LeetCode #1: Two Sum (Basic) ===
+    Array: [2, 7, 11, 15], Target: 9
+    === Two Sum Complete ===
+
+---
+[1m[59/444] Testing: leetcode/arrays/001_two_sum_simple.💀[0m
+  Result: [31mINTERPRETER ERROR (compiled worked)[0m
+  [36mInterpreter (exit: 1):[0m
+    DEBUG: Function 'test_two_sum' not found
+    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/leetcode/arrays/001_two_sum_simple.💀: error.UndefinedFunction
+    error: UndefinedFunction
+                        return InterpreterError.UndefinedFunction;
+                        ^
+                .Call => |call| return try self.evaluateCall(call),
+                                       ^
+                    _ = try self.evaluateExpression(expr);
+                        ^
+                if (try self.executeStatement(stmt.*)) {
+                    ^
+                _ = try self.callFunction(main_func, &[_]Value{});
+                    ^
+            return self.execute(program);
+            ^
+            return err;
+            ^
+            try interpretSource(allocator, source, filename.?, verbose);
+            ^
+
+  [36mCompiled (exit: 0):[0m
+    (no output)
+
+---
+[1m[60/444] Testing: leetcode/arrays/004_median_two_sorted_arrays.💀[0m
+  Result: [31mINTERPRETER ERROR (compiled worked)[0m
+  [36mInterpreter (exit: 1):[0m
+    DEBUG: Function 'test_median_two_arrays' not found
+    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/leetcode/arrays/004_median_two_sorted_arrays.💀: error.UndefinedFunction
+    error: UndefinedFunction
+                        return InterpreterError.UndefinedFunction;
+                        ^
+                .Call => |call| return try self.evaluateCall(call),
+                                       ^
+                    _ = try self.evaluateExpression(expr);
+                        ^
+                if (try self.executeStatement(stmt.*)) {
+                    ^
+                _ = try self.callFunction(main_func, &[_]Value{});
+                    ^
+            return self.execute(program);
+            ^
+            return err;
+            ^
+            try interpretSource(allocator, source, filename.?, verbose);
+            ^
+
+  [36mCompiled (exit: 0):[0m
+    (no output)
+
+---
+[1m[61/444] Testing: leetcode/arrays/011_container_with_most_water.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[62/444] Testing: leetcode/arrays/015_3sum.💀[0m
+  Result: [31mINTERPRETER ERROR (compiled worked)[0m
+  [36mInterpreter (exit: 1):[0m
+    DEBUG: Function 'test_three_sum' not found
+    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/leetcode/arrays/015_3sum.💀: error.UndefinedFunction
+    error: UndefinedFunction
+                        return InterpreterError.UndefinedFunction;
+                        ^
+                .Call => |call| return try self.evaluateCall(call),
+                                       ^
+                    _ = try self.evaluateExpression(expr);
+                        ^
+                if (try self.executeStatement(stmt.*)) {
+                    ^
+                _ = try self.callFunction(main_func, &[_]Value{});
+                    ^
+            return self.execute(program);
+            ^
+            return err;
+            ^
+            try interpretSource(allocator, source, filename.?, verbose);
+            ^
+
+  [36mCompiled (exit: 0):[0m
+    (no output)
+
+---
+[1m[63/444] Testing: leetcode/arrays/016_3sum_closest.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[64/444] Testing: leetcode/arrays/018_4sum.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[65/444] Testing: leetcode/arrays/020_valid_parentheses.💀[0m
+  Result: [31mINTERPRETER ERROR (compiled worked)[0m
+  [36mInterpreter (exit: 1):[0m
+    DEBUG: Function 'test_valid_parentheses' not found
+    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/leetcode/arrays/020_valid_parentheses.💀: error.UndefinedFunction
+    error: UndefinedFunction
+                        return InterpreterError.UndefinedFunction;
+                        ^
+                .Call => |call| return try self.evaluateCall(call),
+                                       ^
+                    _ = try self.evaluateExpression(expr);
+                        ^
+                if (try self.executeStatement(stmt.*)) {
+                    ^
+                _ = try self.callFunction(main_func, &[_]Value{});
+                    ^
+            return self.execute(program);
+            ^
+            return err;
+            ^
+            try interpretSource(allocator, source, filename.?, verbose);
+            ^
+
+  [36mCompiled (exit: 0):[0m
+    (no output)
+
+---
+[1m[66/444] Testing: leetcode/arrays/026_remove_duplicates.💀[0m
+  Result: [31mINTERPRETER ERROR (compiled worked)[0m
+  [36mInterpreter (exit: 1):[0m
+    DEBUG: Function 'test_remove_duplicates' not found
+    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/leetcode/arrays/026_remove_duplicates.💀: error.UndefinedFunction
+    error: UndefinedFunction
+                        return InterpreterError.UndefinedFunction;
+                        ^
+                .Call => |call| return try self.evaluateCall(call),
+                                       ^
+                    _ = try self.evaluateExpression(expr);
+                        ^
+                if (try self.executeStatement(stmt.*)) {
+                    ^
+                _ = try self.callFunction(main_func, &[_]Value{});
+                    ^
+            return self.execute(program);
+            ^
+            return err;
+            ^
+            try interpretSource(allocator, source, filename.?, verbose);
+            ^
+
+  [36mCompiled (exit: 0):[0m
+    (no output)
+
+---
+[1m[67/444] Testing: leetcode/arrays/026_remove_duplicates_from_sorted_array.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[68/444] Testing: leetcode/arrays/027_remove_element.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[69/444] Testing: leetcode/arrays/031_next_permutation.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[70/444] Testing: leetcode/arrays/036_valid_sudoku.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[71/444] Testing: leetcode/arrays/041_first_missing_positive.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[72/444] Testing: leetcode/arrays/042_trapping_rain_water.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[73/444] Testing: leetcode/arrays/048_rotate_image.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[74/444] Testing: leetcode/arrays/054_spiral_matrix.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[75/444] Testing: leetcode/arrays/055_jump_game.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[76/444] Testing: leetcode/arrays/057_insert_interval.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[77/444] Testing: leetcode/arrays/066_plus_one.💀[0m
+  Result: [31mINTERPRETER ERROR (compiled worked)[0m
+  [36mInterpreter (exit: 1):[0m
+    DEBUG: Function 'test_plus_one' not found
+    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/leetcode/arrays/066_plus_one.💀: error.UndefinedFunction
+    error: UndefinedFunction
+                        return InterpreterError.UndefinedFunction;
+                        ^
+                .Call => |call| return try self.evaluateCall(call),
+                                       ^
+                    _ = try self.evaluateExpression(expr);
+                        ^
+                if (try self.executeStatement(stmt.*)) {
+                    ^
+                _ = try self.callFunction(main_func, &[_]Value{});
+                    ^
+            return self.execute(program);
+            ^
+            return err;
+            ^
+            try interpretSource(allocator, source, filename.?, verbose);
+            ^
+
+  [36mCompiled (exit: 0):[0m
+    (no output)
+
+---
+[1m[78/444] Testing: leetcode/arrays/073_set_matrix_zeroes.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[79/444] Testing: leetcode/arrays/1005_maximize_sum_after_k_negations.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[80/444] Testing: leetcode/arrays/1013_partition_array_into_three_parts.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[81/444] Testing: leetcode/arrays/1089_duplicate_zeros.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[82/444] Testing: leetcode/arrays/121_best_time_buy_sell_stock.💀[0m
+  Result: [31mINTERPRETER ERROR (compiled worked)[0m
+  [36mInterpreter (exit: 1):[0m
+    DEBUG: Function 'test_best_time_stock' not found
+    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/leetcode/arrays/121_best_time_buy_sell_stock.💀: error.UndefinedFunction
+    error: UndefinedFunction
+                        return InterpreterError.UndefinedFunction;
+                        ^
+                .Call => |call| return try self.evaluateCall(call),
+                                       ^
+                    _ = try self.evaluateExpression(expr);
+                        ^
+                if (try self.executeStatement(stmt.*)) {
+                    ^
+                _ = try self.callFunction(main_func, &[_]Value{});
+                    ^
+            return self.execute(program);
+            ^
+            return err;
+            ^
+            try interpretSource(allocator, source, filename.?, verbose);
+            ^
+
+  [36mCompiled (exit: 0):[0m
+    (no output)
+
+---
+[1m[83/444] Testing: leetcode/arrays/134_gas_station.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[84/444] Testing: leetcode/arrays/135_candy.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[85/444] Testing: leetcode/arrays/163_missing_ranges.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[86/444] Testing: leetcode/arrays/167_two_sum_ii.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[87/444] Testing: leetcode/arrays/169_majority_element.💀[0m
+  Result: [31mFAIL (OUTPUT_MISMATCH)[0m
+  [36mInterpreter (exit: 0):[0m
+    === LeetCode #169: Majority Element === 
+    Array: [3,2,3] 
+    Majority element: 
+    2 
+    === Majority Element Complete === 
+
+  [36mCompiled (exit: 0):[0m
+    === LeetCode #169: Majority Element ===
+    Array: [3,2,3]
+    Majority element:
+    3
+    === Majority Element Complete ===
+
+  [33mHEX COMPARISON (to identify differences):[0m
+  [36mInterpreter HEX (exit: 0):[0m
+    00000000: 3d3d 3d20 4c65 6574 436f 6465 2023 3136  === LeetCode #16
+    00000010: 393a 204d 616a 6f72 6974 7920 456c 656d  9: Majority Elem
+    00000020: 656e 7420 3d3d 3d20 0a41 7272 6179 3a20  ent === .Array: 
+    00000030: 5b33 2c32 2c33 5d20 0a4d 616a 6f72 6974  [3,2,3] .Majorit
+    00000040: 7920 656c 656d 656e 743a 200a 3220 0a3d  y element: .2 .=
+    00000050: 3d3d 204d 616a 6f72 6974 7920 456c 656d  == Majority Elem
+    00000060: 656e 7420 436f 6d70 6c65 7465 203d 3d3d  ent Complete ===
+    00000070: 20                                        
+
+  [36mCompiled HEX (exit: 0):[0m
+    00000000: 3d3d 3d20 4c65 6574 436f 6465 2023 3136  === LeetCode #16
+    00000010: 393a 204d 616a 6f72 6974 7920 456c 656d  9: Majority Elem
+    00000020: 656e 7420 3d3d 3d0a 4172 7261 793a 205b  ent ===.Array: [
+    00000030: 332c 322c 335d 0a4d 616a 6f72 6974 7920  3,2,3].Majority 
+    00000040: 656c 656d 656e 743a 0a33 0a3d 3d3d 204d  element:.3.=== M
+    00000050: 616a 6f72 6974 7920 456c 656d 656e 7420  ajority Element 
+    00000060: 436f 6d70 6c65 7465 203d 3d3d            Complete ===
+
+---
+[1m[88/444] Testing: leetcode/arrays/189_rotate_array.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[89/444] Testing: leetcode/arrays/209_minimum_size_subarray_sum.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[90/444] Testing: leetcode/arrays/217_contains_duplicate.💀[0m
+  Result: [31mINTERPRETER ERROR (compiled worked)[0m
+  [36mInterpreter (exit: 1):[0m
+    DEBUG: Function 'test_contains_duplicate' not found
+    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/leetcode/arrays/217_contains_duplicate.💀: error.UndefinedFunction
+    error: UndefinedFunction
+                        return InterpreterError.UndefinedFunction;
+                        ^
+                .Call => |call| return try self.evaluateCall(call),
+                                       ^
+                    _ = try self.evaluateExpression(expr);
+                        ^
+                if (try self.executeStatement(stmt.*)) {
+                    ^
+                _ = try self.callFunction(main_func, &[_]Value{});
+                    ^
+            return self.execute(program);
+            ^
+            return err;
+            ^
+            try interpretSource(allocator, source, filename.?, verbose);
+            ^
+
+  [36mCompiled (exit: 0):[0m
+    (no output)
+
+---
+[1m[91/444] Testing: leetcode/arrays/219_contains_duplicate_ii.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[92/444] Testing: leetcode/arrays/220_contains_duplicate_iii.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[93/444] Testing: leetcode/arrays/228_summary_ranges.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[94/444] Testing: leetcode/arrays/229_majority_element_ii.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[95/444] Testing: leetcode/arrays/238_product_except_self.💀[0m
+  Result: [31mINTERPRETER ERROR (compiled worked)[0m
+  [36mInterpreter (exit: 1):[0m
+    DEBUG: Function 'test_product_except_self' not found
+    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/leetcode/arrays/238_product_except_self.💀: error.UndefinedFunction
+    error: UndefinedFunction
+                        return InterpreterError.UndefinedFunction;
+                        ^
+                .Call => |call| return try self.evaluateCall(call),
+                                       ^
+                    _ = try self.evaluateExpression(expr);
+                        ^
+                if (try self.executeStatement(stmt.*)) {
+                    ^
+                _ = try self.callFunction(main_func, &[_]Value{});
+                    ^
+            return self.execute(program);
+            ^
+            return err;
+            ^
+            try interpretSource(allocator, source, filename.?, verbose);
+            ^
+
+  [36mCompiled (exit: 0):[0m
+    (no output)
+
+---
+[1m[96/444] Testing: leetcode/arrays/238_product_of_array_except_self.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[97/444] Testing: leetcode/arrays/239_sliding_window_maximum.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[98/444] Testing: leetcode/arrays/283_move_zeroes.💀[0m
+  Result: [31mINTERPRETER ERROR (compiled worked)[0m
+  [36mInterpreter (exit: 1):[0m
+    DEBUG: Function 'test_move_zeroes' not found
+    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/leetcode/arrays/283_move_zeroes.💀: error.UndefinedFunction
+    error: UndefinedFunction
+                        return InterpreterError.UndefinedFunction;
+                        ^
+                .Call => |call| return try self.evaluateCall(call),
+                                       ^
+                    _ = try self.evaluateExpression(expr);
+                        ^
+                if (try self.executeStatement(stmt.*)) {
+                    ^
+                _ = try self.callFunction(main_func, &[_]Value{});
+                    ^
+            return self.execute(program);
+            ^
+            return err;
+            ^
+            try interpretSource(allocator, source, filename.?, verbose);
+            ^
+
+  [36mCompiled (exit: 0):[0m
+    (no output)
+
+---
+[1m[99/444] Testing: leetcode/arrays/287_find_duplicate_number.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[100/444] Testing: leetcode/arrays/347_top_k_frequent.💀[0m
+  Result: [31mINTERPRETER ERROR (compiled worked)[0m
+  [36mInterpreter (exit: 1):[0m
+    DEBUG: Function 'test_top_k_frequent' not found
+    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/leetcode/arrays/347_top_k_frequent.💀: error.UndefinedFunction
+    error: UndefinedFunction
+                        return InterpreterError.UndefinedFunction;
+                        ^
+                .Call => |call| return try self.evaluateCall(call),
+                                       ^
+                    _ = try self.evaluateExpression(expr);
+                        ^
+                if (try self.executeStatement(stmt.*)) {
+                    ^
+                _ = try self.callFunction(main_func, &[_]Value{});
+                    ^
+            return self.execute(program);
+            ^
+            return err;
+            ^
+            try interpretSource(allocator, source, filename.?, verbose);
+            ^
+
+  [36mCompiled (exit: 0):[0m
+    (no output)
+
+---
+[1m[101/444] Testing: leetcode/arrays/448_find_all_numbers_disappeared.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[102/444] Testing: leetcode/arrays/455_assign_cookies.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[103/444] Testing: leetcode/arrays/463_island_perimeter.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[104/444] Testing: leetcode/arrays/485_max_consecutive_ones.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[105/444] Testing: leetcode/arrays/561_array_partition.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[106/444] Testing: leetcode/arrays/566_reshape_the_matrix.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[107/444] Testing: leetcode/arrays/575_distribute_candies.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[108/444] Testing: leetcode/arrays/594_longest_harmonious_subsequence.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[109/444] Testing: leetcode/arrays/643_maximum_average_subarray.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[110/444] Testing: leetcode/arrays/645_set_mismatch.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[111/444] Testing: leetcode/arrays/661_image_smoother.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[112/444] Testing: leetcode/arrays/665_non_decreasing_array.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[113/444] Testing: leetcode/arrays/674_longest_continuous_increasing_subsequence.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[114/444] Testing: leetcode/arrays/704_binary_search.💀[0m
+  Result: [31mINTERPRETER ERROR (compiled worked)[0m
+  [36mInterpreter (exit: 1):[0m
+    DEBUG: Function 'test_binary_search' not found
+    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/leetcode/arrays/704_binary_search.💀: error.UndefinedFunction
+    error: UndefinedFunction
+                        return InterpreterError.UndefinedFunction;
+                        ^
+                .Call => |call| return try self.evaluateCall(call),
+                                       ^
+                    _ = try self.evaluateExpression(expr);
+                        ^
+                if (try self.executeStatement(stmt.*)) {
+                    ^
+                _ = try self.callFunction(main_func, &[_]Value{});
+                    ^
+            return self.execute(program);
+            ^
+            return err;
+            ^
+            try interpretSource(allocator, source, filename.?, verbose);
+            ^
+
+  [36mCompiled (exit: 0):[0m
+    (no output)
+
+---
+[1m[115/444] Testing: leetcode/arrays/717_1_bit_and_2_bit_characters.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[116/444] Testing: leetcode/arrays/724_find_pivot_index.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[117/444] Testing: leetcode/arrays/747_largest_number_at_least_twice.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[118/444] Testing: leetcode/arrays/832_flipping_an_image.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[119/444] Testing: leetcode/arrays/860_lemonade_change.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[120/444] Testing: leetcode/arrays/867_transpose_matrix.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[121/444] Testing: leetcode/arrays/883_projection_area_of_3d_shapes.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[122/444] Testing: leetcode/arrays/888_fair_candy_swap.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[123/444] Testing: leetcode/arrays/896_monotonic_array.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[124/444] Testing: leetcode/arrays/905_sort_array_by_parity.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[125/444] Testing: leetcode/arrays/908_smallest_range_i.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[126/444] Testing: leetcode/arrays/922_sort_array_by_parity_ii.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[127/444] Testing: leetcode/arrays/941_valid_mountain_array.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[128/444] Testing: leetcode/arrays/942_di_string_match.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[129/444] Testing: leetcode/arrays/977_squares_of_sorted_array.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[130/444] Testing: leetcode/arrays/985_sum_of_even_numbers_after_queries.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[131/444] Testing: leetcode/arrays/989_add_to_array_form_of_integer.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[132/444] Testing: leetcode/backtracking/017_letter_combinations_of_phone_number.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[133/444] Testing: leetcode/backtracking/022_generate_parentheses.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[134/444] Testing: leetcode/backtracking/046_permutations.💀[0m
+  Result: [31mINTERPRETER ERROR (compiled worked)[0m
+  [36mInterpreter (exit: 1):[0m
+    DEBUG: Function 'test_permutations' not found
+    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/leetcode/backtracking/046_permutations.💀: error.UndefinedFunction
+    error: UndefinedFunction
+                        return InterpreterError.UndefinedFunction;
+                        ^
+                .Call => |call| return try self.evaluateCall(call),
+                                       ^
+                    _ = try self.evaluateExpression(expr);
+                        ^
+                if (try self.executeStatement(stmt.*)) {
+                    ^
+                _ = try self.callFunction(main_func, &[_]Value{});
+                    ^
+            return self.execute(program);
+            ^
+            return err;
+            ^
+            try interpretSource(allocator, source, filename.?, verbose);
+            ^
+
+  [36mCompiled (exit: 0):[0m
+    (no output)
+
+---
+[1m[135/444] Testing: leetcode/backtracking/078_subsets.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[136/444] Testing: leetcode/backtracking/079_word_search.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[137/444] Testing: leetcode/backtracking/131_palindrome_partitioning.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[138/444] Testing: leetcode/backtracking/140_word_break_ii.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[139/444] Testing: leetcode/backtracking/212_word_search_ii.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[140/444] Testing: leetcode/backtracking/216_combination_sum_iii.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[141/444] Testing: leetcode/backtracking/784_letter_case_permutation.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[142/444] Testing: leetcode/binary_search/033_search_in_rotated_sorted_array.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[143/444] Testing: leetcode/binary_search/034_find_first_and_last_position.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[144/444] Testing: leetcode/binary_search/035_search_insert_position.💀[0m
+  Result: [31mINTERPRETER ERROR (compiled worked)[0m
+  [36mInterpreter (exit: 1):[0m
+    DEBUG: Function 'test_search_insert' not found
+    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/leetcode/binary_search/035_search_insert_position.💀: error.UndefinedFunction
+    error: UndefinedFunction
+                        return InterpreterError.UndefinedFunction;
+                        ^
+                .Call => |call| return try self.evaluateCall(call),
+                                       ^
+                    _ = try self.evaluateExpression(expr);
+                        ^
+                if (try self.executeStatement(stmt.*)) {
+                    ^
+                _ = try self.callFunction(main_func, &[_]Value{});
+                    ^
+            return self.execute(program);
+            ^
+            return err;
+            ^
+            try interpretSource(allocator, source, filename.?, verbose);
+            ^
+
+  [36mCompiled (exit: 0):[0m
+    (no output)
+
+---
+[1m[145/444] Testing: leetcode/binary_search/153_find_minimum_in_rotated_sorted_array.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[146/444] Testing: leetcode/binary_search/154_find_minimum_in_rotated_sorted_array_ii.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[147/444] Testing: leetcode/binary_search/162_find_peak_element.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[148/444] Testing: leetcode/binary_search/240_search_2d_matrix_ii.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[149/444] Testing: leetcode/binary_search/278_first_bad_version.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[150/444] Testing: leetcode/binary_search/704_binary_search.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[151/444] Testing: leetcode/binary_search/744_find_smallest_letter.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[152/444] Testing: leetcode/binary_search/852_peak_index_in_mountain_array.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[153/444] Testing: leetcode/bit_manipulation/1009_complement_of_base_10_integer.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[154/444] Testing: leetcode/bit_manipulation/136_single_number.💀[0m
+  Result: [31mINTERPRETER ERROR (compiled worked)[0m
+  [36mInterpreter (exit: 1):[0m
+    DEBUG: Function 'test_single_number' not found
+    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/leetcode/bit_manipulation/136_single_number.💀: error.UndefinedFunction
+    error: UndefinedFunction
+                        return InterpreterError.UndefinedFunction;
+                        ^
+                .Call => |call| return try self.evaluateCall(call),
+                                       ^
+                    _ = try self.evaluateExpression(expr);
+                        ^
+                if (try self.executeStatement(stmt.*)) {
+                    ^
+                _ = try self.callFunction(main_func, &[_]Value{});
+                    ^
+            return self.execute(program);
+            ^
+            return err;
+            ^
+            try interpretSource(allocator, source, filename.?, verbose);
+            ^
+
+  [36mCompiled (exit: 0):[0m
+    (no output)
+
+---
+[1m[155/444] Testing: leetcode/bit_manipulation/137_single_number_ii.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[156/444] Testing: leetcode/bit_manipulation/190_reverse_bits.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[157/444] Testing: leetcode/bit_manipulation/191_number_of_1_bits.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[158/444] Testing: leetcode/bit_manipulation/201_bitwise_and_of_numbers_range.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[159/444] Testing: leetcode/bit_manipulation/231_power_of_two.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[160/444] Testing: leetcode/bit_manipulation/268_missing_number.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[161/444] Testing: leetcode/bit_manipulation/338_counting_bits.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[162/444] Testing: leetcode/bit_manipulation/371_sum_of_two_integers.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[163/444] Testing: leetcode/bit_manipulation/476_number_complement.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[164/444] Testing: leetcode/bit_manipulation/693_binary_number_with_alternating_bits.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[165/444] Testing: leetcode/debug/simple_test.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[166/444] Testing: leetcode/debug/vibez_test.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[167/444] Testing: leetcode/design/146_lru_cache.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[168/444] Testing: leetcode/design/170_two_sum_iii.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[169/444] Testing: leetcode/design/225_implement_stack_using_queues.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[170/444] Testing: leetcode/design/232_implement_queue_using_stacks.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[171/444] Testing: leetcode/design/705_design_hashset.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[172/444] Testing: leetcode/design/706_design_hashmap.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[173/444] Testing: leetcode/design/933_number_of_recent_calls.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[174/444] Testing: leetcode/divide_conquer/241_different_ways_to_add_parentheses.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[175/444] Testing: leetcode/dynamic_programming/053_maximum_subarray.💀[0m
+  Result: [31mINTERPRETER ERROR (compiled worked)[0m
+  [36mInterpreter (exit: 1):[0m
+    DEBUG: Function 'test_max_subarray' not found
+    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/leetcode/dynamic_programming/053_maximum_subarray.💀: error.UndefinedFunction
+    error: UndefinedFunction
+                        return InterpreterError.UndefinedFunction;
+                        ^
+                .Call => |call| return try self.evaluateCall(call),
+                                       ^
+                    _ = try self.evaluateExpression(expr);
+                        ^
+                if (try self.executeStatement(stmt.*)) {
+                    ^
+                _ = try self.callFunction(main_func, &[_]Value{});
+                    ^
+            return self.execute(program);
+            ^
+            return err;
+            ^
+            try interpretSource(allocator, source, filename.?, verbose);
+            ^
+
+  [36mCompiled (exit: 0):[0m
+    (no output)
+
+---
+[1m[176/444] Testing: leetcode/dynamic_programming/062_unique_paths.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[177/444] Testing: leetcode/dynamic_programming/063_unique_paths_ii.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[178/444] Testing: leetcode/dynamic_programming/064_minimum_path_sum.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[179/444] Testing: leetcode/dynamic_programming/070_climbing_stairs.💀[0m
+  Result: [31mINTERPRETER ERROR (compiled worked)[0m
+  [36mInterpreter (exit: 1):[0m
+    DEBUG: Function 'test_climbing_stairs' not found
+    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/leetcode/dynamic_programming/070_climbing_stairs.💀: error.UndefinedFunction
+    error: UndefinedFunction
+                        return InterpreterError.UndefinedFunction;
+                        ^
+                .Call => |call| return try self.evaluateCall(call),
+                                       ^
+                    _ = try self.evaluateExpression(expr);
+                        ^
+                if (try self.executeStatement(stmt.*)) {
+                    ^
+                _ = try self.callFunction(main_func, &[_]Value{});
+                    ^
+            return self.execute(program);
+            ^
+            return err;
+            ^
+            try interpretSource(allocator, source, filename.?, verbose);
+            ^
+
+  [36mCompiled (exit: 0):[0m
+    (no output)
+
+---
+[1m[180/444] Testing: leetcode/dynamic_programming/072_edit_distance.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[181/444] Testing: leetcode/dynamic_programming/091_decode_ways.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[182/444] Testing: leetcode/dynamic_programming/1025_divisor_game.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[183/444] Testing: leetcode/dynamic_programming/115_distinct_subsequences.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[184/444] Testing: leetcode/dynamic_programming/118_pascals_triangle.💀[0m
+  Result: [31mINTERPRETER ERROR (compiled worked)[0m
+  [36mInterpreter (exit: 1):[0m
+    DEBUG: Function 'test_pascals_triangle' not found
+    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/leetcode/dynamic_programming/118_pascals_triangle.💀: error.UndefinedFunction
+    error: UndefinedFunction
+                        return InterpreterError.UndefinedFunction;
+                        ^
+                .Call => |call| return try self.evaluateCall(call),
+                                       ^
+                    _ = try self.evaluateExpression(expr);
+                        ^
+                if (try self.executeStatement(stmt.*)) {
+                    ^
+                _ = try self.callFunction(main_func, &[_]Value{});
+                    ^
+            return self.execute(program);
+            ^
+            return err;
+            ^
+            try interpretSource(allocator, source, filename.?, verbose);
+            ^
+
+  [36mCompiled (exit: 0):[0m
+    (no output)
+
+---
+[1m[185/444] Testing: leetcode/dynamic_programming/119_pascals_triangle_ii.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[186/444] Testing: leetcode/dynamic_programming/120_triangle.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[187/444] Testing: leetcode/dynamic_programming/121_best_time_to_buy_and_sell_stock.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[188/444] Testing: leetcode/dynamic_programming/122_best_time_to_buy_and_sell_stock_ii.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[189/444] Testing: leetcode/dynamic_programming/123_best_time_to_buy_and_sell_stock_iii.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[190/444] Testing: leetcode/dynamic_programming/132_palindrome_partitioning_ii.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[191/444] Testing: leetcode/dynamic_programming/139_word_break.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[192/444] Testing: leetcode/dynamic_programming/152_maximum_product_subarray.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[193/444] Testing: leetcode/dynamic_programming/174_dungeon_game.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[194/444] Testing: leetcode/dynamic_programming/198_house_robber.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[195/444] Testing: leetcode/dynamic_programming/213_house_robber_ii.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[196/444] Testing: leetcode/dynamic_programming/221_maximal_square.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[197/444] Testing: leetcode/dynamic_programming/300_longest_increasing_subsequence.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[198/444] Testing: leetcode/dynamic_programming/322_coin_change.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[199/444] Testing: leetcode/dynamic_programming/509_fibonacci_number.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[200/444] Testing: leetcode/dynamic_programming/746_min_cost_climbing_stairs.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[201/444] Testing: leetcode/graphs/126_word_ladder_ii.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[202/444] Testing: leetcode/graphs/127_word_ladder.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[203/444] Testing: leetcode/graphs/130_surrounded_regions.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[204/444] Testing: leetcode/graphs/133_clone_graph.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[205/444] Testing: leetcode/graphs/200_number_of_islands.💀[0m
+  Result: [31mINTERPRETER ERROR (compiled worked)[0m
+  [36mInterpreter (exit: 1):[0m
+    DEBUG: Function 'test_number_of_islands' not found
+    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/leetcode/graphs/200_number_of_islands.💀: error.UndefinedFunction
+    error: UndefinedFunction
+                        return InterpreterError.UndefinedFunction;
+                        ^
+                .Call => |call| return try self.evaluateCall(call),
+                                       ^
+                    _ = try self.evaluateExpression(expr);
+                        ^
+                if (try self.executeStatement(stmt.*)) {
+                    ^
+                _ = try self.callFunction(main_func, &[_]Value{});
+                    ^
+            return self.execute(program);
+            ^
+            return err;
+            ^
+            try interpretSource(allocator, source, filename.?, verbose);
+            ^
+
+  [36mCompiled (exit: 0):[0m
+    (no output)
+
+---
+[1m[206/444] Testing: leetcode/graphs/207_course_schedule.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[207/444] Testing: leetcode/graphs/210_course_schedule_ii.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[208/444] Testing: leetcode/graphs/695_max_area_of_island.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[209/444] Testing: leetcode/graphs/733_flood_fill.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[210/444] Testing: leetcode/graphs/997_find_the_town_judge.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[211/444] Testing: leetcode/heaps/1046_last_stone_weight.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[212/444] Testing: leetcode/heaps/215_kth_largest_element.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[213/444] Testing: leetcode/heaps/218_the_skyline_problem.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[214/444] Testing: leetcode/heaps/347_top_k_frequent_elements.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[215/444] Testing: leetcode/heaps/703_kth_largest_element_in_stream.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[216/444] Testing: leetcode/linked_lists/002_add_two_numbers.💀[0m
+  Result: [31mINTERPRETER ERROR (compiled worked)[0m
+  [36mInterpreter (exit: 1):[0m
+    DEBUG: Function 'test_add_two_numbers' not found
+    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/leetcode/linked_lists/002_add_two_numbers.💀: error.UndefinedFunction
+    error: UndefinedFunction
+                        return InterpreterError.UndefinedFunction;
+                        ^
+                .Call => |call| return try self.evaluateCall(call),
+                                       ^
+                    _ = try self.evaluateExpression(expr);
+                        ^
+                if (try self.executeStatement(stmt.*)) {
+                    ^
+                _ = try self.callFunction(main_func, &[_]Value{});
+                    ^
+            return self.execute(program);
+            ^
+            return err;
+            ^
+            try interpretSource(allocator, source, filename.?, verbose);
+            ^
+
+  [36mCompiled (exit: 0):[0m
+    (no output)
+
+---
+[1m[217/444] Testing: leetcode/linked_lists/019_remove_nth_node_from_end.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[218/444] Testing: leetcode/linked_lists/021_merge_two_sorted_lists.💀[0m
+  Result: [31mINTERPRETER ERROR (compiled worked)[0m
+  [36mInterpreter (exit: 1):[0m
+    DEBUG: Function 'test_merge_two_lists' not found
+    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/leetcode/linked_lists/021_merge_two_sorted_lists.💀: error.UndefinedFunction
+    error: UndefinedFunction
+                        return InterpreterError.UndefinedFunction;
+                        ^
+                .Call => |call| return try self.evaluateCall(call),
+                                       ^
+                    _ = try self.evaluateExpression(expr);
+                        ^
+                if (try self.executeStatement(stmt.*)) {
+                    ^
+                _ = try self.callFunction(main_func, &[_]Value{});
+                    ^
+            return self.execute(program);
+            ^
+            return err;
+            ^
+            try interpretSource(allocator, source, filename.?, verbose);
+            ^
+
+  [36mCompiled (exit: 0):[0m
+    (no output)
+
+---
+[1m[219/444] Testing: leetcode/linked_lists/023_merge_k_sorted_lists.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[220/444] Testing: leetcode/linked_lists/024_swap_nodes_in_pairs.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[221/444] Testing: leetcode/linked_lists/025_reverse_nodes_in_k-group.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[222/444] Testing: leetcode/linked_lists/138_copy_list_with_random_pointer.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[223/444] Testing: leetcode/linked_lists/141_linked_list_cycle.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[224/444] Testing: leetcode/linked_lists/142_linked_list_cycle_ii.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[225/444] Testing: leetcode/linked_lists/143_reorder_list.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[226/444] Testing: leetcode/linked_lists/147_insertion_sort_list.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[227/444] Testing: leetcode/linked_lists/148_sort_list.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[228/444] Testing: leetcode/linked_lists/160_intersection_of_two_linked_lists.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[229/444] Testing: leetcode/linked_lists/203_remove_linked_list_elements.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[230/444] Testing: leetcode/linked_lists/206_reverse_linked_list.💀[0m
+  Result: [31mINTERPRETER ERROR (compiled worked)[0m
+  [36mInterpreter (exit: 1):[0m
+    DEBUG: Function 'test_reverse_linked_list' not found
+    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/leetcode/linked_lists/206_reverse_linked_list.💀: error.UndefinedFunction
+    error: UndefinedFunction
+                        return InterpreterError.UndefinedFunction;
+                        ^
+                .Call => |call| return try self.evaluateCall(call),
+                                       ^
+                    _ = try self.evaluateExpression(expr);
+                        ^
+                if (try self.executeStatement(stmt.*)) {
+                    ^
+                _ = try self.callFunction(main_func, &[_]Value{});
+                    ^
+            return self.execute(program);
+            ^
+            return err;
+            ^
+            try interpretSource(allocator, source, filename.?, verbose);
+            ^
+
+  [36mCompiled (exit: 0):[0m
+    (no output)
+
+---
+[1m[231/444] Testing: leetcode/linked_lists/234_palindrome_linked_list.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[232/444] Testing: leetcode/linked_lists/237_delete_node_in_linked_list.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[233/444] Testing: leetcode/linked_lists/707_design_linked_list.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[234/444] Testing: leetcode/linked_lists/725_split_linked_list_in_parts.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[235/444] Testing: leetcode/linked_lists/876_middle_of_linked_list.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[236/444] Testing: leetcode/math/000_basic_arithmetic.💀[0m
+  Result: [31mFAIL (OUTPUT_MISMATCH)[0m
+  [36mInterpreter (exit: 0):[0m
+    === LeetCode Style: Addition === 
+    10 + 20 = 
+    30 
+    === LeetCode Style: Multiplication === 
+    6 * 7 = 
+    42 
+    === LeetCode Style: Conditionals === 
+    FizzBuzz 
+    === LeetCode Style: ඞ Pointers === 
+    Original value: 
+    42 
+    Value through ඞ pointer: 
+    42 
+    Modified through pointer: 
+    42 
+    === All Demos Complete (CURSED is Based!) === 
+
+  [36mCompiled (exit: 0):[0m
+    === LeetCode Style: Addition ===
+    10 + 20 =
+    30
+    === LeetCode Style: Multiplication ===
+    6 * 7 =
+    42
+    === LeetCode Style: Conditionals ===
+    === LeetCode Style: ඞ Pointers ===
+    Original value:
+    42
+    Value through ඞ pointer:
+    42
+    Modified through pointer:
+    42
+    === All Demos Complete (CURSED is Based!) ===
+
+  [33mHEX COMPARISON (to identify differences):[0m
+  [36mInterpreter HEX (exit: 0):[0m
+    00000000: 3d3d 3d20 4c65 6574 436f 6465 2053 7479  === LeetCode Sty
+    00000010: 6c65 3a20 4164 6469 7469 6f6e 203d 3d3d  le: Addition ===
+    00000020: 200a 3130 202b 2032 3020 3d20 0a33 3020   .10 + 20 = .30 
+    00000030: 0a3d 3d3d 204c 6565 7443 6f64 6520 5374  .=== LeetCode St
+    00000040: 796c 653a 204d 756c 7469 706c 6963 6174  yle: Multiplicat
+    00000050: 696f 6e20 3d3d 3d20 0a36 202a 2037 203d  ion === .6 * 7 =
+    00000060: 200a 3432 200a 3d3d 3d20 4c65 6574 436f   .42 .=== LeetCo
+    00000070: 6465 2053 7479 6c65 3a20 436f 6e64 6974  de Style: Condit
+    00000080: 696f 6e61 6c73 203d 3d3d 200a 4669 7a7a  ionals === .Fizz
+    00000090: 4275 7a7a 200a 3d3d 3d20 4c65 6574 436f  Buzz .=== LeetCo
+    000000a0: 6465 2053 7479 6c65 3a20 e0b6 9e20 506f  de Style: ... Po
+    000000b0: 696e 7465 7273 203d 3d3d 200a 4f72 6967  inters === .Orig
+    000000c0: 696e 616c 2076 616c 7565 3a20 0a34 3220  inal value: .42 
+    000000d0: 0a56 616c 7565 2074 6872 6f75 6768 20e0  .Value through .
+    000000e0: b69e 2070 6f69 6e74 6572 3a20 0a34 3220  .. pointer: .42 
+    000000f0: 0a4d 6f64 6966 6965 6420 7468 726f 7567  .Modified throug
+    00000100: 6820 706f 696e 7465 723a 200a 3432 200a  h pointer: .42 .
+    00000110: 3d3d 3d20 416c 6c20 4465 6d6f 7320 436f  === All Demos Co
+    00000120: 6d70 6c65 7465 2028 4355 5253 4544 2069  mplete (CURSED i
+    00000130: 7320 4261 7365 6421 2920 3d3d 3d20       s Based!) === 
+
+  [36mCompiled HEX (exit: 0):[0m
+    00000000: 3d3d 3d20 4c65 6574 436f 6465 2053 7479  === LeetCode Sty
+    00000010: 6c65 3a20 4164 6469 7469 6f6e 203d 3d3d  le: Addition ===
+    00000020: 0a31 3020 2b20 3230 203d 0a33 300a 3d3d  .10 + 20 =.30.==
+    00000030: 3d20 4c65 6574 436f 6465 2053 7479 6c65  = LeetCode Style
+    00000040: 3a20 4d75 6c74 6970 6c69 6361 7469 6f6e  : Multiplication
+    00000050: 203d 3d3d 0a36 202a 2037 203d 0a34 320a   ===.6 * 7 =.42.
+    00000060: 3d3d 3d20 4c65 6574 436f 6465 2053 7479  === LeetCode Sty
+    00000070: 6c65 3a20 436f 6e64 6974 696f 6e61 6c73  le: Conditionals
+    00000080: 203d 3d3d 0a3d 3d3d 204c 6565 7443 6f64   ===.=== LeetCod
+    00000090: 6520 5374 796c 653a 20e0 b69e 2050 6f69  e Style: ... Poi
+    000000a0: 6e74 6572 7320 3d3d 3d0a 4f72 6967 696e  nters ===.Origin
+    000000b0: 616c 2076 616c 7565 3a0a 3432 0a56 616c  al value:.42.Val
+    000000c0: 7565 2074 6872 6f75 6768 20e0 b69e 2070  ue through ... p
+    000000d0: 6f69 6e74 6572 3a0a 3432 0a4d 6f64 6966  ointer:.42.Modif
+    000000e0: 6965 6420 7468 726f 7567 6820 706f 696e  ied through poin
+    000000f0: 7465 723a 0a34 320a 3d3d 3d20 416c 6c20  ter:.42.=== All 
+    00000100: 4465 6d6f 7320 436f 6d70 6c65 7465 2028  Demos Complete (
+    00000110: 4355 5253 4544 2069 7320 4261 7365 6421  CURSED is Based!
+    00000120: 2920 3d3d 3d                             ) ===
+
+---
+[1m[237/444] Testing: leetcode/math/000_basic_arithmetic_fixed.💀[0m
+  Result: [31mFAIL (OUTPUT_MISMATCH)[0m
+  [36mInterpreter (exit: 0):[0m
+    === CURSED LeetCode Arithmetic Demo === 
+    Addition: 10 + 20 = 
+    30 
+    Multiplication: 6 * 7 = 
+    42 
+    FizzBuzz test for 15: 
+    FizzBuzz 
+    Pointer test - original: 
+    42 
+    Through ඞ pointer: 
+    42 
+    After modifying through ඞ pointer: 
+    42 
+    === CURSED LeetCode Demo Complete === 
+
+  [36mCompiled (exit: 0):[0m
+    === CURSED LeetCode Arithmetic Demo ===
+    Addition: 10 + 20 =
+    30
+    Multiplication: 6 * 7 =
+    42
+    FizzBuzz test for 15:
+    Pointer test - original:
+    42
+    Through ඞ pointer:
+    42
+    After modifying through ඞ pointer:
+    42
+    === CURSED LeetCode Demo Complete ===
+
+  [33mHEX COMPARISON (to identify differences):[0m
+  [36mInterpreter HEX (exit: 0):[0m
+    00000000: 3d3d 3d20 4355 5253 4544 204c 6565 7443  === CURSED LeetC
+    00000010: 6f64 6520 4172 6974 686d 6574 6963 2044  ode Arithmetic D
+    00000020: 656d 6f20 3d3d 3d20 0a41 6464 6974 696f  emo === .Additio
+    00000030: 6e3a 2031 3020 2b20 3230 203d 200a 3330  n: 10 + 20 = .30
+    00000040: 200a 4d75 6c74 6970 6c69 6361 7469 6f6e   .Multiplication
+    00000050: 3a20 3620 2a20 3720 3d20 0a34 3220 0a46  : 6 * 7 = .42 .F
+    00000060: 697a 7a42 757a 7a20 7465 7374 2066 6f72  izzBuzz test for
+    00000070: 2031 353a 200a 4669 7a7a 4275 7a7a 200a   15: .FizzBuzz .
+    00000080: 506f 696e 7465 7220 7465 7374 202d 206f  Pointer test - o
+    00000090: 7269 6769 6e61 6c3a 200a 3432 200a 5468  riginal: .42 .Th
+    000000a0: 726f 7567 6820 e0b6 9e20 706f 696e 7465  rough ... pointe
+    000000b0: 723a 200a 3432 200a 4166 7465 7220 6d6f  r: .42 .After mo
+    000000c0: 6469 6679 696e 6720 7468 726f 7567 6820  difying through 
+    000000d0: e0b6 9e20 706f 696e 7465 723a 200a 3432  ... pointer: .42
+    000000e0: 200a 3d3d 3d20 4355 5253 4544 204c 6565   .=== CURSED Lee
+    000000f0: 7443 6f64 6520 4465 6d6f 2043 6f6d 706c  tCode Demo Compl
+    00000100: 6574 6520 3d3d 3d20                      ete === 
+
+  [36mCompiled HEX (exit: 0):[0m
+    00000000: 3d3d 3d20 4355 5253 4544 204c 6565 7443  === CURSED LeetC
+    00000010: 6f64 6520 4172 6974 686d 6574 6963 2044  ode Arithmetic D
+    00000020: 656d 6f20 3d3d 3d0a 4164 6469 7469 6f6e  emo ===.Addition
+    00000030: 3a20 3130 202b 2032 3020 3d0a 3330 0a4d  : 10 + 20 =.30.M
+    00000040: 756c 7469 706c 6963 6174 696f 6e3a 2036  ultiplication: 6
+    00000050: 202a 2037 203d 0a34 320a 4669 7a7a 4275   * 7 =.42.FizzBu
+    00000060: 7a7a 2074 6573 7420 666f 7220 3135 3a0a  zz test for 15:.
+    00000070: 506f 696e 7465 7220 7465 7374 202d 206f  Pointer test - o
+    00000080: 7269 6769 6e61 6c3a 0a34 320a 5468 726f  riginal:.42.Thro
+    00000090: 7567 6820 e0b6 9e20 706f 696e 7465 723a  ugh ... pointer:
+    000000a0: 0a34 320a 4166 7465 7220 6d6f 6469 6679  .42.After modify
+    000000b0: 696e 6720 7468 726f 7567 6820 e0b6 9e20  ing through ... 
+    000000c0: 706f 696e 7465 723a 0a34 320a 3d3d 3d20  pointer:.42.=== 
+    000000d0: 4355 5253 4544 204c 6565 7443 6f64 6520  CURSED LeetCode 
+    000000e0: 4465 6d6f 2043 6f6d 706c 6574 6520 3d3d  Demo Complete ==
+    000000f0: 3d                                       =
+
+---
+[1m[238/444] Testing: leetcode/math/007_reverse_integer.💀[0m
+  Result: [31mFAIL (OUTPUT_MISMATCH)[0m
+  [36mInterpreter (exit: 0):[0m
+    === LeetCode #7: Reverse Integer === 
+    Test 1 - Expected: 321 
+    321 
+    Test 2 - Expected: -321 
+    -321 
+    Test 3 - Expected: 21 
+    21 
+    Test 4 - Expected: 0 
+    0 
+    === Reverse Integer Complete === 
+
+  [36mCompiled (exit: 0):[0m
+    === LeetCode #7: Reverse Integer ===
+    Test 1 - Expected: 321
+    0
+    Test 2 - Expected: -321
+    0
+    Test 3 - Expected: 21
+    0
+    Test 4 - Expected: 0
+    0
+    === Reverse Integer Complete ===
+
+  [33mHEX COMPARISON (to identify differences):[0m
+  [36mInterpreter HEX (exit: 0):[0m
+    00000000: 3d3d 3d20 4c65 6574 436f 6465 2023 373a  === LeetCode #7:
+    00000010: 2052 6576 6572 7365 2049 6e74 6567 6572   Reverse Integer
+    00000020: 203d 3d3d 200a 5465 7374 2031 202d 2045   === .Test 1 - E
+    00000030: 7870 6563 7465 643a 2033 3231 200a 3332  xpected: 321 .32
+    00000040: 3120 0a54 6573 7420 3220 2d20 4578 7065  1 .Test 2 - Expe
+    00000050: 6374 6564 3a20 2d33 3231 200a 2d33 3231  cted: -321 .-321
+    00000060: 200a 5465 7374 2033 202d 2045 7870 6563   .Test 3 - Expec
+    00000070: 7465 643a 2032 3120 0a32 3120 0a54 6573  ted: 21 .21 .Tes
+    00000080: 7420 3420 2d20 4578 7065 6374 6564 3a20  t 4 - Expected: 
+    00000090: 3020 0a30 200a 3d3d 3d20 5265 7665 7273  0 .0 .=== Revers
+    000000a0: 6520 496e 7465 6765 7220 436f 6d70 6c65  e Integer Comple
+    000000b0: 7465 203d 3d3d 20                        te === 
+
+  [36mCompiled HEX (exit: 0):[0m
+    00000000: 3d3d 3d20 4c65 6574 436f 6465 2023 373a  === LeetCode #7:
+    00000010: 2052 6576 6572 7365 2049 6e74 6567 6572   Reverse Integer
+    00000020: 203d 3d3d 0a54 6573 7420 3120 2d20 4578   ===.Test 1 - Ex
+    00000030: 7065 6374 6564 3a20 3332 310a 300a 5465  pected: 321.0.Te
+    00000040: 7374 2032 202d 2045 7870 6563 7465 643a  st 2 - Expected:
+    00000050: 202d 3332 310a 300a 5465 7374 2033 202d   -321.0.Test 3 -
+    00000060: 2045 7870 6563 7465 643a 2032 310a 300a   Expected: 21.0.
+    00000070: 5465 7374 2034 202d 2045 7870 6563 7465  Test 4 - Expecte
+    00000080: 643a 2030 0a30 0a3d 3d3d 2052 6576 6572  d: 0.0.=== Rever
+    00000090: 7365 2049 6e74 6567 6572 2043 6f6d 706c  se Integer Compl
+    000000a0: 6574 6520 3d3d 3d                        ete ===
+
+---
+[1m[239/444] Testing: leetcode/math/009_palindrome_basic.💀[0m
+  Result: [31mFAIL (OUTPUT_MISMATCH)[0m
+  [36mInterpreter (exit: 0):[0m
+    === LeetCode #9: Palindrome Number (Basic) === 
+    Test 121: 
+    based 
+    Test -121: 
+    cringe 
+    Test 10: 
+    cringe 
+    Test 1221: 
+    based 
+    === Palindrome Number Complete === 
+
+  [36mCompiled (exit: 0):[0m
+    === LeetCode #9: Palindrome Number (Basic) ===
+    Test 121:
+    0
+    Test -121:
+    0
+    Test 10:
+    0
+    Test 1221:
+    0
+    === Palindrome Number Complete ===
+
+  [33mHEX COMPARISON (to identify differences):[0m
+  [36mInterpreter HEX (exit: 0):[0m
+    00000000: 3d3d 3d20 4c65 6574 436f 6465 2023 393a  === LeetCode #9:
+    00000010: 2050 616c 696e 6472 6f6d 6520 4e75 6d62   Palindrome Numb
+    00000020: 6572 2028 4261 7369 6329 203d 3d3d 200a  er (Basic) === .
+    00000030: 5465 7374 2031 3231 3a20 0a62 6173 6564  Test 121: .based
+    00000040: 200a 5465 7374 202d 3132 313a 200a 6372   .Test -121: .cr
+    00000050: 696e 6765 200a 5465 7374 2031 303a 200a  inge .Test 10: .
+    00000060: 6372 696e 6765 200a 5465 7374 2031 3232  cringe .Test 122
+    00000070: 313a 200a 6261 7365 6420 0a3d 3d3d 2050  1: .based .=== P
+    00000080: 616c 696e 6472 6f6d 6520 4e75 6d62 6572  alindrome Number
+    00000090: 2043 6f6d 706c 6574 6520 3d3d 3d20        Complete === 
+
+  [36mCompiled HEX (exit: 0):[0m
+    00000000: 3d3d 3d20 4c65 6574 436f 6465 2023 393a  === LeetCode #9:
+    00000010: 2050 616c 696e 6472 6f6d 6520 4e75 6d62   Palindrome Numb
+    00000020: 6572 2028 4261 7369 6329 203d 3d3d 0a54  er (Basic) ===.T
+    00000030: 6573 7420 3132 313a 0a30 0a54 6573 7420  est 121:.0.Test 
+    00000040: 2d31 3231 3a0a 300a 5465 7374 2031 303a  -121:.0.Test 10:
+    00000050: 0a30 0a54 6573 7420 3132 3231 3a0a 300a  .0.Test 1221:.0.
+    00000060: 3d3d 3d20 5061 6c69 6e64 726f 6d65 204e  === Palindrome N
+    00000070: 756d 6265 7220 436f 6d70 6c65 7465 203d  umber Complete =
+    00000080: 3d3d                                     ==
+
+---
+[1m[240/444] Testing: leetcode/math/009_palindrome_number.💀[0m
+  Result: [31mFAIL (OUTPUT_MISMATCH)[0m
+  [36mInterpreter (exit: 0):[0m
+    === LeetCode #9: Palindrome Number === 
+    Test 1 - Input: 121, Expected: based 
+    cringe 
+    Test 2 - Input: -121, Expected: cringe 
+    cringe 
+    Test 3 - Input: 10, Expected: cringe 
+    cringe 
+    Test 4 - Input: 0, Expected: based 
+    based 
+    Test 5 - Input: 1221, Expected: based 
+    based 
+    === Palindrome Number Complete === 
+
+  [36mCompiled (exit: 0):[0m
+    === LeetCode #9: Palindrome Number ===
+    Test 1 - Input: 121, Expected: based
+    0
+    Test 2 - Input: -121, Expected: cringe
+    0
+    Test 3 - Input: 10, Expected: cringe
+    0
+    Test 4 - Input: 0, Expected: based
+    0
+    Test 5 - Input: 1221, Expected: based
+    0
+    === Palindrome Number Complete ===
+
+  [33mHEX COMPARISON (to identify differences):[0m
+  [36mInterpreter HEX (exit: 0):[0m
+    00000000: 3d3d 3d20 4c65 6574 436f 6465 2023 393a  === LeetCode #9:
+    00000010: 2050 616c 696e 6472 6f6d 6520 4e75 6d62   Palindrome Numb
+    00000020: 6572 203d 3d3d 200a 5465 7374 2031 202d  er === .Test 1 -
+    00000030: 2049 6e70 7574 3a20 3132 312c 2045 7870   Input: 121, Exp
+    00000040: 6563 7465 643a 2062 6173 6564 200a 6372  ected: based .cr
+    00000050: 696e 6765 200a 5465 7374 2032 202d 2049  inge .Test 2 - I
+    00000060: 6e70 7574 3a20 2d31 3231 2c20 4578 7065  nput: -121, Expe
+    00000070: 6374 6564 3a20 6372 696e 6765 200a 6372  cted: cringe .cr
+    00000080: 696e 6765 200a 5465 7374 2033 202d 2049  inge .Test 3 - I
+    00000090: 6e70 7574 3a20 3130 2c20 4578 7065 6374  nput: 10, Expect
+    000000a0: 6564 3a20 6372 696e 6765 200a 6372 696e  ed: cringe .crin
+    000000b0: 6765 200a 5465 7374 2034 202d 2049 6e70  ge .Test 4 - Inp
+    000000c0: 7574 3a20 302c 2045 7870 6563 7465 643a  ut: 0, Expected:
+    000000d0: 2062 6173 6564 200a 6261 7365 6420 0a54   based .based .T
+    000000e0: 6573 7420 3520 2d20 496e 7075 743a 2031  est 5 - Input: 1
+    000000f0: 3232 312c 2045 7870 6563 7465 643a 2062  221, Expected: b
+    00000100: 6173 6564 200a 6261 7365 6420 0a3d 3d3d  ased .based .===
+    00000110: 2050 616c 696e 6472 6f6d 6520 4e75 6d62   Palindrome Numb
+    00000120: 6572 2043 6f6d 706c 6574 6520 3d3d 3d20  er Complete === 
+
+  [36mCompiled HEX (exit: 0):[0m
+    00000000: 3d3d 3d20 4c65 6574 436f 6465 2023 393a  === LeetCode #9:
+    00000010: 2050 616c 696e 6472 6f6d 6520 4e75 6d62   Palindrome Numb
+    00000020: 6572 203d 3d3d 0a54 6573 7420 3120 2d20  er ===.Test 1 - 
+    00000030: 496e 7075 743a 2031 3231 2c20 4578 7065  Input: 121, Expe
+    00000040: 6374 6564 3a20 6261 7365 640a 300a 5465  cted: based.0.Te
+    00000050: 7374 2032 202d 2049 6e70 7574 3a20 2d31  st 2 - Input: -1
+    00000060: 3231 2c20 4578 7065 6374 6564 3a20 6372  21, Expected: cr
+    00000070: 696e 6765 0a30 0a54 6573 7420 3320 2d20  inge.0.Test 3 - 
+    00000080: 496e 7075 743a 2031 302c 2045 7870 6563  Input: 10, Expec
+    00000090: 7465 643a 2063 7269 6e67 650a 300a 5465  ted: cringe.0.Te
+    000000a0: 7374 2034 202d 2049 6e70 7574 3a20 302c  st 4 - Input: 0,
+    000000b0: 2045 7870 6563 7465 643a 2062 6173 6564   Expected: based
+    000000c0: 0a30 0a54 6573 7420 3520 2d20 496e 7075  .0.Test 5 - Inpu
+    000000d0: 743a 2031 3232 312c 2045 7870 6563 7465  t: 1221, Expecte
+    000000e0: 643a 2062 6173 6564 0a30 0a3d 3d3d 2050  d: based.0.=== P
+    000000f0: 616c 696e 6472 6f6d 6520 4e75 6d62 6572  alindrome Number
+    00000100: 2043 6f6d 706c 6574 6520 3d3d 3d          Complete ===
+
+---
+[1m[241/444] Testing: leetcode/math/012_integer_to_roman.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[242/444] Testing: leetcode/math/013_roman_to_integer.💀[0m
+  Result: [31mINTERPRETER ERROR (compiled worked)[0m
+  [36mInterpreter (exit: 134):[0m
+    === LeetCode #13: Roman to Integer === 
+    III -> 3: 
+    DEBUG: Function 'roman_to_int' not found
+    thread 1503061 panic: integer overflow
+                        return InterpreterError.UndefinedFunction;
+                        ^
+                .Call => |call| return try self.evaluateCall(call),
+                                       ^
+                            const arg_value = try self.evaluateExpression(arg_ptr.*);
+                                              ^
+                    _ = try self.evaluateExpression(expr);
+                        ^
+                if (try self.executeStatement(stmt.*)) {
+                    ^
+        return @as(cast_target, @ptrCast(slice))[0 .. slice.len * @sizeOf(std.meta.Elem(Slice))];
+                                                                ^
+        const bytes = mem.sliceAsBytes(memory);
+                                      ^
+                gpa.free(self.allocatedSlice());
+                        ^
+                            defer args.deinit(self.allocator);
+                                             ^
+                .Call => |call| return try self.evaluateCall(call),
+                                                            ^
+                    _ = try self.evaluateExpression(expr);
+                                                   ^
+                if (try self.executeStatement(stmt.*)) {
+                                             ^
+                _ = try self.callFunction(main_func, &[_]Value{});
+                                         ^
+            return self.execute(program);
+                               ^
+        cursed_interpreter.interpret(program) catch |err| {
+                                    ^
+            try interpretSource(allocator, source, filename.?, verbose);
+                               ^
+                const result = root.main() catch |err| {
+                                        ^
+    ../sysdeps/nptl/libc_start_call_main.h:58:16: 0x7c0c7fe2a1c9 in __libc_start_call_main (../sysdeps/x86/libc-start.c)
+    ../csu/libc-start.c:360:3: 0x7c0c7fe2a28a in __libc_start_main_impl (../sysdeps/x86/libc-start.c)
+    ???:?:?: 0x1688504 in ??? (???)
+    ???:?:?: 0x0 in ??? (???)
+
+  [36mCompiled (exit: 0):[0m
+    === LeetCode #13: Roman to Integer ===
+    III -> 3:
+    LVIII -> 58:
+    MCMXC -> 1990:
+    === Roman to Int Complete ===
+
+---
+[1m[243/444] Testing: leetcode/math/029_divide_two_integers.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[244/444] Testing: leetcode/math/043_multiply_strings.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[245/444] Testing: leetcode/math/050_powx_n.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[246/444] Testing: leetcode/math/066_plus_one.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[247/444] Testing: leetcode/math/066_plus_one_basic.💀[0m
+  Result: [31mFAIL (OUTPUT_MISMATCH)[0m
+  [36mInterpreter (exit: 0):[0m
+    === LeetCode #66: Plus One (Basic) === 
+    Input: [1,2,3] 
+    Output: [1,2,4] 
+    1 
+    2 
+    4 
+    Input: [4,3,2,1] 
+    Output: [4,3,2,2] 
+    4 
+    3 
+    2 
+    2 
+    Input: [9] 
+    Carry needed: [1,0] 
+    1 
+    0 
+    === Plus One Complete === 
+
+  [36mCompiled (exit: 0):[0m
+    === LeetCode #66: Plus One (Basic) ===
+    Input: [1,2,3]
+    Output: [1,2,4]
+    1
+    2
+    3
+    Input: [4,3,2,1]
+    Output: [4,3,2,2]
+    4
+    3
+    2
+    1
+    Input: [9]
+    === Plus One Complete ===
+
+  [33mHEX COMPARISON (to identify differences):[0m
+  [36mInterpreter HEX (exit: 0):[0m
+    00000000: 3d3d 3d20 4c65 6574 436f 6465 2023 3636  === LeetCode #66
+    00000010: 3a20 506c 7573 204f 6e65 2028 4261 7369  : Plus One (Basi
+    00000020: 6329 203d 3d3d 200a 496e 7075 743a 205b  c) === .Input: [
+    00000030: 312c 322c 335d 200a 4f75 7470 7574 3a20  1,2,3] .Output: 
+    00000040: 5b31 2c32 2c34 5d20 0a31 200a 3220 0a34  [1,2,4] .1 .2 .4
+    00000050: 200a 496e 7075 743a 205b 342c 332c 322c   .Input: [4,3,2,
+    00000060: 315d 200a 4f75 7470 7574 3a20 5b34 2c33  1] .Output: [4,3
+    00000070: 2c32 2c32 5d20 0a34 200a 3320 0a32 200a  ,2,2] .4 .3 .2 .
+    00000080: 3220 0a49 6e70 7574 3a20 5b39 5d20 0a43  2 .Input: [9] .C
+    00000090: 6172 7279 206e 6565 6465 643a 205b 312c  arry needed: [1,
+    000000a0: 305d 200a 3120 0a30 200a 3d3d 3d20 506c  0] .1 .0 .=== Pl
+    000000b0: 7573 204f 6e65 2043 6f6d 706c 6574 6520  us One Complete 
+    000000c0: 3d3d 3d20                                === 
+
+  [36mCompiled HEX (exit: 0):[0m
+    00000000: 3d3d 3d20 4c65 6574 436f 6465 2023 3636  === LeetCode #66
+    00000010: 3a20 506c 7573 204f 6e65 2028 4261 7369  : Plus One (Basi
+    00000020: 6329 203d 3d3d 0a49 6e70 7574 3a20 5b31  c) ===.Input: [1
+    00000030: 2c32 2c33 5d0a 4f75 7470 7574 3a20 5b31  ,2,3].Output: [1
+    00000040: 2c32 2c34 5d0a 310a 320a 330a 496e 7075  ,2,4].1.2.3.Inpu
+    00000050: 743a 205b 342c 332c 322c 315d 0a4f 7574  t: [4,3,2,1].Out
+    00000060: 7075 743a 205b 342c 332c 322c 325d 0a34  put: [4,3,2,2].4
+    00000070: 0a33 0a32 0a31 0a49 6e70 7574 3a20 5b39  .3.2.1.Input: [9
+    00000080: 5d0a 3d3d 3d20 506c 7573 204f 6e65 2043  ].=== Plus One C
+    00000090: 6f6d 706c 6574 6520 3d3d 3d              omplete ===
+
+---
+[1m[248/444] Testing: leetcode/math/067_add_binary.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[249/444] Testing: leetcode/math/069_sqrtx.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[250/444] Testing: leetcode/math/149_max_points_on_a_line.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[251/444] Testing: leetcode/math/168_excel_sheet_column_title.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[252/444] Testing: leetcode/math/171_excel_sheet_column_number.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[253/444] Testing: leetcode/math/202_happy_number.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[254/444] Testing: leetcode/math/204_count_primes.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[255/444] Testing: leetcode/math/223_rectangle_area.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[256/444] Testing: leetcode/math/233_number_of_digit_one.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[257/444] Testing: leetcode/math/412_fizzbuzz.💀[0m
+  Result: [31mINTERPRETER ERROR (compiled worked)[0m
+  [36mInterpreter (exit: 1):[0m
+    DEBUG: Function 'test_fizz_buzz' not found
+    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/leetcode/math/412_fizzbuzz.💀: error.UndefinedFunction
+    error: UndefinedFunction
+                        return InterpreterError.UndefinedFunction;
+                        ^
+                .Call => |call| return try self.evaluateCall(call),
+                                       ^
+                    _ = try self.evaluateExpression(expr);
+                        ^
+                if (try self.executeStatement(stmt.*)) {
+                    ^
+                _ = try self.callFunction(main_func, &[_]Value{});
+                    ^
+            return self.execute(program);
+            ^
+            return err;
+            ^
+            try interpretSource(allocator, source, filename.?, verbose);
+            ^
+
+  [36mCompiled (exit: 0):[0m
+    (no output)
+
+---
+[1m[258/444] Testing: leetcode/math/412_fizzbuzz_basic.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[259/444] Testing: leetcode/math/415_add_strings.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[260/444] Testing: leetcode/math/728_self_dividing_numbers.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[261/444] Testing: leetcode/math/812_largest_triangle_area.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[262/444] Testing: leetcode/math/914_x_of_a_kind_in_deck.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[263/444] Testing: leetcode/math/976_largest_perimeter_triangle.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[264/444] Testing: leetcode/queues/232_implement_queue_stacks.💀[0m
+  Result: [31mINTERPRETER ERROR (compiled worked)[0m
+  [36mInterpreter (exit: 1):[0m
+    DEBUG: Function 'test_queue_using_stacks' not found
+    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/leetcode/queues/232_implement_queue_stacks.💀: error.UndefinedFunction
+    error: UndefinedFunction
+                        return InterpreterError.UndefinedFunction;
+                        ^
+                .Call => |call| return try self.evaluateCall(call),
+                                       ^
+                    _ = try self.evaluateExpression(expr);
+                        ^
+                if (try self.executeStatement(stmt.*)) {
+                    ^
+                _ = try self.callFunction(main_func, &[_]Value{});
+                    ^
+            return self.execute(program);
+            ^
+            return err;
+            ^
+            try interpretSource(allocator, source, filename.?, verbose);
+            ^
+
+  [36mCompiled (exit: 0):[0m
+    (no output)
+
+---
+[1m[265/444] Testing: leetcode/sorting/056_merge_intervals.💀[0m
+  Result: [31mINTERPRETER ERROR (compiled worked)[0m
+  [36mInterpreter (exit: 1):[0m
+    DEBUG: Function 'test_merge_intervals' not found
+    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/leetcode/sorting/056_merge_intervals.💀: error.UndefinedFunction
+    error: UndefinedFunction
+                        return InterpreterError.UndefinedFunction;
+                        ^
+                .Call => |call| return try self.evaluateCall(call),
+                                       ^
+                    _ = try self.evaluateExpression(expr);
+                        ^
+                if (try self.executeStatement(stmt.*)) {
+                    ^
+                _ = try self.callFunction(main_func, &[_]Value{});
+                    ^
+            return self.execute(program);
+            ^
+            return err;
+            ^
+            try interpretSource(allocator, source, filename.?, verbose);
+            ^
+
+  [36mCompiled (exit: 0):[0m
+    (no output)
+
+---
+[1m[266/444] Testing: leetcode/sorting/075_sort_colors.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[267/444] Testing: leetcode/sorting/088_merge_sorted_array.💀[0m
+  Result: [31mINTERPRETER ERROR (compiled worked)[0m
+  [36mInterpreter (exit: 1):[0m
+    DEBUG: Function 'test_merge_sorted_array' not found
+    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/leetcode/sorting/088_merge_sorted_array.💀: error.UndefinedFunction
+    error: UndefinedFunction
+                        return InterpreterError.UndefinedFunction;
+                        ^
+                .Call => |call| return try self.evaluateCall(call),
+                                       ^
+                    _ = try self.evaluateExpression(expr);
+                        ^
+                if (try self.executeStatement(stmt.*)) {
+                    ^
+                _ = try self.callFunction(main_func, &[_]Value{});
+                    ^
+            return self.execute(program);
+            ^
+            return err;
+            ^
+            try interpretSource(allocator, source, filename.?, verbose);
+            ^
+
+  [36mCompiled (exit: 0):[0m
+    (no output)
+
+---
+[1m[268/444] Testing: leetcode/sorting/1030_matrix_cells_in_distance_order.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[269/444] Testing: leetcode/sorting/1051_height_checker.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[270/444] Testing: leetcode/sorting/179_largest_number.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[271/444] Testing: leetcode/stacks/084_largest_rectangle_in_histogram.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[272/444] Testing: leetcode/stacks/085_maximal_rectangle.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[273/444] Testing: leetcode/stacks/1047_remove_all_adjacent_duplicates.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[274/444] Testing: leetcode/stacks/150_evaluate_reverse_polish_notation.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[275/444] Testing: leetcode/stacks/155_min_stack.💀[0m
+  Result: [31mINTERPRETER ERROR (compiled worked)[0m
+  [36mInterpreter (exit: 1):[0m
+    DEBUG: Function 'test_min_stack' not found
+    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/leetcode/stacks/155_min_stack.💀: error.UndefinedFunction
+    error: UndefinedFunction
+                        return InterpreterError.UndefinedFunction;
+                        ^
+                .Call => |call| return try self.evaluateCall(call),
+                                       ^
+                    _ = try self.evaluateExpression(expr);
+                        ^
+                if (try self.executeStatement(stmt.*)) {
+                    ^
+                _ = try self.callFunction(main_func, &[_]Value{});
+                    ^
+            return self.execute(program);
+            ^
+            return err;
+            ^
+            try interpretSource(allocator, source, filename.?, verbose);
+            ^
+
+  [36mCompiled (exit: 0):[0m
+    (no output)
+
+---
+[1m[276/444] Testing: leetcode/stacks/224_basic_calculator.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[277/444] Testing: leetcode/stacks/227_basic_calculator_ii.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[278/444] Testing: leetcode/stacks/496_next_greater_element_i.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[279/444] Testing: leetcode/stacks/682_baseball_game.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[280/444] Testing: leetcode/strings/003_longest_substring.💀[0m
+  Result: [31mINTERPRETER ERROR (compiled worked)[0m
+  [36mInterpreter (exit: 1):[0m
+    DEBUG: Function 'test_longest_substring' not found
+    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/leetcode/strings/003_longest_substring.💀: error.UndefinedFunction
+    error: UndefinedFunction
+                        return InterpreterError.UndefinedFunction;
+                        ^
+                .Call => |call| return try self.evaluateCall(call),
+                                       ^
+                    _ = try self.evaluateExpression(expr);
+                        ^
+                if (try self.executeStatement(stmt.*)) {
+                    ^
+                _ = try self.callFunction(main_func, &[_]Value{});
+                    ^
+            return self.execute(program);
+            ^
+            return err;
+            ^
+            try interpretSource(allocator, source, filename.?, verbose);
+            ^
+
+  [36mCompiled (exit: 0):[0m
+    (no output)
+
+---
+[1m[281/444] Testing: leetcode/strings/003_longest_substring_without_repeating_characters.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[282/444] Testing: leetcode/strings/005_longest_palindromic_substring.💀[0m
+  Result: [31mINTERPRETER ERROR (compiled worked)[0m
+  [36mInterpreter (exit: 1):[0m
+    DEBUG: Function 'test_longest_palindrome' not found
+    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/leetcode/strings/005_longest_palindromic_substring.💀: error.UndefinedFunction
+    error: UndefinedFunction
+                        return InterpreterError.UndefinedFunction;
+                        ^
+                .Call => |call| return try self.evaluateCall(call),
+                                       ^
+                    _ = try self.evaluateExpression(expr);
+                        ^
+                if (try self.executeStatement(stmt.*)) {
+                    ^
+                _ = try self.callFunction(main_func, &[_]Value{});
+                    ^
+            return self.execute(program);
+            ^
+            return err;
+            ^
+            try interpretSource(allocator, source, filename.?, verbose);
+            ^
+
+  [36mCompiled (exit: 0):[0m
+    (no output)
+
+---
+[1m[283/444] Testing: leetcode/strings/006_zigzag_conversion.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[284/444] Testing: leetcode/strings/008_string_to_integer_atoi.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[285/444] Testing: leetcode/strings/014_longest_common_prefix.💀[0m
+  Result: [31mINTERPRETER ERROR (compiled worked)[0m
+  [36mInterpreter (exit: 1):[0m
+    DEBUG: Function 'test_longest_common_prefix' not found
+    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/leetcode/strings/014_longest_common_prefix.💀: error.UndefinedFunction
+    error: UndefinedFunction
+                        return InterpreterError.UndefinedFunction;
+                        ^
+                .Call => |call| return try self.evaluateCall(call),
+                                       ^
+                    _ = try self.evaluateExpression(expr);
+                        ^
+                if (try self.executeStatement(stmt.*)) {
+                    ^
+                _ = try self.callFunction(main_func, &[_]Value{});
+                    ^
+            return self.execute(program);
+            ^
+            return err;
+            ^
+            try interpretSource(allocator, source, filename.?, verbose);
+            ^
+
+  [36mCompiled (exit: 0):[0m
+    (no output)
+
+---
+[1m[286/444] Testing: leetcode/strings/020_valid_parentheses.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[287/444] Testing: leetcode/strings/028_find_index_of_first_occurrence.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[288/444] Testing: leetcode/strings/049_group_anagrams.💀[0m
+  Result: [31mINTERPRETER ERROR (compiled worked)[0m
+  [36mInterpreter (exit: 1):[0m
+    DEBUG: Function 'test_group_anagrams' not found
+    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/leetcode/strings/049_group_anagrams.💀: error.UndefinedFunction
+    error: UndefinedFunction
+                        return InterpreterError.UndefinedFunction;
+                        ^
+                .Call => |call| return try self.evaluateCall(call),
+                                       ^
+                    _ = try self.evaluateExpression(expr);
+                        ^
+                if (try self.executeStatement(stmt.*)) {
+                    ^
+                _ = try self.callFunction(main_func, &[_]Value{});
+                    ^
+            return self.execute(program);
+            ^
+            return err;
+            ^
+            try interpretSource(allocator, source, filename.?, verbose);
+            ^
+
+  [36mCompiled (exit: 0):[0m
+    (no output)
+
+---
+[1m[289/444] Testing: leetcode/strings/076_minimum_window_substring.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[290/444] Testing: leetcode/strings/1002_find_common_characters.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[291/444] Testing: leetcode/strings/1021_remove_outermost_parentheses.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[292/444] Testing: leetcode/strings/1108_defanging_an_ip_address.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[293/444] Testing: leetcode/strings/125_valid_palindrome.💀[0m
+  Result: [31mINTERPRETER ERROR (compiled worked)[0m
+  [36mInterpreter (exit: 134):[0m
+    === LeetCode #125: Valid Palindrome === 
+    DEBUG: Function 'is_alphanumeric' not found
+    thread 1505521 panic: integer overflow
+                        return InterpreterError.UndefinedFunction;
+                        ^
+                .Call => |call| return try self.evaluateCall(call),
+                                       ^
+            const operand = try self.evaluateExpression(unary.operand.*);
+                            ^
+                .Unary => |unary| return try self.evaluateUnary(unary.*),
+                                         ^
+            const right = try self.evaluateExpression(bin.right.*);
+                          ^
+                .Binary => |bin| return try self.evaluateBinary(bin),
+                                        ^
+                const condition = try self.evaluateExpression(while_stmt.condition.*);
+                                  ^
+                    if (try self.executeWhileStatement(while_stmt)) {
+                        ^
+                    if (try self.executeStatement(stmt.*)) {
+                        ^
+                    if (try self.executeWhileStatement(while_stmt)) {
+                        ^
+                if (try self.executeStatement(stmt.*)) {
+                    ^
+        return @as(cast_target, @ptrCast(slice))[0 .. slice.len * @sizeOf(std.meta.Elem(Slice))];
+                                                                ^
+        const bytes = mem.sliceAsBytes(memory);
+                                      ^
+                gpa.free(self.allocatedSlice());
+                        ^
+                            defer args.deinit(self.allocator);
+                                             ^
+                .Call => |call| return try self.evaluateCall(call),
+                                                            ^
+                try self.evaluateExpression(initializer_expr.*)
+                                           ^
+                    try self.executeLetStatement(let);
+                                                ^
+                if (try self.executeStatement(stmt.*)) {
+                                             ^
+                            return try self.callFunction(func, args.items);
+                                                        ^
+                .Call => |call| return try self.evaluateCall(call),
+                                                            ^
+                    _ = try self.evaluateExpression(expr);
+                                                   ^
+                if (try self.executeStatement(stmt.*)) {
+                                             ^
+                _ = try self.callFunction(main_func, &[_]Value{});
+                                         ^
+            return self.execute(program);
+                               ^
+        cursed_interpreter.interpret(program) catch |err| {
+                                    ^
+            try interpretSource(allocator, source, filename.?, verbose);
+                               ^
+                const result = root.main() catch |err| {
+                                        ^
+    ../sysdeps/nptl/libc_start_call_main.h:58:16: 0x798e5322a1c9 in __libc_start_call_main (../sysdeps/x86/libc-start.c)
+    ../csu/libc-start.c:360:3: 0x798e5322a28a in __libc_start_main_impl (../sysdeps/x86/libc-start.c)
+    ???:?:?: 0x1688504 in ??? (???)
+    ???:?:?: 0x0 in ??? (???)
+
+  [36mCompiled (exit: 0):[0m
+    === LeetCode #125: Valid Palindrome ===
+    Test 1 - Expected: based
+    0
+    Test 2 - Expected: cringe
+    0
+    Test 3 - Expected: based
+    0
+    Test 4 - Expected: based
+    0
+    === Valid Palindrome Complete ===
+
+---
+[1m[294/444] Testing: leetcode/strings/125_valid_palindrome_basic.💀[0m
+  Result: [31mINTERPRETER ERROR (compiled worked)[0m
+  [36mInterpreter (exit: 1):[0m
+    DEBUG: Function 'test_palindrome_strings' not found
+    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/leetcode/strings/125_valid_palindrome_basic.💀: error.UndefinedFunction
+    error: UndefinedFunction
+                        return InterpreterError.UndefinedFunction;
+                        ^
+                .Call => |call| return try self.evaluateCall(call),
+                                       ^
+                    _ = try self.evaluateExpression(expr);
+                        ^
+                if (try self.executeStatement(stmt.*)) {
+                    ^
+                _ = try self.callFunction(main_func, &[_]Value{});
+                    ^
+            return self.execute(program);
+            ^
+            return err;
+            ^
+            try interpretSource(allocator, source, filename.?, verbose);
+            ^
+
+  [36mCompiled (exit: 0):[0m
+    (no output)
+
+---
+[1m[295/444] Testing: leetcode/strings/128_longest_consecutive.💀[0m
+  Result: [31mINTERPRETER ERROR (compiled worked)[0m
+  [36mInterpreter (exit: 1):[0m
+    DEBUG: Function 'test_longest_consecutive' not found
+    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/leetcode/strings/128_longest_consecutive.💀: error.UndefinedFunction
+    error: UndefinedFunction
+                        return InterpreterError.UndefinedFunction;
+                        ^
+                .Call => |call| return try self.evaluateCall(call),
+                                       ^
+                    _ = try self.evaluateExpression(expr);
+                        ^
+                if (try self.executeStatement(stmt.*)) {
+                    ^
+                _ = try self.callFunction(main_func, &[_]Value{});
+                    ^
+            return self.execute(program);
+            ^
+            return err;
+            ^
+            try interpretSource(allocator, source, filename.?, verbose);
+            ^
+
+  [36mCompiled (exit: 0):[0m
+    (no output)
+
+---
+[1m[296/444] Testing: leetcode/strings/151_reverse_words_in_a_string.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[297/444] Testing: leetcode/strings/205_isomorphic_strings.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[298/444] Testing: leetcode/strings/214_shortest_palindrome.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[299/444] Testing: leetcode/strings/242_valid_anagram.💀[0m
+  Result: [31mINTERPRETER ERROR (compiled worked)[0m
+  [36mInterpreter (exit: 134):[0m
+    === LeetCode #242: Valid Anagram === 
+    DEBUG: Function 'is_anagram' not found
+    thread 1505827 panic: integer overflow
+                        return InterpreterError.UndefinedFunction;
+                        ^
+                .Call => |call| return try self.evaluateCall(call),
+                                       ^
+                try self.evaluateExpression(initializer_expr.*)
+                ^
+                    try self.executeLetStatement(let);
+                    ^
+                if (try self.executeStatement(stmt.*)) {
+                    ^
+        return @as(cast_target, @ptrCast(slice))[0 .. slice.len * @sizeOf(std.meta.Elem(Slice))];
+                                                                ^
+        const bytes = mem.sliceAsBytes(memory);
+                                      ^
+                gpa.free(self.allocatedSlice());
+                        ^
+                            defer args.deinit(self.allocator);
+                                             ^
+                .Call => |call| return try self.evaluateCall(call),
+                                                            ^
+                    _ = try self.evaluateExpression(expr);
+                                                   ^
+                if (try self.executeStatement(stmt.*)) {
+                                             ^
+                _ = try self.callFunction(main_func, &[_]Value{});
+                                         ^
+            return self.execute(program);
+                               ^
+        cursed_interpreter.interpret(program) catch |err| {
+                                    ^
+            try interpretSource(allocator, source, filename.?, verbose);
+                               ^
+                const result = root.main() catch |err| {
+                                        ^
+    ../sysdeps/nptl/libc_start_call_main.h:58:16: 0x73da6302a1c9 in __libc_start_call_main (../sysdeps/x86/libc-start.c)
+    ../csu/libc-start.c:360:3: 0x73da6302a28a in __libc_start_main_impl (../sysdeps/x86/libc-start.c)
+    ???:?:?: 0x1688504 in ??? (???)
+    ???:?:?: 0x0 in ??? (???)
+
+  [36mCompiled (exit: 0):[0m
+    === LeetCode #242: Valid Anagram ===
+    Test 1 - anagram vs nagaram, Expected: based
+    0
+    Test 2 - rat vs car, Expected: cringe
+    0
+    Test 3 - listen vs silent, Expected: based
+    0
+    Test 4 - different lengths, Expected: cringe
+    0
+    Test 5 - empty strings, Expected: based
+    0
+    === Valid Anagram Complete ===
+
+---
+[1m[300/444] Testing: leetcode/strings/344_reverse_string.💀[0m
+  Result: [31mINTERPRETER ERROR (compiled worked)[0m
+  [36mInterpreter (exit: 1):[0m
+    DEBUG: Function 'test_reverse_string' not found
+    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/leetcode/strings/344_reverse_string.💀: error.UndefinedFunction
+    error: UndefinedFunction
+                        return InterpreterError.UndefinedFunction;
+                        ^
+                .Call => |call| return try self.evaluateCall(call),
+                                       ^
+                    _ = try self.evaluateExpression(expr);
+                        ^
+                if (try self.executeStatement(stmt.*)) {
+                    ^
+                _ = try self.callFunction(main_func, &[_]Value{});
+                    ^
+            return self.execute(program);
+            ^
+            return err;
+            ^
+            try interpretSource(allocator, source, filename.?, verbose);
+            ^
+
+  [36mCompiled (exit: 0):[0m
+    (no output)
+
+---
+[1m[301/444] Testing: leetcode/strings/383_ransom_note.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[302/444] Testing: leetcode/strings/387_first_unique_character.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[303/444] Testing: leetcode/strings/389_find_the_difference.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[304/444] Testing: leetcode/strings/392_is_subsequence.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[305/444] Testing: leetcode/strings/500_keyboard_row.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[306/444] Testing: leetcode/strings/557_reverse_words_in_string_iii.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[307/444] Testing: leetcode/strings/657_robot_return_to_origin.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[308/444] Testing: leetcode/strings/680_valid_palindrome_ii.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[309/444] Testing: leetcode/strings/696_count_binary_substrings.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[310/444] Testing: leetcode/strings/709_to_lower_case.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[311/444] Testing: leetcode/strings/720_longest_word_in_dictionary.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[312/444] Testing: leetcode/strings/734_sentence_similarity.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[313/444] Testing: leetcode/strings/748_shortest_completing_word.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[314/444] Testing: leetcode/strings/771_jewels_and_stones.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[315/444] Testing: leetcode/strings/796_rotate_string.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[316/444] Testing: leetcode/strings/804_unique_morse_code_words.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[317/444] Testing: leetcode/strings/806_number_of_lines_to_write_string.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[318/444] Testing: leetcode/strings/811_subdomain_visit_count.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[319/444] Testing: leetcode/strings/819_most_common_word.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[320/444] Testing: leetcode/strings/821_shortest_distance_to_character.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[321/444] Testing: leetcode/strings/824_goat_latin.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[322/444] Testing: leetcode/strings/830_positions_of_large_groups.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[323/444] Testing: leetcode/strings/844_backspace_string_compare.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[324/444] Testing: leetcode/strings/925_long_pressed_name.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[325/444] Testing: leetcode/strings/929_unique_email_addresses.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[326/444] Testing: leetcode/strings/944_delete_columns_to_make_sorted.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[327/444] Testing: leetcode/strings/953_verifying_an_alien_dictionary.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[328/444] Testing: leetcode/trees/094_binary_tree_inorder_traversal.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[329/444] Testing: leetcode/trees/095_unique_binary_search_trees_ii.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[330/444] Testing: leetcode/trees/096_unique_binary_search_trees.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[331/444] Testing: leetcode/trees/098_validate_binary_search_tree.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[332/444] Testing: leetcode/trees/100_same_tree.💀[0m
+  Result: [31mINTERPRETER ERROR (compiled worked)[0m
+  [36mInterpreter (exit: 1):[0m
+    DEBUG: Function 'test_same_tree' not found
+    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/leetcode/trees/100_same_tree.💀: error.UndefinedFunction
+    error: UndefinedFunction
+                        return InterpreterError.UndefinedFunction;
+                        ^
+                .Call => |call| return try self.evaluateCall(call),
+                                       ^
+                    _ = try self.evaluateExpression(expr);
+                        ^
+                if (try self.executeStatement(stmt.*)) {
+                    ^
+                _ = try self.callFunction(main_func, &[_]Value{});
+                    ^
+            return self.execute(program);
+            ^
+            return err;
+            ^
+            try interpretSource(allocator, source, filename.?, verbose);
+            ^
+
+  [36mCompiled (exit: 0):[0m
+    (no output)
+
+---
+[1m[333/444] Testing: leetcode/trees/101_symmetric_tree.💀[0m
+  Result: [31mINTERPRETER ERROR (compiled worked)[0m
+  [36mInterpreter (exit: 1):[0m
+    DEBUG: Function 'test_symmetric_tree' not found
+    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/leetcode/trees/101_symmetric_tree.💀: error.UndefinedFunction
+    error: UndefinedFunction
+                        return InterpreterError.UndefinedFunction;
+                        ^
+                .Call => |call| return try self.evaluateCall(call),
+                                       ^
+                    _ = try self.evaluateExpression(expr);
+                        ^
+                if (try self.executeStatement(stmt.*)) {
+                    ^
+                _ = try self.callFunction(main_func, &[_]Value{});
+                    ^
+            return self.execute(program);
+            ^
+            return err;
+            ^
+            try interpretSource(allocator, source, filename.?, verbose);
+            ^
+
+  [36mCompiled (exit: 0):[0m
+    (no output)
+
+---
+[1m[334/444] Testing: leetcode/trees/1028_recover_tree_from_preorder.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[335/444] Testing: leetcode/trees/102_binary_tree_level_order_traversal.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[336/444] Testing: leetcode/trees/1038_bst_to_greater_sum_tree.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[337/444] Testing: leetcode/trees/103_binary_tree_zigzag_level_order.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[338/444] Testing: leetcode/trees/104_maximum_depth_binary_tree.💀[0m
+  Result: [31mINTERPRETER ERROR (compiled worked)[0m
+  [36mInterpreter (exit: 1):[0m
+    DEBUG: Function 'test_max_depth' not found
+    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/leetcode/trees/104_maximum_depth_binary_tree.💀: error.UndefinedFunction
+    error: UndefinedFunction
+                        return InterpreterError.UndefinedFunction;
+                        ^
+                .Call => |call| return try self.evaluateCall(call),
+                                       ^
+                    _ = try self.evaluateExpression(expr);
+                        ^
+                if (try self.executeStatement(stmt.*)) {
+                    ^
+                _ = try self.callFunction(main_func, &[_]Value{});
+                    ^
+            return self.execute(program);
+            ^
+            return err;
+            ^
+            try interpretSource(allocator, source, filename.?, verbose);
+            ^
+
+  [36mCompiled (exit: 0):[0m
+    (no output)
+
+---
+[1m[339/444] Testing: leetcode/trees/104_maximum_depth_of_binary_tree.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[340/444] Testing: leetcode/trees/105_construct_binary_tree_from_preorder_and_inorder.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[341/444] Testing: leetcode/trees/106_construct_binary_tree_from_inorder_and_postorder.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[342/444] Testing: leetcode/trees/107_binary_tree_level_order_traversal_ii.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[343/444] Testing: leetcode/trees/108_convert_sorted_array_to_binary_search_tree.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[344/444] Testing: leetcode/trees/109_convert_sorted_list_to_bst.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[345/444] Testing: leetcode/trees/110_balanced_binary_tree.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[346/444] Testing: leetcode/trees/111_minimum_depth_of_binary_tree.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[347/444] Testing: leetcode/trees/112_path_sum.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[348/444] Testing: leetcode/trees/113_path_sum_ii.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[349/444] Testing: leetcode/trees/114_flatten_binary_tree_to_linked_list.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[350/444] Testing: leetcode/trees/116_populating_next_right_pointers.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[351/444] Testing: leetcode/trees/117_populating_next_right_pointers_ii.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[352/444] Testing: leetcode/trees/124_binary_tree_maximum_path_sum.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[353/444] Testing: leetcode/trees/129_sum_root_to_leaf_numbers.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[354/444] Testing: leetcode/trees/144_binary_tree_preorder_traversal.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[355/444] Testing: leetcode/trees/145_binary_tree_postorder_traversal.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[356/444] Testing: leetcode/trees/173_binary_search_tree_iterator.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[357/444] Testing: leetcode/trees/199_binary_tree_right_side_view.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[358/444] Testing: leetcode/trees/208_implement_trie.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[359/444] Testing: leetcode/trees/211_design_add_and_search_words.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[360/444] Testing: leetcode/trees/222_count_complete_tree_nodes.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[361/444] Testing: leetcode/trees/226_invert_binary_tree.💀[0m
+  Result: [31mINTERPRETER ERROR (compiled worked)[0m
+  [36mInterpreter (exit: 1):[0m
+    DEBUG: Function 'test_invert_binary_tree' not found
+    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/leetcode/trees/226_invert_binary_tree.💀: error.UndefinedFunction
+    error: UndefinedFunction
+                        return InterpreterError.UndefinedFunction;
+                        ^
+                .Call => |call| return try self.evaluateCall(call),
+                                       ^
+                    _ = try self.evaluateExpression(expr);
+                        ^
+                if (try self.executeStatement(stmt.*)) {
+                    ^
+                _ = try self.callFunction(main_func, &[_]Value{});
+                    ^
+            return self.execute(program);
+            ^
+            return err;
+            ^
+            try interpretSource(allocator, source, filename.?, verbose);
+            ^
+
+  [36mCompiled (exit: 0):[0m
+    (no output)
+
+---
+[1m[362/444] Testing: leetcode/trees/230_kth_smallest_element_in_bst.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[363/444] Testing: leetcode/trees/235_lowest_common_ancestor_of_bst.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[364/444] Testing: leetcode/trees/236_lowest_common_ancestor_of_binary_tree.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[365/444] Testing: leetcode/trees/543_diameter_binary_tree.💀[0m
+  Result: [31mINTERPRETER ERROR (compiled worked)[0m
+  [36mInterpreter (exit: 1):[0m
+    DEBUG: Function 'test_diameter_binary_tree' not found
+    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/leetcode/trees/543_diameter_binary_tree.💀: error.UndefinedFunction
+    error: UndefinedFunction
+                        return InterpreterError.UndefinedFunction;
+                        ^
+                .Call => |call| return try self.evaluateCall(call),
+                                       ^
+                    _ = try self.evaluateExpression(expr);
+                        ^
+                if (try self.executeStatement(stmt.*)) {
+                    ^
+                _ = try self.callFunction(main_func, &[_]Value{});
+                    ^
+            return self.execute(program);
+            ^
+            return err;
+            ^
+            try interpretSource(allocator, source, filename.?, verbose);
+            ^
+
+  [36mCompiled (exit: 0):[0m
+    (no output)
+
+---
+[1m[366/444] Testing: leetcode/trees/543_diameter_of_binary_tree.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[367/444] Testing: leetcode/trees/572_subtree_of_another_tree.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[368/444] Testing: leetcode/trees/590_n_ary_tree_postorder.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[369/444] Testing: leetcode/trees/617_merge_two_binary_trees.💀[0m
+  Result: [31mINTERPRETER ERROR (compiled worked)[0m
+  [36mInterpreter (exit: 1):[0m
+    DEBUG: Function 'test_merge_two_binary_trees' not found
+    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/leetcode/trees/617_merge_two_binary_trees.💀: error.UndefinedFunction
+    error: UndefinedFunction
+                        return InterpreterError.UndefinedFunction;
+                        ^
+                .Call => |call| return try self.evaluateCall(call),
+                                       ^
+                    _ = try self.evaluateExpression(expr);
+                        ^
+                if (try self.executeStatement(stmt.*)) {
+                    ^
+                _ = try self.callFunction(main_func, &[_]Value{});
+                    ^
+            return self.execute(program);
+            ^
+            return err;
+            ^
+            try interpretSource(allocator, source, filename.?, verbose);
+            ^
+
+  [36mCompiled (exit: 0):[0m
+    (no output)
+
+---
+[1m[370/444] Testing: leetcode/trees/637_average_of_levels_in_binary_tree.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[371/444] Testing: leetcode/trees/653_two_sum_iv___bst.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[372/444] Testing: leetcode/trees/669_trim_bst.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[373/444] Testing: leetcode/trees/700_search_in_bst.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[374/444] Testing: leetcode/trees/701_insert_into_bst.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[375/444] Testing: leetcode/trees/783_minimum_distance_between_bst_nodes.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[376/444] Testing: leetcode/trees/897_increasing_order_search_tree.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[377/444] Testing: leetcode/trees/938_range_sum_of_bst.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[378/444] Testing: leetcode/trees/965_univalued_binary_tree.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[379/444] Testing: leetcode/trees/993_cousins_in_binary_tree.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[380/444] Testing: memory/01_allocation_patterns.💀[0m
+  Result: [31mINTERPRETER ERROR (compiled worked)[0m
+  [36mInterpreter (exit: 1):[0m
+    DEBUG: Function 'create_large_array' not found
+    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/memory/01_allocation_patterns.💀: error.UndefinedFunction
+    error: UndefinedFunction
+                        return InterpreterError.UndefinedFunction;
+                        ^
+                .Call => |call| return try self.evaluateCall(call),
+                                       ^
+                try self.evaluateExpression(initializer_expr.*)
+                ^
+                    try self.executeLetStatement(let);
+                    ^
+                    _ = try self.executeStatement(stmt.*);
+                        ^
+            return self.execute(program);
+            ^
+            return err;
+            ^
+            try interpretSource(allocator, source, filename.?, verbose);
+            ^
+
+  [36mCompiled (exit: 0):[0m
+    Cycle
+    allocation size:
+
+---
+[1m[381/444] Testing: memory/01_basic_pointers.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[382/444] Testing: memory/01_memory_allocation_simple.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[383/444] Testing: memory/02_pointer_arithmetic.💀[0m
+  Result: [31mINTERPRETER ERROR (compiled worked)[0m
+  [36mInterpreter (exit: 1):[0m
+    Second element: 
+    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/memory/02_pointer_arithmetic.💀: error.UndefinedVariable
+    error: UndefinedVariable
+            return InterpreterError.UndefinedVariable;
+            ^
+                        return InterpreterError.UndefinedVariable;
+                        ^
+            const operand = try self.evaluateExpression(unary.operand.*);
+                            ^
+                .Unary => |unary| return try self.evaluateUnary(unary.*),
+                                         ^
+                            const arg_value = try self.evaluateExpression(arg_ptr.*);
+                                              ^
+                    _ = try self.evaluateExpression(expr);
+                        ^
+                    _ = try self.executeStatement(stmt.*);
+                        ^
+            return self.execute(program);
+            ^
+            return err;
+            ^
+            try interpretSource(allocator, source, filename.?, verbose);
+            ^
+
+  [36mCompiled (exit: 0):[0m
+    Second element:
+    42
+    Modified second element:
+    === Test Complete ===
+
+---
+[1m[384/444] Testing: memory/02_pointer_arithmetic_simple.💀[0m
+  Result: [31mFAIL (OUTPUT_MISMATCH)[0m
+  [36mInterpreter (exit: 0):[0m
+    === Simple Pointer Array Test === 
+    First value through pointer: 
+    10 
+    Second value through pointer: 
+    20 
+    Third value through pointer: 
+    30 
+    Modified second value: 
+    20 
+    === Test Complete === 
+
+  [36mCompiled (exit: 0):[0m
+    === Simple Pointer Array Test ===
+    First value through pointer:
+    42
+    Second value through pointer:
+    42
+    Third value through pointer:
+    42
+    Modified second value:
+    20
+    === Test Complete ===
+
+  [33mHEX COMPARISON (to identify differences):[0m
+  [36mInterpreter HEX (exit: 0):[0m
+    00000000: 3d3d 3d20 5369 6d70 6c65 2050 6f69 6e74  === Simple Point
+    00000010: 6572 2041 7272 6179 2054 6573 7420 3d3d  er Array Test ==
+    00000020: 3d20 0a46 6972 7374 2076 616c 7565 2074  = .First value t
+    00000030: 6872 6f75 6768 2070 6f69 6e74 6572 3a20  hrough pointer: 
+    00000040: 0a31 3020 0a53 6563 6f6e 6420 7661 6c75  .10 .Second valu
+    00000050: 6520 7468 726f 7567 6820 706f 696e 7465  e through pointe
+    00000060: 723a 200a 3230 200a 5468 6972 6420 7661  r: .20 .Third va
+    00000070: 6c75 6520 7468 726f 7567 6820 706f 696e  lue through poin
+    00000080: 7465 723a 200a 3330 200a 4d6f 6469 6669  ter: .30 .Modifi
+    00000090: 6564 2073 6563 6f6e 6420 7661 6c75 653a  ed second value:
+    000000a0: 200a 3230 200a 3d3d 3d20 5465 7374 2043   .20 .=== Test C
+    000000b0: 6f6d 706c 6574 6520 3d3d 3d20            omplete === 
+
+  [36mCompiled HEX (exit: 0):[0m
+    00000000: 3d3d 3d20 5369 6d70 6c65 2050 6f69 6e74  === Simple Point
+    00000010: 6572 2041 7272 6179 2054 6573 7420 3d3d  er Array Test ==
+    00000020: 3d0a 4669 7273 7420 7661 6c75 6520 7468  =.First value th
+    00000030: 726f 7567 6820 706f 696e 7465 723a 0a34  rough pointer:.4
+    00000040: 320a 5365 636f 6e64 2076 616c 7565 2074  2.Second value t
+    00000050: 6872 6f75 6768 2070 6f69 6e74 6572 3a0a  hrough pointer:.
+    00000060: 3432 0a54 6869 7264 2076 616c 7565 2074  42.Third value t
+    00000070: 6872 6f75 6768 2070 6f69 6e74 6572 3a0a  hrough pointer:.
+    00000080: 3432 0a4d 6f64 6966 6965 6420 7365 636f  42.Modified seco
+    00000090: 6e64 2076 616c 7565 3a0a 3230 0a3d 3d3d  nd value:.20.===
+    000000a0: 2054 6573 7420 436f 6d70 6c65 7465 203d   Test Complete =
+    000000b0: 3d3d                                     ==
+
+---
+[1m[385/444] Testing: memory/02_simple_memory_test.💀[0m
+  Result: [31mINTERPRETER ERROR (compiled worked)[0m
+  [36mInterpreter (exit: 1):[0m
+    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/memory/02_simple_memory_test.💀: error.UndefinedVariable
+    error: UndefinedVariable
+            return InterpreterError.UndefinedVariable;
+            ^
+                        return InterpreterError.UndefinedVariable;
+                        ^
+            const left = try self.evaluateExpression(bin.left.*);
+                         ^
+                .Binary => |bin| return try self.evaluateBinary(bin),
+                                        ^
+                try self.evaluateExpression(initializer_expr.*)
+                ^
+                    try self.executeLetStatement(let);
+                    ^
+                    _ = try self.executeStatement(stmt.*);
+                        ^
+            return self.execute(program);
+            ^
+            return err;
+            ^
+            try interpretSource(allocator, source, filename.?, verbose);
+            ^
+
+  [36mCompiled (exit: 0):[0m
+    Inner computation:
+    0
+
+---
+[1m[386/444] Testing: memory/02_stack_overflow_detection.💀[0m
+  Result: [31mINTERPRETER ERROR (compiled worked)[0m
+  [36mInterpreter (exit: 139):[0m
+    (no output)
+
+  [36mCompiled (exit: 0):[0m
+    Safe recursion completed, result available
+    Protected recursion error:
+    Limit exceeded as expected:
+    Testing deep stack with local allocations...
+
+---
+[1m[387/444] Testing: memory/03_corrected_memory_test.💀[0m
+  Result: [31mFAIL (OUTPUT_MISMATCH)[0m
+  [36mInterpreter (exit: 0):[0m
+    === Corrected Memory Test === 
+    Testing simple variable allocation... 
+    Variables: 100 200 300 
+    Testing string allocation... 
+    Strings: First Second Third 
+    Testing computational memory usage... 
+    Iteration 0 result: 0 
+    Iteration 1 result: 1 
+    Iteration 2 result: 4 
+    Iteration 3 result: 9 
+    Iteration 4 result: 16 
+    Testing nested scope memory... 
+    Inner computation: 300 
+    Deep computation: 600 
+    Corrected memory test completed 
+
+  [36mCompiled (exit: 0):[0m
+    === Corrected Memory Test ===
+    Testing simple variable allocation...
+    Variables:
+    100
+    200
+    300
+    Testing string allocation...
+    Strings:
+    Testing string allocation...
+    First
+    Second
+    Testing computational memory usage...
+    Testing nested scope memory...
+    Corrected memory test completed
+
+  [33mHEX COMPARISON (to identify differences):[0m
+  [36mInterpreter HEX (exit: 0):[0m
+    00000000: 3d3d 3d20 436f 7272 6563 7465 6420 4d65  === Corrected Me
+    00000010: 6d6f 7279 2054 6573 7420 3d3d 3d20 0a54  mory Test === .T
+    00000020: 6573 7469 6e67 2073 696d 706c 6520 7661  esting simple va
+    00000030: 7269 6162 6c65 2061 6c6c 6f63 6174 696f  riable allocatio
+    00000040: 6e2e 2e2e 200a 5661 7269 6162 6c65 733a  n... .Variables:
+    00000050: 2031 3030 2032 3030 2033 3030 200a 5465   100 200 300 .Te
+    00000060: 7374 696e 6720 7374 7269 6e67 2061 6c6c  sting string all
+    00000070: 6f63 6174 696f 6e2e 2e2e 200a 5374 7269  ocation... .Stri
+    00000080: 6e67 733a 2046 6972 7374 2053 6563 6f6e  ngs: First Secon
+    00000090: 6420 5468 6972 6420 0a54 6573 7469 6e67  d Third .Testing
+    000000a0: 2063 6f6d 7075 7461 7469 6f6e 616c 206d   computational m
+    000000b0: 656d 6f72 7920 7573 6167 652e 2e2e 200a  emory usage... .
+    000000c0: 4974 6572 6174 696f 6e20 3020 7265 7375  Iteration 0 resu
+    000000d0: 6c74 3a20 3020 0a49 7465 7261 7469 6f6e  lt: 0 .Iteration
+    000000e0: 2031 2072 6573 756c 743a 2031 200a 4974   1 result: 1 .It
+    000000f0: 6572 6174 696f 6e20 3220 7265 7375 6c74  eration 2 result
+    00000100: 3a20 3420 0a49 7465 7261 7469 6f6e 2033  : 4 .Iteration 3
+    00000110: 2072 6573 756c 743a 2039 200a 4974 6572   result: 9 .Iter
+    00000120: 6174 696f 6e20 3420 7265 7375 6c74 3a20  ation 4 result: 
+    00000130: 3136 200a 5465 7374 696e 6720 6e65 7374  16 .Testing nest
+    00000140: 6564 2073 636f 7065 206d 656d 6f72 792e  ed scope memory.
+    00000150: 2e2e 200a 496e 6e65 7220 636f 6d70 7574  .. .Inner comput
+    00000160: 6174 696f 6e3a 2033 3030 200a 4465 6570  ation: 300 .Deep
+    00000170: 2063 6f6d 7075 7461 7469 6f6e 3a20 3630   computation: 60
+    00000180: 3020 0a43 6f72 7265 6374 6564 206d 656d  0 .Corrected mem
+    00000190: 6f72 7920 7465 7374 2063 6f6d 706c 6574  ory test complet
+    000001a0: 6564 20                                  ed 
+
+  [36mCompiled HEX (exit: 0):[0m
+    00000000: 3d3d 3d20 436f 7272 6563 7465 6420 4d65  === Corrected Me
+    00000010: 6d6f 7279 2054 6573 7420 3d3d 3d0a 5465  mory Test ===.Te
+    00000020: 7374 696e 6720 7369 6d70 6c65 2076 6172  sting simple var
+    00000030: 6961 626c 6520 616c 6c6f 6361 7469 6f6e  iable allocation
+    00000040: 2e2e 2e0a 5661 7269 6162 6c65 733a 0a31  ....Variables:.1
+    00000050: 3030 0a32 3030 0a33 3030 0a54 6573 7469  00.200.300.Testi
+    00000060: 6e67 2073 7472 696e 6720 616c 6c6f 6361  ng string alloca
+    00000070: 7469 6f6e 2e2e 2e0a 5374 7269 6e67 733a  tion....Strings:
+    00000080: 0a54 6573 7469 6e67 2073 7472 696e 6720  .Testing string 
+    00000090: 616c 6c6f 6361 7469 6f6e 2e2e 2e0a 4669  allocation....Fi
+    000000a0: 7273 740a 5365 636f 6e64 0a54 6573 7469  rst.Second.Testi
+    000000b0: 6e67 2063 6f6d 7075 7461 7469 6f6e 616c  ng computational
+    000000c0: 206d 656d 6f72 7920 7573 6167 652e 2e2e   memory usage...
+    000000d0: 0a54 6573 7469 6e67 206e 6573 7465 6420  .Testing nested 
+    000000e0: 7363 6f70 6520 6d65 6d6f 7279 2e2e 2e0a  scope memory....
+    000000f0: 436f 7272 6563 7465 6420 6d65 6d6f 7279  Corrected memory
+    00000100: 2074 6573 7420 636f 6d70 6c65 7465 64     test completed
+
+---
+[1m[388/444] Testing: memory/03_nested_pointers.💀[0m
+  Result: [31mFAIL (OUTPUT_MISMATCH)[0m
+  [36mInterpreter (exit: 0):[0m
+    === Nested Pointers Test === 
+    Value through double pointer: 
+    42 
+    Original value after double pointer modification: 
+    42 
+    Value through single pointer: 
+    42 
+    Value through double pointer: 
+    42 
+    === Test Complete === 
+
+  [36mCompiled (exit: 0):[0m
+    === Nested Pointers Test ===
+    Value through double pointer:
+    0
+    Original value after double pointer modification:
+    42
+    Value through single pointer:
+    42
+    Value through double pointer:
+    0
+    === Test Complete ===
+
+  [33mHEX COMPARISON (to identify differences):[0m
+  [36mInterpreter HEX (exit: 0):[0m
+    00000000: 3d3d 3d20 4e65 7374 6564 2050 6f69 6e74  === Nested Point
+    00000010: 6572 7320 5465 7374 203d 3d3d 200a 5661  ers Test === .Va
+    00000020: 6c75 6520 7468 726f 7567 6820 646f 7562  lue through doub
+    00000030: 6c65 2070 6f69 6e74 6572 3a20 0a34 3220  le pointer: .42 
+    00000040: 0a4f 7269 6769 6e61 6c20 7661 6c75 6520  .Original value 
+    00000050: 6166 7465 7220 646f 7562 6c65 2070 6f69  after double poi
+    00000060: 6e74 6572 206d 6f64 6966 6963 6174 696f  nter modificatio
+    00000070: 6e3a 200a 3432 200a 5661 6c75 6520 7468  n: .42 .Value th
+    00000080: 726f 7567 6820 7369 6e67 6c65 2070 6f69  rough single poi
+    00000090: 6e74 6572 3a20 0a34 3220 0a56 616c 7565  nter: .42 .Value
+    000000a0: 2074 6872 6f75 6768 2064 6f75 626c 6520   through double 
+    000000b0: 706f 696e 7465 723a 200a 3432 200a 3d3d  pointer: .42 .==
+    000000c0: 3d20 5465 7374 2043 6f6d 706c 6574 6520  = Test Complete 
+    000000d0: 3d3d 3d20                                === 
+
+  [36mCompiled HEX (exit: 0):[0m
+    00000000: 3d3d 3d20 4e65 7374 6564 2050 6f69 6e74  === Nested Point
+    00000010: 6572 7320 5465 7374 203d 3d3d 0a56 616c  ers Test ===.Val
+    00000020: 7565 2074 6872 6f75 6768 2064 6f75 626c  ue through doubl
+    00000030: 6520 706f 696e 7465 723a 0a30 0a4f 7269  e pointer:.0.Ori
+    00000040: 6769 6e61 6c20 7661 6c75 6520 6166 7465  ginal value afte
+    00000050: 7220 646f 7562 6c65 2070 6f69 6e74 6572  r double pointer
+    00000060: 206d 6f64 6966 6963 6174 696f 6e3a 0a34   modification:.4
+    00000070: 320a 5661 6c75 6520 7468 726f 7567 6820  2.Value through 
+    00000080: 7369 6e67 6c65 2070 6f69 6e74 6572 3a0a  single pointer:.
+    00000090: 3432 0a56 616c 7565 2074 6872 6f75 6768  42.Value through
+    000000a0: 2064 6f75 626c 6520 706f 696e 7465 723a   double pointer:
+    000000b0: 0a30 0a3d 3d3d 2054 6573 7420 436f 6d70  .0.=== Test Comp
+    000000c0: 6c65 7465 203d 3d3d                      lete ===
+
+---
+[1m[389/444] Testing: parser_fixes/01_corrected_hello_world.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[390/444] Testing: parser_fixes/02_corrected_arithmetic.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[391/444] Testing: parser_fixes/03_corrected_function_parameters.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[392/444] Testing: parser/parser_expression_precedence.💀[0m
+  Result: [31mFAIL (OUTPUT_MISMATCH)[0m
+  [36mInterpreter (exit: 0):[0m
+    2 + 3 * 4 = {} 14 
+    20 / 4 + 2 = {} 7 
+    (2 + 3) * 4 = {} 20 
+    2 * 3 + 4 * 5 = {} 26 
+    true || false && true = {} based 
+    (true || false) && true = {} based 
+    5 + 3 > 10 - 2 = {} cringe 
+
+  [36mCompiled (exit: 0):[0m
+    2 + 3 * 4 = {}
+    14
+    20 / 4 + 2 = {}
+    7
+    (2 + 3) * 4 = {}
+    20
+    2 * 3 + 4 * 5 = {}
+    26
+    true || false && true = {}
+    0
+    (true || false) && true = {}
+    0
+    5 + 3 > 10 - 2 = {}
+    0
+
+  [33mHEX COMPARISON (to identify differences):[0m
+  [36mInterpreter HEX (exit: 0):[0m
+    00000000: 3220 2b20 3320 2a20 3420 3d20 7b7d 2031  2 + 3 * 4 = {} 1
+    00000010: 3420 0a32 3020 2f20 3420 2b20 3220 3d20  4 .20 / 4 + 2 = 
+    00000020: 7b7d 2037 200a 2832 202b 2033 2920 2a20  {} 7 .(2 + 3) * 
+    00000030: 3420 3d20 7b7d 2032 3020 0a32 202a 2033  4 = {} 20 .2 * 3
+    00000040: 202b 2034 202a 2035 203d 207b 7d20 3236   + 4 * 5 = {} 26
+    00000050: 200a 7472 7565 207c 7c20 6661 6c73 6520   .true || false 
+    00000060: 2626 2074 7275 6520 3d20 7b7d 2062 6173  && true = {} bas
+    00000070: 6564 200a 2874 7275 6520 7c7c 2066 616c  ed .(true || fal
+    00000080: 7365 2920 2626 2074 7275 6520 3d20 7b7d  se) && true = {}
+    00000090: 2062 6173 6564 200a 3520 2b20 3320 3e20   based .5 + 3 > 
+    000000a0: 3130 202d 2032 203d 207b 7d20 6372 696e  10 - 2 = {} crin
+    000000b0: 6765 20                                  ge 
+
+  [36mCompiled HEX (exit: 0):[0m
+    00000000: 3220 2b20 3320 2a20 3420 3d20 7b7d 0a31  2 + 3 * 4 = {}.1
+    00000010: 340a 3230 202f 2034 202b 2032 203d 207b  4.20 / 4 + 2 = {
+    00000020: 7d0a 370a 2832 202b 2033 2920 2a20 3420  }.7.(2 + 3) * 4 
+    00000030: 3d20 7b7d 0a32 300a 3220 2a20 3320 2b20  = {}.20.2 * 3 + 
+    00000040: 3420 2a20 3520 3d20 7b7d 0a32 360a 7472  4 * 5 = {}.26.tr
+    00000050: 7565 207c 7c20 6661 6c73 6520 2626 2074  ue || false && t
+    00000060: 7275 6520 3d20 7b7d 0a30 0a28 7472 7565  rue = {}.0.(true
+    00000070: 207c 7c20 6661 6c73 6529 2026 2620 7472   || false) && tr
+    00000080: 7565 203d 207b 7d0a 300a 3520 2b20 3320  ue = {}.0.5 + 3 
+    00000090: 3e20 3130 202d 2032 203d 207b 7d0a 30    > 10 - 2 = {}.0
+
+---
+[1m[393/444] Testing: parsing/automatic_semicolon_insertion.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[394/444] Testing: performance/01_pointer_intensive.💀[0m
+  Result: [32mPASS[0m
+---
+[1m[395/444] Testing: performance/01_recursive_depth.💀[0m
+  Result: [31mFAIL (OUTPUT_MISMATCH)[0m
+  [36mInterpreter (exit: 0):[0m
+    === Recursive Depth Test === 
+    Shallow recursion: 
+    5 
+    Medium recursion: 
+    10 
+    Deeper recursion: 
+    50 
+    === Test Complete === 
+
+  [36mCompiled (exit: 0):[0m
+    === Recursive Depth Test ===
+    Shallow recursion:
+    Medium recursion:
+    Deeper recursion:
+    === Test Complete ===
+
+  [33mHEX COMPARISON (to identify differences):[0m
+  [36mInterpreter HEX (exit: 0):[0m
+    00000000: 3d3d 3d20 5265 6375 7273 6976 6520 4465  === Recursive De
+    00000010: 7074 6820 5465 7374 203d 3d3d 200a 5368  pth Test === .Sh
+    00000020: 616c 6c6f 7720 7265 6375 7273 696f 6e3a  allow recursion:
+    00000030: 200a 3520 0a4d 6564 6975 6d20 7265 6375   .5 .Medium recu
+    00000040: 7273 696f 6e3a 200a 3130 200a 4465 6570  rsion: .10 .Deep
+    00000050: 6572 2072 6563 7572 7369 6f6e 3a20 0a35  er recursion: .5
+    00000060: 3020 0a3d 3d3d 2054 6573 7420 436f 6d70  0 .=== Test Comp
+    00000070: 6c65 7465 203d 3d3d 20                   lete === 
+
+  [36mCompiled HEX (exit: 0):[0m
+    00000000: 3d3d 3d20 5265 6375 7273 6976 6520 4465  === Recursive De
+    00000010: 7074 6820 5465 7374 203d 3d3d 0a53 6861  pth Test ===.Sha
+    00000020: 6c6c 6f77 2072 6563 7572 7369 6f6e 3a0a  llow recursion:.
+    00000030: 4d65 6469 756d 2072 6563 7572 7369 6f6e  Medium recursion
+    00000040: 3a0a 4465 6570 6572 2072 6563 7572 7369  :.Deeper recursi
+    00000050: 6f6e 3a0a 3d3d 3d20 5465 7374 2043 6f6d  on:.=== Test Com
+    00000060: 706c 6574 6520 3d3d 3d                   plete ===
+
+---
+[1m[396/444] Testing: performance/02_computation_intensive.💀[0m
+  Result: [31mFAIL (OUTPUT_MISMATCH)[0m
+  [36mInterpreter (exit: 0):[0m
+    === Computation Intensive Test === 
+    Fibonacci sequence: 
+    21 
+    55 
+    Sum of range: 
+    5050 
+    === Test Complete === 
+
+  [36mCompiled (exit: 0):[0m
+    === Computation Intensive Test ===
+    Fibonacci sequence:
+    Sum of range:
+    === Test Complete ===
+
+  [33mHEX COMPARISON (to identify differences):[0m
+  [36mInterpreter HEX (exit: 0):[0m
+    00000000: 3d3d 3d20 436f 6d70 7574 6174 696f 6e20  === Computation 
+    00000010: 496e 7465 6e73 6976 6520 5465 7374 203d  Intensive Test =
+    00000020: 3d3d 200a 4669 626f 6e61 6363 6920 7365  == .Fibonacci se
+    00000030: 7175 656e 6365 3a20 0a32 3120 0a35 3520  quence: .21 .55 
+    00000040: 0a53 756d 206f 6620 7261 6e67 653a 200a  .Sum of range: .
+    00000050: 3530 3530 200a 3d3d 3d20 5465 7374 2043  5050 .=== Test C
+    00000060: 6f6d 706c 6574 6520 3d3d 3d20            omplete === 
+
+  [36mCompiled HEX (exit: 0):[0m
+    00000000: 3d3d 3d20 436f 6d70 7574 6174 696f 6e20  === Computation 
+    00000010: 496e 7465 6e73 6976 6520 5465 7374 203d  Intensive Test =
+    00000020: 3d3d 0a46 6962 6f6e 6163 6369 2073 6571  ==.Fibonacci seq
+    00000030: 7565 6e63 653a 0a53 756d 206f 6620 7261  uence:.Sum of ra
+    00000040: 6e67 653a 0a3d 3d3d 2054 6573 7420 436f  nge:.=== Test Co
+    00000050: 6d70 6c65 7465 203d 3d3d                 mplete ===
+
+---
+[1m[397/444] Testing: regression/01_division_by_zero_fix.💀[0m
+  Result: [33mFAIL (different error messages)[0m
+  [36mInterpreter (exit: 1):[0m
+    Mathz division by zero handled: ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/regression/01_division_by_zero_fix.💀: error.TypeMismatch
+    error: TypeMismatch
+                    return InterpreterError.TypeMismatch;
+                    ^
+                    return try self.evaluateMethodCall(object_as_member, method_call.arguments.items);
+                           ^
+                            const arg_value = try self.evaluateExpression(arg_ptr.*);
+                                              ^
+                    _ = try self.evaluateExpression(expr);
+                        ^
+                if (try self.executeStatement(stmt_ptr.*)) {
+                    ^
+                    if (try self.executeBlockStatement(block)) {
+                        ^
+                    _ = try self.executeStatement(stmt.*);
+                        ^
+            return self.execute(program);
+            ^
+            return err;
+            ^
+            try interpretSource(allocator, source, filename.?, verbose);
+            ^
+
+  [36mCompiled (exit: 134):[0m
+    Compilation failed
+
+---
+[1m[398/444] Testing: regression/01_division_zero_regression.💀[0m
+  Result: [31mINTERPRETER ERROR (compiled worked)[0m
+  [36mInterpreter (exit: 1):[0m
+    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/regression/01_division_zero_regression.💀: error.UndefinedVariable
+    error: UndefinedVariable
+            return InterpreterError.UndefinedVariable;
+            ^
+                        return InterpreterError.UndefinedVariable;
+                        ^
+            const left = try self.evaluateExpression(bin.left.*);
+                         ^
+                .Binary => |bin| return try self.evaluateBinary(bin),
+                                        ^
+            const condition = try self.evaluateExpression(condition_expr.*);
+                              ^
+                    if (try self.executeIfStatement(if_stmt)) {
+                        ^
+                    _ = try self.executeStatement(stmt.*);
+                        ^
+            return self.execute(program);
+            ^
+            return err;
+            ^
+            try interpretSource(allocator, source, filename.?, verbose);
+            ^
+
+  [36mCompiled (exit: 0):[0m
+    Division by zero regression test passed
+
+---
+[1m[399/444] Testing: regression/01_pointer_regression.💀[0m

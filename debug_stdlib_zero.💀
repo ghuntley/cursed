@@ -1,0 +1,9 @@
+vibe main
+yeet "vibez"
+yeet "stringz"
+
+slay main_character() {
+    vibez.spill("Testing stringz.concat:")
+    sus result tea = stringz.concat("Hello", "World")
+    vibez.spill(result)
+}
