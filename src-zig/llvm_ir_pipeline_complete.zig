@@ -834,9 +834,109 @@ pub const LLVMIRPipeline = struct {
             return try self.compileVibezSpill(wip, method_call);
         }
         
+        // Handle common mathz functions with compile-time evaluation
+        if (std.mem.startsWith(u8, full_method_name, "mathz.")) {
+            return try self.compileMathzCall(wip, method_call, full_method_name);
+        }
+        
         print("⚠️ Method call not implemented: {s}\n", .{full_method_name});
         const zero = try self.builder.intConst(llvm.Builder.Type.i64, 0);
         return zero.toValue();
+    }
+    
+    /// Compile mathz function calls with compile-time evaluation
+    fn compileMathzCall(self: *Self, wip: *llvm.Builder.WipFunction, method_call: *const ast.MethodCallExpression, full_method_name: []const u8) (Allocator.Error || CompileError)!llvm.Builder.Value {
+        _ = wip; // Bypass Builder API for now
+        
+        print("🔧 Compiling mathz function: {s}\n", .{full_method_name});
+        
+        // Extract function name (everything after "mathz.")
+        const func_name = full_method_name[6..]; // Skip "mathz."
+        
+        // Evaluate arguments
+        var args = std.ArrayListUnmanaged(IRValue){};
+        for (method_call.arguments.items) |arg_ptr| {
+            const arg: *const ast.Expression = @ptrCast(@alignCast(arg_ptr));
+            
+            const arg_value = switch (arg.*) {
+                .Integer => |int_val| IRValue{ .Integer = int_val },
+                .Float => |float_val| IRValue{ .Float = float_val },
+                .Identifier, .Variable => |name| blk: {
+                    for (self.captured_variables.items) |var_data| {
+                        if (std.mem.eql(u8, var_data.name, name)) {
+                            break :blk var_data.value;
+                        }
+                    }
+                    break :blk IRValue{ .Integer = 0 }; // Default if not found
+                },
+                else => blk: {
+                    print("⚠️ Unsupported mathz argument type\n", .{});
+                    break :blk IRValue{ .Integer = 0 };
+                },
+            };
+            try args.append(self.allocator, arg_value);
+        }
+        
+        // Perform compile-time evaluation of mathz functions
+        const result = if (std.mem.eql(u8, func_name, "abs_normie") and args.items.len == 1) blk: {
+            const arg = args.items[0];
+            switch (arg) {
+                .Integer => |val| break :blk IRValue{ .Integer = if (val < 0) -val else val },
+                .Float => |val| break :blk IRValue{ .Float = if (val < 0) -val else val },
+                else => break :blk IRValue{ .Integer = 0 },
+            }
+        } else if (std.mem.eql(u8, func_name, "add_two") and args.items.len == 2) blk: {
+            const left = args.items[0];
+            const right = args.items[1];
+            switch (left) {
+                .Integer => |left_int| switch (right) {
+                    .Integer => |right_int| break :blk IRValue{ .Integer = left_int + right_int },
+                    else => break :blk IRValue{ .Integer = 0 },
+                },
+                else => break :blk IRValue{ .Integer = 0 },
+            }
+        } else if (std.mem.eql(u8, func_name, "max") and args.items.len == 2) blk: {
+            const left = args.items[0];
+            const right = args.items[1];
+            switch (left) {
+                .Integer => |left_int| switch (right) {
+                    .Integer => |right_int| break :blk IRValue{ .Integer = @max(left_int, right_int) },
+                    else => break :blk IRValue{ .Integer = left_int },
+                },
+                else => break :blk IRValue{ .Integer = 0 },
+            }
+        } else if (std.mem.eql(u8, func_name, "min") and args.items.len == 2) blk: {
+            const left = args.items[0];
+            const right = args.items[1];
+            switch (left) {
+                .Integer => |left_int| switch (right) {
+                    .Integer => |right_int| break :blk IRValue{ .Integer = @min(left_int, right_int) },
+                    else => break :blk IRValue{ .Integer = left_int },
+                },
+                else => break :blk IRValue{ .Integer = 0 },
+            }
+        } else blk: {
+            print("⚠️ Mathz function not implemented: {s}\n", .{func_name});
+            break :blk IRValue{ .Integer = 0 };
+        };
+        
+        // Convert result back to Builder Value for return
+        switch (result) {
+            .Integer => |int_val| {
+                const int_const = try self.builder.intConst(llvm.Builder.Type.i64, int_val);
+                print("✅ Computed mathz.{s}() = {d}\n", .{func_name, int_val});
+                return int_const.toValue();
+            },
+            .Float => |float_val| {
+                const float_const = try self.builder.doubleConst(float_val);
+                print("✅ Computed mathz.{s}() = {d}\n", .{func_name, float_val});
+                return float_const.toValue();
+            },
+            else => {
+                const zero_fallback = try self.builder.intConst(llvm.Builder.Type.i64, 0);
+                return zero_fallback.toValue();
+            },
+        }
     }
     
     /// Compile vibez.spill() with COMPLETE CURSED runtime implementation
@@ -894,6 +994,19 @@ pub const LLVMIRPipeline = struct {
                     switch (result) {
                         .Integer => |int_val| print("📝 Captured computed binary result: {d}\n", .{int_val}),
                         .Float => |float_val| print("📝 Captured computed binary result: {d}\n", .{float_val}),
+                        else => {},
+                    }
+                },
+                .MethodCall => |nested_method_call| {
+                    // Handle method calls like mathz.abs_normie(-42) inside vibez.spill()
+                    const result = self.evaluateMethodCallAtCompileTime(nested_method_call) catch |err| {
+                        print("⚠️ Cannot evaluate method call: {any}\n", .{err});
+                        continue;
+                    };
+                    try ir_args.append(self.allocator, result);
+                    switch (result) {
+                        .Integer => |int_val| print("📝 Captured computed method call result: {d}\n", .{int_val}),
+                        .Float => |float_val| print("📝 Captured computed method call result: {d}\n", .{float_val}),
                         else => {},
                     }
                 },
@@ -1218,6 +1331,95 @@ pub const LLVMIRPipeline = struct {
             },
             else => return CompileError.InvalidExpression,
         };
+    }
+    
+    /// Evaluate method calls at compile time for nested calls in vibez.spill arguments
+    fn evaluateMethodCallAtCompileTime(self: *Self, method_call: *const ast.MethodCallExpression) !IRValue {
+        // Extract method name and object
+        const method_name = std.mem.sliceAsBytes(method_call.method_name[0..]);
+        const object_name = switch (method_call.object.*) {
+            .Identifier => |name| name,
+            .Variable => |name| name,
+            else => return CompileError.InvalidExpression,
+        };
+        
+        const full_method_name = try std.fmt.allocPrint(self.allocator, "{s}.{s}", .{object_name, method_name});
+        defer self.allocator.free(full_method_name);
+        
+        print("🔧 Evaluating nested method call: {s}\n", .{full_method_name});
+        
+        if (std.mem.startsWith(u8, full_method_name, "mathz.")) {
+            const func_name = full_method_name[6..]; // Skip "mathz."
+            
+            // Evaluate arguments recursively
+            var args = std.ArrayListUnmanaged(IRValue){};
+            for (method_call.arguments.items) |arg_ptr| {
+                const arg: *const ast.Expression = @ptrCast(@alignCast(arg_ptr));
+                
+                const arg_value = switch (arg.*) {
+                    .Integer => |int_val| IRValue{ .Integer = int_val },
+                    .Float => |float_val| IRValue{ .Float = float_val },
+                    .Unary => |unary| blk: {
+                        if (std.mem.eql(u8, unary.operator, "-")) {
+                            switch (unary.operand.*) {
+                                .Integer => |int_val| break :blk IRValue{ .Integer = -int_val },
+                                .Float => |float_val| break :blk IRValue{ .Float = -float_val },
+                                else => break :blk IRValue{ .Integer = 0 },
+                            }
+                        } else {
+                            break :blk IRValue{ .Integer = 0 };
+                        }
+                    },
+                    else => IRValue{ .Integer = 0 },
+                };
+                try args.append(self.allocator, arg_value);
+            }
+            
+            // Compute mathz function result
+            return if (std.mem.eql(u8, func_name, "abs_normie") and args.items.len == 1) blk: {
+                const arg = args.items[0];
+                switch (arg) {
+                    .Integer => |val| break :blk IRValue{ .Integer = if (val < 0) -val else val },
+                    .Float => |val| break :blk IRValue{ .Float = if (val < 0) -val else val },
+                    else => break :blk IRValue{ .Integer = 0 },
+                }
+            } else if (std.mem.eql(u8, func_name, "add_two") and args.items.len == 2) blk: {
+                const left = args.items[0];
+                const right = args.items[1];
+                switch (left) {
+                    .Integer => |left_int| switch (right) {
+                        .Integer => |right_int| break :blk IRValue{ .Integer = left_int + right_int },
+                        else => break :blk IRValue{ .Integer = 0 },
+                    },
+                    else => break :blk IRValue{ .Integer = 0 },
+                }
+            } else if (std.mem.eql(u8, func_name, "max") and args.items.len == 2) blk: {
+                const left = args.items[0];
+                const right = args.items[1];
+                switch (left) {
+                    .Integer => |left_int| switch (right) {
+                        .Integer => |right_int| break :blk IRValue{ .Integer = @max(left_int, right_int) },
+                        else => break :blk IRValue{ .Integer = left_int },
+                    },
+                    else => break :blk IRValue{ .Integer = 0 },
+                }
+            } else if (std.mem.eql(u8, func_name, "min") and args.items.len == 2) blk: {
+                const left = args.items[0];
+                const right = args.items[1];
+                switch (left) {
+                    .Integer => |left_int| switch (right) {
+                        .Integer => |right_int| break :blk IRValue{ .Integer = @min(left_int, right_int) },
+                        else => break :blk IRValue{ .Integer = left_int },
+                    },
+                    else => break :blk IRValue{ .Integer = 0 },
+                }
+            } else blk: {
+                print("⚠️ Mathz function not implemented: {s}\n", .{func_name});
+                break :blk IRValue{ .Integer = 0 };
+            };
+        }
+        
+        return CompileError.UnsupportedFeature;
     }
        
     /// Automatically compile LLVM IR to native binary executable
