@@ -358,10 +358,14 @@ pub const Lexer = struct {
         const utf8_codepoint = self.peekUtf8();
         if (utf8_codepoint == 0x0D9E) { // ඞ Unicode codepoint
             // std.debug.print("DEBUG: Found ඞ Unicode character, tokenizing as .At\n", .{});
+            const start_pos = self.position;
             _ = self.advanceUtf8(); // Consume the ඞ character
             const start_line = self.line;
             const start_column = self.column - 1;
-            return self.makeToken(.At, start_line, start_column);
+            
+            // Create token with explicit lexeme for Unicode character
+            const lexeme = self.input[start_pos..self.position];
+            return Token.init(.At, lexeme, start_line, start_column);
         }
 
         const c = self.advance();

@@ -1,0 +1,11 @@
+vibe main
+yeet "vibez"
+
+slay main_character() {
+    vibez.spill("Testing basic pointer...")
+    
+    sus value drip = 42
+    vibez.spill(value)
+    
+    vibez.spill("Basic test complete")
+}

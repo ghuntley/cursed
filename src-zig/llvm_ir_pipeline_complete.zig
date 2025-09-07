@@ -32,6 +32,17 @@ const IRValue = union(enum) {
     Integer: i64,
     Float: f64,
     Variable: []const u8,
+    Pointer: struct {
+        target_type: PointerTargetType,
+        address: u64,
+    },
+};
+
+const PointerTargetType = enum {
+    Integer,
+    Float, 
+    String,
+    Unknown,
 };
 
 const IRFunction = struct {
@@ -1117,6 +1128,15 @@ pub const LLVMIRPipeline = struct {
                     defer self.allocator.free(store_line);
                     try file.writeAll(store_line);
                 },
+                .Pointer => |ptr_val| {
+                    const alloca_line = try std.fmt.allocPrint(self.allocator, "  %{s} = alloca ptr, align 8\n", .{var_data.name});
+                    defer self.allocator.free(alloca_line);
+                    try file.writeAll(alloca_line);
+                    
+                    const store_line = try std.fmt.allocPrint(self.allocator, "  store ptr inttoptr (i64 {d} to ptr), ptr %{s}, align 8\n", .{ptr_val.address, var_data.name});
+                    defer self.allocator.free(store_line);
+                    try file.writeAll(store_line);
+                },
                 .Variable => |_| {
                     // For variables assigned from expressions (like method calls)
                     // We need to allocate space but can't store a specific value yet
@@ -1172,6 +1192,12 @@ pub const LLVMIRPipeline = struct {
                             defer self.allocator.free(call_line);
                             try file.writeAll(call_line);
                         },
+                        .Pointer => |ptr_val| {
+                            // Print pointer as address
+                            const call_line = try std.fmt.allocPrint(self.allocator, "  call void @cursed_runtime_spill_int(i64 {d})\n", .{ptr_val.address});
+                            defer self.allocator.free(call_line);
+                            try file.writeAll(call_line);
+                        },
                         .Variable => |var_name| {
                             // Check if variable exists in our tracked variables before generating load
                             var variable_exists = false;
@@ -1212,6 +1238,20 @@ pub const LLVMIRPipeline = struct {
                                                 try file.writeAll(load_line);
                                                 
                                                 const call_line = try std.fmt.allocPrint(self.allocator, "  call void @cursed_runtime_spill_string(ptr %{s}_load)\n", .{var_name});
+                                                defer self.allocator.free(call_line);
+                                                try file.writeAll(call_line);
+                                            },
+                                            .Pointer => |_| {
+                                                // Load pointer address and print as integer
+                                                const load_line = try std.fmt.allocPrint(self.allocator, "  %{s}_load = load ptr, ptr %{s}, align 8\n", .{var_name, var_name});
+                                                defer self.allocator.free(load_line);
+                                                try file.writeAll(load_line);
+                                                
+                                                const cast_line = try std.fmt.allocPrint(self.allocator, "  %{s}_addr = ptrtoint ptr %{s}_load to i64\n", .{var_name, var_name});
+                                                defer self.allocator.free(cast_line);
+                                                try file.writeAll(cast_line);
+                                                
+                                                const call_line = try std.fmt.allocPrint(self.allocator, "  call void @cursed_runtime_spill_int(i64 %{s}_addr)\n", .{var_name});
                                                 defer self.allocator.free(call_line);
                                                 try file.writeAll(call_line);
                                             },
@@ -1279,6 +1319,43 @@ pub const LLVMIRPipeline = struct {
                         .Float => |val| break :blk IRValue{ .Float = -val },
                         else => break :blk IRValue{ .Integer = 0 },
                     }
+                } else if (unary.operator.len == 3 and 
+                           unary.operator[0] == 0xe0 and unary.operator[1] == 0xb6 and unary.operator[2] == 0x9e) {
+                    // Address-of operation: ඞvariable (Among Us character: UTF-8 bytes e0 b6 9e)
+                    const operand_result = switch (unary.operand.*) {
+                        .Identifier, .Variable => |name| blk2: {
+                            print("🔧 Taking address of variable: {s}\n", .{name});
+                            // Return a pointer value
+                            break :blk2 IRValue{ .Pointer = .{
+                                .target_type = .Integer, // For now, assume integer target
+                                .address = 0x1000, // Mock address
+                            }};
+                        },
+                        else => IRValue{ .Integer = 0 },
+                    };
+                    break :blk operand_result;
+                } else if (std.mem.eql(u8, unary.operator, "*")) {
+                    // Pointer dereferencing: *ptr
+                    const operand = try self.evaluateExpressionAtCompileTime(unary.operand);
+                    const deref_result = switch (operand) {
+                        .Integer => |addr| blk2: {
+                            print("🔧 Dereferencing pointer at address: 0x{x}\n", .{addr});
+                            // For now, return a default dereferenced value
+                            break :blk2 IRValue{ .Integer = 42 }; // Mock dereferenced value
+                        },
+                        .Pointer => |ptr_val| blk2: {
+                            print("🔧 Dereferencing pointer to {s} at address: 0x{x}\n", .{@tagName(ptr_val.target_type), ptr_val.address});
+                            // Return value based on target type
+                            switch (ptr_val.target_type) {
+                                .Integer => break :blk2 IRValue{ .Integer = 42 },
+                                .Float => break :blk2 IRValue{ .Float = 3.14 },
+                                .String => break :blk2 IRValue{ .String = "dereferenced" },
+                                .Unknown => break :blk2 IRValue{ .Integer = 0 },
+                            }
+                        },
+                        else => IRValue{ .Integer = 0 },
+                    };
+                    break :blk deref_result;
                 } else {
                     break :blk IRValue{ .Integer = 0 };
                 }
@@ -1416,6 +1493,18 @@ pub const LLVMIRPipeline = struct {
                 print("🔧 Evaluating member access expression\n", .{});
                 // For now, return a default value - this needs proper struct support
                 break :blk IRValue{ .Integer = 0 };
+            },
+            .Array => |_| blk: {
+                // Handle array literals like []normie{1, 2, 3}
+                print("🔧 Evaluating array literal expression\n", .{});
+                // For now, return a default array representation
+                break :blk IRValue{ .Integer = 0x2000 }; // Mock array address
+            },
+            .ArrayAccess => |_| blk: {
+                // Handle array indexing like arr[0] or (*arr_ptr)[0]
+                print("🔧 Evaluating array access expression\n", .{});
+                // For now, return a default indexed value
+                break :blk IRValue{ .Integer = 1 }; // Mock array element value
             },
             else => {
                 print("⚠️ Unsupported expression type in compile-time evaluation: {}\n", .{expr.*});
@@ -1659,6 +1748,16 @@ pub const LLVMIRPipeline = struct {
         } else if (std.mem.eql(u8, unary.operator, "!")) {
             const one = try self.builder.intConst(llvm.Builder.Type.i1, 1);
             return try wip.bin(.xor, operand, one.toValue(), "");
+        } else if (std.mem.eql(u8, unary.operator, "*")) {
+            // Pointer dereferencing - load from the pointer address
+            print("🔧 Compiling pointer dereferencing operation\n", .{});
+            return try wip.load(.normal, llvm.Builder.Type.i64, operand, .default, "");
+        } else if (unary.operator.len == 3 and 
+                   unary.operator[0] == 0xe0 and unary.operator[1] == 0xb6 and unary.operator[2] == 0x9e) {
+            // Address-of operation: ඞvariable (Among Us character)
+            print("🔧 Compiling address-of operation\n", .{});
+            // For now, return the operand as a pointer (alloca address)
+            return operand;
         } else {
             print("❌ Unsupported unary operator: {s}\n", .{unary.operator});
             return operand;

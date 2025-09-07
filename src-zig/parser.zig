@@ -321,6 +321,7 @@ pub const Parser = struct {
             .Plus, .Minus => .Term,
             .Star, .Slash, .Percent => .Factor,
             .PlusPlus, .MinusMinus => .Unary,
+            .Bang, .At => .Unary, // Added .At for ඞ unary operator
             .LeftParen, .LeftBracket, .LeftBrace => .Call,
             .Dot => .Access,
             else => .None,
@@ -339,7 +340,7 @@ pub const Parser = struct {
             .LeftParen => parsePrattGrouping,
             .LeftBracket => parsePrattArrayOrComposite,
             .LeftBrace => parsePrattMapOrComposite,
-            .Bang, .Minus, .Star, .Amp => parsePrattUnary,
+            .Bang, .Minus, .Star, .Amp, .At => parsePrattUnary, // Added .At for ඞ address-of operator
             .PlusPlus, .MinusMinus => parsePrattPrefixIncrement,
             .Normie, .Tea, .Txt, .Sip, .Smol, .Mid, .Thicc, .Snack, .Meal, .Byte, .Rune, .Extra, .Lit, .Cap, .Yikes => parsePrattTypeForComposite,
             else => null,
@@ -1293,7 +1294,7 @@ pub const Parser = struct {
             return Statement{ .Function = self.parseFunctionStatement() catch |parse_err| {
                 const error_token = if (self.current < self.tokens.len) self.tokens[self.current] else self.tokens[self.tokens.len - 1];
                 _ = self.reportErrorAtToken(error_token, "Error parsing function statement") catch {};
-                
+
                 // Try to recover to the end of the function
                 self.syncToMatchingDelimiter(.LeftBrace, .RightBrace);
                 self.recoverFromStatementError();
@@ -1608,7 +1609,7 @@ pub const Parser = struct {
         
         // Parse optional type annotation after identifier
         var var_type: ?Type = null;
-        if (self.checkBasicType() or self.check(.Identifier) or self.check(.Slay)) {
+        if (self.checkBasicType() or self.check(.Identifier) or self.check(.Slay) or self.check(.At)) {
             var_type = try self.parseType();
         }
         
@@ -1622,7 +1623,6 @@ pub const Parser = struct {
         
         // Parse initializer
         if (self.match(.Equal) or self.match(.ColonEqual)) {
-            // std.debug.print("DEBUG: About to parse initializer expression for variable: {s}\n", .{name});
             const init_expr = try self.parseExpression();
             const init_ptr = try self.arena_allocator.create(Expression);
     
@@ -2315,7 +2315,7 @@ pub const Parser = struct {
     }
 
     fn parseUnary(self: *Parser) ParserError!Expression {
-        if (self.match(.Bang) or self.match(.Minus) or self.match(.Star) or self.match(.Amp)) {
+        if (self.match(.Bang) or self.match(.Minus) or self.match(.Star) or self.match(.Amp) or self.match(.At)) {
             const operator = self.previous().lexeme;
             const right = try self.parseUnary();
             
@@ -4498,6 +4498,7 @@ pub const Parser = struct {
                self.check(.Thicc) or self.check(.Snack) or self.check(.Meal) or
                self.check(.Byte) or self.check(.Rune) or self.check(.Extra) or
                self.check(.Lit) or self.check(.Cap) or self.check(.Yikes) or self.check(.Identifier);
+               // Removed .At - pointer types should be handled separately in parseType
     }
 
     fn advance(self: *Parser) Token {
