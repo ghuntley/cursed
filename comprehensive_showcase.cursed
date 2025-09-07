@@ -1,0 +1,30 @@
+vibe main
+yeet "vibez"
+yeet "mathz"
+
+slay main_character() {
+    vibez.spill("=== CURSED Compiler Showcase ===")
+    
+    fr fr Test basic types
+    sus number drip = 42
+    sus pi meal = 3.14159
+    sus name tea = "CURSED Language"
+    
+    vibez.spill("Variables:")
+    vibez.spill(number)
+    vibez.spill(pi) 
+    vibez.spill(name)
+    
+    fr fr Test arithmetic
+    vibez.spill("Arithmetic:")
+    vibez.spill(number + 8)
+    vibez.spill(pi * 2)
+    
+    fr fr Test mathz functions
+    vibez.spill("Mathz Functions:")
+    vibez.spill(mathz.abs_normie(-17))
+    vibez.spill(mathz.max(number, 50))
+    vibez.spill(mathz.add_two(10, 15))
+    
+    vibez.spill("=== Showcase Complete ===")
+}
