@@ -1291,7 +1291,6 @@ pub const Parser = struct {
         
         // Function declaration (slay) with enhanced error recovery
         if (self.check(.Slay)) {
-            std.debug.print("🔧 DEBUG: Found .Slay token, parsing function...\n", .{});
             return Statement{ .Function = self.parseFunctionStatement() catch |parse_err| {
                 const error_token = if (self.current < self.tokens.len) self.tokens[self.current] else self.tokens[self.tokens.len - 1];
                 _ = self.reportErrorAtToken(error_token, "Error parsing function statement") catch {};

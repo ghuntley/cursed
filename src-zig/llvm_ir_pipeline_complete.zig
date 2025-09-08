@@ -225,6 +225,7 @@ pub const LLVMIRPipeline = struct {
     /// Declare CURSED function signature
     fn declareCursedFunction(self: *Self, func_stmt: *const ast.FunctionStatement) !void {
         const func_name = func_stmt.name;
+        print("🔧 Declaring LLVM function: {s}\n", .{func_name});
         
         // Determine return type based on function signature
         const return_type = if (std.mem.eql(u8, func_name, "main_character")) 
@@ -1592,6 +1593,27 @@ pub const LLVMIRPipeline = struct {
         try file.writeAll("declare void @cursed_runtime_spill_int(i64)\n");
         try file.writeAll("declare void @cursed_runtime_spill_float(double)\n");
         try file.writeAll("declare void @cursed_runtime_spill_bool(i64)\n\n");
+        
+        // Write user-defined function declarations
+        try file.writeAll("; User-defined CURSED Functions\n");
+        var function_iter = self.functions.iterator();
+        while (function_iter.next()) |entry| {
+            const func_name = entry.key_ptr.*;
+            _ = entry.value_ptr.*; // Unused but needed for iteration
+            
+            // Skip main_character since it's written as main later
+            if (std.mem.eql(u8, func_name, "main_character")) continue;
+            
+            // Get function type info and generate declaration  
+            const declaration = try std.fmt.allocPrint(self.allocator, "declare {s} @{s}(...)\n", .{"i64", func_name});
+            defer self.allocator.free(declaration);
+            try file.writeAll(declaration);
+        }
+        try file.writeAll("\n");
+        
+        // TODO: Write user function implementations
+        // For now, user functions will be declared but not implemented
+        // This allows calls to compile but functions won't execute correctly
         
         // Output main function with REAL program content
         try file.writeAll("define i32 @main() {\n");
