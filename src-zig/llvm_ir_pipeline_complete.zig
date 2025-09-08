@@ -763,50 +763,19 @@ pub const LLVMIRPipeline = struct {
     
     /// Compile assignment with COMPLETE load/store implementation  
     fn compileAssignmentStatement(self: *Self, wip: *llvm.Builder.WipFunction, assign_stmt: *const ast.AssignmentStatement) (Allocator.Error || CompileError)!void {
-        // Extract variable name from assignment target (cast from anyopaque)
+        // Oracle's Step 2.3: Extract variable name and resolve to alloca
         const target_expr: *const ast.Expression = @ptrCast(@alignCast(assign_stmt.target));
         const var_name = switch (target_expr.*) {
             .Identifier => |name| name,
             .Variable => |name| name,
-            else => {
-                print("⚠️ Complex assignment targets not implemented yet\n", .{});
-                return;
-            },
+            else => return CompileError.InvalidExpression,
         };
         
-        print("🔧 Processing assignment: {s} = ...\n", .{var_name});
-        
-        // Evaluate the new value for this variable
+        // Oracle's Step 2.3: resolve identifier → alloca; compile rhs → value; store(value, alloca)
+        const ptr = self.variables.get(var_name) orelse return CompileError.VariableNotFound;
         const value_expr: *const ast.Expression = @ptrCast(@alignCast(assign_stmt.value));
-        const new_value = self.evaluateExpressionAtCompileTime(value_expr) catch |err| {
-            print("⚠️ Cannot evaluate assignment value for {s}: {any}\n", .{var_name, err});
-            return;
-        };
-        
-        print("📝 Computed new value for {s}: ", .{var_name});
-        switch (new_value) {
-            .Integer => |int_val| print("{d}\n", .{int_val}),
-            .Float => |float_val| print("{d}\n", .{float_val}), 
-            .Boolean => |bool_val| print("{s}\n", .{if (bool_val) "based" else "cringe"}),
-            .String => |str_val| print("\"{s}\"\n", .{str_val}),
-            else => print("(other type)\n", .{}),
-        }
-        
-        // Update captured variables for text generation and condition evaluation
-        for (self.captured_variables.items) |*var_data| {
-            if (std.mem.eql(u8, var_data.name, var_name)) {
-                // Update the captured variable value
-                var_data.value = new_value;
-                print("✅ Updated captured variable {s} for loop iteration\n", .{var_name});
-                break;
-            }
-        }
-        
-        // Also update Builder API variables if they exist
-        if (self.variables.get(var_name)) |var_ref| {
-            const value = try self.compileCompleteExpression(wip, value_expr);
-            _ = try wip.store(.normal, value, var_ref, .default);
-        }
+        const rhs = try self.compileCompleteExpression(wip, value_expr);
+        _ = try wip.store(.normal, rhs, ptr, .default);
     }
     
     /// Compile return statement with COMPLETE implementation
