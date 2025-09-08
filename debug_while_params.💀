@@ -1,0 +1,30 @@
+vibe main
+
+yeet "vibez"
+
+slay test_while(limit normie) {
+    vibez.spill("Starting test_while with limit:")
+    vibez.spill(limit)
+    
+    sus i normie = 1
+    vibez.spill("Initial i:")
+    vibez.spill(i)
+    
+    periodt (i <= limit) {
+        vibez.spill("In loop, i =")
+        vibez.spill(i)
+        i = i + 1
+        
+        ready (i > 3) {
+            vibez.spill("Breaking early")
+            break
+        }
+    }
+    
+    vibez.spill("Loop finished")
+}
+
+slay main_character() {
+    test_while(5)
+    damn
+}

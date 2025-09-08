@@ -13,7 +13,7 @@ define i32 @main() {
 entry:
   ; Variable: i
   %i = alloca i64, align 8
-  store i64 16, ptr %i, align 8
+  store i64 1, ptr %i, align 8
   ; Call: vibez.spill
   call void @cursed_runtime_spill_string(ptr @.str.0)
   call void @cursed_runtime_spill_string(ptr @newline_str)
