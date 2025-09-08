@@ -1,0 +1,25 @@
+vibe main
+yeet "vibez"
+
+slay multiply_numbers(x normie, y normie) normie {
+    damn x * y
+}
+
+slay subtract_and_double(a normie, b normie) normie {
+    sus diff normie = a - b
+    damn diff * 2
+}
+
+slay main_character() {
+    vibez.spill("=== Multiple Function Test ===")
+    
+    sus result1 normie = multiply_numbers(6, 7)
+    vibez.spill("multiply_numbers(6, 7) =")
+    vibez.spill(result1)
+    
+    sus result2 normie = subtract_and_double(20, 8)
+    vibez.spill("subtract_and_double(20, 8) =")  
+    vibez.spill(result2)
+    
+    vibez.spill("=== Test Complete ===")
+}

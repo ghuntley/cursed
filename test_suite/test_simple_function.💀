@@ -1,0 +1,16 @@
+vibe main
+yeet "vibez"
+
+slay simple_test(n normie) normie {
+    damn n * 3
+}
+
+slay main_character() {
+    vibez.spill("=== Simple Function Test ===")
+    
+    sus result normie = simple_test(7)
+    vibez.spill("simple_test(7) =")
+    vibez.spill(result)
+    
+    vibez.spill("=== Test Complete ===")
+}
