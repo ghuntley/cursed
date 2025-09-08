@@ -1300,7 +1300,7 @@ Found 444 test files
     === LeetCode #1: Two Sum (Basic) === 
     Array: [2, 7, 11, 15], Target: 9 
     Found indices: 0, 1 
-    thread 2200599 panic: integer overflow
+    thread 2229171 panic: integer overflow
             return InterpreterError.TypeMismatch;
             ^
                 .Binary => |bin| return try self.evaluateBinary(bin),
@@ -1347,8 +1347,8 @@ Found 444 test files
                                ^
                 const result = root.main() catch |err| {
                                         ^
-    ../sysdeps/nptl/libc_start_call_main.h:58:16: 0x72a63402a1c9 in __libc_start_call_main (../sysdeps/x86/libc-start.c)
-    ../csu/libc-start.c:360:3: 0x72a63402a28a in __libc_start_main_impl (../sysdeps/x86/libc-start.c)
+    ../sysdeps/nptl/libc_start_call_main.h:58:16: 0x79c7ce62a1c9 in __libc_start_call_main (../sysdeps/x86/libc-start.c)
+    ../csu/libc-start.c:360:3: 0x79c7ce62a28a in __libc_start_main_impl (../sysdeps/x86/libc-start.c)
     ???:?:?: 0x16c59a4 in ??? (???)
     ???:?:?: 0x0 in ??? (???)
 
@@ -2710,7 +2710,7 @@ Found 444 test files
     === LeetCode #13: Roman to Integer === 
     III -> 3: 
     DEBUG: Function 'roman_to_int' not found
-    thread 2209434 panic: integer overflow
+    thread 2238011 panic: integer overflow
                         return InterpreterError.UndefinedFunction;
                         ^
                 .Call => |call| return try self.evaluateCall(call),
@@ -2745,8 +2745,8 @@ Found 444 test files
                                ^
                 const result = root.main() catch |err| {
                                         ^
-    ../sysdeps/nptl/libc_start_call_main.h:58:16: 0x7178f162a1c9 in __libc_start_call_main (../sysdeps/x86/libc-start.c)
-    ../csu/libc-start.c:360:3: 0x7178f162a28a in __libc_start_main_impl (../sysdeps/x86/libc-start.c)
+    ../sysdeps/nptl/libc_start_call_main.h:58:16: 0x71c406e2a1c9 in __libc_start_call_main (../sysdeps/x86/libc-start.c)
+    ../csu/libc-start.c:360:3: 0x71c406e2a28a in __libc_start_main_impl (../sysdeps/x86/libc-start.c)
     ???:?:?: 0x16c59a4 in ??? (???)
     ???:?:?: 0x0 in ??? (???)
 
@@ -3188,7 +3188,7 @@ Found 444 test files
   [36mInterpreter (exit: 134):[0m
     === LeetCode #125: Valid Palindrome === 
     DEBUG: Function 'is_alphanumeric' not found
-    thread 2211894 panic: integer overflow
+    thread 2240471 panic: integer overflow
                         return InterpreterError.UndefinedFunction;
                         ^
                 .Call => |call| return try self.evaluateCall(call),
@@ -3245,8 +3245,8 @@ Found 444 test files
                                ^
                 const result = root.main() catch |err| {
                                         ^
-    ../sysdeps/nptl/libc_start_call_main.h:58:16: 0x71ed8f82a1c9 in __libc_start_call_main (../sysdeps/x86/libc-start.c)
-    ../csu/libc-start.c:360:3: 0x71ed8f82a28a in __libc_start_main_impl (../sysdeps/x86/libc-start.c)
+    ../sysdeps/nptl/libc_start_call_main.h:58:16: 0x71a79f82a1c9 in __libc_start_call_main (../sysdeps/x86/libc-start.c)
+    ../csu/libc-start.c:360:3: 0x71a79f82a28a in __libc_start_main_impl (../sysdeps/x86/libc-start.c)
     ???:?:?: 0x16c59a4 in ??? (???)
     ???:?:?: 0x0 in ??? (???)
 
@@ -3320,7 +3320,7 @@ Found 444 test files
   [36mInterpreter (exit: 134):[0m
     === LeetCode #242: Valid Anagram === 
     DEBUG: Function 'is_anagram' not found
-    thread 2212209 panic: integer overflow
+    thread 2240785 panic: integer overflow
                         return InterpreterError.UndefinedFunction;
                         ^
                 .Call => |call| return try self.evaluateCall(call),
@@ -3355,8 +3355,8 @@ Found 444 test files
                                ^
                 const result = root.main() catch |err| {
                                         ^
-    ../sysdeps/nptl/libc_start_call_main.h:58:16: 0x79843862a1c9 in __libc_start_call_main (../sysdeps/x86/libc-start.c)
-    ../csu/libc-start.c:360:3: 0x79843862a28a in __libc_start_main_impl (../sysdeps/x86/libc-start.c)
+    ../sysdeps/nptl/libc_start_call_main.h:58:16: 0x74d272e2a1c9 in __libc_start_call_main (../sysdeps/x86/libc-start.c)
+    ../csu/libc-start.c:360:3: 0x74d272e2a28a in __libc_start_main_impl (../sysdeps/x86/libc-start.c)
     ???:?:?: 0x16c59a4 in ??? (???)
     ???:?:?: 0x0 in ??? (???)
 
@@ -4253,7 +4253,7 @@ Found 444 test files
   [36mInterpreter (exit: 134):[0m
     === Pointer Regression Test === 
     Math with pointers: 
-    thread 2217096 panic: integer overflow
+    thread 2245673 panic: integer overflow
                         return InterpreterError.UndefinedFunction;
                         ^
                     return try self.evaluateMethodCall(object_as_member, method_call.arguments.items);
@@ -4290,8 +4290,8 @@ Found 444 test files
                                ^
                 const result = root.main() catch |err| {
                                         ^
-    ../sysdeps/nptl/libc_start_call_main.h:58:16: 0x78ca40c2a1c9 in __libc_start_call_main (../sysdeps/x86/libc-start.c)
-    ../csu/libc-start.c:360:3: 0x78ca40c2a28a in __libc_start_main_impl (../sysdeps/x86/libc-start.c)
+    ../sysdeps/nptl/libc_start_call_main.h:58:16: 0x7c6b0f22a1c9 in __libc_start_call_main (../sysdeps/x86/libc-start.c)
+    ../csu/libc-start.c:360:3: 0x7c6b0f22a28a in __libc_start_main_impl (../sysdeps/x86/libc-start.c)
     ???:?:?: 0x16c59a4 in ??? (???)
     ???:?:?: 0x0 in ??? (???)
 
@@ -4383,7 +4383,7 @@ Found 444 test files
 [1m[401/444] Testing: regression/02_variable_scope_regression.💀[0m
   Result: [31mINTERPRETER ERROR (compiled worked)[0m
   [36mInterpreter (exit: 134):[0m
-    thread 2217221 panic: integer overflow
+    thread 2245798 panic: integer overflow
             return InterpreterError.UndefinedVariable;
             ^
                         return InterpreterError.UndefinedVariable;
@@ -4410,8 +4410,8 @@ Found 444 test files
                                ^
                 const result = root.main() catch |err| {
                                         ^
-    ../sysdeps/nptl/libc_start_call_main.h:58:16: 0x7cb98d62a1c9 in __libc_start_call_main (../sysdeps/x86/libc-start.c)
-    ../csu/libc-start.c:360:3: 0x7cb98d62a28a in __libc_start_main_impl (../sysdeps/x86/libc-start.c)
+    ../sysdeps/nptl/libc_start_call_main.h:58:16: 0x70269ea2a1c9 in __libc_start_call_main (../sysdeps/x86/libc-start.c)
+    ../csu/libc-start.c:360:3: 0x70269ea2a28a in __libc_start_main_impl (../sysdeps/x86/libc-start.c)
     ???:?:?: 0x16c59a4 in ??? (???)
     ???:?:?: 0x0 in ??? (???)
 
@@ -6544,5 +6544,5 @@ Found 444 test files
   Compile Errors: 18
 
   Pass Rate: 68%
-Report saved to: /home/ghuntley/cursed/test_suite/results/test_suite_report_20250908_071234.md
+Report saved to: /home/ghuntley/cursed/test_suite/results/test_suite_report_20250908_071647.md
 [31mSome tests failed. See details above.[0m
