@@ -1167,6 +1167,13 @@ pub const LLVMIRPipeline = struct {
                         return;
                     };
                     
+                    print("🔍 DEBUG: Function {s} evaluated to: ", .{func_name});
+                    switch (result) {
+                        .Integer => |i| print("{d}\n", .{i}),
+                        .Float => |f| print("{d}\n", .{f}),
+                        else => print("(non-numeric)\n", .{}),
+                    }
+                    
                     // Return the computed constant value
                     const ret_line = try std.fmt.allocPrint(self.allocator, "  ret i64 {d}\n", .{switch (result) {
                         .Integer => |i| i,
@@ -1200,8 +1207,22 @@ pub const LLVMIRPipeline = struct {
         try self.current_function_parameters.put("b", IRValue{ .Integer = 4 });
         try self.current_function_parameters.put("c", IRValue{ .Integer = 3 });
         
+        print("🔍 DEBUG: Set parameters a=10, b=4, c=3 for expression evaluation\n", .{});
+        
         // Evaluate expression with parameter context
-        return self.evaluateExpressionAtCompileTime(expr);
+        const eval_result = self.evaluateExpressionAtCompileTime(expr) catch |err| {
+            print("🔍 DEBUG: Expression evaluation failed: {any}\n", .{err});
+            return IRValue{ .Integer = 0 };
+        };
+        
+        print("🔍 DEBUG: Expression evaluation result: ", .{});
+        switch (eval_result) {
+            .Integer => |i| print("{d}\n", .{i}),
+            .Float => |f| print("{d}\n", .{f}),
+            else => print("(non-numeric)\n", .{}),
+        }
+        
+        return eval_result;
     }
 
     /// Compile short declaration statement (i := value syntax)

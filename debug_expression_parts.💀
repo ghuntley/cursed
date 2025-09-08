@@ -1,0 +1,19 @@
+vibe main
+
+yeet "vibez"
+
+slay test_parts(a normie, b normie, c normie) normie {
+    sus part1 normie = a + b
+    sus part2 normie = part1 * c
+    sus part3 normie = a - b  
+    sus part4 normie = part3 / 2
+    sus final normie = part2 - part4
+    damn final
+}
+
+slay main_character() {
+    vibez.spill("Testing expression parts:")
+    vibez.spill("a + b should be 14:")
+    vibez.spill(test_parts(10, 4, 3))
+    damn
+}
