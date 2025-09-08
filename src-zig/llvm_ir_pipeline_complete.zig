@@ -1814,7 +1814,6 @@ pub const LLVMIRPipeline = struct {
         
         // Generate variable allocations from unique variables to avoid conflicts  
         var var_iterator = unique_variables.valueIterator();
-        var string_index: u32 = 0; // Track string indices
         while (var_iterator.next()) |var_data| {
             const comment = try std.fmt.allocPrint(self.allocator, "  ; Variable: {s}\n", .{var_data.name});
             defer self.allocator.free(comment);
@@ -1830,15 +1829,25 @@ pub const LLVMIRPipeline = struct {
                     defer self.allocator.free(store_line);
                     try file.writeAll(store_line);
                 },
-                .String => |_| {
+                .String => |str_val| {
                     const alloca_line = try std.fmt.allocPrint(self.allocator, "  %{s} = alloca ptr, align 8\n", .{var_data.name});
                     defer self.allocator.free(alloca_line);
                     try file.writeAll(alloca_line);
                     
-                    const store_line = try std.fmt.allocPrint(self.allocator, "  store ptr @.str.{d}, ptr %{s}, align 8\n", .{string_index, var_data.name});
-                    string_index += 1;
+                    // Find the correct string index in captured_strings
+                    const correct_str_idx = blk: {
+                        for (self.captured_strings.items, 0..) |captured_str, idx| {
+                            if (std.mem.eql(u8, captured_str, str_val)) {
+                                break :blk idx;
+                            }
+                        }
+                        break :blk 0; // Fallback to first string if not found
+                    };
+                    
+                    const store_line = try std.fmt.allocPrint(self.allocator, "  store ptr @.str.{d}, ptr %{s}, align 8\n", .{correct_str_idx, var_data.name});
                     defer self.allocator.free(store_line);
                     try file.writeAll(store_line);
+                    print("🔧 Fixed string variable {s} to use correct index {d} for value '{s}'\n", .{var_data.name, correct_str_idx, str_val});
                 },
                 .Float => |float_val| {
                     const alloca_line = try std.fmt.allocPrint(self.allocator, "  %{s} = alloca double, align 8\n", .{var_data.name});
