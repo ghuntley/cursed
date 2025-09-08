@@ -1,22 +1,30 @@
-; Generated LLVM IR from CURSED with REAL program data
-target triple = "x86_64-unknown-linux-gnu"
+; ModuleID = 'debug_simple_let'
+source_filename = "debug_simple_let"
 
-; CURSED Runtime Function Declarations
-declare void @cursed_runtime_spill_string(ptr)
-declare void @cursed_runtime_spill_int(i64)
-declare void @cursed_runtime_spill_float(double)
-declare void @cursed_runtime_spill_bool(i64)
+declare void @cursed_runtime_spill_string(ptr %0)
+
+declare void @cursed_runtime_spill_int(i64 %0)
+
+declare i32 @printf(ptr %0, ...)
+
+define i64 @simple_add(i64 %0, i64 %1) {
+entry:
+  %a = alloca i64
+  store i64 %0, ptr %a
+  %b = alloca i64
+  store i64 %1, ptr %b
+  %2 = load i64, ptr %a
+  %3 = load i64, ptr %b
+  %4 = add i64 %2, %3
+  ret i64 %4
+  ret i64 0
+}
 
 define i32 @main() {
 entry:
-  ; Variable: test_var
-  %test_var = alloca ptr, align 8
-  store ptr @.str.0, ptr %test_var, align 8
-  ; Call: vibez.spill
-  %test_var_load_0 = load ptr, ptr %test_var, align 8
-  call void @cursed_runtime_spill_string(ptr %test_var_load_0)
+  %result = alloca i64
+  %0 = call i64 @simple_add(i64 5, i64 3)
+  store i64 %0, ptr %result
+  ret void
   ret i32 0
 }
-
-; String Constants
-@.str.0 = private unnamed_addr constant [11 x i8] c"HelloWorld\00", align 1

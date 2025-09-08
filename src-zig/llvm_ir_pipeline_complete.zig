@@ -1423,21 +1423,61 @@ pub const LLVMIRPipeline = struct {
 
     /// Compile vibez.spill() with COMPLETE multi-argument formatting like interpreter
     fn compileVibezSpillComplete(self: *Self, wip: *llvm.Builder.WipFunction, method_call: *const ast.MethodCallExpression) (Allocator.Error || CompileError)!llvm.Builder.Value {
-        
+
         if (method_call.arguments.items.len == 0) {
-            // No arguments - just print newline  
-            const call = IRCall{
-                .function_name = try self.allocator.dupe(u8, "vibez.spill"),
-                .args = &[_]IRValue{},
-            };
-            try self.captured_calls.append(self.allocator, call);
-            print("✅ Empty vibez.spill() call captured\n", .{});
+            // No arguments - just print newline using runtime function call
+            const newline_fn = self.external_functions.get("cursed_spill_string") orelse 
+                return CompileError.FunctionNotFound;
+            
+            // Create newline string constant
+            const newline_str = try self.compileStringConstant("\n");
+            _ = try wip.call(.normal, .default, .none, 
+                newline_fn.typeOf(&self.builder), newline_fn.toValue(&self.builder), 
+                &[_]llvm.Builder.Value{newline_str}, "");
+            print("✅ Empty vibez.spill() call compiled to runtime\n", .{});
             
             const zero = try self.builder.intConst(llvm.Builder.Type.i32, 0);
             return zero.toValue();
         }
         
-        // Use enhanced string interpolation approach for perfect interpreter matching
+        // Oracle's guidance: Generate runtime calls instead of capture
+        // For single argument, call appropriate runtime function based on argument type
+        if (method_call.arguments.items.len == 1) {
+            const arg_ptr: *const ast.Expression = @ptrCast(@alignCast(method_call.arguments.items[0]));
+            const arg_value = try self.compileCompleteExpression(wip, arg_ptr);
+            
+            // Determine runtime function based on argument type
+            const arg_type = arg_value.typeOfWip(wip);
+            const runtime_fn = if (arg_type == llvm.Builder.Type.i64)
+                self.external_functions.get("cursed_spill_int")
+            else if (arg_type == llvm.Builder.Type.ptr)
+                self.external_functions.get("cursed_spill_string")
+            else if (arg_type == llvm.Builder.Type.double)
+                self.external_functions.get("cursed_spill_float")
+            else if (arg_type == llvm.Builder.Type.i1)
+                self.external_functions.get("cursed_spill_bool")
+            else
+                self.external_functions.get("cursed_spill_int"); // Default
+            
+            const fn_ref = runtime_fn orelse return CompileError.FunctionNotFound;
+            _ = try wip.call(.normal, .default, .none, 
+                fn_ref.typeOf(&self.builder), fn_ref.toValue(&self.builder),
+                &[_]llvm.Builder.Value{arg_value}, "");
+                
+            // Add newline call after spill
+            const newline_fn = self.external_functions.get("cursed_spill_string") orelse 
+                return CompileError.FunctionNotFound;
+            const newline_str = try self.compileStringConstant("\n");
+            _ = try wip.call(.normal, .default, .none, 
+                newline_fn.typeOf(&self.builder), newline_fn.toValue(&self.builder),
+                &[_]llvm.Builder.Value{newline_str}, "");
+            
+            print("✅ Single-argument vibez.spill() compiled to runtime\n", .{});
+            const zero = try self.builder.intConst(llvm.Builder.Type.i32, 0);
+            return zero.toValue();
+        }
+        
+        // For multi-argument calls, fall back to interpolation for now
         return self.compileVibezSpillWithInterpolation(wip, method_call);
     }
     
