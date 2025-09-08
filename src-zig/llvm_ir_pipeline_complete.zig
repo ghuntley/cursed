@@ -665,152 +665,20 @@ pub const LLVMIRPipeline = struct {
         }
     }
     
-    /// Compile let statement with COMPLETE alloca/store implementation
+    /// Compile let statement with runtime-first Oracle implementation
     fn compileLetStatement(self: *Self, wip: *llvm.Builder.WipFunction, let_stmt: *const ast.LetStatement) (Allocator.Error || CompileError)!void {
         const var_name = let_stmt.name;
-        const var_type = llvm.Builder.Type.i64; // Default to i64
-        
-        // CAPTURE variable declaration for dynamic IR generation
-        if (let_stmt.initializer) |initializer| {
-            const expr_ptr: *const ast.Expression = @ptrCast(@alignCast(initializer));
-            
-            // Use recursive evaluator for any expression type
-            const result_value = self.evaluateExpressionAtCompileTime(expr_ptr) catch |err| {
-                print("⚠️ Cannot evaluate variable initializer: {any}\n", .{err});
-                
-                // Check if this is a function call that failed compile-time evaluation
-                if (expr_ptr.* == .Call) {
-                    const call = expr_ptr.Call;
-                    const func_name = switch (call.function.*) {
-                        .Identifier => |name| name,
-                        .Variable => |name| name,
-                        else => "unknown",
-                    };
-                    
-                    // Evaluate actual arguments
-                    var args = std.ArrayList(IRValue){ .items = &.{}, .capacity = 0 };
-                    defer args.deinit(self.allocator);
-                    
-                    for (call.arguments.items) |arg_ptr| {
-                        const arg: *const ast.Expression = @ptrCast(@alignCast(arg_ptr));
-                        const arg_value = switch (arg.*) {
-                            .Integer => |val| IRValue{ .Integer = val },
-                            .Float => |val| IRValue{ .Float = val },
-                            .Identifier, .Variable => |name| blk: {
-                                // Look up variable value
-                                for (self.captured_variables.items) |captured_var| {
-                                    if (std.mem.eql(u8, captured_var.name, name)) {
-                                        break :blk captured_var.value;
-                                    }
-                                }
-                                break :blk IRValue{ .Integer = 0 }; // Default if not found
-                            },
-                            else => IRValue{ .Integer = 0 }, // Default for unsupported types
-                        };
-                        try args.append(self.allocator, arg_value);
-                    }
-                    
-                    // Store as function call for dynamic IR generation
-                    const owned_name = try self.allocator.dupe(u8, var_name);
-                    const owned_func_name = try self.allocator.dupe(u8, func_name);
-                    const args_slice = try self.allocator.dupe(IRValue, args.items);
-                    const var_data = IRVariable{
-                        .name = owned_name,
-                        .value = IRValue{ .FunctionCall = .{ 
-                            .function_name = owned_func_name, 
-                            .arg_count = call.arguments.items.len,
-                            .args = args_slice,
-                        } },
-                    };
-                    try self.captured_variables.append(self.allocator, var_data);
-                    print("📝 Captured function call: {s}({d} args) = call to {s}\n", .{var_name, args.items.len, func_name});
-                    
-                    // Still create alloca for Builder state
-                    const alloca = try wip.alloca(.normal, var_type, .none, .default, .default, "");
-                    try self.variables.put(var_name, alloca);
-                    return;
-                }
-                
-                // Fallback: create variable with default value
-                const owned_name = try self.allocator.dupe(u8, var_name);
-                const var_data = IRVariable{
-                    .name = owned_name,
-                    .value = IRValue{ .Integer = 0 },
-                };
-                try self.captured_variables.append(self.allocator, var_data);
-                print("📝 Captured default variable: {s} = 0 (fallback)\n", .{var_name});
-                
-                // Still create alloca for Builder state
-                const alloca = try wip.alloca(.normal, var_type, .none, .default, .default, "");
-                try self.variables.put(var_name, alloca);
-                return;
-            };
-            
-            // Store the computed result
-            const owned_name = try self.allocator.dupe(u8, var_name);
-            switch (result_value) {
-                .String => |str_val| {
-                    const owned_str = try self.allocator.dupe(u8, str_val);
-                    try self.captured_strings.append(self.allocator, owned_str);
-                    const var_data = IRVariable{
-                        .name = owned_name,
-                        .value = IRValue{ .String = owned_str },
-                    };
-                    try self.captured_variables.append(self.allocator, var_data);
-                    print("📝 Captured computed string variable: {s} = {s}\n", .{var_name, str_val});
-                },
-                .Integer => |int_val| {
-                    const var_data = IRVariable{
-                        .name = owned_name,
-                        .value = IRValue{ .Integer = int_val },
-                    };
-                    try self.captured_variables.append(self.allocator, var_data);
-                    print("📝 Captured computed integer variable: {s} = {d}\n", .{var_name, int_val});
-                },
-                .Float => |float_val| {
-                    const var_data = IRVariable{
-                        .name = owned_name,
-                        .value = IRValue{ .Float = float_val },
-                    };
-                    try self.captured_variables.append(self.allocator, var_data);
-                    print("📝 Captured computed float variable: {s} = {d}\n", .{var_name, float_val});
-                },
-                .Boolean => |bool_val| {
-                    const var_data = IRVariable{
-                        .name = owned_name,
-                        .value = IRValue{ .Boolean = bool_val },
-                    };
-                    try self.captured_variables.append(self.allocator, var_data);
-                    print("📝 Captured computed boolean variable: {s} = {s}\n", .{var_name, if (bool_val) "based" else "cringe"});
-                },
-                .Pointer => |ptr_val| {
-                    const var_data = IRVariable{
-                        .name = owned_name,
-                        .value = IRValue{ .Pointer = ptr_val },
-                    };
-                    try self.captured_variables.append(self.allocator, var_data);
-                    print("📝 Captured computed pointer variable: {s} = 0x{x}\n", .{var_name, ptr_val.address});
-                },
-                else => {
-                    const var_data = IRVariable{
-                        .name = owned_name,
-                        .value = IRValue{ .Integer = 0 },
-                    };
-                    try self.captured_variables.append(self.allocator, var_data);
-                    print("📝 Captured default variable: {s} = 0\n", .{var_name});
-                },
-            }
-        }
-        
-        // Oracle pattern: alloca with alignment (still create for Builder state)
-        const alloca = try wip.alloca(.normal, var_type, .none, .default, .default, "");
-        try self.variables.put(var_name, alloca);
-        
-        // Initialize if there's a value
+        const ptr_ty = llvm.Builder.Type.i64; // TODO: real type inference
+        const one = try self.builder.intConst(llvm.Builder.Type.i32, 1);
+
+        const slot = try wip.alloca(.normal, ptr_ty, one.toValue(), .default, .default, var_name);
+        const stable_name = try self.allocator.dupe(u8, var_name);
+        try self.variables.put(stable_name, slot);
+
         if (let_stmt.initializer) |initializer| {
             const expr_ptr: *const ast.Expression = @ptrCast(@alignCast(initializer));
             const value = try self.compileCompleteExpression(wip, expr_ptr);
-            _ = try wip.store(.normal, value, alloca, .default);
+            _ = try wip.store(.normal, value, slot, .default);
         }
     }
     
