@@ -1,9 +1,13 @@
 vibe vibez
 
 slay spill(message tea) {
-    fr fr Built-in print function - implementation provided by runtime
+    fr fr Print string message followed by newline
+    fr fr This should interface with the CURSED runtime
+    damn
 }
 
 slay spill(value normie) {
-    fr fr Built-in print function for integers - implementation provided by runtime
+    fr fr Print integer value followed by newline  
+    fr fr This should interface with the CURSED runtime
+    damn
 }

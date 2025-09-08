@@ -362,6 +362,9 @@ pub const LLVMIRPipeline = struct {
             }
         }
         
+        // Process imports first to load stdlib modules
+        try self.processImports(program);
+        
         if (has_main_character) {
             // Compile all functions including main_character -> main
             try self.compileFunctions(program);
@@ -370,7 +373,83 @@ pub const LLVMIRPipeline = struct {
             try self.createWrapperMain(program);
         }
     }
-    
+
+    /// Process import statements and load stdlib modules
+    fn processImports(self: *Self, program: *const ast.Program) !void {
+        for (program.statements.items) |stmt_ptr| {
+            const stmt: *const ast.Statement = @ptrCast(@alignCast(stmt_ptr));
+            if (stmt.* == .Import) {
+                const import_stmt = stmt.Import;
+                
+                // Extract module name from import path
+                const module_name = import_stmt.path;
+                print("🔧 Processing import: yeet \"{s}\"\n", .{module_name});
+                
+                // Load stdlib module based on name
+                if (std.mem.eql(u8, module_name, "vibez")) {
+                    try self.loadStdlibModule("vibez");
+                } else if (std.mem.eql(u8, module_name, "mathz")) {
+                    try self.loadStdlibModule("mathz");
+                } else if (std.mem.eql(u8, module_name, "stringz")) {
+                    try self.loadStdlibModule("stringz");
+                } else {
+                    print("⚠️ Unknown stdlib module: {s}\n", .{module_name});
+                }
+            }
+        }
+    }
+
+    /// Load and compile a stdlib module 
+    fn loadStdlibModule(self: *Self, module_name: []const u8) !void {
+        print("📚 Loading stdlib module: {s}\n", .{module_name});
+        
+        // Construct path to stdlib module: stdlib/{module_name}/mod.💀
+        const module_path = try std.fmt.allocPrint(self.allocator, "stdlib/{s}/mod.💀", .{module_name});
+        defer self.allocator.free(module_path);
+        
+        // Read module source file
+        const module_source = std.fs.cwd().readFileAlloc(self.allocator, module_path, 1024 * 1024) catch |err| {
+            print("❌ Failed to load module {s}: {any}\n", .{module_name, err});
+            return;
+        };
+        defer self.allocator.free(module_source);
+        
+        // Parse the module
+        var lex = lexer.Lexer.init(self.allocator, module_source);
+        var tokens_list = try lex.tokenize();
+        defer tokens_list.deinit(self.allocator);
+        
+        var module_parser = parser.Parser.initWithFile(self.allocator, tokens_list.items, module_path);
+        defer module_parser.deinit();
+        
+        const module_program = try module_parser.parseProgram();
+        
+        // Compile functions from the module
+        print("🔧 Compiling functions from module {s}\n", .{module_name});
+        for (module_program.statements.items) |stmt_ptr| {
+            const stmt: *const ast.Statement = @ptrCast(@alignCast(stmt_ptr));
+            if (stmt.* == .Function) {
+                const func_ptr: *const ast.FunctionStatement = @ptrCast(@alignCast(&stmt.Function));
+                
+                // Register function with module prefix: vibez_spill, mathz_add, etc.
+                const prefixed_name = try std.fmt.allocPrint(self.allocator, "{s}_{s}", .{module_name, func_ptr.name});
+                
+                // Temporarily modify function name to include prefix for registration
+                const original_name = func_ptr.name;
+                
+                // Create a copy of the function with prefixed name for proper registration
+                var modified_func = func_ptr.*;
+                modified_func.name = prefixed_name;
+                
+                // Declare and implement with prefixed name
+                try self.declareCursedFunction(&modified_func);
+                try self.implementCursedFunction(&modified_func);
+                
+                print("✅ Loaded function: {s} as {s}\n", .{original_name, prefixed_name});
+            }
+        }
+    }
+
     /// Compile all function statements in the program
     fn compileFunctions(self: *Self, program: *const ast.Program) !void {
         // First pass: declare all function signatures
@@ -1354,27 +1433,33 @@ pub const LLVMIRPipeline = struct {
         
         // Debug: Compiling method call: {s}
         
-        // Handle vibez.spill specially with proper multi-argument formatting
-        if (std.mem.eql(u8, full_method_name, "vibez.spill")) {
-            return try self.compileVibezSpillComplete(wip, method_call);
+        // Core method call compilation - resolve method through module system
+        // Method calls like vibez.spill() should be resolved as function calls to stdlib
+        
+        // Convert method call to function call syntax
+        const func_name = try std.fmt.allocPrint(self.allocator, "{s}_{s}", .{object_name, method_name});
+        defer self.allocator.free(func_name);
+        
+        // Look up the function (should be imported from stdlib)
+        const callee = self.functions.get(func_name) orelse self.external_functions.get(func_name) orelse {
+            print("⚠️ Method {s} not found in module system\n", .{full_method_name});
+            return CompileError.FunctionNotFound;
+        };
+
+        // Compile arguments using runtime generation
+        var args = std.ArrayListUnmanaged(llvm.Builder.Value){};
+        defer args.deinit(self.allocator);
+
+        for (method_call.arguments.items) |arg_ptr| {
+            const arg: *const ast.Expression = @ptrCast(@alignCast(arg_ptr));
+            const arg_value = try self.compileCompleteExpression(wip, arg);
+            try args.append(self.allocator, arg_value);
         }
         
-        // Handle common mathz functions with compile-time evaluation
-        if (std.mem.startsWith(u8, full_method_name, "mathz.")) {
-            return try self.compileMathzCall(wip, method_call, full_method_name);
-        }
-        
-        // Handle stringz functions
-        if (std.mem.startsWith(u8, full_method_name, "stringz.")) {
-            return try self.compileStringzCall(wip, method_call, full_method_name);
-        }
-        
-        // Generate proper runtime function call instead of returning 0
-        print("🔧 Generating runtime call for method: {s}\n", .{full_method_name});
-        
-        // Try to generate a runtime function call for non-compile-time evaluable methods
-        // This handles user-defined functions and stdlib functions with variables
-        return try self.compileRuntimeMethodCall(wip, method_call, full_method_name);
+        // Generate the method call as a regular function call
+        return try wip.call(.normal, .default, .none, 
+            callee.typeOf(&self.builder), callee.toValue(&self.builder), 
+            args.items, "");
     }
     
     /// Compile runtime method calls for stdlib functions with variables and user functions
