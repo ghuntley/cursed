@@ -788,6 +788,25 @@ pub const LLVMIRPipeline = struct {
         const value_expr: *const ast.Expression = @ptrCast(@alignCast(assign_stmt.value));
         const rhs = try self.compileCompleteExpression(wip, value_expr);
         _ = try wip.store(.normal, rhs, ptr, .default);
+        
+        // Also update captured variables for text generation (hybrid approach)
+        const new_value = self.evaluateExpressionAtCompileTime(value_expr) catch IRValue{ .Integer = 0 };
+        
+        // Update existing captured variable or create new one
+        for (self.captured_variables.items) |*var_data| {
+            if (std.mem.eql(u8, var_data.name, var_name)) {
+                var_data.value = new_value;
+                return;
+            }
+        }
+        
+        // Variable not in captured list - add it
+        const owned_name = try self.allocator.dupe(u8, var_name);
+        const var_data = IRVariable{
+            .name = owned_name,
+            .value = new_value,
+        };
+        try self.captured_variables.append(self.allocator, var_data);
     }
     
     /// Compile return statement with COMPLETE implementation
@@ -2483,7 +2502,12 @@ pub const LLVMIRPipeline = struct {
             try file.writeAll(call_comment);
             
             if (std.mem.eql(u8, call.function_name, "vibez.spill")) {
-                for (call.args) |arg| {
+                for (call.args, 0..) |arg, arg_idx| {
+                    // Add space before non-first arguments to match interpreter behavior
+                    if (arg_idx > 0) {
+                        try file.writeAll("  call void @cursed_runtime_spill_string(ptr @space_str)\n");
+                    }
+                    
                     switch (arg) {
                         .String => |str_val| {
                             const str_idx = blk: {
@@ -2745,6 +2769,9 @@ pub const LLVMIRPipeline = struct {
         
         // Add newline constant for vibez.spill formatting
         try file.writeAll("@newline_str = private unnamed_addr constant [2 x i8] c\"\\0A\\00\", align 1\n");
+        
+        // Add space constant for multi-argument vibez.spill formatting
+        try file.writeAll("@space_str = private unnamed_addr constant [2 x i8] c\" \\00\", align 1\n");
         
         // Add hello comma constant for greet function
         try file.writeAll("@hello_comma_str = private unnamed_addr constant [7 x i8] c\"Hello,\\00\", align 1\n");
