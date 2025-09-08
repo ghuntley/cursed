@@ -968,7 +968,7 @@ pub const Interpreter = struct {
     }
 
     pub fn execute(self: *Interpreter, program: Program) InterpreterError!void {
-        // First pass: collect type and function declarations
+        // Enhanced first pass: collect function declarations with error isolation
         for (program.statements.items) |stmt_ptr| {
             const stmt: *Statement = @ptrCast(@alignCast(stmt_ptr));
             switch (stmt.*) {
