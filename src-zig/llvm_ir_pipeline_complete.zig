@@ -206,66 +206,29 @@ pub const LLVMIRPipeline = struct {
     
     /// Write Builder API output to IR file (with proper control flow support)
     fn writeBuilderAPIOutput(self: *Self, ir_file: []const u8) !void {
-        _ = self; _ = ir_file;
-        print("🚀 Attempting to use Builder API output with control flow support...\n", .{});
+        print("🚀 Using Builder API output with control flow support...\n", .{});
         
-        // For now, this is a stub - the Builder API path needs to be completed
-        // The issue is that the Builder API compilation doesn't save its output
-        // and the text generation path doesn't handle control flow
-        
-        // TODO: Implement proper Builder API output saving
-        return CompileError.UnsupportedFeature;
+        // Oracle's guidance: This should just call writeFinalIR
+        try self.writeFinalIR(ir_file);
     }
 
     /// Generate real function implementation from stored AST (NO PLACEHOLDERS)
     fn generateRealFunctionImplementation(self: *Self, file: std.fs.File, func_name: []const u8, func_ast: *const ast.FunctionStatement) !void {
+        _ = file; // Use implementCursedFunction instead of direct IR generation
         print("🔧 Generating REAL implementation for function: {s} (parameters: {d})\n", .{func_name, func_ast.parameters.items.len});
         
-        // For calculate_complex specifically, generate the exact calculation
-        if (std.mem.eql(u8, func_name, "calculate_complex")) {
-            // calculate_complex(a, b, c) = (a + b) * c - (a - b) / 2
-            const impl = try std.fmt.allocPrint(self.allocator,
-                \\define i64 @{s}(i64 %a, i64 %b, i64 %c) {{
-                \\  %sum = add i64 %a, %b
-                \\  %mult = mul i64 %sum, %c  
-                \\  %diff = sub i64 %a, %b
-                \\  %div = sdiv i64 %diff, 2
-                \\  %result = sub i64 %mult, %div
-                \\  ret i64 %result
-                \\}}
-                \\
-            , .{func_name});
-            defer self.allocator.free(impl);
-            try file.writeAll(impl);
-            print("✅ Generated calculate_complex with correct 3-parameter arithmetic\n", .{});
-            return;
-        }
+        // Oracle's guidance: wire this to implementCursedFunction
+        // All heavy lifting should happen in implementCursedFunction and compileCompleteStatement
+        try self.implementCursedFunction(func_ast);
         
-        // For other functions, generate basic implementation with correct parameter count
-        try file.writeAll("define i64 @");
-        try file.writeAll(func_name);
-        try file.writeAll("(");
-        
-        // Write actual parameters from AST
-        for (func_ast.parameters.items, 0..) |param, i| {
-            if (i > 0) try file.writeAll(", ");
-            const param_str = try std.fmt.allocPrint(self.allocator, "i64 %{s}", .{param.name});
-            defer self.allocator.free(param_str);
-            try file.writeAll(param_str);
-        }
-        try file.writeAll(") {\n");
-        
-        // Simple implementation: return first parameter or 0
-        if (func_ast.parameters.items.len > 0) {
-            const ret_line = try std.fmt.allocPrint(self.allocator, "  ret i64 %{s}\n", .{func_ast.parameters.items[0].name});
-            defer self.allocator.free(ret_line);
-            try file.writeAll(ret_line);
-        } else {
-            try file.writeAll("  ret i64 0\n");
-        }
-        
-        try file.writeAll("}\n\n");
         print("✅ Generated implementation for {s}\n", .{func_name});
+    }
+
+    /// Write complete LLVM IR from Builder API to file (Oracle's recommended approach)
+    fn writeFinalIR(self: *Self, path: []const u8) !void {
+        // Use Builder API's built-in print functionality
+        try self.builder.printToFilePath(std.fs.cwd(), path);
+        print("✅ Generated complete IR from Builder API to {s}\n", .{path});
     }
 
     /// Generate LLVM IR instructions for an expression with runtime parameters  
@@ -911,9 +874,10 @@ pub const LLVMIRPipeline = struct {
             // Generate appropriate return value based on expected type
             const return_value = switch (expected_return_type) {
                 llvm.Builder.Type.i32 => blk: {
-                    // For i32 return (main_character), return 0
+                    // For i32 return (main_character), compile expression but convert to i32
+                    _ = try self.compileCompleteExpression(wip, expr_ptr); // Execute the expression for side effects
                     const zero = try self.builder.intConst(llvm.Builder.Type.i32, 0);
-                    break :blk zero.toValue();
+                    break :blk zero.toValue(); // For now, return 0 but compile the expression
                 },
                 llvm.Builder.Type.i1 => blk: {
                     // For boolean return (lit), return true 
@@ -2142,37 +2106,10 @@ pub const LLVMIRPipeline = struct {
             // Skip main_character since it's written as main later
             if (std.mem.eql(u8, func_name, "main_character")) continue;
             
-            // Generate actual function implementation from stored AST
-            if (self.function_asts.get(func_name)) |func_ast| {
-                try self.generateRealFunctionImplementation(file, func_name, func_ast);
-                continue;
-            }
-            
-            // Use hardcoded implementations based on function signature instead of AST
-            // This avoids AST memory corruption issues
-            
-            // For now, use a simple heuristic for parameter count based on function name
-            // This is a temporary solution until we fix AST storage
-            var param_count: u32 = 2; // Default assumption for most functions
-            
-            // Try to infer parameter count from common function name patterns
-            if (std.mem.containsAtLeast(u8, func_name, 1, "greet") or 
-                std.mem.containsAtLeast(u8, func_name, 1, "double") or
-                std.mem.containsAtLeast(u8, func_name, 1, "square") or
-                std.mem.endsWith(u8, func_name, "_one")) {
-                param_count = 1;
-            } else if (std.mem.containsAtLeast(u8, func_name, 1, "three") or
-                       std.mem.containsAtLeast(u8, func_name, 1, "triple") or
-                       std.mem.eql(u8, func_name, "calculate_complex") or
-                       std.mem.containsAtLeast(u8, func_name, 1, "complex")) {
-                param_count = 3;
-            }
-            
-            print("🔧 Generating fallback implementation for {s} with {d} parameters\n", .{func_name, param_count});
-            
-            print("⚠️ No AST found for function {s}, using generic fallback\n", .{func_name});
-            // Use generic implementation only as last resort
-            try self.generateGenericFunctionImplementation(file, func_name, param_count);
+            // Function bodies are now handled by Builder API in implementCursedFunction
+            // Skip text generation for function bodies - they're already compiled
+            print("🔧 Skipping text generation for {s} - already compiled via Builder API\n", .{func_name});
+            continue;
         }
         try file.writeAll("\n");
         
@@ -3176,7 +3113,7 @@ pub const LLVMIRPipeline = struct {
         const ir_file = try std.fmt.allocPrint(self.allocator, "{s}.ll", .{output_file});
         defer self.allocator.free(ir_file);
         
-        // Try to use Builder API output if available, otherwise fallback to text generation
+        // Hybrid approach: Try Builder API first, fallback to text generation for main function
         self.writeBuilderAPIOutput(ir_file) catch |err| {
             print("⚠️ Builder API output failed ({any}), falling back to text generation\n", .{err});
             try self.writeAssemblyFile(ir_file);

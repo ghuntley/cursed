@@ -1,0 +1,9 @@
+vibe main
+
+slay add_test(x normie, y normie) normie {
+    damn x + y
+}
+
+slay main_character() {
+    damn 0
+}
