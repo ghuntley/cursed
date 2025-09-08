@@ -1527,6 +1527,9 @@ pub const LLVMIRPipeline = struct {
             return try self.captureFunctionCallForTextGeneration(wip, call, func_name);
         }
         
+        // For all function calls, also capture for text generation to ensure definitions are included
+        _ = try self.captureFunctionCallForTextGeneration(wip, call, func_name);
+        
         // Use Builder API for simple numeric functions
         const callee = self.functions.get(func_name) orelse 
             return CompileError.FunctionNotFound;
@@ -2440,8 +2443,14 @@ pub const LLVMIRPipeline = struct {
             }
             
             if (function_needed) {
-                // Generate simple fallback implementation for captured functions
-                try self.generateGenericFunctionImplementation(file, func_name, 1); // Assume 1 param for captured calls
+                // Get actual parameter count from function AST
+                const param_count = if (self.function_asts.get(func_name)) |func_ast|
+                    @as(u32, @intCast(func_ast.parameters.items.len))
+                else
+                    1; // Fallback if AST not available
+                
+                // Generate function implementation with correct parameter count
+                try self.generateGenericFunctionImplementation(file, func_name, param_count);
             }
             
             print("🔧 Skipping text generation for {s} - already compiled via Builder API\n", .{func_name});
@@ -3478,11 +3487,8 @@ pub const LLVMIRPipeline = struct {
         const ir_file = try std.fmt.allocPrint(self.allocator, "{s}.ll", .{output_file});
         defer self.allocator.free(ir_file);
         
-        // Hybrid Oracle + working approach: Try Builder API, fallback to text generation for stdlib
-        self.writeBuilderAPIOutput(ir_file) catch |err| {
-            print("⚠️ Builder API output failed ({any}), using text generation for main function\n", .{err});
-            try self.writeAssemblyFile(ir_file);
-        };
+        // Always use text generation fallback to include all needed function definitions  
+        try self.writeAssemblyFile(ir_file);
         
         // Step 2: Determine target executable name
         const exe_name = if (@import("builtin").target.os.tag == .windows)
