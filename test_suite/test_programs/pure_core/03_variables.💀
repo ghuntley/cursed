@@ -1,0 +1,13 @@
+vibe main
+
+slay main_character() {
+    sus a normie = 100
+    sus b normie = 200
+    sus c normie = 300
+    
+    a = b + c
+    b = a - 100
+    c = b * 2
+    
+    damn
+}

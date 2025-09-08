@@ -1,0 +1,15 @@
+vibe main
+
+slay multiply(a normie, b normie) normie {
+    damn a * b
+}
+
+slay complex_calc(x normie, y normie, z normie) normie {
+    sus temp normie = multiply(x, y)
+    damn temp + z
+}
+
+slay main_character() {
+    sus result normie = complex_calc(3, 4, 5)
+    damn
+}

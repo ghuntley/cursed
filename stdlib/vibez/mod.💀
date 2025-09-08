@@ -1,13 +1,13 @@
 vibe vibez
 
 slay spill(message tea) {
-    fr fr Print string message followed by newline
-    fr fr This should interface with the CURSED runtime
+    fr fr Simple implementation for testing
+    sus dummy normie = 1
     damn
 }
 
 slay spill(value normie) {
-    fr fr Print integer value followed by newline  
-    fr fr This should interface with the CURSED runtime
+    fr fr Simple implementation for testing  
+    sus dummy normie = value
     damn
 }
