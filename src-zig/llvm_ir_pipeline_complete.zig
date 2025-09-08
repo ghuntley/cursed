@@ -1437,8 +1437,6 @@ pub const LLVMIRPipeline = struct {
     
     /// Compile function calls with COMPLETE implementation
     fn compileFunctionCall(self: *Self, wip: *llvm.Builder.WipFunction, call: *const ast.CallExpression) (Allocator.Error || CompileError)!llvm.Builder.Value {
-        _ = wip; // Unused in text generation approach
-        
         // Get function name
         const func_name = switch (call.function.*) {
             .Identifier => |name| name,
@@ -1450,43 +1448,24 @@ pub const LLVMIRPipeline = struct {
             },
         };
         
-        // For user-defined functions, use text generation approach instead of Builder API
-        // This avoids the type mismatch issues in the Builder API during function body compilation
-        print("🔧 Capturing user-defined function call: {s} for text generation\n", .{func_name});
+        // Oracle's guidance: Generate function call using Builder API, not capture
+        print("🔧 Compiling user-defined function call: {s} with Builder API\n", .{func_name});
         
-        // Evaluate arguments at compile time
-        var eval_args = std.ArrayListUnmanaged(IRValue){};
-        defer eval_args.deinit(self.allocator);
-        
+        // Oracle's guidance: Compile function call using Builder API
+        const callee = self.functions.get(func_name) orelse 
+            return CompileError.FunctionNotFound;
+
+        var args = std.ArrayListUnmanaged(llvm.Builder.Value){};
+        defer args.deinit(self.allocator);
+
         for (call.arguments.items) |arg_ptr| {
             const arg: *const ast.Expression = @ptrCast(@alignCast(arg_ptr));
-            
-            // Try to evaluate at compile time to get the value
-            const arg_value = self.evaluateExpressionAtCompileTime(arg) catch {
-                // If can't evaluate, use a default value
-                try eval_args.append(self.allocator, IRValue{ .Integer = 0 });
-                continue;
-            };
-            try eval_args.append(self.allocator, arg_value);
+            const arg_value = try self.compileCompleteExpression(wip, arg);
+            try args.append(self.allocator, arg_value);
         }
         
-        // Create an owned copy of the arguments
-        const owned_args = try self.allocator.alloc(IRValue, eval_args.items.len);
-        for (eval_args.items, 0..) |arg, i| {
-            owned_args[i] = arg;
-        }
-        
-        // Capture this function call for text generation
-        const owned_func_name = try self.allocator.dupe(u8, func_name);
-        const call_data = IRCall{
-            .function_name = owned_func_name,
-            .args = owned_args,
-        };
-        try self.captured_calls.append(self.allocator, call_data);
-        
-        // Return a placeholder value for Builder API - this will be replaced in text generation
-        const placeholder = try self.builder.intConst(llvm.Builder.Type.i64, 42);
-        return placeholder.toValue();
+        // Generate the actual function call
+        return try wip.call(.normal, .default, .none, callee.typeOf(&self.builder), callee.toValue(&self.builder), args.items, "");
     }
     
     /// Compile method calls (vibez.spill, etc.) with COMPLETE implementation
