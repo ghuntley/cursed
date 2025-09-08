@@ -2554,6 +2554,59 @@ pub const LLVMIRPipeline = struct {
             }
         }
         
+        // Generate standalone function calls that aren't part of vibez.spill
+        for (self.captured_calls.items) |call| {
+            if (!std.mem.eql(u8, call.function_name, "vibez.spill")) {
+                // This is a standalone user-defined function call
+                const call_comment = try std.fmt.allocPrint(self.allocator, "  ; Standalone call: {s}\n", .{call.function_name});
+                defer self.allocator.free(call_comment);
+                try file.writeAll(call_comment);
+                
+                // Generate function call IR
+                const call_start = try std.fmt.allocPrint(self.allocator, "  call i64 @{s}(", .{call.function_name});
+                defer self.allocator.free(call_start);
+                try file.writeAll(call_start);
+                
+                // Generate arguments
+                for (call.args, 0..) |arg_value, i| {
+                    if (i > 0) try file.writeAll(", ");
+                    switch (arg_value) {
+                        .Integer => |int_val| {
+                            const arg_str = try std.fmt.allocPrint(self.allocator, "i64 {d}", .{int_val});
+                            defer self.allocator.free(arg_str);
+                            try file.writeAll(arg_str);
+                        },
+                        .String => |str_val| {
+                            // Find string index
+                            const str_idx = blk: {
+                                for (self.captured_strings.items, 0..) |captured_str, idx| {
+                                    if (std.mem.eql(u8, captured_str, str_val)) {
+                                        break :blk idx;
+                                    }
+                                }
+                                break :blk 0; // Fallback
+                            };
+                            const arg_str = try std.fmt.allocPrint(self.allocator, "ptr @.str.{d}", .{str_idx});
+                            defer self.allocator.free(arg_str);
+                            try file.writeAll(arg_str);
+                        },
+                        .Float => |float_val| {
+                            const arg_str = try std.fmt.allocPrint(self.allocator, "double {d}", .{float_val});
+                            defer self.allocator.free(arg_str);
+                            try file.writeAll(arg_str);
+                        },
+                        .Boolean => |bool_val| {
+                            const arg_str = try std.fmt.allocPrint(self.allocator, "i1 {s}", .{if (bool_val) "true" else "false"});
+                            defer self.allocator.free(arg_str);
+                            try file.writeAll(arg_str);
+                        },
+                        else => try file.writeAll("i64 0"),
+                    }
+                }
+                try file.writeAll(")\n");
+            }
+        }
+        
         try file.writeAll("  ret i32 0\n");
         try file.writeAll("}\n\n");
         
