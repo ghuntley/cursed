@@ -1,0 +1,12 @@
+vibe main
+
+yeet "vibez"
+
+slay simple_add(a normie, b normie) normie {
+    damn a + b
+}
+
+slay main_character() {
+    sus result normie = simple_add(5, 3)
+    vibez.spill(result)
+}
