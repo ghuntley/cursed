@@ -701,8 +701,8 @@ export fn runtime_cos(value: f64) f64 {
 
 /// Test the stdlib core functionality
 pub fn test_stdlib_core() !void {
-    print("\n🧪 Testing CURSED Stdlib Core Implementation\n", .{});
-    print("=========================================\n", .{});
+        if (verbose) print("debug: \n🧪 Testing CURSED Stdlib Core Implementation\n", .{});
+        if (verbose) print("debug: =========================================\n", .{});
     
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     defer _ = gpa.deinit();
@@ -713,41 +713,41 @@ pub fn test_stdlib_core() !void {
     var core = get_stdlib_core();
     
     // Test string functions
-    print("Testing string functions...\n", .{});
+        if (verbose) print("debug: Testing string functions...\n", .{});
     const test_string = "Hello";
     const char_at_2 = core.string_char_at(test_string, 2);
-    print("Character at index 2 of 'Hello': {c}\n", .{char_at_2});
+        if (verbose) print("debug: Character at index 2 of 'Hello': {c}\n", .{char_at_2});
     
     const int_string = try core.int_to_string(42);
     defer allocator.free(int_string);
-    print("Integer 42 as string: {s}\n", .{int_string});
+        if (verbose) print("debug: Integer 42 as string: {s}\n", .{int_string});
     
     // Test math functions
-    print("Testing math functions...\n", .{});
-    print("abs(-5): {s}\n", .{core.abs_int(-5)});
-    print("sqrt(16): {s}\n", .{core.sqrt(16.0)});
-    print("sin(0): {s}\n", .{core.sin(0.0)});
+        if (verbose) print("debug: Testing math functions...\n", .{});
+        if (verbose) print("debug: abs(-5): {s}\n", .{core.abs_int(-5)});
+        if (verbose) print("debug: sqrt(16): {s}\n", .{core.sqrt(16.0)});
+        if (verbose) print("debug: sin(0): {s}\n", .{core.sin(0.0)});
     
     // Test file operations
-    print("Testing file operations...\n", .{});
+        if (verbose) print("debug: Testing file operations...\n", .{});
     const test_file = "test_stdlib_core.txt";
     const test_content = "Hello from CURSED stdlib core!";
     
     if (try core.write_file_content(test_file, test_content)) {
-        print("Successfully wrote test file\n", .{});
+        if (verbose) print("debug: Successfully wrote test file\n", .{});
         
         if (core.file_exists(test_file)) {
-            print("File exists check: passed\n", .{});
+        if (verbose) print("debug: File exists check: passed\n", .{});
             
             const read_content = try core.read_file_content(test_file);
             defer allocator.free(read_content);
-            print("Read content: {s}\n", .{read_content});
+        if (verbose) print("debug: Read content: {s}\n", .{read_content});
             
             if (core.delete_file(test_file)) {
-                print("Successfully deleted test file\n", .{});
+        if (verbose) print("debug: Successfully deleted test file\n", .{});
             }
         }
     }
     
-    print("\n✅ Stdlib Core tests completed successfully\n", .{});
+        if (verbose) print("debug: \n✅ Stdlib Core tests completed successfully\n", .{});
 }
