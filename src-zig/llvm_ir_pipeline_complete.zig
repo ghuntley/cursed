@@ -2548,6 +2548,9 @@ pub const LLVMIRPipeline = struct {
                         },
                     }
                 }
+                
+                // Add newline after each vibez.spill call to match interpreter behavior
+                try file.writeAll("  call void @cursed_runtime_spill_string(ptr @newline_str)\n");
             }
         }
         
@@ -2562,6 +2565,9 @@ pub const LLVMIRPipeline = struct {
             defer self.allocator.free(str_line);
             try file.writeAll(str_line);
         }
+        
+        // Add newline constant for vibez.spill formatting
+        try file.writeAll("@newline_str = private unnamed_addr constant [2 x i8] c\"\\0A\\00\", align 1\n");
         
         print("✅ Generated dynamic LLVM IR with {d} strings, {d} variables, {d} calls\n", 
             .{self.captured_strings.items.len, self.captured_variables.items.len, self.captured_calls.items.len});
@@ -2965,6 +2971,21 @@ pub const LLVMIRPipeline = struct {
                             break :blk IRValue{ .Integer = @mod(left_int, right_int) };
                         },
                         else => break :blk IRValue{ .Integer = 0 },
+                    },
+                    else => break :blk IRValue{ .Integer = 0 },
+                }
+            } else if (std.mem.eql(u8, func_name, "sqrt") and args.items.len == 1) blk: {
+                const arg = args.items[0];
+                switch (arg) {
+                    .Integer => |int_val| {
+                        if (int_val < 0) break :blk IRValue{ .Integer = 0 };
+                        // Integer square root approximation
+                        const sqrt_val = @sqrt(@as(f64, @floatFromInt(int_val)));
+                        break :blk IRValue{ .Integer = @intFromFloat(sqrt_val) };
+                    },
+                    .Float => |float_val| {
+                        if (float_val < 0) break :blk IRValue{ .Float = 0.0 };
+                        break :blk IRValue{ .Float = @sqrt(float_val) };
                     },
                     else => break :blk IRValue{ .Integer = 0 },
                 }
