@@ -1,0 +1,14 @@
+vibe main
+
+yeet "vibez"
+
+slay test_if(unknown_param normie) {
+    ready (unknown_param % 2 == 0) {
+        vibez.spill("Even")
+    }
+}
+
+slay main_character() {
+    test_if(42)
+    damn
+}
