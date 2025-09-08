@@ -1,0 +1,19 @@
+vibe main
+
+slay add_two(a normie, b normie) normie {
+    damn a + b
+}
+
+slay multiply(x normie, y normie) normie {
+    damn x * y
+}
+
+slay main_character() {
+    sus a normie = 10
+    sus b normie = 5
+    sus sum normie = add_two(a, b)
+    sus product normie = multiply(a, b)
+    
+    fr fr Should compute: sum = 15, product = 50
+    damn
+}

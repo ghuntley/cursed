@@ -431,8 +431,22 @@ pub const LLVMIRPipeline = struct {
             if (stmt.* == .Function) {
                 const func_ptr: *const ast.FunctionStatement = @ptrCast(@alignCast(&stmt.Function));
                 
-                // Register function with module prefix: vibez_spill, mathz_add, etc.
-                const prefixed_name = try std.fmt.allocPrint(self.allocator, "{s}_{s}", .{module_name, func_ptr.name});
+                // Register function with module prefix and parameter signature to handle overloads
+                const param_signature = if (func_ptr.parameters.items.len > 0)
+                    switch (func_ptr.parameters.items[0].param_type) {
+                        .Basic => |basic| switch (basic) {
+                            .Tea, .Txt => "_string",
+                            .Normie => "_int", 
+                            .Lit => "_bool",
+                            .Drip, .Snack, .Meal => "_float",
+                            else => "_generic",
+                        },
+                        else => "_generic",
+                    }
+                else 
+                    "_void";
+                    
+                const prefixed_name = try std.fmt.allocPrint(self.allocator, "{s}_{s}{s}", .{module_name, func_ptr.name, param_signature});
                 
                 // Temporarily modify function name to include prefix for registration
                 const original_name = func_ptr.name;
@@ -631,22 +645,29 @@ pub const LLVMIRPipeline = struct {
             print("✅ Registered function parameter: {s} (type: {})\n", .{param.name, param_llvm_type});
         }
         
+        // Oracle's guidance: Track if explicit return was processed
+        var has_explicit_return = false;
+        
         // Compile function body with COMPLETE implementation
-        for (func_stmt.body.items) |stmt| {
+        for (func_stmt.body.items) |stmt_ptr| {
+            const stmt: *const ast.Statement = @ptrCast(@alignCast(stmt_ptr));
+            if (stmt.* == .Return) {
+                has_explicit_return = true;
+            }
             try self.compileCompleteStatement(&wip, stmt);
         }
-        
-        // Add return if not present and function expects a return value
-        if (std.mem.eql(u8, func_name, "main_character")) {
-            // main_character maps to main() and must return i32 for C compatibility
-            // Only add return if no explicit return was processed
-            const zero = try self.builder.intConst(llvm.Builder.Type.i32, 0);
-            _ = try wip.ret(zero.toValue());
-        } else if (func_stmt.return_type != null) {
-            // Function has a return type but no explicit return found
-            // Add default return based on type
-            if (func_stmt.return_type) |ret_type| {
-                switch (ret_type) {
+
+        // Oracle's guidance: Only add default return if no explicit return was processed
+        if (!has_explicit_return) {
+            if (std.mem.eql(u8, func_name, "main_character")) {
+                // main_character maps to main() and must return i32 for C compatibility
+                const zero = try self.builder.intConst(llvm.Builder.Type.i32, 0);
+                _ = try wip.ret(zero.toValue());
+            } else if (func_stmt.return_type != null) {
+                // Function has a return type but no explicit return found
+                // Add default return based on type
+                if (func_stmt.return_type) |ret_type| {
+                    switch (ret_type) {
                     .Basic => |basic_type| switch (basic_type) {
                         .Normie, .Thicc => {
                             const zero = try self.builder.intConst(llvm.Builder.Type.i64, 0);
@@ -663,11 +684,9 @@ pub const LLVMIRPipeline = struct {
                     else => {
                         _ = try wip.retVoid();
                     },
+                    }
                 }
             }
-        } else {
-            // Function has no return type, use void return
-            _ = try wip.retVoid();
         }
         
         // CRITICAL: Oracle says finish() exactly once
@@ -820,7 +839,18 @@ pub const LLVMIRPipeline = struct {
             print("✅ Compiled return statement with value\n", .{});
         } else {
             // Return statement without value: damn
-            _ = try wip.retVoid();
+            // Check if function expects a return value (use existing variable)
+            if (expected_return_type == llvm.Builder.Type.void) {
+                _ = try wip.retVoid();
+            } else if (expected_return_type == llvm.Builder.Type.i32) {
+                // main_character should return 0
+                const zero = try self.builder.intConst(llvm.Builder.Type.i32, 0);
+                _ = try wip.ret(zero.toValue());
+            } else {
+                // Other functions with no explicit return - return default value
+                const zero = try self.builder.intConst(expected_return_type, 0);
+                _ = try wip.ret(zero.toValue());
+            }
             print("✅ Compiled return statement (void)\n", .{});
         }
     }
@@ -1405,8 +1435,22 @@ pub const LLVMIRPipeline = struct {
         // Core method call compilation - resolve method through module system
         // Method calls like vibez.spill() should be resolved as function calls to stdlib
         
-        // Convert method call to function call syntax
-        const func_name = try std.fmt.allocPrint(self.allocator, "{s}_{s}", .{object_name, method_name});
+        // Convert method call to function call syntax with overload resolution
+        // Try to determine parameter signature from first argument
+        var param_signature: []const u8 = "_generic";
+        if (method_call.arguments.items.len > 0) {
+            const first_arg: *const ast.Expression = @ptrCast(@alignCast(method_call.arguments.items[0]));
+            param_signature = switch (first_arg.*) {
+                .String => "_string",
+                .Integer => "_int",
+                .Boolean => "_bool", 
+                .Float => "_float",
+                .Identifier, .Variable => |_| "_generic",
+                else => "_generic",
+            };
+        }
+        
+        const func_name = try std.fmt.allocPrint(self.allocator, "{s}_{s}{s}", .{object_name, method_name, param_signature});
         defer self.allocator.free(func_name);
         
         // Look up the function (should be imported from stdlib)
