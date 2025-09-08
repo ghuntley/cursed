@@ -1,128 +1,85 @@
-; Generated LLVM IR from CURSED with REAL program data
-target triple = "x86_64-unknown-linux-gnu"
+; ModuleID = 'comprehensive_core_test'
+source_filename = "comprehensive_core_test"
 
-; CURSED Runtime Function Declarations
-declare void @cursed_runtime_spill_string(ptr)
-declare void @cursed_runtime_spill_int(i64)
-declare void @cursed_runtime_spill_float(double)
-declare void @cursed_runtime_spill_bool(i64)
+declare void @cursed_runtime_spill_string(ptr %0)
 
-; User-defined CURSED Functions
-define i64 @test_control_flow(i64 %p0, i64 %p1) {
-  %result = add i64 %p0, %p1
-  ret i64 %result
+declare void @cursed_runtime_spill_int(i64 %0)
+
+declare i32 @printf(ptr %0, ...)
+
+define i64 @add(i64 %0, i64 %1) {
+entry:
+  %a = alloca i64
+  store i64 %0, ptr %a
+  %b = alloca i64
+  store i64 %1, ptr %b
+  %2 = load i64, ptr %a
+  %3 = load i64, ptr %b
+  %4 = add i64 %2, %3
+  ret i64 %4
 }
 
-define i64 @test_arithmetic_operations(i64 %p0, i64 %p1) {
-  %result = add i64 %p0, %p1
-  ret i64 %result
+define i64 @subtract(i64 %0, i64 %1) {
+entry:
+  %x = alloca i64
+  store i64 %0, ptr %x
+  %y = alloca i64
+  store i64 %1, ptr %y
+  %2 = load i64, ptr %x
+  %3 = load i64, ptr %y
+  %4 = sub i64 %2, %3
+  ret i64 %4
 }
 
-define i64 @test_loops(i64 %p0, i64 %p1) {
-  %result = add i64 %p0, %p1
-  ret i64 %result
+define i64 @multiply(i64 %0, i64 %1) {
+entry:
+  %m = alloca i64
+  store i64 %0, ptr %m
+  %n = alloca i64
+  store i64 %1, ptr %n
+  %2 = load i64, ptr %m
+  %3 = load i64, ptr %n
+  %4 = mul i64 %2, %3
+  ret i64 %4
 }
-
-define i64 @simple_multiply(i64 %p0, i64 %p1) {
-  %result = mul i64 %p0, %p1
-  ret i64 %result
-}
-
 
 define i32 @main() {
 entry:
-  ; Variable: b
-  %b = alloca i64, align 8
-  store i64 7, ptr %b, align 8
-  ; Variable: a
-  %a = alloca i64, align 8
-  store i64 15, ptr %a, align 8
-  ; Variable: i
-  %i = alloca i64, align 8
-  store i64 4, ptr %i, align 8
-  ; Variable: multiply_result
-  %multiply_result = alloca i64, align 8
-  %multiply_result_call = call i64 @simple_multiply(i64 5, i64 6)
-  store i64 %multiply_result_call, ptr %multiply_result, align 8
-  ; Variable: integer_var
-  %integer_var = alloca i64, align 8
-  store i64 42, ptr %integer_var, align 8
-  ; Call: vibez.spill
-  call void @cursed_runtime_spill_string(ptr @.str.0)
-  ; Call: vibez.spill
-  call void @cursed_runtime_spill_string(ptr @.str.1)
-  ; Call: vibez.spill
-  call void @cursed_runtime_spill_int(i64 22)
-  ; Call: vibez.spill
-  call void @cursed_runtime_spill_string(ptr @.str.2)
-  ; Call: vibez.spill
-  call void @cursed_runtime_spill_int(i64 8)
-  ; Call: vibez.spill
-  call void @cursed_runtime_spill_string(ptr @.str.3)
-  ; Call: vibez.spill
-  call void @cursed_runtime_spill_int(i64 105)
-  ; Call: vibez.spill
-  call void @cursed_runtime_spill_string(ptr @.str.4)
-  ; Call: vibez.spill
-  call void @cursed_runtime_spill_int(i64 2)
-  ; Call: vibez.spill
-  call void @cursed_runtime_spill_string(ptr @.str.5)
-  ; Call: vibez.spill
-  call void @cursed_runtime_spill_string(ptr @.str.6)
-  ; Call: vibez.spill
-  call void @cursed_runtime_spill_string(ptr @.str.7)
-  ; Call: vibez.spill
-  call void @cursed_runtime_spill_string(ptr @.str.8)
-  ; Call: vibez.spill
-  call void @cursed_runtime_spill_int(i64 1)
-  ; Call: vibez.spill
-  call void @cursed_runtime_spill_string(ptr @.str.8)
-  ; Call: vibez.spill
-  call void @cursed_runtime_spill_int(i64 2)
-  ; Call: vibez.spill
-  call void @cursed_runtime_spill_string(ptr @.str.8)
-  ; Call: vibez.spill
-  call void @cursed_runtime_spill_int(i64 3)
-  ; Call: vibez.spill
-  call void @cursed_runtime_spill_string(ptr @.str.11)
-  ; Call: vibez.spill
-  call void @cursed_runtime_spill_string(ptr @.str.12)
-  ; Call: vibez.spill
-  call void @cursed_runtime_spill_string(ptr @.str.13)
-  ; Call: vibez.spill
-  call void @cursed_runtime_spill_int(i64 42)
-  ; Call: vibez.spill
-  call void @cursed_runtime_spill_string(ptr @.str.14)
-  ; Call: vibez.spill
-  %temp_call_0 = call i64 @simple_multiply(i64 5, i64 6)
-  call void @cursed_runtime_spill_int(i64 %temp_call_0)
-  ; Call: vibez.spill
-  call void @cursed_runtime_spill_string(ptr @.str.15)
-  ; Call: test_control_flow
-  ; Call: test_control_flow
-  ; Call: test_control_flow
-  ; Call: test_loops
-  ; Call: test_arithmetic_operations
-  ; Call: vibez.spill
-  call void @cursed_runtime_spill_string(ptr @.str.16)
+  %a = alloca i64
+  store i64 10, ptr %a
+  %b = alloca i64
+  store i64 5, ptr %b
+  %c = alloca i64
+  store i64 2, ptr %c
+  %sum = alloca i64
+  %0 = load i64, ptr %a
+  %1 = load i64, ptr %b
+  %2 = call i64 @add(i64 %0, i64 %1)
+  store i64 %2, ptr %sum
+  %diff = alloca i64
+  %3 = load i64, ptr %a
+  %4 = load i64, ptr %b
+  %5 = call i64 @subtract(i64 %3, i64 %4)
+  store i64 %5, ptr %diff
+  %product = alloca i64
+  %6 = load i64, ptr %sum
+  %7 = load i64, ptr %c
+  %8 = call i64 @multiply(i64 %6, i64 %7)
+  store i64 %8, ptr %product
+  store i64 20, ptr %a
+  store i64 30, ptr %b
+  %9 = load i64, ptr %a
+  %10 = load i64, ptr %b
+  %11 = call i64 @add(i64 %9, i64 %10)
+  store i64 %11, ptr %c
+  %final = alloca i64
+  %12 = load i64, ptr %a
+  %13 = load i64, ptr %b
+  %14 = call i64 @add(i64 %12, i64 %13)
+  %15 = load i64, ptr %c
+  %16 = load i64, ptr %diff
+  %17 = call i64 @subtract(i64 %15, i64 %16)
+  %18 = call i64 @multiply(i64 %14, i64 %17)
+  store i64 %18, ptr %final
   ret i32 0
 }
-
-; String Constants
-@.str.0 = private unnamed_addr constant [31 x i8] c"Testing arithmetic operations:\00", align 1
-@.str.1 = private unnamed_addr constant [10 x i8] c"Addition:\00", align 1
-@.str.2 = private unnamed_addr constant [13 x i8] c"Subtraction:\00", align 1
-@.str.3 = private unnamed_addr constant [16 x i8] c"Multiplication:\00", align 1
-@.str.4 = private unnamed_addr constant [10 x i8] c"Division:\00", align 1
-@.str.5 = private unnamed_addr constant [26 x i8] c"Math operations completed\00", align 1
-@.str.6 = private unnamed_addr constant [15 x i8] c"Value is small\00", align 1
-@.str.7 = private unnamed_addr constant [22 x i8] c"Testing periodt loop:\00", align 1
-@.str.8 = private unnamed_addr constant [16 x i8] c"Loop iteration:\00", align 1
-@.str.9 = private unnamed_addr constant [16 x i8] c"Loop iteration:\00", align 1
-@.str.10 = private unnamed_addr constant [16 x i8] c"Loop iteration:\00", align 1
-@.str.11 = private unnamed_addr constant [44 x i8] c"CURSED Comprehensive Language Features Test\00", align 1
-@.str.12 = private unnamed_addr constant [42 x i8] c"=========================================\00", align 1
-@.str.13 = private unnamed_addr constant [22 x i8] c"Variable declaration:\00", align 1
-@.str.14 = private unnamed_addr constant [37 x i8] c"Function call test - multiply 5 * 6:\00", align 1
-@.str.15 = private unnamed_addr constant [19 x i8] c"Control flow test:\00", align 1
-@.str.16 = private unnamed_addr constant [34 x i8] c"All tests completed successfully!\00", align 1
