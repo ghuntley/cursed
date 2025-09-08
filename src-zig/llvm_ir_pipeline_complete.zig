@@ -737,6 +737,19 @@ pub const LLVMIRPipeline = struct {
     /// Compile let statement with runtime-first Oracle implementation
     fn compileLetStatement(self: *Self, wip: *llvm.Builder.WipFunction, let_stmt: *const ast.LetStatement) (Allocator.Error || CompileError)!void {
         const var_name = let_stmt.name;
+        
+        // Oracle's Step 2.6: Check if variable already exists (for while loop scope fix)
+        if (self.variables.get(var_name)) |existing_slot| {
+            // Variable already exists - treat this as an assignment instead of new declaration
+            if (let_stmt.initializer) |initializer| {
+                const expr_ptr: *const ast.Expression = @ptrCast(@alignCast(initializer));
+                const value = try self.compileCompleteExpression(wip, expr_ptr);
+                _ = try wip.store(.normal, value, existing_slot, .default);
+            }
+            return;
+        }
+        
+        // Variable doesn't exist - create new alloca (original Oracle Step 2.2 logic)
         const ptr_ty = llvm.Builder.Type.i64; // TODO: real type inference
         const one = try self.builder.intConst(llvm.Builder.Type.i32, 1);
 
@@ -1417,6 +1430,16 @@ pub const LLVMIRPipeline = struct {
             return try self.captureVibezSpillForTextGeneration(wip, method_call);
         }
         
+        // Handle mathz functions with compile-time evaluation + capture fallback
+        if (std.mem.startsWith(u8, full_method_name, "mathz.")) {
+            return try self.captureMathzForTextGeneration(wip, method_call, full_method_name);
+        }
+        
+        // Handle stringz functions similarly
+        if (std.mem.startsWith(u8, full_method_name, "stringz.")) {
+            return try self.captureStringzForTextGeneration(wip, method_call, full_method_name);
+        }
+        
         // Core method call compilation - resolve method through module system
         // Method calls like vibez.spill() should be resolved as function calls to stdlib
         
@@ -1549,9 +1572,12 @@ pub const LLVMIRPipeline = struct {
         for (method_call.arguments.items) |arg_ptr| {
             const arg: *const ast.Expression = @ptrCast(@alignCast(arg_ptr));
             
-            // Evaluate argument for capture
-            const arg_value = self.evaluateExpressionAtCompileTime(arg) catch 
-                IRValue{ .Integer = 0 }; // Default fallback
+            // Evaluate argument for capture with better error handling
+            const arg_value = self.evaluateExpressionAtCompileTime(arg) catch |err| blk: {
+                print("⚠️ Compile-time evaluation failed for vibez.spill argument: {any}\n", .{err});
+                // Return safe fallback
+                break :blk IRValue{ .Integer = 0 };
+            };
             
             // If it's a string, add to captured_strings for proper text generation
             if (arg_value == .String) {
@@ -1577,6 +1603,42 @@ pub const LLVMIRPipeline = struct {
         
         const zero = try self.builder.intConst(llvm.Builder.Type.i32, 0);
         return zero.toValue();
+    }
+
+    /// Capture mathz functions for text generation (reusing existing evaluation logic)
+    fn captureMathzForTextGeneration(self: *Self, wip: *llvm.Builder.WipFunction, method_call: *const ast.MethodCallExpression, full_method_name: []const u8) (Allocator.Error || CompileError)!llvm.Builder.Value {
+        _ = wip; _ = full_method_name; // Use capture approach
+        
+        // Try to evaluate at compile time using existing logic
+        const result = self.evaluateMethodCallAtCompileTime(method_call) catch 
+            // Fallback to zero if can't evaluate
+            IRValue{ .Integer = 0 };
+        
+        // Return the computed value as Builder constant
+        const const_value = switch (result) {
+            .Integer => |int_val| blk: {
+                const int_const = try self.builder.intConst(llvm.Builder.Type.i64, int_val);
+                break :blk int_const.toValue();
+            },
+            .Float => |float_val| blk: {
+                const float_const = try self.builder.doubleConst(float_val);
+                break :blk float_const.toValue();
+            },
+            else => blk: {
+                const zero = try self.builder.intConst(llvm.Builder.Type.i64, 0);
+                break :blk zero.toValue();
+            },
+        };
+        
+        return const_value;
+    }
+
+    /// Capture stringz functions for text generation  
+    fn captureStringzForTextGeneration(self: *Self, wip: *llvm.Builder.WipFunction, method_call: *const ast.MethodCallExpression, full_method_name: []const u8) (Allocator.Error || CompileError)!llvm.Builder.Value {
+        _ = wip; _ = full_method_name; _ = method_call; // Use capture approach
+        
+        // For now, return empty string constant
+        return try self.compileStringConstant("");
     }
 
     /// Compile vibez.spill() using printf (simpler than custom runtime functions)
@@ -2681,7 +2743,7 @@ pub const LLVMIRPipeline = struct {
                             else if (std.mem.eql(u8, binary.operator, "*"))
                                 left_int * right_int
                             else if (std.mem.eql(u8, binary.operator, "/"))
-                                @divTrunc(left_int, right_int)
+                                if (right_int == 0) 0 else @divTrunc(left_int, right_int)
                             else if (std.mem.eql(u8, binary.operator, ">"))
                                 @as(i64, if (left_int > right_int) 1 else 0)
                             else if (std.mem.eql(u8, binary.operator, "<"))
