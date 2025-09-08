@@ -11,24 +11,12 @@ declare void @cursed_runtime_spill_bool(i64)
 
 define i32 @main() {
 entry:
-  ; Variable: abs_result
-  %abs_result = alloca i64, align 8
-  store i64 25, ptr %abs_result, align 8
-  ; Variable: min_result
-  %min_result = alloca i64, align 8
-  store i64 32, ptr %min_result, align 8
-  ; Variable: expr_result
-  %expr_result = alloca i64, align 8
-  store i64 28, ptr %expr_result, align 8
-  ; Variable: chained_result
-  %chained_result = alloca i64, align 8
-  store i64 10, ptr %chained_result, align 8
-  ; Variable: max_result
-  %max_result = alloca i64, align 8
-  store i64 23, ptr %max_result, align 8
-  ; Variable: add_result
-  %add_result = alloca i64, align 8
-  store i64 42, ptr %add_result, align 8
+  ; Variable: int_val
+  %int_val = alloca i64, align 8
+  store i64 10, ptr %int_val, align 8
+  ; Variable: float_val
+  %float_val = alloca double, align 8
+  store double 3.5, ptr %float_val, align 8
   ; Call: vibez.spill
   call void @cursed_runtime_spill_string(ptr @.str.0)
   call void @cursed_runtime_spill_string(ptr @newline_str)
@@ -36,37 +24,37 @@ entry:
   call void @cursed_runtime_spill_string(ptr @.str.1)
   call void @cursed_runtime_spill_string(ptr @newline_str)
   ; Call: vibez.spill
-  call void @cursed_runtime_spill_int(i64 25)
+  call void @cursed_runtime_spill_int(i64 10)
   call void @cursed_runtime_spill_string(ptr @newline_str)
   ; Call: vibez.spill
   call void @cursed_runtime_spill_string(ptr @.str.2)
   call void @cursed_runtime_spill_string(ptr @newline_str)
   ; Call: vibez.spill
-  call void @cursed_runtime_spill_int(i64 23)
+  call void @cursed_runtime_spill_float(double 3.5)
   call void @cursed_runtime_spill_string(ptr @newline_str)
   ; Call: vibez.spill
   call void @cursed_runtime_spill_string(ptr @.str.3)
   call void @cursed_runtime_spill_string(ptr @newline_str)
   ; Call: vibez.spill
-  call void @cursed_runtime_spill_int(i64 32)
+  call void @cursed_runtime_spill_int(i64 15)
   call void @cursed_runtime_spill_string(ptr @newline_str)
   ; Call: vibez.spill
   call void @cursed_runtime_spill_string(ptr @.str.4)
   call void @cursed_runtime_spill_string(ptr @newline_str)
   ; Call: vibez.spill
-  call void @cursed_runtime_spill_int(i64 42)
+  call void @cursed_runtime_spill_float(double 6.0)
   call void @cursed_runtime_spill_string(ptr @newline_str)
   ; Call: vibez.spill
   call void @cursed_runtime_spill_string(ptr @.str.5)
   call void @cursed_runtime_spill_string(ptr @newline_str)
   ; Call: vibez.spill
-  call void @cursed_runtime_spill_int(i64 10)
+  call void @cursed_runtime_spill_int(i64 20)
   call void @cursed_runtime_spill_string(ptr @newline_str)
   ; Call: vibez.spill
   call void @cursed_runtime_spill_string(ptr @.str.6)
   call void @cursed_runtime_spill_string(ptr @newline_str)
   ; Call: vibez.spill
-  call void @cursed_runtime_spill_int(i64 28)
+  call void @cursed_runtime_spill_float(double 1.75)
   call void @cursed_runtime_spill_string(ptr @newline_str)
   ; Call: vibez.spill
   call void @cursed_runtime_spill_string(ptr @.str.7)
@@ -75,13 +63,13 @@ entry:
 }
 
 ; String Constants
-@.str.0 = private unnamed_addr constant [32 x i8] c"=== Stdlib Integration Test ===\00", align 1
-@.str.1 = private unnamed_addr constant [33 x i8] c"Testing mathz.abs with negative:\00", align 1
-@.str.2 = private unnamed_addr constant [35 x i8] c"Testing mathz.max with two values:\00", align 1
-@.str.3 = private unnamed_addr constant [35 x i8] c"Testing mathz.min with two values:\00", align 1
-@.str.4 = private unnamed_addr constant [32 x i8] c"Testing mathz.add_two function:\00", align 1
-@.str.5 = private unnamed_addr constant [57 x i8] c"Chained operations mathz.abs_normie(mathz.min(-10, -5)):\00", align 1
-@.str.6 = private unnamed_addr constant [47 x i8] c"Expression with stdlib (max(10,20) + abs(-8)):\00", align 1
-@.str.7 = private unnamed_addr constant [34 x i8] c"=== Integration Test Complete ===\00", align 1
+@.str.0 = private unnamed_addr constant [35 x i8] c"=== Mixed Type Arithmetic Test ===\00", align 1
+@.str.1 = private unnamed_addr constant [15 x i8] c"Integer value:\00", align 1
+@.str.2 = private unnamed_addr constant [13 x i8] c"Float value:\00", align 1
+@.str.3 = private unnamed_addr constant [19 x i8] c"Integer + Integer:\00", align 1
+@.str.4 = private unnamed_addr constant [15 x i8] c"Float + Float:\00", align 1
+@.str.5 = private unnamed_addr constant [13 x i8] c"Integer * 2:\00", align 1
+@.str.6 = private unnamed_addr constant [11 x i8] c"Float / 2:\00", align 1
+@.str.7 = private unnamed_addr constant [22 x i8] c"=== Test Complete ===\00", align 1
 @newline_str = private unnamed_addr constant [2 x i8] c"\0A\00", align 1
 @hello_comma_str = private unnamed_addr constant [7 x i8] c"Hello,\00", align 1

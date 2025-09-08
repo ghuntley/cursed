@@ -761,6 +761,15 @@ pub const LLVMIRPipeline = struct {
             const expr_ptr: *const ast.Expression = @ptrCast(@alignCast(initializer));
             const value = try self.compileCompleteExpression(wip, expr_ptr);
             _ = try wip.store(.normal, value, slot, .default);
+            
+            // Also capture for text generation (hybrid approach)
+            const init_value = self.evaluateExpressionAtCompileTime(expr_ptr) catch IRValue{ .Integer = 0 };
+            const owned_name = try self.allocator.dupe(u8, var_name);
+            const var_data = IRVariable{
+                .name = owned_name,
+                .value = init_value,
+            };
+            try self.captured_variables.append(self.allocator, var_data);
         }
     }
     
@@ -3016,6 +3025,12 @@ pub const LLVMIRPipeline = struct {
                             }
                         }
                         break :blk IRValue{ .Integer = 0 }; // Default if not found
+                    },
+                    .MethodCall => |nested_method_call| blk: {
+                        // Handle nested method calls recursively
+                        const nested_result = self.evaluateMethodCallAtCompileTime(nested_method_call) catch 
+                            IRValue{ .Integer = 0 };
+                        break :blk nested_result;
                     },
                     .Unary => |unary| blk: {
                         if (std.mem.eql(u8, unary.operator, "-")) {

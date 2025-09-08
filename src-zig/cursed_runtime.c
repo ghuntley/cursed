@@ -3,7 +3,7 @@
 
 // CURSED Runtime Library - Provides built-in functions for compiled CURSED programs
 
-// vibez.spill() string implementation - NO automatic newlines to match interpreter
+// vibez.spill() string implementation - match interpreter spacing  
 void cursed_runtime_spill_string(const char* str) {
     printf("%s", str);
     fflush(stdout);

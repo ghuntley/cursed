@@ -1,0 +1,15 @@
+vibe main
+
+yeet "vibez"
+
+slay main_character() {
+    sus x normie = 42
+    sus y normie = 10
+    vibez.spill("x should be 42:")
+    vibez.spill(x)
+    vibez.spill("y should be 10:")
+    vibez.spill(y)
+    vibez.spill("x + y should be 52:")
+    vibez.spill(x + y)
+    damn
+}
