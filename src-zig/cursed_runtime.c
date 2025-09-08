@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdint.h>
+#include <math.h>
 
 // CURSED Runtime Library - Provides built-in functions for compiled CURSED programs
 
@@ -15,15 +16,20 @@ void cursed_runtime_spill_int(int64_t value) {
     fflush(stdout);
 }
 
-// vibez.spill() float implementation - match interpreter precision formatting
+// vibez.spill() float implementation - match interpreter precision exactly
 void cursed_runtime_spill_float(double value) {
-    // Match interpreter precision: use %.5g format for scientific notation
+    // Match interpreter precision exactly
     if (value == (long)value) {
         // If it's a whole number, print as integer
         printf("%ld", (long)value);
     } else {
-        // For decimals, use %.5g to match interpreter formatting (5 significant digits)
-        printf("%.5g", value);
+        // For scientific notation, use .5g to match interpreter format
+        // But for very small numbers, use .5e format to match "1.00000e-6"
+        if (fabs(value) < 1e-4 || fabs(value) > 1e6) {
+            printf("%.5e", value);
+        } else {
+            printf("%.5g", value);
+        }
     }
     fflush(stdout);
 }

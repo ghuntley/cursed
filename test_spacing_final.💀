@@ -1,0 +1,11 @@
+vibe main
+
+yeet "vibez"
+yeet "mathz"
+
+slay main_character() {
+    vibez.spill("abs(-17) =", mathz.abs_normie(-17))
+    vibez.spill("max(42, 17) =", mathz.max(42, 17))
+    vibez.spill("Test:", "value")
+    damn
+}

@@ -1,0 +1,22 @@
+vibe main
+
+yeet "vibez"
+
+slay simple_loop(max_val normie) {
+    vibez.spill("Starting loop with max_val:")
+    vibez.spill(max_val)
+    
+    sus i normie = 1
+    periodt (i <= max_val) {
+        vibez.spill("Loop iteration:")
+        vibez.spill(i)
+        i = i + 1
+    }
+    
+    vibez.spill("Loop finished")
+}
+
+slay main_character() {
+    simple_loop(3)
+    damn
+}
