@@ -2,7 +2,7 @@
 
 > An esoteric programming language that combines Go-like semantics with Gen Z slang keywords, featuring the world's first use of Among Us `ඞ` characters in pointer syntax.
 
-CURSED is a statically typed, garbage-collected programming language designed to make coding more expressive and culturally relevant while maintaining practical functionality. It's self-hosting through a multi-stage bootstrap compiler written in Rust.
+CURSED is a statically typed, garbage-collected programming language designed to make coding more expressive and culturally relevant while maintaining practical functionality. It's self-hosting through a multi-stage bootstrap compiler written in Zig.
 
 ## Features
 
