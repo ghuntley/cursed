@@ -1503,6 +1503,11 @@ pub const Interpreter = struct {
             
             // Generic length function for arrays
             try module_functions.put("length", Value{ .BuiltinFunction = .{ .name = "collections.length", .func = builtinCollectionsLength } });
+            
+            // Simple array operations for test compatibility
+            try module_functions.put("new_array", Value{ .BuiltinFunction = .{ .name = "collections.new_array", .func = builtinCollectionsNewArray } });
+            try module_functions.put("push", Value{ .BuiltinFunction = .{ .name = "collections.push", .func = builtinCollectionsPush } });
+            try module_functions.put("get", Value{ .BuiltinFunction = .{ .name = "collections.get", .func = builtinCollectionsGet } });
         } else if (std.mem.eql(u8, module_name, "json")) {
             // Add json functions
             try module_functions.put("parse", Value{ .BuiltinFunction = .{ .name = "json.parse", .func = builtinJsonParse } });
@@ -5491,6 +5496,52 @@ fn builtinCollectionsLength(interpreter: *Interpreter, args: []Value) Interprete
             std.debug.print("DEBUG: builtinCollectionsLength - Unsupported type for length(): {s}\n", .{@tagName(value)});
             return InterpreterError.TypeMismatch;
         },
+    }
+}
+
+// Simple array operations for test compatibility
+fn builtinCollectionsNewArray(interpreter: *Interpreter, args: []Value) InterpreterError!Value {
+    if (args.len != 0) return InterpreterError.InvalidArgumentCount;
+    
+    // Create empty array
+    const empty_array = try interpreter.allocator.alloc(Value, 0);
+    return Value{ .Array = empty_array };
+}
+
+fn builtinCollectionsPush(interpreter: *Interpreter, args: []Value) InterpreterError!Value {
+    if (args.len != 2) return InterpreterError.InvalidArgumentCount;
+    
+    switch (args[0]) {
+        .Array => |arr| {
+            // Create new array with additional element
+            const new_array = try interpreter.allocator.alloc(Value, arr.len + 1);
+            for (arr, 0..) |val, i| {
+                new_array[i] = val;
+            }
+            new_array[arr.len] = args[1];
+            return Value{ .Array = new_array };
+        },
+        else => return InterpreterError.TypeMismatch,
+    }
+}
+
+fn builtinCollectionsGet(_: *Interpreter, args: []Value) InterpreterError!Value {
+    if (args.len != 2) return InterpreterError.InvalidArgumentCount;
+    
+    switch (args[0]) {
+        .Array => |arr| {
+            switch (args[1]) {
+                .Integer => |index| {
+                    if (index < 0 or index >= arr.len) {
+                        return Value{ .Integer = 0 }; // Return 0 for out of bounds
+                    }
+                    const idx = @as(usize, @intCast(index));
+                    return arr[idx];
+                },
+                else => return InterpreterError.TypeMismatch,
+            }
+        },
+        else => return InterpreterError.TypeMismatch,
     }
 }
 
