@@ -1,0 +1,32 @@
+=== Loop Syntax Regression Test === 
+Testing basic periodt loop... 
+Count: 1 
+Count: 2 
+Count: 3 
+Count: 4 
+Count: 5 
+Testing countdown loop... 
+Countdown: 3 
+Countdown: 2 
+Countdown: 1 
+Loop completed! 
+Testing nested loops... 
+Outer loop: 1 
+  Inner loop: 1 
+  Inner loop: 2 
+Outer loop: 2 
+  Inner loop: 1 
+  Inner loop: 2 
+Testing loop with conditions... 
+Even number: 10 
+Odd number: 9 
+Even number: 8 
+Odd number: 7 
+Even number: 6 
+Halfway point reached 
+Odd number: 5 
+Even number: 4 
+Odd number: 3 
+Even number: 2 
+Odd number: 1 
+Loop syntax regression test completed 

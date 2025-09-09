@@ -1,0 +1,16 @@
+vibe main
+
+slay pure_computation() {
+    sus sum normie = 0
+    sus i normie = 1
+    periodt (i <= 5) {
+        sum = sum + i
+        i = i + 1
+    }
+    damn sum
+}
+
+slay main_character() {
+    sus result normie = pure_computation()
+    damn
+}

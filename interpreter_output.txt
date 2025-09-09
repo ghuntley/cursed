@@ -1,26 +1,18 @@
-"=== Extreme Input Tests ===" 
-"=== Very Large Number Tests ===" 
-"Large number operations:" 
-"Large1:" 999999 
-"Large2:" 888888 
-"Large3:" 777777 
-"Large1 + Large2:" 1888887 
-"Large1 - Large2:" 111111 
-"Large1 abs:" 999999 
-"Large accumulation:" 2666664 
-"=== Very Long String Tests ===" 
-"Final long string length:" 32 
-"Upper version length:" 32 
-"Lower version length:" 32 
-"=== Very Large Array Tests ===" 
-"Array length:" 5 
-"Array sum:" 5500 
-"Array max:" 100 
-"Array min:" 100 
-"=== Extreme Computation Tests ===" 
-"Computation result:" 275 
-"Average per cycle:" 91 
-"=== Mixed Extreme Operations ===" 
-"Final - num:" 234567 "str_len:" 27 "arr_len:" 3 
-"Mixed extreme operations completed" 
-"All extreme input tests completed" 
+=== FizzBuzz Test === 
+FizzBuzz from 1 to 15: 
+1 
+2 
+Fizz 
+4 
+Buzz 
+Fizz 
+7 
+8 
+Fizz 
+Buzz 
+11 
+Fizz 
+13 
+14 
+FizzBuzz 
+=== Test Complete === 
