@@ -144,53 +144,57 @@ slay safe_division() {
 
 ### Prerequisites
 
-- Rust 1.70+ (for bootstrap compiler)
-- LLVM 14+ (for code generation)
+- Zig 0.13+ (compiler implementation)
 - Git
+
+The CURSED compiler is now implemented in Zig with built-in LLVM support, eliminating external LLVM dependencies and enabling cross-platform compilation including Windows.
 
 ### Building from Source
 
 ```bash
 git clone https://github.com/ghuntley/cursed
 cd cursed
-cargo build --release
+zig build
 ```
 
 ### Running Programs
 
 ```bash
-# Compile and run a CURSED program
-./target/release/cursed run example.💀
+# Interpret and run a CURSED program
+./zig-out/bin/cursed-compiler example.💀
 
-# Just compile
-./target/release/cursed build example.💀
+# Compile to native executable
+./zig-out/bin/cursed-compiler --compile example.💀
 
-# Format code
-./target/release/cursed fmt example.💀
+# Generate LLVM IR
+./zig-out/bin/cursed-compiler --emit-ir example.💀
+
+# Debug mode
+./zig-out/bin/cursed-compiler --debug --verbose example.💀
 ```
 
 ## Project Structure
 
 ```
-├── src/                 # Rust bootstrap compiler source
+├── src-zig/            # Zig compiler implementation source
 ├── runtime/            # Runtime library and garbage collector  
 ├── stdlib/             # Standard library modules
 ├── specs/              # Language specifications
-├── examples/           # Example programs
-├── test_suite/         # Comprehensive tests
-└── tools/              # Development tools
+├── test_suite/         # Comprehensive tests (including LeetCode suite)
+├── tools/              # Development tools
+└── build.zig           # Zig build configuration
 ```
 
-## Development Stages
+## Development Status
 
-CURSED follows a four-stage bootstrap process:
+CURSED has evolved through multiple implementation phases:
 
-1. **Stage 0**: Environment setup and basic tooling
-2. **Stage 1**: Minimal bootstrap compiler in Rust
-3. **Stage 2**: Full compiler written in CURSED
-4. **Stage 3**: Self-compiled optimized compiler
+1. ✅ **Stage 0**: Environment setup and language design
+2. ✅ **Stage 1**: Zig-native compiler with LLVM backend  
+3. 🚧 **Stage 2**: Advanced features and optimization
+4. 🔮 **Stage 3**: Self-hosting compiler in CURSED
 
-Currently in **Stage 1** development.
+**Current Status**: Full compiler implemented in Zig with comprehensive language support, built-in LLVM backend, and extensive test suite including 17+ LeetCode problems.
 
 ## Contributing
 
