@@ -1,319 +1,152 @@
-name: Release
+name: Build and Release CURSED Compiler
 
 on:
   push:
     tags:
-      - 'v*'
+      - 'v*.*.*'
+  release:
+    types: [created]
   workflow_dispatch:
-    inputs:
-      version:
-        description: 'Release version (e.g., v1.0.0)'
-        required: true
-        type: string
-
-env:
-  CARGO_TERM_COLOR: always
 
 jobs:
-  create-release:
-    name: Create Release
-    runs-on: ubuntu-latest
-    outputs:
-      upload_url: ${{ steps.create_release.outputs.upload_url }}
-      version: ${{ steps.get_version.outputs.version }}
-    
-    steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-
-    - name: Get Version
-      id: get_version
-      run: |
-        if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-          VERSION="${{ github.event.inputs.version }}"
-        else
-          VERSION=${GITHUB_REF#refs/tags/}
-        fi
-        echo "version=$VERSION" >> $GITHUB_OUTPUT
-
-    - name: Generate Changelog
-      id: changelog
-      run: |
-        if [ -f CHANGELOG.md ]; then
-          # Extract version-specific changelog
-          sed -n "/## \[${{ steps.get_version.outputs.version }}\]/,/## \[/p" CHANGELOG.md | head -n -1 > RELEASE_CHANGELOG.md
-        else
-          echo "Release ${{ steps.get_version.outputs.version }}" > RELEASE_CHANGELOG.md
-          echo "" >> RELEASE_CHANGELOG.md
-          echo "### Features" >> RELEASE_CHANGELOG.md
-          echo "- Complete CURSED language implementation" >> RELEASE_CHANGELOG.md
-          echo "- Full IDE integration support" >> RELEASE_CHANGELOG.md
-          echo "- Cross-platform compilation" >> RELEASE_CHANGELOG.md
-          echo "- Comprehensive standard library" >> RELEASE_CHANGELOG.md
-        fi
-
-    - name: Create Release
-      id: create_release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: ${{ steps.get_version.outputs.version }}
-        release_name: CURSED ${{ steps.get_version.outputs.version }}
-        body_path: RELEASE_CHANGELOG.md
-        draft: false
-        prerelease: ${{ contains(steps.get_version.outputs.version, 'alpha') || contains(steps.get_version.outputs.version, 'beta') || contains(steps.get_version.outputs.version, 'rc') }}
-
-  build-and-upload:
-    name: Build and Upload
-    needs: create-release
+  build:
+    name: Build CURSED Compiler
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         include:
           - os: ubuntu-latest
             target: x86_64-linux
-            artifact_name: cursed-linux-x64
+            artifact: cursed-compiler-linux-x64
+            binary: cursed-compiler
           - os: windows-latest
             target: x86_64-windows
-            artifact_name: cursed-windows-x64.exe
+            artifact: cursed-compiler-windows-x64
+            binary: cursed-compiler.exe
           - os: macos-latest
             target: x86_64-macos
-            artifact_name: cursed-macos-x64
-          - os: ubuntu-latest
-            target: aarch64-linux
-            artifact_name: cursed-linux-arm64
+            artifact: cursed-compiler-macos-x64
+            binary: cursed-compiler
           - os: macos-latest
             target: aarch64-macos
-            artifact_name: cursed-macos-arm64
-    
+            artifact: cursed-compiler-macos-arm64
+            binary: cursed-compiler
+
     steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Setup Zig
-      uses: goto-bus-stop/setup-zig@v2
-      with:
-        version: 0.12.0
+      - name: Setup Zig
+        uses: goto-bus-stop/setup-zig@v2
+        with:
+          version: 0.13.0
 
-    - name: Build Release
-      run: |
-        zig build -Dtarget=${{ matrix.target }} -Doptimize=ReleaseFast
+      - name: Cache Zig artifacts
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/zig
+            .zig-cache
+          key: zig-${{ matrix.target }}-${{ hashFiles('build.zig', 'src-zig/**') }}
+          restore-keys: |
+            zig-${{ matrix.target }}-
 
-    - name: Package Binary
-      shell: bash
-      run: |
-        mkdir -p release-package
-        
-        if [ "${{ matrix.os }}" = "windows-latest" ]; then
-          cp zig-out/bin/cursed-zig.exe release-package/${{ matrix.artifact_name }}
-        else
-          cp zig-out/bin/cursed-zig release-package/${{ matrix.artifact_name }}
-        fi
-        
-        # Add additional files
-        cp README.md release-package/
-        cp LICENSE release-package/ 2>/dev/null || echo "No LICENSE file found"
-        
-        # Create archive
-        cd release-package
-        if [ "${{ matrix.os }}" = "windows-latest" ]; then
-          7z a ../${{ matrix.artifact_name }}.zip *
-        else
-          tar -czf ../${{ matrix.artifact_name }}.tar.gz *
-        fi
+      - name: Build CURSED compiler
+        run: zig build -Dtarget=${{ matrix.target }} -Doptimize=ReleaseFast
 
-    - name: Upload Release Asset
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ needs.create-release.outputs.upload_url }}
-        asset_path: ${{ matrix.artifact_name }}.${{ matrix.os == 'windows-latest' && 'zip' || 'tar.gz' }}
-        asset_name: ${{ matrix.artifact_name }}.${{ matrix.os == 'windows-latest' && 'zip' || 'tar.gz' }}
-        asset_content_type: application/octet-stream
+      - name: Create artifact directory
+        run: |
+          mkdir -p artifacts
+          cp zig-out/bin/${{ matrix.binary }} artifacts/
+        shell: bash
 
-  publish-vscode-extension:
-    name: Publish VS Code Extension
-    needs: create-release
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: artifacts/${{ matrix.binary }}
+          retention-days: 90
+
+  release:
+    name: Create Release
+    needs: build
     runs-on: ubuntu-latest
+    if: github.event_name == 'release' || startsWith(github.ref, 'refs/tags/')
     
     steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v4
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-artifacts
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '18'
-        cache: 'npm'
-        cache-dependency-path: cursed-vscode-extension/package.json
+      - name: List downloaded artifacts
+        run: find release-artifacts -type f -name "*" -exec ls -la {} \;
 
-    - name: Install Dependencies
-      run: |
-        cd cursed-vscode-extension
-        npm ci
-
-    - name: Update Version
-      run: |
-        cd cursed-vscode-extension
-        VERSION="${{ needs.create-release.outputs.version }}"
-        VERSION_NO_V="${VERSION#v}"
-        npm version $VERSION_NO_V --no-git-tag-version
-
-    - name: Package Extension
-      run: |
-        cd cursed-vscode-extension
-        npm run package
-
-    - name: Publish to VS Code Marketplace
-      env:
-        VSCE_PAT: ${{ secrets.VSCODE_MARKETPLACE_TOKEN }}
-      run: |
-        cd cursed-vscode-extension
-        npm run publish
-
-    - name: Upload Extension Package
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ needs.create-release.outputs.upload_url }}
-        asset_path: cursed-vscode-extension/cursed-language-${{ needs.create-release.outputs.version }}.vsix
-        asset_name: cursed-vscode-extension.vsix
-        asset_content_type: application/octet-stream
-
-  publish-docker:
-    name: Publish Docker Image
-    needs: create-release
-    runs-on: ubuntu-latest
-    
-    steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v4
-
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
-
-    - name: Login to Docker Hub
-      uses: docker/login-action@v3
-      with:
-        username: ${{ secrets.DOCKER_USERNAME }}
-        password: ${{ secrets.DOCKER_PASSWORD }}
-
-    - name: Login to GitHub Container Registry
-      uses: docker/login-action@v3
-      with:
-        registry: ghcr.io
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
-
-    - name: Extract Metadata
-      id: meta
-      uses: docker/metadata-action@v5
-      with:
-        images: |
-          cursedlang/cursed
-          ghcr.io/${{ github.repository }}
-        tags: |
-          type=ref,event=tag
-          type=semver,pattern={{version}}
-          type=semver,pattern={{major}}.{{minor}}
-          type=semver,pattern={{major}}
-
-    - name: Build and Push Docker Images
-      uses: docker/build-push-action@v5
-      with:
-        context: .
-        platforms: linux/amd64,linux/arm64
-        push: true
-        tags: ${{ steps.meta.outputs.tags }}
-        labels: ${{ steps.meta.outputs.labels }}
-        file: |
-          FROM alpine:latest
+      - name: Prepare release assets
+        run: |
+          mkdir -p release-assets
           
-          RUN apk add --no-cache \
-              zig \
-              llvm \
-              clang \
-              git \
-              ca-certificates
+          # Linux x64
+          cp release-artifacts/cursed-compiler-linux-x64/cursed-compiler release-assets/cursed-compiler-linux-x64
+          chmod +x release-assets/cursed-compiler-linux-x64
           
-          WORKDIR /cursed
-          COPY . .
+          # Windows x64
+          cp release-artifacts/cursed-compiler-windows-x64/cursed-compiler.exe release-assets/cursed-compiler-windows-x64.exe
           
-          RUN zig build -Doptimize=ReleaseFast
+          # macOS x64
+          cp release-artifacts/cursed-compiler-macos-x64/cursed-compiler release-assets/cursed-compiler-macos-x64
+          chmod +x release-assets/cursed-compiler-macos-x64
           
-          ENV PATH="/cursed/zig-out/bin:${PATH}"
-          
-          ENTRYPOINT ["cursed-zig"]
-          CMD ["--help"]
+          # macOS ARM64
+          cp release-artifacts/cursed-compiler-macos-arm64/cursed-compiler release-assets/cursed-compiler-macos-arm64
+          chmod +x release-assets/cursed-compiler-macos-arm64
 
-  publish-documentation:
-    name: Publish Documentation
-    needs: create-release
-    runs-on: ubuntu-latest
-    
-    steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v4
+      - name: Create checksums
+        run: |
+          cd release-assets
+          sha256sum * > checksums.sha256
+          cat checksums.sha256
 
-    - name: Setup Zig
-      uses: goto-bus-stop/setup-zig@v2
-      with:
-        version: 0.12.0
-
-    - name: Build Documentation
-      run: |
-        zig build
-        mkdir -p docs-output
-        
-        # Generate API documentation
-        echo "# CURSED Language Documentation" > docs-output/index.md
-        echo "" >> docs-output/index.md
-        echo "Version: ${{ needs.create-release.outputs.version }}" >> docs-output/index.md
-        
-        # Add more documentation generation here
-
-    - name: Deploy to GitHub Pages
-      uses: peaceiris/actions-gh-pages@v3
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: ./docs-output
-
-  notify-release:
-    name: Notify Release
-    needs: [create-release, build-and-upload, publish-vscode-extension, publish-docker]
-    runs-on: ubuntu-latest
-    
-    steps:
-    - name: Send Discord Notification
-      if: ${{ secrets.DISCORD_WEBHOOK_URL }}
-      run: |
-        curl -H "Content-Type: application/json" \
-             -X POST \
-             -d '{
-               "content": "🚀 CURSED Language ${{ needs.create-release.outputs.version }} has been released!\n\n**Download:** https://github.com/${{ github.repository }}/releases/tag/${{ needs.create-release.outputs.version }}\n**VS Code Extension:** Available on the marketplace\n**Docker:** `docker pull cursedlang/cursed:${{ needs.create-release.outputs.version }}`"
-             }' \
-             ${{ secrets.DISCORD_WEBHOOK_URL }}
-
-    - name: Update Package Managers
-      run: |
-        echo "Would update Homebrew, AUR, etc. here"
-        # Add package manager update scripts
-
-  update-website:
-    name: Update Website
-    needs: create-release
-    runs-on: ubuntu-latest
-    
-    steps:
-    - name: Trigger Website Update
-      if: ${{ secrets.WEBSITE_WEBHOOK_URL }}
-      run: |
-        curl -X POST \
-             -H "Content-Type: application/json" \
-             -d '{"version": "${{ needs.create-release.outputs.version }}"}' \
-             ${{ secrets.WEBSITE_WEBHOOK_URL }}
+      - name: Upload release assets
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            release-assets/cursed-compiler-linux-x64
+            release-assets/cursed-compiler-windows-x64.exe
+            release-assets/cursed-compiler-macos-x64
+            release-assets/cursed-compiler-macos-arm64
+            release-assets/checksums.sha256
+          tag_name: ${{ github.ref_name }}
+          name: CURSED Compiler ${{ github.ref_name }}
+          body: |
+            ## CURSED Programming Language Compiler Release
+            
+            This release contains pre-compiled binaries of the CURSED compiler for multiple platforms.
+            
+            ### Downloads
+            - **Linux x64**: `cursed-compiler-linux-x64`
+            - **Windows x64**: `cursed-compiler-windows-x64.exe`  
+            - **macOS x64**: `cursed-compiler-macos-x64`
+            - **macOS ARM64**: `cursed-compiler-macos-arm64`
+            
+            ### Usage
+            ```bash
+            # Make executable (Linux/macOS)
+            chmod +x cursed-compiler-*
+            
+            # Compile a CURSED program
+            ./cursed-compiler-* --compile program.💀 -o output
+            
+            # Run in interpreter mode
+            ./cursed-compiler-* --interpret program.💀
+            ```
+            
+            ### Verification
+            Use the provided `checksums.sha256` file to verify download integrity:
+            ```bash
+            sha256sum -c checksums.sha256
+            ```
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
