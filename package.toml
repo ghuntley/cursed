@@ -1,6 +1,0 @@
-[package]
-name = "my-cursed-project"
-version = "0.1.0"
-description = "A CURSED project"
-
-[dependencies]

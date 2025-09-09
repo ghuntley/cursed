@@ -1,5 +1,0 @@
-Testing direct arithmetic:
-8
-6
-42
-5

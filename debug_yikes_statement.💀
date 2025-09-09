@@ -1,9 +1,0 @@
-vibe main
-
-slay test_yikes_statement() normie yikes {
-    yikes "test error"
-}
-
-slay main_character() {
-    vibez.spill("Testing yikes statement")
-}

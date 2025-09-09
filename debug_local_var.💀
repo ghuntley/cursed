@@ -1,7 +1,0 @@
-vibe main
-yeet "vibez"
-
-slay main_character() {
-    sus test_var normie = 42
-    vibez.spill("Local var:", test_var)
-}

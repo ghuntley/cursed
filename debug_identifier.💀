@@ -1,8 +1,0 @@
-vibe main
-yeet "vibez"
-
-slay main_character() {
-    vibez.spill("Before identifier")
-    sus x = Node
-    vibez.spill("After identifier")
-}

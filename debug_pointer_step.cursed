@@ -1,9 +1,0 @@
-vibe main
-
-slay test_func() {
-    vibez.spill("Before pointer")
-    sus x drip = 42
-    vibez.spill("After normal var")
-    sus ptr ඞnormie
-    vibez.spill("After pointer")
-}

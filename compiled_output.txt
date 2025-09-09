@@ -1,3 +1,0 @@
-=== FizzBuzz Test ===
-FizzBuzz from 1 to 15:
-=== Test Complete ===

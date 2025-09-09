@@ -1,1 +1,0 @@
-/bin/bash: line 1: ./validation_test_working: No such file or directory

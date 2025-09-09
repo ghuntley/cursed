@@ -1,9 +1,0 @@
-vibe main
-yeet "vibez"
-
-slay main_character() {
-    sus a normie = 1
-    sus b normie = 2
-    sus c normie = a + b / 2
-    vibez.spill("c =", c)
-}

@@ -1,9 +1,0 @@
-vibe main
-yeet "vibez"
-
-slay main_character() {
-    sus right normie = 5
-    sus left normie = 0
-    sus diff normie = (right - left)
-    vibez.spill("diff =", diff)
-}
