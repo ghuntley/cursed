@@ -191,13 +191,23 @@ pub const Parser = struct {
     }
 
     pub fn initWithFile(allocator: Allocator, tokens: []const Token, file_path: []const u8) Parser {
+        // SAFETY FIX: Initialize arena properly and test it
         var arena = std.heap.ArenaAllocator.init(allocator);
+        const arena_alloc = arena.allocator();
+
+        // Test allocation to ensure arena works
+        const test_ptr = arena_alloc.create(u8) catch |err| {
+            std.debug.print("FATAL: Arena initialization failed: {any}\n", .{err});
+            @panic("Failed to initialize arena allocator");
+        };
+        arena_alloc.destroy(test_ptr);
+
         return Parser{
             .tokens = tokens,
             .current = 0,
             .allocator = allocator,
             .arena = arena,
-            .arena_allocator = arena.allocator(),
+            .arena_allocator = arena_alloc,
             .had_error = false,
             .in_function = false,
             .in_loop = false,
@@ -860,6 +870,7 @@ pub const Parser = struct {
                 // CRITICAL MEMORY SAFETY FIX: Add bounds checking and validation
                 const stmt_ptr = self.arena_allocator.create(Statement) catch |alloc_err| {
                     std.debug.print("MEMORY ERROR: Failed to allocate statement in parseProgram: {any}\n", .{alloc_err});
+                    std.debug.print("Arena allocator vtable ptr: {}\n", .{@intFromPtr(self.arena_allocator.ptr)});
                     _ = self.reportErrorWithContext("Out of memory allocating statement", "parseProgram") catch {};
                     return ParserError.OutOfMemory;
                 };
