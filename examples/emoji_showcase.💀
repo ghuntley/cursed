@@ -1,0 +1,106 @@
+vibe main
+yeet "vibez"
+yeet "mathz"
+
+fr fr 🎉 CURSED Language - Now with Emoji Identifiers! 🎉
+fr fr 
+fr fr This program demonstrates the power of emoji variable names
+fr fr in the CURSED programming language. Making code more expressive
+fr fr and fun while maintaining full functionality!
+
+slay main_character() {
+    vibez.spill("🔥🔥🔥 CURSED EMOJI IDENTIFIERS SHOWCASE 🔥🔥🔥")
+    
+    fr fr ===== Basic Emoji Variables =====
+    sus 🔥 normie = 100              fr fr Fire power level
+    sus 💻 tea = "CURSED Lang"       fr fr Computer/tech name
+    sus 🚀 snack = 42.0              fr fr Rocket speed (float)
+    sus 💎 normie = 999              fr fr Diamond value
+    sus ⭐ normie = 5                fr fr Star rating
+    sus 🎯 lit = based               fr fr Target achieved (boolean)
+    
+    fr fr ===== Mathematical Operations with Emojis =====
+    sus 📊 normie = 🔥 + 💎          fr fr Total power
+    sus 🧮 snack = 🚀 * 2.5          fr fr Calculated speed
+    sus 💰 normie = 💎 / 10          fr fr Money calculation
+    
+    fr fr ===== Display Results =====
+    vibez.spill("🔥 Fire power:", 🔥)
+    vibez.spill("💻 Tech name:", 💻)
+    vibez.spill("🚀 Rocket speed:", 🚀)
+    vibez.spill("💎 Diamond value:", 💎)
+    vibez.spill("⭐ Star rating:", ⭐)
+    vibez.spill("🎯 Target achieved:", 🎯)
+    vibez.spill("📊 Total power:", 📊)
+    vibez.spill("🧮 Calculated speed:", 🧮)
+    vibez.spill("💰 Money value:", 💰)
+    
+    fr fr ===== Emoji Function Calls =====
+    🎮processGame(🔥, ⭐)
+    🌟calculateRating(💎, 📊)
+    
+    fr fr ===== Emoji Arrays and Collections =====
+    sus 🎪 normie[] = []normie{🔥, 💎, ⭐}
+    vibez.spill("🎪 Collection size:", len(🎪))
+    
+    bestie 🔄 := 0; 🔄 < len(🎪); 🔄++ {
+        vibez.spill("🎪[", 🔄, "]:", 🎪[🔄])
+    }
+    
+    fr fr ===== Mixed Emoji + Text Identifiers =====
+    sus 🔥hotData normie = 42
+    sus 💻techStack tea = "CURSED + Zig"
+    sus 🚀speedBoost snack = 3.14159
+    sus 🎯targetReached lit = based
+    
+    vibez.spill("🔥 Hot data value:", 🔥hotData)
+    vibez.spill("💻 Tech stack:", 💻techStack)
+    vibez.spill("🚀 Speed boost:", 🚀speedBoost)
+    vibez.spill("🎯 Target reached:", 🎯targetReached)
+    
+    fr fr ===== Complex Emoji Expressions =====
+    ready 🎯 and (🔥 > 50) and (💎 >= 500) {
+        vibez.spill("🏆 Achievement unlocked! All targets met!")
+        sus 🏆 tea = "CURSED Master"
+        vibez.spill("🏆 Title earned:", 🏆)
+    } otherwise {
+        vibez.spill("💪 Keep grinding to unlock achievements!")
+    }
+    
+    vibez.spill("✨ Emoji identifiers make CURSED absolutely fire! ✨")
+}
+
+fr fr ===== Emoji Functions =====
+
+slay 🎮processGame(🔥power normie, ⭐rating normie) {
+    vibez.spill("🎮 Processing game with power:", 🔥power, "and rating:", ⭐rating)
+    sus 🏁result normie = 🔥power * ⭐rating
+    vibez.spill("🏁 Game processing result:", 🏁result)
+}
+
+slay 🌟calculateRating(💎value normie, 📊total normie) normie {
+    vibez.spill("🌟 Calculating rating from value:", 💎value, "total:", 📊total)
+    sus 🧠calculated snack = (💎value * 100.0) / 📊total
+    vibez.spill("🧠 Calculated percentage:", 🧠calculated)
+    damn mathz.round(🧠calculated)
+}
+
+fr fr ===== Unicode + Emoji Mix =====
+
+slay 🌍globalTest() {
+    sus café🇫🇷 tea = "French coffee"
+    sus sushi🇯🇵 tea = "Japanese food"
+    sus pizza🇮🇹 tea = "Italian cuisine"
+    
+    vibez.spill("🌍 International menu:")
+    vibez.spill("  ", café🇫🇷)
+    vibez.spill("  ", sushi🇯🇵)
+    vibez.spill("  ", pizza🇮🇹)
+}
+
+fr fr This demonstrates that CURSED is now the most expressive
+fr fr programming language in existence! Emoji identifiers make
+fr fr code more intuitive, fun, and visually appealing while
+fr fr maintaining all the power and performance of a systems language.
+fr fr 
+fr fr Welcome to the future of programming! 🚀✨

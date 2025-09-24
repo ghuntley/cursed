@@ -44,13 +44,44 @@ on god
 
 ## Identifiers
 
-Identifiers name program entities such as variables and types. An identifier is a sequence of one or more letters, digits, and underscores, with the first character not being a digit.
+Identifiers name program entities such as variables and types. CURSED supports **Unicode identifiers** including emoji characters, making code more expressive and fun.
 
+### Identifier Rules
+
+1. **Start character**: Letters (Unicode categories Lu, Ll, Lt, Lm, Lo, Nl), underscore (`_`), or **emoji characters**
+2. **Continuation characters**: Start characters plus digits (0-9)
+3. **Unicode support**: Full UTF-8 support including emoji ranges (U+1F300-U+1F6FF and others)
+4. **Case sensitive**: `myVar` and `MyVar` are different identifiers
+
+### Examples
+
+**Traditional identifiers:**
 ```
 validIdentifier
 _also_valid
-invalid2Identifier  fr fr Valid in CURSED
+userName123
 ```
+
+**Unicode identifiers:**
+```
+café
+用户名
+тест
+```
+
+**Emoji identifiers (NEW!):**
+```
+sus 🔥 normie = 42
+sus 💻 tea = "hello"
+sus 🚀speed snack = 3.14
+sus 😂count normie = 0
+
+slay 🎮process(data 📊) {
+    vibez.spill("Processing data:", data)
+}
+```
+
+**Note**: While emoji identifiers are supported, use them judiciously in production code for readability and maintainability.
 
 ## Keywords
 
