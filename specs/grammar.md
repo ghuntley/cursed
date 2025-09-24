@@ -2,6 +2,23 @@
 
 This document specifies the grammar rules and syntax of the CURSED programming language. The grammar follows Go-like structure but uses Gen Z slang keywords.
 
+## Lexical Elements
+
+### Identifiers
+
+```
+identifier       = unicode_letter { unicode_letter | unicode_digit } .
+unicode_letter   = /* any Unicode code point categorized as "Letter" or emoji */ .
+unicode_digit    = /* any Unicode code point categorized as "Number, decimal digit" */ .
+```
+
+**CURSED ENHANCEMENT:** Identifiers support full Unicode including emoji characters for maximum expressiveness! 🔥
+
+Examples of valid identifiers:
+- Traditional: `myVariable`, `_private`, `MAX_VALUE`
+- Unicode: `café`, `用户名`, `тест`
+- **Emoji**: `🔥`, `💻data`, `🚀speed`, `😂count`
+
 ## Program Structure
 
 A CURSED program consists of one or more source files organized into packages. Each source file belongs to a single package and consists of package declarations, imports, and top-level declarations.

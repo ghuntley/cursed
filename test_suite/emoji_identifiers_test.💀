@@ -1,0 +1,61 @@
+vibe main
+yeet "vibez"
+yeet "mathz"
+
+fr fr Test program for emoji identifiers in CURSED! 🔥
+
+slay main_character() {
+    vibez.spill("=== 🎉 CURSED Emoji Identifiers Demo 🎉 ===")
+    
+    fr fr Basic emoji variables
+    sus 🔥 normie = 42
+    sus 💻 tea = "Hello, CURSED!"
+    sus 🚀speed snack = 3.14159
+    sus 😂count normie = 0
+    sus 🎮isActive lit = based
+    
+    fr fr Mixed emoji and text identifiers
+    sus 🔥hotData normie = 100
+    sus 💎value123 normie = 999
+    sus 🌟rating snack = 4.8
+    
+    fr fr Mathematical operations with emoji variables
+    sus 📊total normie = 🔥 + 🔥hotData
+    sus 🧮average snack = (🚀speed + 🌟rating) / 2.0
+    
+    fr fr Display all the emoji variables
+    vibez.spill("🔥 Fire variable:", 🔥)
+    vibez.spill("💻 Computer message:", 💻)
+    vibez.spill("🚀 Speed value:", 🚀speed)
+    vibez.spill("😂 Count value:", 😂count)
+    vibez.spill("🎮 Game active:", 🎮isActive)
+    
+    vibez.spill("🔥 Hot data:", 🔥hotData)
+    vibez.spill("💎 Diamond value:", 💎value123)
+    vibez.spill("🌟 Star rating:", 🌟rating)
+    
+    vibez.spill("📊 Total calculation:", 📊total)
+    vibez.spill("🧮 Average calculation:", 🧮average)
+    
+    fr fr Test emoji function parameters
+    📈processData(🔥, 💻, 🚀speed)
+    
+    fr fr Test emoji in loops
+    bestie 🔄i := 1; 🔄i <= 3; 🔄i++ {
+        vibez.spill("🔄 Loop iteration:", 🔄i)
+        sus 💫magic normie = 🔄i * 🔥
+        vibez.spill("💫 Magic value:", 💫magic)
+    }
+    
+    vibez.spill("=== ✨ Emoji identifiers working perfectly! ✨ ===")
+}
+
+slay 📈processData(🔢num normie, 📝msg tea, 💨velocity snack) {
+    vibez.spill("📈 Processing data:")
+    vibez.spill("  🔢 Number:", 🔢num)
+    vibez.spill("  📝 Message:", 📝msg)
+    vibez.spill("  💨 Velocity:", 💨velocity)
+    
+    sus 🎯result normie = 🔢num * 10
+    vibez.spill("  🎯 Calculated result:", 🎯result)
+}

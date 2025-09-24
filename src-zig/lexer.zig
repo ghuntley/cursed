@@ -761,9 +761,9 @@ pub const Lexer = struct {
 
     fn isUnicodeIdentifierStart(codepoint: u32) bool {
         // Unicode categories: Lu, Ll, Lt, Lm, Lo, Nl plus underscore
-        // Simplified check for common Unicode identifier characters
-        return (codepoint >= 0x41 and codepoint <= 0x5A) or  // A-Z
-               (codepoint >= 0x61 and codepoint <= 0x7A) or  // a-z  
+        // CURSED ENHANCEMENT: Full emoji support for identifiers!
+        const result = (codepoint >= 0x41 and codepoint <= 0x5A) or  // A-Z
+               (codepoint >= 0x61 and codepoint <= 0x7A) or  // a-z
                (codepoint == 0x5F) or                        // _
                (codepoint >= 0xC0 and codepoint <= 0xD6) or  // Latin-1 supplement letters
                (codepoint >= 0xD8 and codepoint <= 0xF6) or
@@ -775,7 +775,25 @@ pub const Lexer = struct {
                (codepoint >= 0x4E00 and codepoint <= 0x9FFF) or // CJK Unified Ideographs
                (codepoint >= 0x3040 and codepoint <= 0x309F) or // Hiragana
                (codepoint >= 0x30A0 and codepoint <= 0x30FF) or // Katakana
-               (codepoint >= 0x1F300 and codepoint <= 0x1F6FF); // Emoji ranges (partial)
+               // EMOJI RANGES - Making CURSED the most expressive language! 🔥
+               (codepoint >= 0x1F600 and codepoint <= 0x1F64F) or // Emoticons
+               (codepoint >= 0x1F300 and codepoint <= 0x1F5FF) or // Misc Symbols and Pictographs
+               (codepoint >= 0x1F680 and codepoint <= 0x1F6FF) or // Transport and Map Symbols
+               (codepoint >= 0x1F1E6 and codepoint <= 0x1F1FF) or // Regional Indicator Symbols (flags)
+               (codepoint >= 0x2600 and codepoint <= 0x26FF) or   // Miscellaneous Symbols (☀️, ⭐, etc.)
+               (codepoint >= 0x2700 and codepoint <= 0x27BF) or   // Dingbats (✨, ❤️, etc.)
+               (codepoint >= 0x1F900 and codepoint <= 0x1F9FF) or // Supplemental Symbols and Pictographs
+               (codepoint >= 0x1FA70 and codepoint <= 0x1FAFF) or // Symbols and Pictographs Extended-A
+               (codepoint >= 0x231A and codepoint <= 0x231B) or   // Watch, Hourglass
+               (codepoint >= 0x23E9 and codepoint <= 0x23EC) or   // Play/pause buttons
+               (codepoint >= 0x25AA and codepoint <= 0x25AB) or   // Black/white squares
+               (codepoint >= 0x25B6 and codepoint <= 0x25C0) or   // Triangles
+               (codepoint >= 0x25FB and codepoint <= 0x25FE) or   // Squares
+               (codepoint >= 0x2934 and codepoint <= 0x2935) or   // Arrows
+               (codepoint >= 0x3030 and codepoint <= 0x303D) or   // Wavy dash, etc.
+               (codepoint >= 0x3297 and codepoint <= 0x3299);     // Japanese symbols
+
+        return result;
     }
 
     fn isUnicodeIdentifierContinue(codepoint: u32) bool {
@@ -807,9 +825,23 @@ pub const Lexer = struct {
 
     fn identifier(self: *Lexer, line: usize, column: usize) !Token {
         const start = self.position;
-        
-        while (std.ascii.isAlphanumeric(self.peek()) or self.peek() == '_') {
-            _ = self.advance();
+
+        // Handle ASCII identifier characters and Unicode continuation
+        while (!self.isAtEnd()) {
+            const c = self.peek();
+            if (std.ascii.isAlphanumeric(c) or c == '_') {
+                _ = self.advance();
+            } else if (c >= 0x80) {
+                // Potential Unicode character - check if it's a valid identifier continue
+                const cp = self.peekUtf8();
+                if (isUnicodeIdentifierContinue(cp)) {
+                    _ = self.advanceUtf8();
+                } else {
+                    break;
+                }
+            } else {
+                break;
+            }
         }
 
         const lexeme = self.input[start..self.position];
@@ -1005,8 +1037,8 @@ test "lexer basic tokens" {
     const allocator = std.testing.allocator;
     
     var lexer = Lexer.init(allocator, "slay main_character() { }");
-    const tokens = try lexer.tokenize();
-    defer tokens.deinit();
+    var tokens = try lexer.tokenize();
+    defer tokens.deinit(allocator);
 
     try std.testing.expect(tokens.items.len >= 5);
     try std.testing.expect(tokens.items[0].kind == .Slay);
@@ -1020,8 +1052,8 @@ test "lexer numbers" {
     const allocator = std.testing.allocator;
     
     var lexer = Lexer.init(allocator, "42 3.14");
-    const tokens = try lexer.tokenize();
-    defer tokens.deinit();
+    var tokens = try lexer.tokenize();
+    defer tokens.deinit(allocator);
 
     try std.testing.expect(tokens.items.len >= 2);
     try std.testing.expect(tokens.items[0].kind == .Number);
@@ -1032,8 +1064,8 @@ test "lexer strings" {
     const allocator = std.testing.allocator;
     
     var lexer = Lexer.init(allocator, "\"hello world\"");
-    const tokens = try lexer.tokenize();
-    defer tokens.deinit();
+    var tokens = try lexer.tokenize();
+    defer tokens.deinit(allocator);
 
     try std.testing.expect(tokens.items.len >= 1);
     try std.testing.expect(tokens.items[0].kind == .StringLiteral);
@@ -1043,8 +1075,8 @@ test "lexer bitwise operators" {
     const allocator = std.testing.allocator;
     
     var lexer = Lexer.init(allocator, "& | ^ << >>");
-    const tokens = try lexer.tokenize();
-    defer tokens.deinit();
+    var tokens = try lexer.tokenize();
+    defer tokens.deinit(allocator);
 
     try std.testing.expect(tokens.items.len >= 5);
     try std.testing.expect(tokens.items[0].kind == .Amp);
@@ -1074,8 +1106,71 @@ test "lexer hash character support" {
     
     // Test hash comment followed by code (filtered in tokenize)
     var lexer4 = Lexer.init(allocator, "# comment\nvibez.spill");
-    const tokens4 = try lexer4.tokenize();
-    defer tokens4.deinit();
-    try std.testing.expect(tokens4.items.len >= 2);
-    try std.testing.expect(tokens4.items[0].kind == .Identifier); // vibez
+    var tokens4 = try lexer4.tokenize();
+    defer tokens4.deinit(allocator);
+    // Skip newlines and find the first identifier
+    var found_vibez = false;
+    for (tokens4.items) |token| {
+        if (token.kind == .Identifier and std.mem.eql(u8, token.lexeme, "vibez")) {
+            found_vibez = true;
+            break;
+        }
+    }
+    try std.testing.expect(found_vibez);
+}
+
+test "lexer emoji identifiers" {
+    const allocator = std.testing.allocator;
+    
+    // Test single emoji identifier
+    var lexer1 = Lexer.init(allocator, "🔥");
+    const token1 = try lexer1.nextToken();
+    try std.testing.expect(token1.kind == .Identifier);
+    try std.testing.expect(std.mem.eql(u8, token1.lexeme, "🔥"));
+    
+    // Test emoji + text identifier
+    var lexer2 = Lexer.init(allocator, "🔥speed");
+    const token2 = try lexer2.nextToken();
+    try std.testing.expect(token2.kind == .Identifier);
+    try std.testing.expect(std.mem.eql(u8, token2.lexeme, "🔥speed"));
+    
+    // Test multiple emoji identifiers
+    var lexer3 = Lexer.init(allocator, "💻 📊 🚀");
+    var tokens3 = try lexer3.tokenize();
+    defer tokens3.deinit(allocator);
+    try std.testing.expect(tokens3.items.len >= 3);
+    try std.testing.expect(tokens3.items[0].kind == .Identifier);
+    try std.testing.expect(tokens3.items[1].kind == .Identifier);
+    try std.testing.expect(tokens3.items[2].kind == .Identifier);
+    try std.testing.expect(std.mem.eql(u8, tokens3.items[0].lexeme, "💻"));
+    try std.testing.expect(std.mem.eql(u8, tokens3.items[1].lexeme, "📊"));
+    try std.testing.expect(std.mem.eql(u8, tokens3.items[2].lexeme, "🚀"));
+    
+    // Test emoji with numbers (continuation characters)
+    var lexer4 = Lexer.init(allocator, "🔥data123");
+    const token4 = try lexer4.nextToken();
+    try std.testing.expect(token4.kind == .Identifier);
+    try std.testing.expect(std.mem.eql(u8, token4.lexeme, "🔥data123"));
+    
+    // Test mixed Unicode and emoji
+    var lexer5 = Lexer.init(allocator, "café🍕test");
+    const token5 = try lexer5.nextToken();
+    try std.testing.expect(token5.kind == .Identifier);
+    try std.testing.expect(std.mem.eql(u8, token5.lexeme, "café🍕test"));
+}
+
+test "lexer cursed variable declarations with emojis" {
+    const allocator = std.testing.allocator;
+    
+    // Test CURSED variable declaration with emoji
+    var lexer = Lexer.init(allocator, "sus 🔥 normie = 42");
+    var tokens = try lexer.tokenize();
+    defer tokens.deinit(allocator);
+    
+    try std.testing.expect(tokens.items.len >= 4);
+    try std.testing.expect(tokens.items[0].kind == .Sus);           // sus
+    try std.testing.expect(tokens.items[1].kind == .Identifier);    // 🔥
+    try std.testing.expect(tokens.items[2].kind == .Normie);        // normie
+    try std.testing.expect(tokens.items[3].kind == .Equal);         // =
+    try std.testing.expect(std.mem.eql(u8, tokens.items[1].lexeme, "🔥"));
 }
