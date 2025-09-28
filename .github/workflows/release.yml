@@ -23,6 +23,10 @@ jobs:
             target: x86_64-windows
             artifact: cursed-compiler-windows-x64
             binary: cursed-compiler.exe
+          - os: windows-11-arm
+            target: aarch64-windows-gnu
+            artifact: cursed-compiler-windows-arm64
+            binary: cursed-compiler.exe
           - os: macos-latest
             target: x86_64-macos
             artifact: cursed-compiler-macos-x64
@@ -31,7 +35,6 @@ jobs:
             target: aarch64-macos
             artifact: cursed-compiler-macos-arm64
             binary: cursed-compiler
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -93,6 +96,9 @@ jobs:
           # Windows x64
           cp release-artifacts/cursed-compiler-windows-x64/cursed-compiler.exe release-assets/cursed-compiler-windows-x64.exe
           
+          # Windows ARM64
+          cp release-artifacts/cursed-compiler-windows-arm64/cursed-compiler.exe release-assets/cursed-compiler-windows-arm64.exe
+          
           # macOS x64
           cp release-artifacts/cursed-compiler-macos-x64/cursed-compiler release-assets/cursed-compiler-macos-x64
           chmod +x release-assets/cursed-compiler-macos-x64
@@ -113,6 +119,7 @@ jobs:
           files: |
             release-assets/cursed-compiler-linux-x64
             release-assets/cursed-compiler-windows-x64.exe
+            release-assets/cursed-compiler-windows-arm64.exe
             release-assets/cursed-compiler-macos-x64
             release-assets/cursed-compiler-macos-arm64
             release-assets/checksums.sha256
@@ -125,7 +132,8 @@ jobs:
             
             ### Downloads
             - **Linux x64**: `cursed-compiler-linux-x64`
-            - **Windows x64**: `cursed-compiler-windows-x64.exe`  
+            - **Windows x64**: `cursed-compiler-windows-x64.exe`
+            - **Windows ARM64**: `cursed-compiler-windows-arm64.exe`
             - **macOS x64**: `cursed-compiler-macos-x64`
             - **macOS ARM64**: `cursed-compiler-macos-arm64`
             
