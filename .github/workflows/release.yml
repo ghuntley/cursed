@@ -23,6 +23,10 @@ jobs:
             target: x86_64-windows
             artifact: cursed-compiler-windows-x64
             binary: cursed-compiler.exe
+          - os: windows-11-arm
+            target: aarch64-windows-gnu
+            artifact: cursed-compiler-windows-arm64
+            binary: cursed-compiler.exe
           - os: macos-latest
             target: x86_64-macos
             artifact: cursed-compiler-macos-x64
@@ -31,10 +35,6 @@ jobs:
             target: aarch64-macos
             artifact: cursed-compiler-macos-arm64
             binary: cursed-compiler
-          - os: windows-latest
-            target: aarch64-windows-gnu
-            artifact: cursed-compiler-windows-arm64
-            binary: cursed-compiler.exe
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
