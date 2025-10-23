@@ -162,21 +162,22 @@ function! s:setup_cursed_buffer()
     setlocal foldlevel=1
   endif
   
-  " Set comment strings
-  setlocal commentstring=//\ %s
-  setlocal comments=://,s1:/*,mb:*,ex:*/
-  
+   " Set comment strings
+   setlocal commentstring=fr\ fr\ %s
+   setlocal comments=fr\ fr,no\ cap:on\ god
+
   " Enable omni completion
   setlocal omnifunc=cursed#completion#omnifunc
-  
+
   " Set up text width and formatting
   setlocal textwidth=120
   setlocal formatoptions=croql
-  
+
   " Enable spell checking for comments and strings
   setlocal spell spelllang=en_us
-  syntax match cursedComment "//.*" contains=@Spell
+  syntax match cursedComment "fr fr.*" contains=@Spell
   syntax region cursedString start=+"+ skip=+\\"+ end=+"+ contains=@Spell
+  syntax region cursedRawString start=+`+ end=+`+ contains=@Spell
 endfunction
 
 " Initialize LSP if available and enabled
@@ -375,11 +376,11 @@ function! cursed#completion#omnifunc(findstart, base)
     
     " Keywords
     let keywords = [
-          \ 'sus', 'drip', 'tea', 'lit', 'cap', 'vibe', 'flex', 'no_cap', 'periodt',
-          \ 'slay', 'squad', 'collab', 'yeet', 'nocap', 'vibes',
-          \ 'ready', 'otherwise', 'bestie', 'break', 'continue', 'damn',
-          \ 'yikes', 'fam', 'shook', 'sick', 'go',
-          \ 'and', 'or', 'not', 'in', 'is', 'as'
+          \ 'sus', 'tea', 'lit', 'nah', 'vibe', 'flex',
+          \ 'slay', 'squad', 'collab', 'yeet', 'based', 'cringe',
+          \ 'ready', 'otherwise', 'bestie', 'ghosted', 'simp', 'damn',
+          \ 'yikes', 'fam', 'shook', 'later', 'stan', 'facts', 'be_like',
+          \ 'vibe_check', 'mood', 'basic', 'dm_send', 'dm_recv', 'dm_close'
           \ ]
     
     for keyword in keywords
@@ -394,9 +395,8 @@ function! cursed#completion#omnifunc(findstart, base)
     
     " Built-in functions and modules
     let builtins = [
-          \ 'print', 'println', 'spill', 'format', 'parse',
-          \ 'len', 'push', 'pop', 'slice', 'map', 'filter', 'reduce',
-          \ 'spawn', 'channel', 'select', 'timeout'
+          \ 'len', 'append', 'copy', 'make', 'new',
+          \ 'panic', 'recover', 'print', 'println'
           \ ]
     
     for builtin in builtins

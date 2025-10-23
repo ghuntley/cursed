@@ -35,13 +35,13 @@
     "comments": {
       "patterns": [
         {
-          "name": "comment.line.double-slash.cursed",
-          "match": "//.*$"
+          "name": "comment.line.cursed",
+          "match": "fr fr.*$"
         },
         {
           "name": "comment.block.cursed",
-          "begin": "/\\*",
-          "end": "\\*/"
+          "begin": "no cap",
+          "end": "on god"
         }
       ]
     },
@@ -112,11 +112,11 @@
       "patterns": [
         {
           "name": "keyword.control.cursed",
-          "match": "\\b(lowkey|highkey|vibe_check|mood|basic|bestie|flex|periodt|ready|yolo|ghosted|simp|later|stan)\\b"
+          "match": "\\b(ready|otherwise|vibe_check|mood|basic|bestie|flex|periodt|damn|ghosted|simp|later|stan|yikes|fam|shook)\\b"
         },
         {
           "name": "keyword.declaration.cursed",
-          "match": "\\b(vibe|yeet|facts|sus|be_like|slay|squad|vibes|dm|map)\\b"
+          "match": "\\b(vibe|yeet|facts|sus|be_like|slay|squad|collab|map|dm|ඞ)\\b"
         },
         {
           "name": "keyword.operator.cursed",
@@ -124,11 +124,11 @@
         },
         {
           "name": "constant.language.boolean.cursed",
-          "match": "\\b(based|cap)\\b"
+          "match": "\\b(based|cringe)\\b"
         },
         {
-          "name": "constant.language.null.cursed",
-          "match": "\\b(cringe)\\b"
+          "name": "constant.language.nil.cursed",
+          "match": "\\b(nah)\\b"
         }
       ]
     },
@@ -136,7 +136,7 @@
       "patterns": [
         {
           "name": "storage.type.cursed",
-          "match": "\\b(normie|smol|mid|thicc|drip|snack|meal|byte|rune|extra|tea|lit|sip)\\b"
+          "match": "\\b(normie|smol|mid|thicc|snack|meal|byte|rune|extra|tea|lit|sip|channel|dm)\\b"
         }
       ]
     },

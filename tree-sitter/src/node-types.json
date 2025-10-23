@@ -300,11 +300,6 @@
     }
   },
   {
-    "type": "builtin_type",
-    "named": true,
-    "fields": {}
-  },
-  {
     "type": "call_expression",
     "named": true,
     "fields": {
@@ -360,6 +355,22 @@
     "type": "char_literal",
     "named": true,
     "fields": {}
+  },
+  {
+    "type": "close_statement",
+    "named": true,
+    "fields": {
+      "channel": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "expression",
+            "named": true
+          }
+        ]
+      }
+    }
   },
   {
     "type": "comment",
@@ -499,37 +510,6 @@
     }
   },
   {
-    "type": "declaration",
-    "named": true,
-    "fields": {},
-    "children": {
-      "multiple": false,
-      "required": true,
-      "types": [
-        {
-          "type": "const_declaration",
-          "named": true
-        },
-        {
-          "type": "function_declaration",
-          "named": true
-        },
-        {
-          "type": "method_declaration",
-          "named": true
-        },
-        {
-          "type": "type_declaration",
-          "named": true
-        },
-        {
-          "type": "var_declaration",
-          "named": true
-        }
-      ]
-    }
-  },
-  {
     "type": "defer_statement",
     "named": true,
     "fields": {
@@ -591,7 +571,7 @@
       },
       "variable": {
         "multiple": false,
-        "required": true,
+        "required": false,
         "types": [
           {
             "type": "identifier",
@@ -1188,6 +1168,10 @@
           "named": true
         },
         {
+          "type": "pointer_type",
+          "named": true
+        },
+        {
           "type": "type",
           "named": true
         }
@@ -1420,22 +1404,6 @@
     }
   },
   {
-    "type": "receive_expression",
-    "named": true,
-    "fields": {
-      "channel": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "expression",
-            "named": true
-          }
-        ]
-      }
-    }
-  },
-  {
     "type": "receive_statement",
     "named": true,
     "fields": {
@@ -1444,7 +1412,7 @@
         "required": true,
         "types": [
           {
-            "type": "receive_expression",
+            "type": "expression",
             "named": true
           }
         ]
@@ -1481,7 +1449,7 @@
       },
       "error_variable": {
         "multiple": false,
-        "required": true,
+        "required": false,
         "types": [
           {
             "type": "identifier",
@@ -1490,7 +1458,7 @@
         ]
       },
       "recovery_body": {
-        "multiple": false,
+        "multiple": true,
         "required": false,
         "types": [
           {
@@ -1747,7 +1715,6 @@
   {
     "type": "source_file",
     "named": true,
-    "root": true,
     "fields": {},
     "children": {
       "multiple": true,
@@ -1777,19 +1744,15 @@
       "required": true,
       "types": [
         {
-          "type": "block",
-          "named": true
-        },
-        {
           "type": "break_statement",
           "named": true
         },
         {
-          "type": "continue_statement",
+          "type": "close_statement",
           "named": true
         },
         {
-          "type": "declaration",
+          "type": "continue_statement",
           "named": true
         },
         {
@@ -1817,6 +1780,10 @@
           "named": true
         },
         {
+          "type": "receive_statement",
+          "named": true
+        },
+        {
           "type": "recovery_statement",
           "named": true
         },
@@ -1829,11 +1796,19 @@
           "named": true
         },
         {
+          "type": "send_statement",
+          "named": true
+        },
+        {
           "type": "simple_statement",
           "named": true
         },
         {
           "type": "switch_statement",
+          "named": true
+        },
+        {
+          "type": "var_declaration",
           "named": true
         },
         {
@@ -2259,10 +2234,6 @@
             "named": false
           },
           {
-            "type": "&",
-            "named": false
-          },
-          {
             "type": "*",
             "named": false
           },
@@ -2275,15 +2246,7 @@
             "named": false
           },
           {
-            "type": "<-",
-            "named": false
-          },
-          {
-            "type": "^",
-            "named": false
-          },
-          {
-            "type": "shook",
+            "type": "ඞ",
             "named": false
           }
         ]
@@ -2461,14 +2424,6 @@
     "named": false
   },
   {
-    "type": "/*",
-    "named": false
-  },
-  {
-    "type": "//",
-    "named": false
-  },
-  {
     "type": "/=",
     "named": false
   },
@@ -2486,10 +2441,6 @@
   },
   {
     "type": "<",
-    "named": false
-  },
-  {
-    "type": "<-",
     "named": false
   },
   {
@@ -2569,19 +2520,19 @@
     "named": false
   },
   {
-    "type": "byte",
+    "type": "builtin_type",
+    "named": true
+  },
+  {
+    "type": "collab",
     "named": false
   },
   {
-    "type": "cap",
+    "type": "cringe",
     "named": false
   },
   {
-    "type": "chan",
-    "named": false
-  },
-  {
-    "type": "defer",
+    "type": "damn",
     "named": false
   },
   {
@@ -2589,11 +2540,15 @@
     "named": false
   },
   {
-    "type": "drip",
+    "type": "dm_close",
     "named": false
   },
   {
-    "type": "extra",
+    "type": "dm_recv",
+    "named": false
+  },
+  {
+    "type": "dm_send",
     "named": false
   },
   {
@@ -2609,11 +2564,11 @@
     "named": false
   },
   {
-    "type": "ghosted",
+    "type": "fr fr",
     "named": false
   },
   {
-    "type": "highkey",
+    "type": "ghosted",
     "named": false
   },
   {
@@ -2621,23 +2576,11 @@
     "named": true
   },
   {
-    "type": "lit",
-    "named": false
-  },
-  {
-    "type": "lowkey",
+    "type": "later",
     "named": false
   },
   {
     "type": "map",
-    "named": false
-  },
-  {
-    "type": "meal",
-    "named": false
-  },
-  {
-    "type": "mid",
     "named": false
   },
   {
@@ -2649,7 +2592,15 @@
     "named": true
   },
   {
-    "type": "normie",
+    "type": "no cap",
+    "named": false
+  },
+  {
+    "type": "on god",
+    "named": false
+  },
+  {
+    "type": "otherwise",
     "named": false
   },
   {
@@ -2661,31 +2612,11 @@
     "named": false
   },
   {
-    "type": "rune",
-    "named": false
-  },
-  {
-    "type": "shook",
-    "named": false
-  },
-  {
     "type": "simp",
     "named": false
   },
   {
-    "type": "sip",
-    "named": false
-  },
-  {
     "type": "slay",
-    "named": false
-  },
-  {
-    "type": "smol",
-    "named": false
-  },
-  {
-    "type": "snack",
     "named": false
   },
   {
@@ -2701,14 +2632,6 @@
     "named": false
   },
   {
-    "type": "tea",
-    "named": false
-  },
-  {
-    "type": "thicc",
-    "named": false
-  },
-  {
     "type": "vibe",
     "named": false
   },
@@ -2717,19 +2640,11 @@
     "named": false
   },
   {
-    "type": "vibes",
-    "named": false
-  },
-  {
     "type": "yeet",
     "named": false
   },
   {
     "type": "yikes",
-    "named": false
-  },
-  {
-    "type": "yolo",
     "named": false
   },
   {
@@ -2754,6 +2669,10 @@
   },
   {
     "type": "~",
+    "named": false
+  },
+  {
+    "type": "ඞ",
     "named": false
   }
 ]

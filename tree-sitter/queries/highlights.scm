@@ -1,67 +1,45 @@
 ; Keywords
 [
-  "vibe"
-  "yeet"
-  "facts"
-  "sus"
-  "be_like"
-  "slay"
-  "squad"
-  "vibes"
-] @keyword
+     "vibe"
+     "yeet"
+     "facts"
+     "sus"
+     "be_like"
+     "slay"
+     "squad"
+     "collab"
+     ] @keyword
 
 ; Control flow keywords
 [
-  "lowkey"
-  "highkey"
-  "vibe_check"
-  "mood"
-  "basic"
-  "bestie"
-  "flex"
-  "periodt"
-  "ready"
-  "yolo"
-  "ghosted"
-  "simp"
-  "defer"
-  "stan"
-  "later"
-] @keyword.control
+     "ready"
+     "otherwise"
+     "vibe_check"
+     "mood"
+     "basic"
+     "bestie"
+     "flex"
+     "periodt"
+     "ghosted"
+     "simp"
+     "later"
+     "stan"
+     "dm_send"
+     "dm_recv"
+     "dm_close"
+     ] @keyword.control
 
 ; Error handling keywords
 [
-  "yikes"
-  "shook"
-  "fam"
-] @keyword.exception
+     "yikes"
+     "fam"
+     ] @keyword.exception
 
 ; Types
-[
-  "normie"
-  "smol"
-  "mid"
-  "thicc"
-  "drip"
-  "snack"
-  "meal"
-  "byte"
-  "rune"
-  "extra"
-  "tea"
-  "lit"
-  "sip"
-  "dm"
-  "chan"
-  "map"
-] @type.builtin
+(builtin_type) @type.builtin
 
 ; Literals
-[
-  "based"
-  "cap"
-  "cringe"
-] @constant.builtin
+(bool_literal) @constant.builtin
 
 ; Strings
 (string_literal) @string
@@ -80,63 +58,64 @@
 ; Function names
 (function_declaration name: (identifier) @function)
 (method_declaration name: (identifier) @function.method)
-(call_expression function: (identifier) @function)
-(call_expression function: (selector_expression field: (identifier) @function))
+(call_expression function: (primary_expression (operand (identifier))) @function)
+(call_expression function: (primary_expression (selector_expression field: (identifier))) @function)
 
 ; Operators
 [
-  "+"
-  "-"
-  "*"
-  "/"
-  "%"
-  "="
-  ":="
-  "+="
-  "-="
-  "*="
-  "/="
-  "%="
-  "&="
-  "|="
-  "^="
-  "<<="
-  ">>="
-  "=="
-  "!="
-  "<"
-  "<="
-  ">"
-  ">="
-  "&&"
-  "||"
-  "!"
-  "&"
-  "|"
-  "^"
-  "<<"
-  ">>"
-  "&^"
-  "<-"
-  "->"
-  "++"
-  "--"
-] @operator
+     "+"
+     "-"
+     "*"
+     "/"
+     "%"
+     "="
+     ":="
+     "+="
+     "-="
+     "*="
+     "/="
+     "%="
+     "&="
+     "|="
+     "^="
+     "<<="
+     ">>="
+     "=="
+     "!="
+     "<"
+     "<="
+     ">"
+     ">="
+     "&&"
+     "||"
+     "!"
+     "&"
+     "|"
+     "^"
+     "<<"
+     ">>"
+     "&^"
+     "++"
+     "--"
+     "ඞ"
+     ] @operator
 
 ; Punctuation
 [
-  "("
-  ")"
-  "["
-  "]"
-  "{"
-  "}"
-  ","
-  ";"
-  ":"
-  "."
-  "?"
-] @punctuation.delimiter
+     "("
+     ")"
+     "["
+     "]"
+     "{"
+     "}"
+     ","
+     ";"
+     ":"
+     "."
+     "?"
+     "<"
+     ">"
+     ] @punctuation.delimiter
 
 ; Package names
 (package_clause name: (identifier) @module)
@@ -163,3 +142,6 @@
 ; Error variables
 (error_statement variable: (identifier) @variable.special)
 (recovery_statement error_variable: (identifier) @variable.special)
+
+; Concurrency constructs
+(channel_type) @type

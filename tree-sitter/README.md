@@ -9,18 +9,18 @@ CURSED is a Go-inspired programming language that uses Gen Z slang keywords for 
 ## Features
 
 - **Complete syntax support** for all CURSED language constructs
-- **Gen Z slang keywords** with proper highlighting:
-  - `slay` - function declaration
-  - `lowkey`/`highkey` - if/else statements
-  - `vibe_check` - switch statements
-  - `bestie` - for loops
-  - `periodt` - while loops
-  - `stan` - goroutines
-  - `dm` - channels
-  - `facts` - constants
-  - `sus` - variables
-  - `based`/`cap` - boolean literals
-  - `cringe` - nil literal
+  - **Gen Z slang keywords** with proper highlighting:
+    - `slay` - function declaration
+    - `ready`/`otherwise` - if/else statements
+    - `vibe_check` - switch statements
+    - `bestie` - for loops
+    - `periodt` - while loops
+    - `stan` - goroutines
+    - `dm` - channels
+    - `facts` - constants
+    - `sus` - variables
+    - `based`/`cringe` - boolean literals
+    - `nah` - nil literal
 - **Error recovery** for robust parsing
 - **Incremental parsing** for fast IDE integration
 - **VS Code extension** with syntax highlighting and snippets
@@ -28,8 +28,8 @@ CURSED is a Go-inspired programming language that uses Gen Z slang keywords for 
 ## Language Keywords
 
 ### Control Flow
-- `lowkey` - if statement
-- `highkey` - else statement  
+- `ready` - if statement
+- `otherwise` - else statement
 - `vibe_check` - switch statement
 - `mood` - case clause
 - `basic` - default clause
@@ -37,7 +37,7 @@ CURSED is a Go-inspired programming language that uses Gen Z slang keywords for 
 - `flex` - range iteration
 - `periodt` - while loop
 - `ready` - select statement
-- `yolo` - return statement
+- `damn` - return statement
 - `ghosted` - break statement
 - `simp` - continue statement
 
@@ -226,12 +226,12 @@ sus isActive lit = based
 ### Control Flow
 ```cursed
 slay checkAge(age normie) tea {
-    lowkey age >= 18 {
-        yolo "Adult"
-    } highkey lowkey age >= 13 {
-        yolo "Teen"
-    } highkey {
-        yolo "Child"
+    ready age >= 18 {
+        damn "Adult"
+    } otherwise ready age >= 13 {
+        damn "Teen"
+    } otherwise {
+        damn "Child"
     }
 }
 ```

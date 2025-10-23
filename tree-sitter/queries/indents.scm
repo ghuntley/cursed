@@ -2,7 +2,6 @@
 [
   (block)
   (literal_value)
-  (field_declaration_list)
   (expression_case)
   (select_case)
   (interface_type)

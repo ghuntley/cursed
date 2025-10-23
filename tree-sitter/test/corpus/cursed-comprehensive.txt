@@ -1,10 +1,14 @@
-==================
+================================================================================
 Comprehensive CURSED test
-==================
+================================================================================
+
+vibe main
+
+slay main() {
 
 vibez.spill("Testing basic types without conversions:")
 
-# Test typed variable declarations
+fr fr Test typed variable declarations
 sus smol_var smol = 42
 sus mid_var mid = 12345
 sus thicc_var thicc = 1234567890
@@ -14,7 +18,7 @@ sus rune_var rune = 65
 vibez.spill("smol value:")
 vibez.spill(smol_var)
 
-# Test arithmetic operations
+fr fr Test arithmetic operations
 sus smol_a smol = 10
 sus smol_b smol = 20
 sus smol_sum smol = smol_a + smol_b
@@ -26,7 +30,7 @@ vibez.spill(smol_sum)
 vibez.spill(smol_diff)
 vibez.spill(smol_product)
 
-# Test comparisons  
+fr fr Test comparisons  
 sus comp_a smol = 15
 sus comp_b smol = 25
 sus is_equal lit = comp_a == comp_b
@@ -40,204 +44,549 @@ vibez.spill(is_greater)
 
 vibez.spill("Basic types test complete!")
 
----
+}
+
+--------------------------------------------------------------------------------
 
 (source_file
-  (expression_statement
-    (call_expression
-      function: (selector_expression
-        operand: (identifier)
-        field: (identifier))
-      arguments: (argument_list
-        (expression_list
-          (string_literal)))))
-  (comment)
-  (var_declaration
-    (var_spec
-      (identifier_list (identifier))
-      (builtin_type)
-      (expression_list (int_literal))))
-  (var_declaration
-    (var_spec
-      (identifier_list (identifier))
-      (builtin_type)
-      (expression_list (int_literal))))
-  (var_declaration
-    (var_spec
-      (identifier_list (identifier))
-      (builtin_type)
-      (expression_list (int_literal))))
-  (var_declaration
-    (var_spec
-      (identifier_list (identifier))
-      (builtin_type)
-      (expression_list (int_literal))))
-  (var_declaration
-    (var_spec
-      (identifier_list (identifier))
-      (builtin_type)
-      (expression_list (int_literal))))
-  (expression_statement
-    (call_expression
-      function: (selector_expression
-        operand: (identifier)
-        field: (identifier))
-      arguments: (argument_list
-        (expression_list
-          (string_literal)))))
-  (expression_statement
-    (call_expression
-      function: (selector_expression
-        operand: (identifier)
-        field: (identifier))
-      arguments: (argument_list
-        (expression_list
-          (identifier)))))
-  (comment)
-  (var_declaration
-    (var_spec
-      (identifier_list (identifier))
-      (builtin_type)
-      (expression_list (int_literal))))
-  (var_declaration
-    (var_spec
-      (identifier_list (identifier))
-      (builtin_type)
-      (expression_list (int_literal))))
-  (var_declaration
-    (var_spec
-      (identifier_list (identifier))
-      (builtin_type)
-      (expression_list
-        (binary_expression
-          left: (identifier)
-          operator: "+"
-          right: (identifier)))))
-  (var_declaration
-    (var_spec
-      (identifier_list (identifier))
-      (builtin_type)
-      (expression_list
-        (binary_expression
-          left: (identifier)
-          operator: "-"
-          right: (identifier)))))
-  (var_declaration
-    (var_spec
-      (identifier_list (identifier))
-      (builtin_type)
-      (expression_list
-        (binary_expression
-          left: (identifier)
-          operator: "*"
-          right: (identifier)))))
-  (expression_statement
-    (call_expression
-      function: (selector_expression
-        operand: (identifier)
-        field: (identifier))
-      arguments: (argument_list
-        (expression_list
-          (string_literal)))))
-  (expression_statement
-    (call_expression
-      function: (selector_expression
-        operand: (identifier)
-        field: (identifier))
-      arguments: (argument_list
-        (expression_list
-          (identifier)))))
-  (expression_statement
-    (call_expression
-      function: (selector_expression
-        operand: (identifier)
-        field: (identifier))
-      arguments: (argument_list
-        (expression_list
-          (identifier)))))
-  (expression_statement
-    (call_expression
-      function: (selector_expression
-        operand: (identifier)
-        field: (identifier))
-      arguments: (argument_list
-        (expression_list
-          (identifier)))))
-  (comment)
-  (var_declaration
-    (var_spec
-      (identifier_list (identifier))
-      (builtin_type)
-      (expression_list (int_literal))))
-  (var_declaration
-    (var_spec
-      (identifier_list (identifier))
-      (builtin_type)
-      (expression_list (int_literal))))
-  (var_declaration
-    (var_spec
-      (identifier_list (identifier))
-      (builtin_type)
-      (expression_list
-        (binary_expression
-          left: (identifier)
-          operator: "=="
-          right: (identifier)))))
-  (var_declaration
-    (var_spec
-      (identifier_list (identifier))
-      (builtin_type)
-      (expression_list
-        (binary_expression
-          left: (identifier)
-          operator: "<"
-          right: (identifier)))))
-  (var_declaration
-    (var_spec
-      (identifier_list (identifier))
-      (builtin_type)
-      (expression_list
-        (binary_expression
-          left: (identifier)
-          operator: ">"
-          right: (identifier)))))
-  (expression_statement
-    (call_expression
-      function: (selector_expression
-        operand: (identifier)
-        field: (identifier))
-      arguments: (argument_list
-        (expression_list
-          (string_literal)))))
-  (expression_statement
-    (call_expression
-      function: (selector_expression
-        operand: (identifier)
-        field: (identifier))
-      arguments: (argument_list
-        (expression_list
-          (identifier)))))
-  (expression_statement
-    (call_expression
-      function: (selector_expression
-        operand: (identifier)
-        field: (identifier))
-      arguments: (argument_list
-        (expression_list
-          (identifier)))))
-  (expression_statement
-    (call_expression
-      function: (selector_expression
-        operand: (identifier)
-        field: (identifier))
-      arguments: (argument_list
-        (expression_list
-          (identifier)))))
-  (expression_statement
-    (call_expression
-      function: (selector_expression
-        operand: (identifier)
-        field: (identifier))
-      arguments: (argument_list
-        (expression_list
-          (string_literal))))))
+  (package_clause
+    name: (identifier))
+  (top_level_declaration
+    (function_declaration
+      name: (identifier)
+      (signature
+        (parameters))
+      (block
+        (statement
+          (expression_statement
+            (expression
+              (unary_expression
+                (primary_expression
+                  (call_expression
+                    function: (primary_expression
+                      (selector_expression
+                        operand: (primary_expression
+                          (operand
+                            (identifier)))
+                        field: (identifier)))
+                    arguments: (argument_list
+                      (expression_list
+                        (expression
+                          (unary_expression
+                            (primary_expression
+                              (operand
+                                (literal
+                                  (basic_literal
+                                    (string_literal)))))))))))))))
+        (comment)
+        (statement
+          (var_declaration
+            (var_spec
+              (identifier_list
+                (identifier))
+              (type
+                (type_name
+                  (builtin_type)))
+              (expression_list
+                (expression
+                  (unary_expression
+                    (primary_expression
+                      (operand
+                        (literal
+                          (basic_literal
+                            (int_literal)))))))))))
+        (statement
+          (var_declaration
+            (var_spec
+              (identifier_list
+                (identifier))
+              (type
+                (type_name
+                  (builtin_type)))
+              (expression_list
+                (expression
+                  (unary_expression
+                    (primary_expression
+                      (operand
+                        (literal
+                          (basic_literal
+                            (int_literal)))))))))))
+        (statement
+          (var_declaration
+            (var_spec
+              (identifier_list
+                (identifier))
+              (type
+                (type_name
+                  (builtin_type)))
+              (expression_list
+                (expression
+                  (unary_expression
+                    (primary_expression
+                      (operand
+                        (literal
+                          (basic_literal
+                            (int_literal)))))))))))
+        (statement
+          (var_declaration
+            (var_spec
+              (identifier_list
+                (identifier))
+              (type
+                (type_name
+                  (builtin_type)))
+              (expression_list
+                (expression
+                  (unary_expression
+                    (primary_expression
+                      (operand
+                        (literal
+                          (basic_literal
+                            (int_literal)))))))))))
+        (statement
+          (var_declaration
+            (var_spec
+              (identifier_list
+                (identifier))
+              (type
+                (type_name
+                  (builtin_type)))
+              (expression_list
+                (expression
+                  (unary_expression
+                    (primary_expression
+                      (operand
+                        (literal
+                          (basic_literal
+                            (int_literal)))))))))))
+        (statement
+          (expression_statement
+            (expression
+              (unary_expression
+                (primary_expression
+                  (selector_expression
+                    operand: (primary_expression
+                      (operand
+                        (identifier)))
+                    field: (identifier)))))))
+        (statement
+          (expression_statement
+            (expression
+              (unary_expression
+                (primary_expression
+                  (operand
+                    (expression
+                      (unary_expression
+                        (primary_expression
+                          (operand
+                            (literal
+                              (basic_literal
+                                (string_literal)))))))))))))
+        (statement
+          (expression_statement
+            (expression
+              (unary_expression
+                (primary_expression
+                  (selector_expression
+                    operand: (primary_expression
+                      (operand
+                        (identifier)))
+                    field: (identifier)))))))
+        (statement
+          (expression_statement
+            (expression
+              (unary_expression
+                (primary_expression
+                  (operand
+                    (expression
+                      (unary_expression
+                        (primary_expression
+                          (operand
+                            (identifier)))))))))))
+        (comment)
+        (statement
+          (var_declaration
+            (var_spec
+              (identifier_list
+                (identifier))
+              (type
+                (type_name
+                  (builtin_type)))
+              (expression_list
+                (expression
+                  (unary_expression
+                    (primary_expression
+                      (operand
+                        (literal
+                          (basic_literal
+                            (int_literal)))))))))))
+        (statement
+          (var_declaration
+            (var_spec
+              (identifier_list
+                (identifier))
+              (type
+                (type_name
+                  (builtin_type)))
+              (expression_list
+                (expression
+                  (unary_expression
+                    (primary_expression
+                      (operand
+                        (literal
+                          (basic_literal
+                            (int_literal)))))))))))
+        (statement
+          (var_declaration
+            (var_spec
+              (identifier_list
+                (identifier))
+              (type
+                (type_name
+                  (builtin_type)))
+              (expression_list
+                (expression
+                  (binary_expression
+                    left: (expression
+                      (unary_expression
+                        (primary_expression
+                          (operand
+                            (identifier)))))
+                    right: (expression
+                      (unary_expression
+                        (primary_expression
+                          (operand
+                            (identifier)))))))))))
+        (statement
+          (var_declaration
+            (var_spec
+              (identifier_list
+                (identifier))
+              (type
+                (type_name
+                  (builtin_type)))
+              (expression_list
+                (expression
+                  (binary_expression
+                    left: (expression
+                      (unary_expression
+                        (primary_expression
+                          (operand
+                            (identifier)))))
+                    right: (expression
+                      (unary_expression
+                        (primary_expression
+                          (operand
+                            (identifier)))))))))))
+        (statement
+          (var_declaration
+            (var_spec
+              (identifier_list
+                (identifier))
+              (type
+                (type_name
+                  (builtin_type)))
+              (expression_list
+                (expression
+                  (binary_expression
+                    left: (expression
+                      (unary_expression
+                        (primary_expression
+                          (operand
+                            (identifier)))))
+                    right: (expression
+                      (unary_expression
+                        (primary_expression
+                          (operand
+                            (identifier)))))))))))
+        (statement
+          (expression_statement
+            (expression
+              (unary_expression
+                (primary_expression
+                  (selector_expression
+                    operand: (primary_expression
+                      (operand
+                        (identifier)))
+                    field: (identifier)))))))
+        (statement
+          (expression_statement
+            (expression
+              (unary_expression
+                (primary_expression
+                  (operand
+                    (expression
+                      (unary_expression
+                        (primary_expression
+                          (operand
+                            (literal
+                              (basic_literal
+                                (string_literal)))))))))))))
+        (statement
+          (expression_statement
+            (expression
+              (unary_expression
+                (primary_expression
+                  (selector_expression
+                    operand: (primary_expression
+                      (operand
+                        (identifier)))
+                    field: (identifier)))))))
+        (statement
+          (expression_statement
+            (expression
+              (unary_expression
+                (primary_expression
+                  (operand
+                    (expression
+                      (unary_expression
+                        (primary_expression
+                          (operand
+                            (identifier)))))))))))
+        (statement
+          (expression_statement
+            (expression
+              (unary_expression
+                (primary_expression
+                  (selector_expression
+                    operand: (primary_expression
+                      (operand
+                        (identifier)))
+                    field: (identifier)))))))
+        (statement
+          (expression_statement
+            (expression
+              (unary_expression
+                (primary_expression
+                  (operand
+                    (expression
+                      (unary_expression
+                        (primary_expression
+                          (operand
+                            (identifier)))))))))))
+        (statement
+          (expression_statement
+            (expression
+              (unary_expression
+                (primary_expression
+                  (selector_expression
+                    operand: (primary_expression
+                      (operand
+                        (identifier)))
+                    field: (identifier)))))))
+        (statement
+          (expression_statement
+            (expression
+              (unary_expression
+                (primary_expression
+                  (operand
+                    (expression
+                      (unary_expression
+                        (primary_expression
+                          (operand
+                            (identifier)))))))))))
+        (comment)
+        (statement
+          (var_declaration
+            (var_spec
+              (identifier_list
+                (identifier))
+              (type
+                (type_name
+                  (builtin_type)))
+              (expression_list
+                (expression
+                  (unary_expression
+                    (primary_expression
+                      (operand
+                        (literal
+                          (basic_literal
+                            (int_literal)))))))))))
+        (statement
+          (var_declaration
+            (var_spec
+              (identifier_list
+                (identifier))
+              (type
+                (type_name
+                  (builtin_type)))
+              (expression_list
+                (expression
+                  (unary_expression
+                    (primary_expression
+                      (operand
+                        (literal
+                          (basic_literal
+                            (int_literal)))))))))))
+        (statement
+          (var_declaration
+            (var_spec
+              (identifier_list
+                (identifier))
+              (type
+                (type_name
+                  (builtin_type)))
+              (expression_list
+                (expression
+                  (binary_expression
+                    left: (expression
+                      (unary_expression
+                        (primary_expression
+                          (operand
+                            (identifier)))))
+                    right: (expression
+                      (unary_expression
+                        (primary_expression
+                          (operand
+                            (identifier)))))))))))
+        (statement
+          (var_declaration
+            (var_spec
+              (identifier_list
+                (identifier))
+              (type
+                (type_name
+                  (builtin_type)))
+              (expression_list
+                (expression
+                  (binary_expression
+                    left: (expression
+                      (unary_expression
+                        (primary_expression
+                          (operand
+                            (identifier)))))
+                    right: (expression
+                      (unary_expression
+                        (primary_expression
+                          (operand
+                            (identifier)))))))))))
+        (statement
+          (var_declaration
+            (var_spec
+              (identifier_list
+                (identifier))
+              (type
+                (type_name
+                  (builtin_type)))
+              (expression_list
+                (expression
+                  (binary_expression
+                    left: (expression
+                      (unary_expression
+                        (primary_expression
+                          (operand
+                            (identifier)))))
+                    right: (expression
+                      (unary_expression
+                        (primary_expression
+                          (operand
+                            (identifier)))))))))))
+        (statement
+          (expression_statement
+            (expression
+              (unary_expression
+                (primary_expression
+                  (selector_expression
+                    operand: (primary_expression
+                      (operand
+                        (identifier)))
+                    field: (identifier)))))))
+        (statement
+          (expression_statement
+            (expression
+              (unary_expression
+                (primary_expression
+                  (operand
+                    (expression
+                      (unary_expression
+                        (primary_expression
+                          (operand
+                            (literal
+                              (basic_literal
+                                (string_literal)))))))))))))
+        (statement
+          (expression_statement
+            (expression
+              (unary_expression
+                (primary_expression
+                  (selector_expression
+                    operand: (primary_expression
+                      (operand
+                        (identifier)))
+                    field: (identifier)))))))
+        (statement
+          (expression_statement
+            (expression
+              (unary_expression
+                (primary_expression
+                  (operand
+                    (expression
+                      (unary_expression
+                        (primary_expression
+                          (operand
+                            (identifier)))))))))))
+        (statement
+          (expression_statement
+            (expression
+              (unary_expression
+                (primary_expression
+                  (selector_expression
+                    operand: (primary_expression
+                      (operand
+                        (identifier)))
+                    field: (identifier)))))))
+        (statement
+          (expression_statement
+            (expression
+              (unary_expression
+                (primary_expression
+                  (operand
+                    (expression
+                      (unary_expression
+                        (primary_expression
+                          (operand
+                            (identifier)))))))))))
+        (statement
+          (expression_statement
+            (expression
+              (unary_expression
+                (primary_expression
+                  (selector_expression
+                    operand: (primary_expression
+                      (operand
+                        (identifier)))
+                    field: (identifier)))))))
+        (statement
+          (expression_statement
+            (expression
+              (unary_expression
+                (primary_expression
+                  (operand
+                    (expression
+                      (unary_expression
+                        (primary_expression
+                          (operand
+                            (identifier)))))))))))
+        (statement
+          (expression_statement
+            (expression
+              (unary_expression
+                (primary_expression
+                  (selector_expression
+                    operand: (primary_expression
+                      (operand
+                        (identifier)))
+                    field: (identifier)))))))
+        (statement
+          (expression_statement
+            (expression
+              (unary_expression
+                (primary_expression
+                  (operand
+                    (expression
+                      (unary_expression
+                        (primary_expression
+                          (operand
+                            (literal
+                              (basic_literal
+                                (string_literal)))))))))))))))))

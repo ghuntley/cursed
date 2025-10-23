@@ -1,0 +1,11 @@
+vibe main
+
+slay test(x normie) {
+    ready x > 0 {
+        damn x
+    } otherwise ready x < 0 {
+        damn -x
+    } otherwise {
+        damn 0
+    }
+}

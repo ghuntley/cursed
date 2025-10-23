@@ -1,0 +1,83 @@
+{
+  "name": "CURSED Light",
+  "type": "light",
+  "colors": {
+    "editor.background": "#ffffff",
+    "editor.foreground": "#000000",
+    "editorLineNumber.foreground": "#237893",
+    "editor.selectionBackground": "#add6ff",
+    "editor.inactiveSelectionBackground": "#e5ebf1"
+  },
+  "tokenColors": [
+    {
+      "name": "Comment",
+      "scope": ["comment", "comment.line", "comment.block"],
+      "settings": {
+        "foreground": "#008000"
+      }
+    },
+    {
+      "name": "String",
+      "scope": ["string", "string.quoted", "string.template"],
+      "settings": {
+        "foreground": "#a31515"
+      }
+    },
+    {
+      "name": "Number",
+      "scope": ["constant.numeric"],
+      "settings": {
+        "foreground": "#098658"
+      }
+    },
+    {
+      "name": "Boolean",
+      "scope": ["constant.language.boolean"],
+      "settings": {
+        "foreground": "#0000ff"
+      }
+    },
+    {
+      "name": "Keyword",
+      "scope": ["keyword", "keyword.control", "keyword.declaration"],
+      "settings": {
+        "foreground": "#0000ff"
+      }
+    },
+    {
+      "name": "Type",
+      "scope": ["storage.type", "entity.name.type"],
+      "settings": {
+        "foreground": "#267f99"
+      }
+    },
+    {
+      "name": "Function",
+      "scope": ["entity.name.function"],
+      "settings": {
+        "foreground": "#795e26"
+      }
+    },
+    {
+      "name": "Variable",
+      "scope": ["variable", "variable.name"],
+      "settings": {
+        "foreground": "#001080"
+      }
+    },
+    {
+      "name": "Operator",
+      "scope": ["keyword.operator"],
+      "settings": {
+        "foreground": "#000000"
+      }
+    },
+    {
+      "name": "Punctuation",
+      "scope": ["punctuation"],
+      "settings": {
+        "foreground": "#000000"
+      }
+    }
+  ]
+}
