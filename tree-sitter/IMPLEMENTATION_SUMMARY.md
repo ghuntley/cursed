@@ -43,7 +43,7 @@ tree-sitter/
 - ✅ **Type declarations** (`be_like Person squad { ... }`)
 
 ### Gen Z Slang Keywords
-- ✅ **Control flow**: `lowkey`, `highkey`, `vibe_check`, `mood`, `basic`
+- ✅ **Control flow**: `ready`, `otherwise`, `vibe_check`, `mood`, `basic`
 - ✅ **Loops**: `bestie`, `flex`, `periodt`
 - ✅ **Functions**: `slay`, `yolo`
 - ✅ **Concurrency**: `stan`, `ready`, `dm`
@@ -97,8 +97,8 @@ The VS Code extension includes 20+ code snippets:
 
 - `main` - Main function template
 - `slay` - Function declaration
-- `lowkey` - If statement
-- `lowkeyhighkey` - If-else statement
+- `ready` - If statement
+- `readyotherwise` - If-else statement
 - `bestie` - For loop
 - `bestieflex` - For-in loop
 - `periodt` - While loop
@@ -164,11 +164,11 @@ slay calculateAge(birthYear normie) normie {
 
 ### Control Flow
 ```cursed
-lowkey age >= 18 {
+ready age >= 18 {
     vibez.spill("You're an adult!")
-} highkey lowkey age >= 13 {
+} otherwise ready age >= 13 {
     vibez.spill("You're a teenager!")
-} highkey {
+} otherwise {
     vibez.spill("You're a child!")
 }
 ```

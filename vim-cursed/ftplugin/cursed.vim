@@ -8,8 +8,8 @@ endif
 let b:did_ftplugin = 1
 
 " Set local options
-setlocal commentstring=//\ %s
-setlocal comments=sO:*\ -,mO:*\ \ ,exO:*/,s1:/*,mb:*,ex:*/,://
+setlocal commentstring=fr\ fr\ %s
+setlocal comments=fr\ fr,no\ cap:on\ god
 setlocal formatoptions-=t formatoptions+=croql
 setlocal suffixesadd=.💀
 setlocal tabstop=4
@@ -95,7 +95,7 @@ function! CursedIndent()
   let ind = indent(v:lnum - 1)
   
   " Increase indent after opening braces, control structures
-  if prevline =~ '\v(\{|ready|otherwise|bestie|slay|squad|collab|sick).*$'
+  if prevline =~ '\v(\{|ready|otherwise|bestie|slay|squad|collab|vibe_check).*$'
     let ind += &shiftwidth
   endif
   

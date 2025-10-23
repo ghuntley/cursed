@@ -38,24 +38,13 @@
     "comments": {
       "patterns": [
         {
-          "name": "comment.line.double-slash.cursed",
-          "begin": "//",
-          "end": "$",
-          "captures": {
-            "0": {
-              "name": "punctuation.definition.comment.cursed"
-            }
-          }
+          "name": "comment.line.cursed",
+          "match": "fr fr.*$"
         },
         {
           "name": "comment.block.cursed",
-          "begin": "/\\*",
-          "end": "\\*/",
-          "captures": {
-            "0": {
-              "name": "punctuation.definition.comment.cursed"
-            }
-          }
+          "begin": "no cap",
+          "end": "on god"
         }
       ]
     },
@@ -118,35 +107,51 @@
       "patterns": [
         {
           "name": "keyword.control.cursed",
-          "match": "\\b(ready|otherwise|bestie|sick|when|periodt|aight|stan|defer|yikes|fam|shook|damn|ghosted|simp)\\b"
+          "match": "\\b(ready|otherwise|vibe_check|mood|basic|bestie|flex|periodt|damn|ghosted|simp|later|stan|dm_send|dm_recv|dm_close|yikes|fam|shook)\\b"
         },
         {
           "name": "keyword.declaration.cursed",
-          "match": "\\b(sus|slay|squad|collab|facts|be_like|vibe|yeet)\\b"
-        },
-        {
-          "name": "keyword.operator.cursed",
-          "match": "\\b(flex|dm|chan)\\b"
+          "match": "\\b(vibe|yeet|facts|sus|be_like|slay|squad|collab|map|dm|ඞ)\\b"
         },
         {
           "name": "constant.language.boolean.cursed",
-          "match": "\\b(based|cringe|cap|nah)\\b"
+          "match": "\\b(based|cringe)\\b"
+        },
+        {
+          "name": "constant.language.nil.cursed",
+          "match": "\\b(nah)\\b"
+        }
+      ]
+    },
+        {
+          "name": "keyword.declaration.cursed",
+          "match": "\\b(vibe|yeet|facts|sus|be_like|slay|squad|collab)\\b"
+        },
+        {
+          "name": "constant.language.boolean.cursed",
+          "match": "\\b(based|cringe)\\b"
+        },
+        {
+          "name": "constant.language.nil.cursed",
+          "match": "\\b(nah)\\b"
         },
         {
           "name": "keyword.other.cursed",
-          "match": "\\b(spill|basic|mood)\\b"
+          "match": "\\b(fr\\ fr|no\\ cap|on\\ god)\\b"
         }
       ]
     },
     "types": {
       "patterns": [
         {
-          "name": "storage.type.primitive.cursed",
-          "match": "\\b(normie|smol|mid|thicc|drip|snack|meal|byte|rune|extra|tea|lit|sip)\\b"
-        },
+          "name": "storage.type.cursed",
+          "match": "\\b(normie|smol|mid|thicc|snack|meal|byte|rune|extra|tea|lit|sip|channel|dm)\\b"
+        }
+      ]
+    },
         {
           "name": "storage.type.complex.cursed",
-          "match": "\\b(map|chan|dm)\\b"
+          "match": "\\b(map|dm)\\b"
         },
         {
           "name": "entity.name.type.cursed",
@@ -217,12 +222,8 @@
           "match": "(&|\\||\\^|<<|>>|&\\^)"
         },
         {
-          "name": "keyword.operator.channel.cursed",
-          "match": "(<-)"
-        },
-        {
-          "name": "keyword.operator.increment.cursed",
-          "match": "(\\+\\+|\\-\\-)"
+          "name": "keyword.operator.address.cursed",
+          "match": "(&|\\*|ඞ)"
         }
       ]
     },

@@ -1,0 +1,7 @@
+vibe main
+
+slay test() {
+    ready based {
+        damn 1
+    }
+}

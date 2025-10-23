@@ -20,20 +20,20 @@
     "description": "Function declaration"
   },
   "if statement": {
-    "prefix": "lowkey",
+    "prefix": "ready",
     "body": [
-      "lowkey ${1:condition} {",
+      "ready ${1:condition} {",
       "\t$0",
       "}"
     ],
     "description": "If statement"
   },
   "if-else statement": {
-    "prefix": "lowkeyhighkey",
+    "prefix": "readyotherwise",
     "body": [
-      "lowkey ${1:condition} {",
+      "ready ${1:condition} {",
       "\t$2",
-      "} highkey {",
+      "} otherwise {",
       "\t$0",
       "}"
     ],
@@ -81,7 +81,7 @@
     "description": "Switch statement"
   },
   "select statement": {
-    "prefix": "ready",
+    "prefix": "readyselect",
     "body": [
       "ready {",
       "\tmood ${1:channel_op}:",
@@ -131,9 +131,9 @@
     "description": "Struct definition"
   },
   "interface": {
-    "prefix": "vibes",
+    "prefix": "collab",
     "body": [
-      "vibes {",
+      "collab {",
       "\t${1:method}(${2:params}) ${3:return_type}",
       "\t$0",
       "}"
@@ -148,9 +148,9 @@
     "description": "Defer statement"
   },
   "return": {
-    "prefix": "yolo",
+    "prefix": "damn",
     "body": [
-      "yolo ${1:value}"
+      "damn ${1:value}"
     ],
     "description": "Return statement"
   },
@@ -168,11 +168,15 @@
     ],
     "description": "Continue statement"
   },
-  "print": {
-    "prefix": "spill",
+  "error handling": {
+    "prefix": "fam",
     "body": [
-      "vibez.spill(${1:value})"
+      "fam {",
+      "\t${1:code}",
+      "} sus ${2:error} {",
+      "\t$0",
+      "}"
     ],
-    "description": "Print statement"
+    "description": "Error handling with fam"
   }
 }

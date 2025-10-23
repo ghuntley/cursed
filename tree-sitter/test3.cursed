@@ -1,0 +1,7 @@
+vibe main
+
+facts (
+    PI = 3.14159
+    E = 2.71828
+    MAX_SIZE = 1000
+)

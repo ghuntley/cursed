@@ -1,0 +1,5 @@
+vibe main
+
+sus name tea = "World"
+sus age normie = 25
+sus height, weight = 180.5, 70.2

@@ -1,6 +1,6 @@
-==================
+================================================================================
 Advanced CURSED features
-==================
+================================================================================
 
 vibe main
 
@@ -17,66 +17,33 @@ be_like Point squad {
     y normie
 }
 
-be_like Shape vibes {
+be_like Shape collab {
     area() meal
     perimeter() meal
 }
 
 slay (p Point) area() meal {
-    yolo p.x * p.y
+    damn p.x * p.y
 }
 
 slay main() {
-    sus numbers [5]normie = [5]normie{1, 2, 3, 4, 5}
     sus point Point = Point{x: 10, y: 20}
-    sus tuple := (1, "hello", based)
-    (a, b, c) := tuple
-    
+    sus a normie = 10
+    sus b normie = 20
+    sus sum normie = a + b
+
+    ready sum > 15 {
+        vibez.spill("Large sum")
+    } otherwise {
+        vibez.spill("Small sum")
+    }
+
     bestie i := 0; i < 5; i++ {
-        lowkey numbers[i] > 2 {
-            vibez.spill("Large number:", numbers[i])
-        } highkey {
-            vibez.spill("Small number:", numbers[i])
-        }
-    }
-    
-    bestie _, value := flex numbers {
-        vibez.spill("Value:", value)
-    }
-    
-    sus ch dm<normie>
-    stan worker(ch)
-    
-    ready {
-        mood ch <- 42:
-            vibez.spill("Sent value")
-        mood result := <-ch:
-            vibez.spill("Received:", result)
-        basic:
-            vibez.spill("Default case")
-    }
-    
-    yikes err := dangerous_operation()
-    fam recoveryErr {
-        risky_call()
-    } highkey {
-        vibez.spill("Recovered from error")
-    }
-    
-    defer cleanup()
-}
-
-slay worker(ch dm<normie>) {
-    bestie i := 0; i < 10; i++ {
-        ch <- i
+        vibez.spill(i)
     }
 }
 
-slay dangerous_operation() tea {
-    yolo shook risky_function()
-}
-
----
+--------------------------------------------------------------------------------
 
 (source_file
   (package_clause
@@ -87,294 +54,321 @@ slay dangerous_operation() tea {
   (import_declaration
     (import_spec
       path: (string_literal)))
-  (const_declaration
-    (const_spec
-      (identifier_list
-        (identifier))
-      (expression_list
-        (int_literal)))
-    (const_spec
-      (identifier_list
-        (identifier))
-      (expression_list
-        (int_literal))))
-  (type_declaration
-    (type_spec
-      name: (identifier)
-      type: (struct_type
-        (field_declaration
-          (identifier_list
-            (identifier))
-          (builtin_type))
-        (field_declaration
-          (identifier_list
-            (identifier))
-          (builtin_type)))))
-  (type_declaration
-    (type_spec
-      name: (identifier)
-      type: (interface_type
-        (method_spec
-          name: (identifier)
-          (signature
-            (parameters)
-            (builtin_type)))
-        (method_spec
-          name: (identifier)
-          (signature
-            (parameters)
-            (builtin_type))))))
-  (method_declaration
-    (method_receiver
-      (identifier)
-      (identifier))
-    name: (identifier)
-    (signature
-      (parameters)
-      (builtin_type))
-    (block
-      (return_statement
+  (top_level_declaration
+    (const_declaration
+      (const_spec
+        (identifier_list
+          (identifier))
         (expression_list
-          (binary_expression
-            left: (selector_expression
-              operand: (identifier)
-              field: (identifier))
-            operator:
-              right: (selector_expression
-                operand: (identifier)
-                field: (identifier)))))))
-  (function_declaration
-    name: (identifier)
-    (signature
-      (parameters))
-    (block
-      (var_declaration
-        (var_spec
-          (identifier_list
-            (identifier))
-          (array_type
-            length: (int_literal)
-            element: (builtin_type))
-          (composite_literal
-            type: (array_type
-              length: (int_literal)
-              element: (builtin_type))
-            body: (literal_value
-              (element_list
-                (keyed_element
-                  (int_literal))
-                (keyed_element
-                  (int_literal))
-                (keyed_element
-                  (int_literal))
-                (keyed_element
-                  (int_literal))
-                (keyed_element
-                  (int_literal)))))))
-      (var_declaration
-        (var_spec
-          (identifier_list
-            (identifier))
-          (identifier)
-          (composite_literal
-            type: (identifier)
-            body: (literal_value
-              (element_list
-                (keyed_element
-                  key: (identifier)
-                  value: (int_literal))
-                (keyed_element
-                  key: (identifier)
-                  value: (int_literal)))))))
-      (short_var_declaration
-        left: (identifier_list
+          (expression
+            (unary_expression
+              (primary_expression
+                (operand
+                  (literal
+                    (basic_literal
+                      (int_literal)))))))))
+      (const_spec
+        (identifier_list
           (identifier))
-        right: (expression_list
-          (tuple_literal
-            (int_literal)
-            (string_literal)
-            (bool_literal))))
-      (short_var_declaration
-        left: (tuple_destructure
-          (identifier)
-          (identifier)
-          (identifier))
-        right: (expression_list
-          (identifier)))
-      (for_statement
-        (for_clause
-          init: (short_var_declaration
-            left: (identifier_list
-              (identifier))
-            right: (expression_list
-              (int_literal)))
-          condition: (binary_expression
-            left: (identifier)
-            operator:
-              right: (int_literal))
-            update: (inc_dec_statement
-              operand: (identifier)))
-          body: (block
-            (if_statement
-              condition: (binary_expression
-                left: (index_expression
-                  operand: (identifier)
-                  index: (identifier))
-                operator:
-                  right: (int_literal))
-                consequence: (block
-                  (expression_statement
-                    (call_expression
-                      function: (selector_expression
-                        operand: (identifier)
-                        field: (identifier))
-                      arguments: (argument_list
-                        (expression_list
-                          (string_literal)
-                          (index_expression
-                            operand: (identifier)
-                            index: (identifier)))))))
-                alternative: (block
-                  (expression_statement
-                    (call_expression
-                      function: (selector_expression
-                        operand: (identifier)
-                        field: (identifier))
-                      arguments: (argument_list
-                        (expression_list
-                          (string_literal)
-                          (index_expression
-                            operand: (identifier)
-                            index: (identifier))))))))))
-        (for_statement
-          (range_clause
-            (identifier_list
-              (identifier)
-              (identifier))
-            right: (identifier))
-          body: (block
-            (expression_statement
-              (call_expression
-                function: (selector_expression
-                  operand: (identifier)
-                  field: (identifier))
-                arguments: (argument_list
-                  (expression_list
-                    (string_literal)
-                    (identifier)))))))
-        (var_declaration
-          (var_spec
-            (identifier_list
-              (identifier))
-            (channel_type
-              element: (builtin_type))))
-        (go_statement
-          call: (call_expression
-            function: (identifier)
-            arguments: (argument_list
-              (expression_list
-                (identifier)))))
-        (select_statement
-          (select_case
-            (send_statement
-              channel: (identifier)
-              value: (int_literal))
-            (expression_statement
-              (call_expression
-                function: (selector_expression
-                  operand: (identifier)
-                  field: (identifier))
-                arguments: (argument_list
-                  (expression_list
-                    (string_literal))))))
-          (select_case
-            (receive_statement
+        (expression_list
+          (expression
+            (unary_expression
+              (primary_expression
+                (operand
+                  (literal
+                    (basic_literal
+                      (int_literal)))))))))))
+  (top_level_declaration
+    (type_declaration
+      (type_spec
+        name: (identifier)
+        type: (type
+          (struct_type
+            (field_declaration
               (identifier_list
                 (identifier))
-              channel: (receive_expression
-                channel: (identifier)))
-            (expression_statement
-              (call_expression
-                function: (selector_expression
-                  operand: (identifier)
-                  field: (identifier))
-                arguments: (argument_list
-                  (expression_list
-                    (string_literal)
-                    (identifier))))))
-          (select_case
-            (expression_statement
-              (call_expression
-                function: (selector_expression
-                  operand: (identifier)
-                  field: (identifier))
-                arguments: (argument_list
-                  (expression_list
-                    (string_literal)))))))
-        (error_statement
-          variable: (identifier)
-          value: (call_expression
-            function: (identifier)
-            arguments: (argument_list)))
-        (recovery_statement
-          error_variable: (identifier)
-          body: (block
-            (expression_statement
-              (call_expression
-                function: (identifier)
-                arguments: (argument_list))))
-          recovery_body: (block
-            (expression_statement
-              (call_expression
-                function: (selector_expression
-                  operand: (identifier)
-                  field: (identifier))
-                arguments: (argument_list
-                  (expression_list
-                    (string_literal)))))))
-        (defer_statement
-          call: (call_expression
-            function: (identifier)
-            arguments: (argument_list)))))
-  (function_declaration
-    name: (identifier)
-    (signature
-      (parameters
-        (parameter_list
-          (parameter_declaration
-            (identifier_list
-              (identifier))
-            (channel_type
-              element: (builtin_type))))))
-    (block
-      (for_statement
-        (for_clause
-          init: (short_var_declaration
-            left: (identifier_list
-              (identifier))
-            right: (expression_list
-              (int_literal)))
-          condition: (binary_expression
-            left: (identifier)
-            operator:
-              right: (int_literal))
-            update: (inc_dec_statement
-              operand: (identifier)))
-          body: (block
-            (expression_statement
-              (send_statement
-                channel: (identifier)
-                value: (identifier)))))))
-  (function_declaration
-    name: (identifier)
-    (signature
-      (parameters)
-      (builtin_type))
-    (block
-      (return_statement
-        (expression_list
-          (unary_expression
-            operator:
-              operand: (call_expression
-                function: (identifier)
-                arguments: (argument_list))))))))
+              (type
+                (type_name
+                  (builtin_type))))
+            (field_declaration
+              (identifier_list
+                (identifier))
+              (type
+                (type_name
+                  (builtin_type)))))))))
+  (top_level_declaration
+    (type_declaration
+      (type_spec
+        name: (identifier)
+        type: (type
+          (interface_type
+            (method_spec
+              name: (identifier)
+              (signature
+                (parameters)
+                (type
+                  (type_name
+                    (builtin_type)))))
+            (method_spec
+              name: (identifier)
+              (signature
+                (parameters)
+                (type
+                  (type_name
+                    (builtin_type))))))))))
+  (top_level_declaration
+    (method_declaration
+      (method_receiver
+        (identifier)
+        (type
+          (type_name
+            (identifier))))
+      name: (identifier)
+      (signature
+        (parameters)
+        (type
+          (type_name
+            (builtin_type))))
+      (block
+        (statement
+          (return_statement
+            (expression_list
+              (expression
+                (binary_expression
+                  left: (expression
+                    (unary_expression
+                      (primary_expression
+                        (selector_expression
+                          operand: (primary_expression
+                            (operand
+                              (identifier)))
+                          field: (identifier)))))
+                  right: (expression
+                    (unary_expression
+                      (primary_expression
+                        (selector_expression
+                          operand: (primary_expression
+                            (operand
+                              (identifier)))
+                          field: (identifier)))))))))))))
+  (top_level_declaration
+    (function_declaration
+      name: (identifier)
+      (signature
+        (parameters))
+      (block
+        (statement
+          (var_declaration
+            (var_spec
+              (identifier_list
+                (identifier))
+              (type
+                (type_name
+                  (identifier)))
+              (expression_list
+                (expression
+                  (unary_expression
+                    (primary_expression
+                      (operand
+                        (literal
+                          (composite_literal
+                            type: (type
+                              (type_name
+                                (identifier)))
+                            body: (literal_value
+                              (element_list
+                                (keyed_element
+                                  key: (expression
+                                    (unary_expression
+                                      (primary_expression
+                                        (operand
+                                          (identifier)))))
+                                  value: (expression
+                                    (unary_expression
+                                      (primary_expression
+                                        (operand
+                                          (literal
+                                            (basic_literal
+                                              (int_literal))))))))
+                                (keyed_element
+                                  key: (expression
+                                    (unary_expression
+                                      (primary_expression
+                                        (operand
+                                          (identifier)))))
+                                  value: (expression
+                                    (unary_expression
+                                      (primary_expression
+                                        (operand
+                                          (literal
+                                            (basic_literal
+                                              (int_literal))))))))))))))))))))
+        (statement
+          (var_declaration
+            (var_spec
+              (identifier_list
+                (identifier))
+              (type
+                (type_name
+                  (builtin_type)))
+              (expression_list
+                (expression
+                  (unary_expression
+                    (primary_expression
+                      (operand
+                        (literal
+                          (basic_literal
+                            (int_literal)))))))))))
+        (statement
+          (var_declaration
+            (var_spec
+              (identifier_list
+                (identifier))
+              (type
+                (type_name
+                  (builtin_type)))
+              (expression_list
+                (expression
+                  (unary_expression
+                    (primary_expression
+                      (operand
+                        (literal
+                          (basic_literal
+                            (int_literal)))))))))))
+        (statement
+          (var_declaration
+            (var_spec
+              (identifier_list
+                (identifier))
+              (type
+                (type_name
+                  (builtin_type)))
+              (expression_list
+                (expression
+                  (binary_expression
+                    left: (expression
+                      (unary_expression
+                        (primary_expression
+                          (operand
+                            (identifier)))))
+                    right: (expression
+                      (unary_expression
+                        (primary_expression
+                          (operand
+                            (identifier)))))))))))
+        (statement
+          (if_statement
+            condition: (expression
+              (binary_expression
+                left: (expression
+                  (unary_expression
+                    (primary_expression
+                      (operand
+                        (identifier)))))
+                right: (expression
+                  (unary_expression
+                    (primary_expression
+                      (operand
+                        (literal
+                          (basic_literal
+                            (int_literal)))))))))
+            consequence: (block
+              (statement
+                (expression_statement
+                  (expression
+                    (unary_expression
+                      (primary_expression
+                        (call_expression
+                          function: (primary_expression
+                            (selector_expression
+                              operand: (primary_expression
+                                (operand
+                                  (identifier)))
+                              field: (identifier)))
+                          arguments: (argument_list
+                            (expression_list
+                              (expression
+                                (unary_expression
+                                  (primary_expression
+                                    (operand
+                                      (literal
+                                        (basic_literal
+                                          (string_literal))))))))))))))))
+            alternative: (block
+              (statement
+                (expression_statement
+                  (expression
+                    (unary_expression
+                      (primary_expression
+                        (call_expression
+                          function: (primary_expression
+                            (selector_expression
+                              operand: (primary_expression
+                                (operand
+                                  (identifier)))
+                              field: (identifier)))
+                          arguments: (argument_list
+                            (expression_list
+                              (expression
+                                (unary_expression
+                                  (primary_expression
+                                    (operand
+                                      (literal
+                                        (basic_literal
+                                          (string_literal))))))))))))))))))
+        (statement
+          (for_statement
+            (for_clause
+              init: (simple_statement
+                (short_var_declaration
+                  left: (identifier_list
+                    (identifier))
+                  right: (expression_list
+                    (expression
+                      (unary_expression
+                        (primary_expression
+                          (operand
+                            (literal
+                              (basic_literal
+                                (int_literal))))))))))
+              condition: (expression
+                (binary_expression
+                  left: (expression
+                    (unary_expression
+                      (primary_expression
+                        (operand
+                          (identifier)))))
+                  right: (expression
+                    (unary_expression
+                      (primary_expression
+                        (operand
+                          (literal
+                            (basic_literal
+                              (int_literal)))))))))
+              update: (simple_statement
+                (inc_dec_statement
+                  operand: (expression
+                    (unary_expression
+                      (primary_expression
+                        (operand
+                          (identifier))))))))
+            body: (block
+              (statement
+                (expression_statement
+                  (expression
+                    (unary_expression
+                      (primary_expression
+                        (call_expression
+                          function: (primary_expression
+                            (selector_expression
+                              operand: (primary_expression
+                                (operand
+                                  (identifier)))
+                              field: (identifier)))
+                          arguments: (argument_list
+                            (expression_list
+                              (expression
+                                (unary_expression
+                                  (primary_expression
+                                    (operand
+                                      (identifier))))))))))))))))))))

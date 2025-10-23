@@ -1,0 +1,1 @@
+cmd_Release/tree_sitter.a := ln -f "Release/obj.target/tree_sitter.a" "Release/tree_sitter.a" 2>/dev/null || (rm -rf "Release/tree_sitter.a" && cp -af "Release/obj.target/tree_sitter.a" "Release/tree_sitter.a")

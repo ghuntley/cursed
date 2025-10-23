@@ -2,7 +2,6 @@
 [
   (block)
   (literal_value)
-  (field_declaration_list)
   (interface_type)
   (struct_type)
   (function_declaration)
