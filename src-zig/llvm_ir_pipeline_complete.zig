@@ -4263,9 +4263,9 @@ pub const LLVMIRPipeline = struct {
             try self.allocator.dupe(u8, output_file);
         defer self.allocator.free(exe_name);
         
-        // Step 3: Automatically invoke clang to compile to native binary
-        // Use absolute path to runtime to work from any directory
-        const runtime_path = "/home/ghuntley/cursed/src-zig/cursed_runtime.c";
+        // Step 3: Automatically invoke clang to compile to native binary.
+        const runtime_path = try self.resolveRuntimePath();
+        defer self.allocator.free(runtime_path);
         
         const compile_cmd = try std.fmt.allocPrint(self.allocator, 
             "clang -O2 -o {s} {s} {s}", .{ exe_name, ir_file, runtime_path });
@@ -4299,6 +4299,21 @@ pub const LLVMIRPipeline = struct {
             }
             print("💡 LLVM IR saved for debugging: {s}\n", .{ir_file});
         }
+    }
+
+    fn resolveRuntimePath(self: *Self) ![]u8 {
+        const exe_dir = try std.fs.selfExeDirPathAlloc(self.allocator);
+        defer self.allocator.free(exe_dir);
+
+        // In the source-checkout build, the compiler lives at zig-out/bin
+        // and the runtime source is kept in the checkout's src-zig directory.
+        return try std.fs.path.resolve(self.allocator, &[_][]const u8{
+            exe_dir,
+            "..",
+            "..",
+            "src-zig",
+            "cursed_runtime.c",
+        });
     }
     
     // ========================= NEW STATEMENT IMPLEMENTATIONS =========================
