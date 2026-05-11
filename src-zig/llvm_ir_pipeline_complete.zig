@@ -10,12 +10,14 @@ const lexer = @import("lexer.zig");
 const parser = @import("parser.zig");
 
 // Define explicit error set to avoid circular dependencies
-const CompileError = error{ 
-    OutOfMemory, 
+const CompileError = error{
+    OutOfMemory,
     InvalidExpression,
     UnsupportedFeature,
     VariableNotFound,
     FunctionNotFound,
+    ClangUnavailable,
+    ClangFailed,
 };
 
 // Use Zig's built-in LLVM IR builder (cross-platform, no C dependencies)
@@ -4263,9 +4265,9 @@ pub const LLVMIRPipeline = struct {
             try self.allocator.dupe(u8, output_file);
         defer self.allocator.free(exe_name);
         
-        // Step 3: Automatically invoke clang to compile to native binary
-        // Use absolute path to runtime to work from any directory
-        const runtime_path = "/home/ghuntley/cursed/src-zig/cursed_runtime.c";
+        // Step 3: Automatically invoke clang to compile to native binary.
+        const runtime_path = try self.resolveRuntimePath();
+        defer self.allocator.free(runtime_path);
         
         const compile_cmd = try std.fmt.allocPrint(self.allocator, 
             "clang -O2 -o {s} {s} {s}", .{ exe_name, ir_file, runtime_path });
@@ -4281,7 +4283,7 @@ pub const LLVMIRPipeline = struct {
         }) catch |err| {
             print("❌ Failed to run clang: {any}\n", .{err});
             print("💡 Make sure clang is installed and accessible\n", .{});
-            return;
+            return CompileError.ClangUnavailable;
         };
         defer self.allocator.free(result.stdout);
         defer self.allocator.free(result.stderr);
@@ -4298,7 +4300,23 @@ pub const LLVMIRPipeline = struct {
                 print("Error output: {s}\n", .{result.stderr});
             }
             print("💡 LLVM IR saved for debugging: {s}\n", .{ir_file});
+            return CompileError.ClangFailed;
         }
+    }
+
+    fn resolveRuntimePath(self: *Self) ![]u8 {
+        const exe_dir = try std.fs.selfExeDirPathAlloc(self.allocator);
+        defer self.allocator.free(exe_dir);
+
+        // In the source-checkout build, the compiler lives at zig-out/bin
+        // and the runtime source is kept in the checkout's src-zig directory.
+        return try std.fs.path.resolve(self.allocator, &[_][]const u8{
+            exe_dir,
+            "..",
+            "..",
+            "src-zig",
+            "cursed_runtime.c",
+        });
     }
     
     // ========================= NEW STATEMENT IMPLEMENTATIONS =========================
