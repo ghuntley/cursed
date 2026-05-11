@@ -77,10 +77,16 @@ clean: ## Clean all build artifacts
 
 # Testing Framework
 # =============================================================================
-.PHONY: test test-all test-zig test-stdlib test-compiler test-examples
+.PHONY: test test-all test-zig test-stdlib test-compiler test-examples native-runtime-path native-clang-failure
 .PHONY: run-tests check verify
 
 test: test-zig ## Run all tests
+
+native-runtime-path: build ## Verify native compile finds runtime outside repo cwd
+	$(AT)scripts/check-native-runtime-path.sh
+
+native-clang-failure: build ## Verify native compile returns nonzero when clang fails
+	$(AT)scripts/check-native-clang-failure.sh
 
 test-zig: build ## Run Zig compiler tests
 	$(AT)echo -e "$(BLUE)🧪 Running Zig compiler tests...$(RESET)"
