@@ -10,12 +10,14 @@ const lexer = @import("lexer.zig");
 const parser = @import("parser.zig");
 
 // Define explicit error set to avoid circular dependencies
-const CompileError = error{ 
-    OutOfMemory, 
+const CompileError = error{
+    OutOfMemory,
     InvalidExpression,
     UnsupportedFeature,
     VariableNotFound,
     FunctionNotFound,
+    ClangUnavailable,
+    ClangFailed,
 };
 
 // Use Zig's built-in LLVM IR builder (cross-platform, no C dependencies)
@@ -4281,7 +4283,7 @@ pub const LLVMIRPipeline = struct {
         }) catch |err| {
             print("❌ Failed to run clang: {any}\n", .{err});
             print("💡 Make sure clang is installed and accessible\n", .{});
-            return;
+            return CompileError.ClangUnavailable;
         };
         defer self.allocator.free(result.stdout);
         defer self.allocator.free(result.stderr);
@@ -4298,6 +4300,7 @@ pub const LLVMIRPipeline = struct {
                 print("Error output: {s}\n", .{result.stderr});
             }
             print("💡 LLVM IR saved for debugging: {s}\n", .{ir_file});
+            return CompileError.ClangFailed;
         }
     }
 
